@@ -79,19 +79,36 @@ class _MissionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final current = mission.currentAction;
+    final followUp = mission.actions
+        .where((action) => action.followUpAt != null)
+        .map((action) => action.followUpAt!)
+        .fold<DateTime?>(null, (earliest, date) {
+      if (earliest == null || date.isBefore(earliest)) return date;
+      return earliest;
+    });
     final state = current?.status == ActionStatus.waiting
         ? 'Waiting'
         : missionStatusLabel(mission.status);
+    final localFollowUp = followUp?.toLocal();
+    final followUpLabel = localFollowUp == null
+        ? null
+        : DateUtils.isSameDay(localFollowUp, DateTime.now())
+            ? 'Follow-up today'
+            : localFollowUp.isBefore(DateTime.now())
+                ? 'Follow-up overdue (${localFollowUp.toString().split(' ').first})'
+                : 'Follow-up ${localFollowUp.toString().split(' ').first}';
+    final details = <String>[
+      '$state • ${current?.title ?? 'All steps completed'}',
+      '${mission.completedActionCount} of ${mission.actions.length} steps completed',
+      if (followUpLabel != null) followUpLabel,
+    ];
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         onTap: onTap,
         title: Text(mission.objective),
-        subtitle: Text([
-          '$state • ${current?.title ?? 'All steps completed'}',
-          '${mission.completedActionCount} of ${mission.actions.length} steps completed',
-        ].join('\n')),
-        isThreeLine: true,
+        subtitle: Text(details.join('\n')),
+        isThreeLine: details.length > 2,
         trailing: SizedBox(
           width: 52,
           child: Text('${(mission.progress * 100).round()}%',
