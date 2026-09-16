@@ -30,6 +30,26 @@ void main() {
     );
   }
 
+  void expectViolation({
+    required DelegationAuthoritySnapshot parent,
+    required DelegationAuthoritySnapshot child,
+    required String code,
+  }) {
+    expect(
+      () => const DelegationAttenuationValidator().validate(
+        parent: parent,
+        child: child,
+      ),
+      throwsA(
+        isA<DelegationAttenuationViolation>().having(
+          (violation) => violation.code,
+          'code',
+          code,
+        ),
+      ),
+    );
+  }
+
   test('valid child delegation attenuates parent authority', () {
     final parent = snapshot();
     final child = snapshot(
@@ -54,68 +74,69 @@ void main() {
 
   test('rejects scope and action expansion', () {
     final parent = snapshot();
-    expect(
-      () => const DelegationAttenuationValidator().validate(
-        parent: parent,
-        child: snapshot(scope: {'CRM:LEADS', 'CRM:CONTACTS'}),
-      ),
-      throwsA(isA<DelegationAttenuationViolation>()),
+    expectViolation(
+      parent: parent,
+      child: snapshot(scope: {'CRM:LEADS', 'CRM:CONTACTS'}),
+      code: 'SCOPE_EXPANSION',
     );
-    expect(
-      () => const DelegationAttenuationValidator().validate(
-        parent: parent,
-        child: snapshot(allowedActions: {'READ', 'WRITE', 'DELETE'}),
+    expectViolation(
+      parent: parent,
+      child: snapshot(allowedActions: {'READ', 'WRITE', 'DELETE'}),
+      code: 'ACTION_EXPANSION',
+    );
+  });
+
+  test('rejects denied-action weakening and provider expansion', () {
+    final parent = snapshot();
+    expectViolation(
+      parent: parent,
+      child: snapshot(deniedActions: {}),
+      code: 'DENY_WEAKENING',
+    );
+    expectViolation(
+      parent: parent,
+      child: snapshot(
+        toolProviderScope: {'crm', 'billing'},
+        remainingDelegationDepth: 2,
       ),
-      throwsA(isA<DelegationAttenuationViolation>()),
+      code: 'TOOL_PROVIDER_EXPANSION',
     );
   });
 
   test('rejects budget and expiry expansion', () {
     final parent = snapshot();
-    expect(
-      () => const DelegationAttenuationValidator().validate(
-        parent: parent,
-        child: snapshot(remainingBudget: 101),
-      ),
-      throwsA(isA<DelegationAttenuationViolation>()),
+    expectViolation(
+      parent: parent,
+      child: snapshot(remainingBudget: 101),
+      code: 'BUDGET_EXPANSION',
     );
-    expect(
-      () => const DelegationAttenuationValidator().validate(
-        parent: parent,
-        child: snapshot(
-          expiresAtOverride: DateTime.utc(2027, 1, 1),
-        ),
-      ),
-      throwsA(isA<DelegationAttenuationViolation>()),
+    expectViolation(
+      parent: parent,
+      child: snapshot(expiresAtOverride: DateTime.utc(2027, 1, 1)),
+      code: 'EXPIRY_EXTENSION',
     );
   });
 
   test('rejects weaker security requirements', () {
     final parent = snapshot();
-    expect(
-      () => const DelegationAttenuationValidator().validate(
-        parent: parent,
-        child: snapshot(approvalStrength: 1),
-      ),
-      throwsA(isA<DelegationAttenuationViolation>()),
+    expectViolation(
+      parent: parent,
+      child: snapshot(approvalStrength: 1),
+      code: 'APPROVAL_WEAKENING',
     );
-    expect(
-      () => const DelegationAttenuationValidator().validate(
-        parent: parent,
-        child: snapshot(evidenceStrength: 1),
-      ),
-      throwsA(isA<DelegationAttenuationViolation>()),
+    expectViolation(
+      parent: parent,
+      child: snapshot(evidenceStrength: 1),
+      code: 'EVIDENCE_WEAKENING',
     );
   });
 
   test('rejects non-reduced delegation depth', () {
     final parent = snapshot(remainingDelegationDepth: 3);
-    expect(
-      () => const DelegationAttenuationValidator().validate(
-        parent: parent,
-        child: snapshot(remainingDelegationDepth: 3),
-      ),
-      throwsA(isA<DelegationAttenuationViolation>()),
+    expectViolation(
+      parent: parent,
+      child: snapshot(remainingDelegationDepth: 3),
+      code: 'DELEGATION_DEPTH_NOT_REDUCED',
     );
   });
 }
