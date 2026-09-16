@@ -1,20 +1,29 @@
 import 'package:flutter/material.dart';
 import 'data/mission_repository.dart';
+import 'data/local_mission_store.dart';
 import 'domain/intent.dart';
 import 'domain/mission.dart';
 import 'ui/intent_builder_screen.dart';
 import 'ui/mission_screen.dart';
 
-void main() => runApp(const NexoApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final repository = DemoMissionRepository(
+    store: SharedPreferencesMissionStore(),
+  );
+  await repository.restore();
+  runApp(NexoApp(repository: repository));
+}
 
 class NexoApp extends StatelessWidget {
-  const NexoApp({super.key});
+  final DemoMissionRepository repository;
+  const NexoApp({super.key, required this.repository});
 
   @override
   Widget build(BuildContext context) => MaterialApp(
         title: 'NEXO',
         theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.indigo),
-        home: _Home(repository: DemoMissionRepository()),
+        home: _Home(repository: repository),
       );
 }
 

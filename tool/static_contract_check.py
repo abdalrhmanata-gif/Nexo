@@ -13,6 +13,7 @@ ALLOWED_EXTERNAL = {
     'package:flutter_test/',
     'package:supabase_flutter/',
     'package:crypto/',
+    'package:shared_preferences/',
     'package:test/',
 }
 

@@ -27,13 +27,18 @@ The mission screen also exposes local progress tracking for each step. A user ca
 record `RUNNING`, `WAITING`, `SUCCEEDED`, or `FAILED` status, an outcome note,
 and a follow-up date through the repository boundary. Execution-owned
 `AUTHORIZED` and `COMMITTED` states remain protected from manual mutation.
-These updates are in-memory demo persistence and do not represent backend or
-provider state.
+These updates remain local demo behavior and do not represent backend or
+provider state. The application now stores the current mission and its local
+ledger in a versioned JSON value through the `shared_preferences` adapter.
+Storage is isolated behind `LocalMissionStore`, so tests can use an injected
+in-memory store and a future API/database adapter can replace it without
+changing the domain or application boundary. Invalid local data is discarded
+fail-closed rather than used to fabricate mission or authority state.
 
-The current local app starts with a single in-memory mission and does not restore
-data after an application restart. A multi-mission list and durable persistence
-remain product follow-up work; no backend or cloud storage is introduced by this
-MVP slice.
+The local app still supports one mission at a time and has no multi-device sync,
+cloud backup, or server-side durability. Persisted execution leases are not
+re-established as live backend authority; real authorization remains a
+server-side prerequisite.
 
 The application layer also exposes a provider-neutral follow-through engine that re-checks the lease fence, dispatches through the existing execution gateway, accepts evidence through a verifier port, and commits only a protocol-valid verified outcome. Its adapter and verifier ports are replaceable; no real external side effect or production certification is implied.
 
