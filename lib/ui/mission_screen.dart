@@ -153,6 +153,10 @@ class _MissionScreenState extends State<MissionScreen> {
               label: const Text('Start Mission')),
         if (m.status == MissionStatus.running) ...[
           FilledButton.icon(
+              onPressed: () => _command(widget.repository.continueMission),
+              icon: const Icon(Icons.skip_next),
+              label: const Text('Continue Mission')),
+          FilledButton.icon(
               onPressed: () => _command(widget.repository.pauseMission),
               icon: const Icon(Icons.pause),
               label: const Text('Pause Mission')),

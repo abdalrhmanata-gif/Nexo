@@ -21,6 +21,8 @@ v0.3 turns the previous Intent Builder demo into a local command-boundary protot
 
 This is a local deterministic prototype. It does not write to Supabase Main and does not claim production security. The real Execution Lease and Authorization Boundary will be implemented server-side only after the PostgreSQL/security gates are passed.
 
+The local repository now supports a bounded Continue action loop for already-authorized demo actions. It records action start/success ledger events and enters `NEEDS_USER` before an action that requires approval. This is product-layer behavior only; it is not provider execution, backend authorization, or production evidence.
+
 ## Next implementation
 
 1. Add persistent Mission Ledger events.
