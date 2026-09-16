@@ -2,6 +2,7 @@ import '../domain/intent.dart';
 import '../domain/mission.dart';
 import '../domain/execution_lease.dart';
 import '../domain/mission_ledger.dart';
+import 'local_mission_store.dart';
 
 abstract interface class MissionRepository {
   Future<Mission> createMission(IntentDraft draft);
@@ -26,14 +27,57 @@ abstract interface class MissionRepository {
 /// Local deterministic repository. It models the command boundary without
 /// touching Supabase Main. Production implementation comes after DB gates.
 class DemoMissionRepository implements MissionRepository {
-  DemoMissionRepository({DateTime Function()? clock})
-      : _clock = clock ?? DateTime.now;
+  DemoMissionRepository({
+    DateTime Function()? clock,
+    LocalMissionStore? store,
+  })  : _clock = clock ?? DateTime.now,
+        _store = store;
 
   final DateTime Function() _clock;
+  final LocalMissionStore? _store;
+  final MissionStorageCodec _codec = const MissionStorageCodec();
   Mission? _mission;
   ExecutionLease? _lease;
   final List<MissionLedgerEntry> _ledger = [];
   int _missionSequence = 0;
+
+  Future<void> restore() async {
+    final store = _store;
+    if (store == null) return;
+    final encoded = await store.read();
+    if (encoded == null) return;
+    try {
+      final state = _codec.decodeState(encoded);
+      final restored = state.mission;
+      _mission =
+          restored.leaseId == null && restored.status != MissionStatus.running
+              ? restored
+              : restored.copyWith(
+                  status: MissionStatus.paused,
+                  authorityApproved: false,
+                  clearLeaseId: true,
+                  clearLeaseExpiresAt: true,
+                  actions: restored.actions
+                      .map((action) => action.status == ActionStatus.authorized
+                          ? action.copyWith(status: ActionStatus.pending)
+                          : action)
+                      .toList(growable: false),
+                );
+      _ledger
+        ..clear()
+        ..addAll(state.ledger);
+    } on Object {
+      _mission = null;
+      await store.clear();
+    }
+  }
+
+  Future<void> _persist() async {
+    final store = _store;
+    final mission = _mission;
+    if (store == null || mission == null) return;
+    await store.write(_codec.encodeState(mission, _ledger));
+  }
 
   @override
   Future<Mission> createMission(IntentDraft draft) async {
@@ -83,6 +127,7 @@ class DemoMissionRepository implements MissionRepository {
     _record(LedgerEventType.intentCreated, 'Intent converted into a Mission.');
     _record(LedgerEventType.authorityRequested,
         'Requested bounded authority for the mission.');
+    await _persist();
     return _mission!;
   }
 
@@ -118,6 +163,7 @@ class DemoMissionRepository implements MissionRepository {
         authorityApproved: true,
         status: MissionStatus.ready,
         delegationId: 'delegation-${m.id}');
+    await _persist();
     return _mission!;
   }
 
@@ -160,6 +206,7 @@ class DemoMissionRepository implements MissionRepository {
     _record(LedgerEventType.leaseIssued, 'Issued a 30-minute execution lease.',
         {'lease_id': _lease!.id});
     _record(LedgerEventType.missionStarted, 'Mission entered RUNNING.');
+    await _persist();
     return _mission!;
   }
 
@@ -181,6 +228,7 @@ class DemoMissionRepository implements MissionRepository {
             LedgerEventType.waitingEntered,
             'Mission is waiting for approval before the next action.',
             {'action_id': m.actions[waitingIndex].id});
+        await _persist();
         return _mission!;
       }
 
@@ -198,6 +246,7 @@ class DemoMissionRepository implements MissionRepository {
     );
     _record(LedgerEventType.actionSucceeded, 'Completed demo action.',
         {'action_id': action.id});
+    await _persist();
     return _mission!;
   }
 
@@ -239,6 +288,7 @@ class DemoMissionRepository implements MissionRepository {
         if (followUpAt != null) 'follow_up_at': followUpAt.toIso8601String(),
       },
     );
+    await _persist();
     return _mission!;
   }
 
@@ -250,6 +300,7 @@ class DemoMissionRepository implements MissionRepository {
     }
     _mission = m.copyWith(status: MissionStatus.paused);
     _record(LedgerEventType.missionPaused, 'Mission paused by user.');
+    await _persist();
     return _mission!;
   }
 
@@ -260,6 +311,7 @@ class DemoMissionRepository implements MissionRepository {
     final expiry = m.leaseExpiresAt;
     if (expiry == null || !_isLeaseUsable(expiry)) {
       _expireLease();
+      await _persist();
       throw StateError(
           'Execution lease expired. Re-authorization is required.');
     }
@@ -269,6 +321,7 @@ class DemoMissionRepository implements MissionRepository {
     _mission = m.copyWith(status: MissionStatus.running);
     _record(LedgerEventType.missionResumed,
         'Mission resumed under the existing lease.');
+    await _persist();
     return _mission!;
   }
 
@@ -348,6 +401,7 @@ class DemoMissionRepository implements MissionRepository {
           .toList(),
     );
     _record(LedgerEventType.leaseRevoked, 'Execution lease revoked.');
+    await _persist();
     return _mission!;
   }
 
