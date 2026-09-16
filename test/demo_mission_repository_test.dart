@@ -31,6 +31,32 @@ void main() {
       expect(ledger.every((entry) => entry.missionId == second.id), isTrue);
     });
 
+    test('creates the user-defined steps in the supplied order', () async {
+      final repo = DemoMissionRepository();
+      final mission = await repo.createMission(IntentDraft(
+        rawGoal: 'renew passport',
+        objective: 'Renew passport',
+        constraints: const [],
+        successCriteria: const [],
+        authorityRequests: const [],
+        timeWindow: null,
+        steps: const [
+          'Find the renewal form',
+          'Gather required documents',
+          'Submit the application',
+        ],
+      ));
+
+      expect(mission.actions.map((action) => action.title).toList(), [
+        'Find the renewal form',
+        'Gather required documents',
+        'Submit the application',
+      ]);
+      expect(mission.actions.every((action) => action.authorityClass == 'USER'),
+          isTrue);
+      expect(mission.currentAction?.title, 'Find the renewal form');
+    });
+
     test('requires authority before starting', () async {
       final repo = DemoMissionRepository();
       final mission = await repo.createMission(draft('bounded task'));

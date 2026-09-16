@@ -14,11 +14,14 @@ class IntentBuilderScreen extends StatefulWidget {
 class _IntentBuilderScreenState extends State<IntentBuilderScreen> {
   final _controller = TextEditingController();
   final _builder = IntentBuilder();
+  final _stepController = TextEditingController();
+  final _steps = <String>[];
   IntentDraft? _draft;
 
   @override
   void dispose() {
     _controller.dispose();
+    _stepController.dispose();
     super.dispose();
   }
 
@@ -29,6 +32,44 @@ class _IntentBuilderScreenState extends State<IntentBuilderScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.message.toString())),
       );
+    }
+  }
+
+  void _addStep() {
+    final step = _stepController.text.trim();
+    if (step.isEmpty) return;
+    setState(() {
+      _steps.add(step);
+      _stepController.clear();
+    });
+  }
+
+  Future<void> _editStep(int index) async {
+    final controller = TextEditingController(text: _steps[index]);
+    final value = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit step'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          onSubmitted: (value) => Navigator.pop(context, value),
+          decoration: const InputDecoration(labelText: 'Step'),
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(context, controller.text),
+              child: const Text('Save')),
+        ],
+      ),
+    );
+    controller.dispose();
+    final step = value?.trim();
+    if (step != null && step.isNotEmpty && mounted) {
+      setState(() => _steps[index] = step);
     }
   }
 
@@ -58,12 +99,81 @@ class _IntentBuilderScreenState extends State<IntentBuilderScreen> {
           const SizedBox(height: 12),
           FilledButton.icon(
             onPressed: _understand,
-            icon: const Icon(Icons.auto_awesome),
-            label: const Text('Let NEXO understand this goal'),
+            icon: const Icon(Icons.check),
+            label: const Text('Set goal'),
           ),
           if (draft != null) ...[
             const SizedBox(height: 24),
             _Section(title: 'NEXO understood', child: Text(draft.objective)),
+            _Section(
+              title: 'Steps',
+              child: Column(
+                children: [
+                  if (_steps.isEmpty)
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text('Add at least one step to continue.'),
+                    ),
+                  ..._steps.asMap().entries.map((entry) => ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: CircleAvatar(child: Text('${entry.key + 1}')),
+                        title: Text(entry.value),
+                        trailing: Wrap(
+                          children: [
+                            IconButton(
+                              tooltip: 'Edit step',
+                              onPressed: () => _editStep(entry.key),
+                              icon: const Icon(Icons.edit_outlined),
+                            ),
+                            IconButton(
+                              tooltip: 'Remove step',
+                              onPressed: () =>
+                                  setState(() => _steps.removeAt(entry.key)),
+                              icon: const Icon(Icons.delete_outline),
+                            ),
+                            if (entry.key > 0)
+                              IconButton(
+                                tooltip: 'Move step up',
+                                onPressed: () => setState(() {
+                                  final step = _steps.removeAt(entry.key);
+                                  _steps.insert(entry.key - 1, step);
+                                }),
+                                icon: const Icon(Icons.arrow_upward),
+                              ),
+                            if (entry.key < _steps.length - 1)
+                              IconButton(
+                                tooltip: 'Move step down',
+                                onPressed: () => setState(() {
+                                  final step = _steps.removeAt(entry.key);
+                                  _steps.insert(entry.key + 1, step);
+                                }),
+                                icon: const Icon(Icons.arrow_downward),
+                              ),
+                          ],
+                        ),
+                      )),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _stepController,
+                          onSubmitted: (_) => _addStep(),
+                          decoration: const InputDecoration(
+                            labelText: 'Add a step',
+                            hintText: 'Example: Submit the application',
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Add step',
+                        onPressed: _addStep,
+                        icon: const Icon(Icons.add_circle),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
             _Section(
               title: 'Constraints',
               child: Column(
@@ -110,7 +220,9 @@ class _IntentBuilderScreenState extends State<IntentBuilderScreen> {
             ),
             const SizedBox(height: 12),
             FilledButton(
-              onPressed: () => widget.onApproved(draft),
+              onPressed: _steps.isEmpty
+                  ? null
+                  : () => widget.onApproved(draft.withSteps(_steps)),
               child: const Text('Create this plan'),
             ),
           ],

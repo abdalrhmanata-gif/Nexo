@@ -40,6 +40,12 @@ cloud backup, or server-side durability. Persisted execution leases are not
 re-established as live backend authority; real authorization remains a
 server-side prerequisite.
 
+Mission creation now accepts a user-supplied ordered step list. These steps are
+ordinary `MissionAction` domain data and are persisted with the existing mission
+codec. Older callers that provide no steps retain the legacy demo sequence for
+compatibility; the product UI requires at least one user-entered step and does
+not generate steps automatically.
+
 The application layer also exposes a provider-neutral follow-through engine that re-checks the lease fence, dispatches through the existing execution gateway, accepts evidence through a verifier port, and commits only a protocol-valid verified outcome. Its adapter and verifier ports are replaceable; no real external side effect or production certification is implied.
 
 ## Next implementation
