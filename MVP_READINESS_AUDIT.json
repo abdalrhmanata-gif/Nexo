@@ -1,0 +1,12 @@
+{
+  "version": "v10",
+  "status": "STATIC_READY",
+  "test_declarations": 70,
+  "runtime": "BLOCKED_UNTIL_FLUTTER_RUNNER",
+  "generated_checks": [
+    "static_contract",
+    "mvp_readiness",
+    "bash_syntax",
+    "python_compile"
+  ]
+}

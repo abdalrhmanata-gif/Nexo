@@ -1,0 +1,131 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:nexo_followthrough/data/mission_repository.dart';
+import 'package:nexo_followthrough/domain/intent.dart';
+import 'package:nexo_followthrough/domain/mission.dart';
+import 'package:nexo_followthrough/domain/execution_lease.dart';
+
+IntentDraft draft(String objective) => IntentDraft(
+      rawGoal: objective,
+      objective: objective,
+      constraints: const [],
+      successCriteria: const [],
+      authorityRequests: const [],
+      timeWindow: null,
+    );
+
+void main() {
+  group('DemoMissionRepository safety boundaries', () {
+    test('creates isolated missions and resets ledger/lease state', () async {
+      final repo = DemoMissionRepository();
+      final first = await repo.createMission(draft('first'));
+      await repo.approveAuthority(first.id);
+      await repo.startMission(first.id);
+      expect((await repo.getLedger(first.id)).length, 4);
+
+      final second = await repo.createMission(draft('second'));
+      expect(second.id, isNot(first.id));
+      expect(await repo.getExecutionLease(second.id), isNull);
+      final ledger = await repo.getLedger(second.id);
+      expect(ledger.length, 2);
+      expect(ledger.every((entry) => entry.missionId == second.id), isTrue);
+    });
+
+    test('requires authority before starting', () async {
+      final repo = DemoMissionRepository();
+      final mission = await repo.createMission(draft('bounded task'));
+      expect(() => repo.startMission(mission.id), throwsStateError);
+    });
+
+    test('pause and resume are explicit state transitions', () async {
+      final repo = DemoMissionRepository();
+      final mission = await repo.createMission(draft('pause test'));
+      await repo.approveAuthority(mission.id);
+      await repo.startMission(mission.id);
+      expect(
+          (await repo.pauseMission(mission.id)).status, MissionStatus.paused);
+      expect(
+          (await repo.resumeMission(mission.id)).status, MissionStatus.running);
+      final types =
+          (await repo.getLedger(mission.id)).map((e) => e.type).toList();
+      expect(types.where((type) => type.name == 'missionPaused').length, 1);
+      expect(types.where((type) => type.name == 'missionResumed').length, 1);
+    });
+
+    test('revoking lease removes active authority and pauses mission',
+        () async {
+      final repo = DemoMissionRepository();
+      final mission = await repo.createMission(draft('revoke test'));
+      await repo.approveAuthority(mission.id);
+      final running = await repo.startMission(mission.id);
+      expect(running.actions.any((a) => a.status == ActionStatus.authorized),
+          isTrue);
+
+      final revoked = await repo.revokeLease(mission.id);
+      expect(revoked.status, MissionStatus.paused);
+      expect(revoked.leaseId, isNull);
+      expect(await repo.getExecutionLease(mission.id), isNotNull);
+      expect(revoked.actions.every((a) => a.status != ActionStatus.authorized),
+          isTrue);
+      expect(() => repo.resumeMission(mission.id), throwsStateError);
+    });
+
+    test('revocation requires explicit re-authorization before a new start',
+        () async {
+      final repo = DemoMissionRepository();
+      final mission = await repo.createMission(draft('reauthorize test'));
+      await repo.approveAuthority(mission.id);
+      await repo.startMission(mission.id);
+      await repo.revokeLease(mission.id);
+      expect(() => repo.startMission(mission.id), throwsStateError);
+      final reapproved = await repo.approveAuthority(mission.id);
+      expect(reapproved.authorityApproved, isTrue);
+      expect(reapproved.status, MissionStatus.ready);
+      final restarted = await repo.startMission(mission.id);
+      expect(restarted.status, MissionStatus.running);
+    });
+
+    test('cannot start a mission twice without an explicit resume transition',
+        () async {
+      final repo = DemoMissionRepository();
+      final mission = await repo.createMission(draft('double start'));
+      await repo.approveAuthority(mission.id);
+      await repo.startMission(mission.id);
+      expect(() => repo.startMission(mission.id), throwsStateError);
+    });
+
+    test('rejects resume while already running', () async {
+      final repo = DemoMissionRepository();
+      final mission = await repo.createMission(draft('invalid resume'));
+      await repo.approveAuthority(mission.id);
+      await repo.startMission(mission.id);
+      expect(() => repo.resumeMission(mission.id), throwsStateError);
+    });
+
+    test('expires the lease exactly at the boundary and invalidates authority',
+        () async {
+      var now = DateTime(2026, 9, 14, 18, 0);
+      final repo = DemoMissionRepository(clock: () => now);
+      final mission = await repo.createMission(draft('exact expiry'));
+      await repo.approveAuthority(mission.id);
+      final started = await repo.startMission(mission.id);
+      now = started.leaseExpiresAt!;
+      expect(() => repo.resumeMission(mission.id), throwsStateError);
+      final expired = await repo.getMission(mission.id);
+      expect(expired.authorityApproved, isFalse);
+      expect(expired.leaseId, isNull);
+      expect(expired.status, MissionStatus.paused);
+      final lease = await repo.getExecutionLease(mission.id);
+      expect(lease?.status, ExecutionLeaseStatus.expired);
+      expect(
+          (await repo.getLedger(mission.id))
+              .any((e) => e.type.name == 'leaseExpired'),
+          isTrue);
+    });
+
+    test('cannot pause a mission that is not running', () async {
+      final repo = DemoMissionRepository();
+      final mission = await repo.createMission(draft('invalid pause'));
+      expect(() => repo.pauseMission(mission.id), throwsStateError);
+    });
+  });
+}
