@@ -1,8 +1,8 @@
 {
   "status": "STATIC_PASS",
-  "dart_files": 61,
-  "lib_files": 43,
-  "test_files": 18,
+  "dart_files": 63,
+  "lib_files": 44,
+  "test_files": 19,
   "errors": [],
   "warnings": [],
   "sha256": {
@@ -13,6 +13,7 @@
     "lib/application/intent_builder.dart": "e5c5d9bfdbc814b0c196b3b6a51d14d46efbfe6d5b65859df61fac9bb64e12d2",
     "lib/application/jit_authorization_engine.dart": "05314ad14d91f63a103736211b6d05e5b7ebc46d5efd0e97654d932fe0551ce4",
     "lib/application/mission_control_boundary.dart": "aba83e80c93876ae9c2959d2313cfbe5dbe3b92d4fa44c5abdc62895bd01960b",
+    "lib/application/mission_followthrough_engine.dart": "38f088b43efa9d5e90cae23b569e2ba79d233be8063eaf0c1db98794a2601d85",
     "lib/application/mission_handoff_service.dart": "bc0803bcecbf5fb1f46040ed23be1d3bd168c2ec42b2dc8c136ba02c8dfa2b67",
     "lib/application/mission_intelligence_router.dart": "9a4bd1ac8e8dc31907e91918e7581da6042c6fe0e13e1cd986a58aa88855fb27",
     "lib/application/mission_policy_engine.dart": "f34b10ca62481f3cbcff5573c49675ce7bbf09a1d1555b8a7eea7d83d138acb3",
@@ -57,6 +58,7 @@
     "test/jit_authorization_test.dart": "8d4dbd966cfcb44c76f18d9088b5b781d55029a64ffe446dc9e90ca45526b09c",
     "test/lease_fence_boundary_test.dart": "ba8c4a7ac0e6fc03189d6720f19b3efdd049aa4a57c0cdd9846c5c64de35dd63",
     "test/mission_control_boundary_test.dart": "8d1bd0a41f9373106b4bbbb5666c0b86cbde3f85befea4e489705465e20a02f3",
+    "test/mission_followthrough_engine_test.dart": "4e35d545885bd8d668359c226fa952f43420ee86cf5666cd23b4188d7cd164de",
     "test/mission_handoff_test.dart": "8210c44df6238f6eee5b88d6eea4f1b76261fbc2fb589c160172741280741d1c",
     "test/mission_intelligence_router_test.dart": "fc6683e72564541d41350b0553f5638153c05e9f8f5c02ec67788790ad120dc6",
     "test/mission_kernel_test.dart": "21831ec91fe0fbc3e157b7fda78608e92adf61395edc3ebe39b92c57bbbe946a",
