@@ -36,7 +36,7 @@ class _IntentBuilderScreenState extends State<IntentBuilderScreen> {
   Widget build(BuildContext context) {
     final draft = _draft;
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Mission')),
+      appBar: AppBar(title: const Text('Create a goal')),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
@@ -111,7 +111,7 @@ class _IntentBuilderScreenState extends State<IntentBuilderScreen> {
             const SizedBox(height: 12),
             FilledButton(
               onPressed: () => widget.onApproved(draft),
-              child: const Text('Approve this Mission authority'),
+              child: const Text('Create this plan'),
             ),
           ],
         ],

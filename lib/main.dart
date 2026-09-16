@@ -38,6 +38,12 @@ class _Home extends StatefulWidget {
 class _HomeState extends State<_Home> {
   Mission? mission;
 
+  @override
+  void initState() {
+    super.initState();
+    mission = widget.repository.currentMission;
+  }
+
   Future<void> _create(IntentDraft draft) async {
     final created = await widget.repository.createMission(draft);
     if (!mounted) return;

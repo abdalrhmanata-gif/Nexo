@@ -200,8 +200,6 @@ class _MissionScreenState extends State<MissionScreen> {
         ),
       );
     }
-    final leaseActive =
-        m.leaseExpiresAt != null && DateTime.now().isBefore(m.leaseExpiresAt!);
     final current = m.currentAction;
     return Scaffold(
       appBar: AppBar(title: const Text('NEXO Follow-through')),
@@ -256,30 +254,6 @@ class _MissionScreenState extends State<MissionScreen> {
                   ? 'Authority approved'
                   : 'Authority approval required'),
             ])),
-        _Card(
-            title: 'Execution Lease',
-            icon: Icons.timer_outlined,
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(leaseActive ? 'ACTIVE' : 'NOT ACTIVE',
-                  style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 6),
-              Text(leaseActive
-                  ? 'Expires ${m.leaseExpiresAt!.toLocal()}'
-                  : 'No live execution authority.'),
-              const SizedBox(height: 10),
-              const Text(
-                  'Temporary authority • bounded actions • budgeted • revocable'),
-            ])),
-        _Card(
-            title: 'Authority Boundary',
-            icon: Icons.policy_outlined,
-            child: Text(m.authoritySummary)),
-        _Card(
-            title: 'Budget',
-            icon: Icons.account_balance_wallet_outlined,
-            child: Text(
-                'Cost: ${m.currentCost}/${m.maxCost ?? '∞'}  •  Actions: ${m.actionCount}/${m.maxActions ?? '∞'}  •  Retries: ${m.maxRetries}')),
         if (error != null)
           Padding(
               padding: const EdgeInsets.only(bottom: 12),
@@ -293,7 +267,7 @@ class _MissionScreenState extends State<MissionScreen> {
           FilledButton.icon(
               onPressed: () => _command(widget.repository.approveAuthority),
               icon: const Icon(Icons.verified_user_outlined),
-              label: const Text('Approve authority')),
+              label: const Text('Prepare this plan')),
         if (m.authorityApproved && m.status == MissionStatus.ready)
           FilledButton.icon(
               onPressed: () => _command(widget.repository.startMission),
@@ -311,7 +285,7 @@ class _MissionScreenState extends State<MissionScreen> {
           OutlinedButton.icon(
               onPressed: () => _command(widget.repository.revokeLease),
               icon: const Icon(Icons.stop_circle_outlined),
-              label: const Text('Revoke Execution Lease')),
+              label: const Text('Stop active work')),
         ],
         Text('Actions', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
@@ -341,9 +315,7 @@ class _MissionScreenState extends State<MissionScreen> {
                 ),
               ),
             )),
-        const SizedBox(height: 12),
         const SizedBox(height: 20),
-        const _TrustChain(),
       ]),
     );
   }
@@ -383,14 +355,4 @@ class _Card extends StatelessWidget {
             const SizedBox(height: 10),
             child
           ])));
-}
-
-class _TrustChain extends StatelessWidget {
-  const _TrustChain();
-  @override
-  Widget build(BuildContext context) => Card(
-      child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: const Text(
-              'Intent → Mission → Delegation → Policy → Execution Lease → Authorization → Action → Evidence → Verification → Outcome')));
 }
