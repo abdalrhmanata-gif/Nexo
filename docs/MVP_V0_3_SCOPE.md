@@ -23,6 +23,13 @@ This is a local deterministic prototype. It does not write to Supabase Main and 
 
 The local repository now supports a bounded Continue action loop for already-authorized demo actions. It records action start/success ledger events and enters `NEEDS_USER` before an action that requires approval. This is product-layer behavior only; it is not provider execution, backend authorization, or production evidence.
 
+The mission screen also exposes local progress tracking for each step. A user can
+record `RUNNING`, `WAITING`, `SUCCEEDED`, or `FAILED` status, an outcome note,
+and a follow-up date through the repository boundary. Execution-owned
+`AUTHORIZED` and `COMMITTED` states remain protected from manual mutation.
+These updates are in-memory demo persistence and do not represent backend or
+provider state.
+
 The application layer also exposes a provider-neutral follow-through engine that re-checks the lease fence, dispatches through the existing execution gateway, accepts evidence through a verifier port, and commits only a protocol-valid verified outcome. Its adapter and verifier ports are replaceable; no real external side effect or production certification is implied.
 
 ## Next implementation

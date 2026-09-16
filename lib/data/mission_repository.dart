@@ -8,6 +8,13 @@ abstract interface class MissionRepository {
   Future<Mission> approveAuthority(String missionId);
   Future<Mission> startMission(String missionId);
   Future<Mission> continueMission(String missionId);
+  Future<Mission> updateActionProgress(
+    String missionId,
+    String actionId, {
+    required ActionStatus status,
+    String? outcomeNote,
+    DateTime? followUpAt,
+  });
   Future<Mission> pauseMission(String missionId);
   Future<Mission> resumeMission(String missionId);
   Future<Mission> revokeLease(String missionId);
@@ -176,6 +183,7 @@ class DemoMissionRepository implements MissionRepository {
             {'action_id': m.actions[waitingIndex].id});
         return _mission!;
       }
+
       throw StateError('No executable action remains.');
     }
 
@@ -190,6 +198,47 @@ class DemoMissionRepository implements MissionRepository {
     );
     _record(LedgerEventType.actionSucceeded, 'Completed demo action.',
         {'action_id': action.id});
+    return _mission!;
+  }
+
+  @override
+  Future<Mission> updateActionProgress(
+    String missionId,
+    String actionId, {
+    required ActionStatus status,
+    String? outcomeNote,
+    DateTime? followUpAt,
+  }) async {
+    final m = _require(missionId);
+    final index = m.actions.indexWhere((action) => action.id == actionId);
+    if (index == -1) throw StateError('Action not found.');
+    if (status == ActionStatus.authorized || status == ActionStatus.committed) {
+      throw StateError('Execution-owned action status cannot be set manually.');
+    }
+    final action = m.actions[index];
+    final actions = [...m.actions];
+    actions[index] = action.copyWith(
+      status: status,
+      outcomeNote: outcomeNote,
+      followUpAt: followUpAt,
+      clearOutcomeNote: outcomeNote == null,
+      clearFollowUpAt: followUpAt == null,
+    );
+    _mission = m.copyWith(actions: actions);
+    _record(
+      status == ActionStatus.failed
+          ? LedgerEventType.actionFailed
+          : status == ActionStatus.waiting
+              ? LedgerEventType.waitingEntered
+              : LedgerEventType.actionSucceeded,
+      'Updated action progress.',
+      {
+        'action_id': actionId,
+        'status': actionStatusLabel(status),
+        if (outcomeNote != null) 'outcome_note': outcomeNote,
+        if (followUpAt != null) 'follow_up_at': followUpAt.toIso8601String(),
+      },
+    );
     return _mission!;
   }
 

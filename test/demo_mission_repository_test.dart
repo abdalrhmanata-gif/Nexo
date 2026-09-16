@@ -141,6 +141,49 @@ void main() {
       expect(() => repo.continueMission(mission.id), throwsStateError);
     });
 
+    test('records step progress, outcome notes, and follow-up dates', () async {
+      final repo = DemoMissionRepository();
+      final mission = await repo.createMission(draft('track progress'));
+      final followUp = DateTime(2026, 9, 20);
+
+      final updated = await repo.updateActionProgress(
+        mission.id,
+        'a1',
+        status: ActionStatus.waiting,
+        outcomeNote: 'Waiting for the lead to reply.',
+        followUpAt: followUp,
+      );
+
+      expect(updated.actions.first.status, ActionStatus.waiting);
+      expect(
+          updated.actions.first.outcomeNote, 'Waiting for the lead to reply.');
+      expect(updated.actions.first.followUpAt, followUp);
+      expect((await repo.getLedger(mission.id)).last.type,
+          LedgerEventType.waitingEntered);
+    });
+
+    test('does not allow the user to forge execution-owned statuses', () async {
+      final repo = DemoMissionRepository();
+      final mission = await repo.createMission(draft('protect progress'));
+
+      expect(
+        () => repo.updateActionProgress(
+          mission.id,
+          'a1',
+          status: ActionStatus.authorized,
+        ),
+        throwsStateError,
+      );
+      expect(
+        () => repo.updateActionProgress(
+          mission.id,
+          'a1',
+          status: ActionStatus.committed,
+        ),
+        throwsStateError,
+      );
+    });
+
     test('expires the lease exactly at the boundary and invalidates authority',
         () async {
       var now = DateTime(2026, 9, 14, 18, 0);
