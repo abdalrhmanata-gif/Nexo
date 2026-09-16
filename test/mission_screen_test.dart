@@ -53,4 +53,22 @@ void main() {
     );
     expect(find.text('Continue Mission'), findsOneWidget);
   });
+
+  testWidgets('mission screen explains the next step and progress',
+      (tester) async {
+    final repo = DemoMissionRepository();
+    final mission = await repo.createMission(_draft('understand next step'));
+    await repo.approveAuthority(mission.id);
+    await repo.startMission(mission.id);
+
+    await tester.pumpWidget(MaterialApp(
+      home: MissionScreen(repository: repo, missionId: mission.id),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('What needs attention next?'), findsOneWidget);
+    expect(find.text('Research suitable leads'), findsOneWidget);
+    expect(find.text('0 of 3 steps completed'), findsOneWidget);
+    expect(find.text('This is the next step to work on.'), findsOneWidget);
+  });
 }

@@ -158,8 +158,29 @@ void main() {
       expect(
           updated.actions.first.outcomeNote, 'Waiting for the lead to reply.');
       expect(updated.actions.first.followUpAt, followUp);
+      expect(updated.currentAction?.id, 'a1');
+      expect(updated.progress, 0);
+      expect(updated.hasWaitingAction, isTrue);
       expect((await repo.getLedger(mission.id)).last.type,
           LedgerEventType.waitingEntered);
+    });
+
+    test('progress identifies the next step after a completed action',
+        () async {
+      final repo = DemoMissionRepository();
+      final mission = await repo.createMission(draft('next step'));
+
+      final updated = await repo.updateActionProgress(
+        mission.id,
+        'a1',
+        status: ActionStatus.succeeded,
+        outcomeNote: 'Research complete.',
+      );
+
+      expect(updated.completedActionCount, 1);
+      expect(updated.progress, closeTo(1 / 3, 0.001));
+      expect(updated.currentAction?.id, 'a2');
+      expect(updated.hasWaitingAction, isFalse);
     });
 
     test('does not allow the user to forge execution-owned statuses', () async {
