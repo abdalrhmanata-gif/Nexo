@@ -17,6 +17,7 @@ enum ActionStatus {
   pending,
   authorized,
   running,
+  waiting,
   succeeded,
   failed,
   cancelled,
@@ -99,6 +100,8 @@ class MissionAction {
   final ActionStatus status;
   final bool requiresApproval;
   final bool requiresVerification;
+  final String? outcomeNote;
+  final DateTime? followUpAt;
 
   const MissionAction({
     required this.id,
@@ -107,15 +110,27 @@ class MissionAction {
     required this.status,
     required this.requiresApproval,
     required this.requiresVerification,
+    this.outcomeNote,
+    this.followUpAt,
   });
 
-  MissionAction copyWith({ActionStatus? status}) => MissionAction(
+  MissionAction copyWith({
+    ActionStatus? status,
+    String? outcomeNote,
+    DateTime? followUpAt,
+    bool clearOutcomeNote = false,
+    bool clearFollowUpAt = false,
+  }) =>
+      MissionAction(
         id: id,
         title: title,
         authorityClass: authorityClass,
         status: status ?? this.status,
         requiresApproval: requiresApproval,
         requiresVerification: requiresVerification,
+        outcomeNote:
+            clearOutcomeNote ? null : (outcomeNote ?? this.outcomeNote),
+        followUpAt: clearFollowUpAt ? null : (followUpAt ?? this.followUpAt),
       );
 }
 
@@ -138,6 +153,7 @@ String actionStatusLabel(ActionStatus status) => switch (status) {
       ActionStatus.pending => 'Pending',
       ActionStatus.authorized => 'Authorized',
       ActionStatus.running => 'Running',
+      ActionStatus.waiting => 'Waiting',
       ActionStatus.succeeded => 'Succeeded',
       ActionStatus.failed => 'Failed',
       ActionStatus.cancelled => 'Cancelled',

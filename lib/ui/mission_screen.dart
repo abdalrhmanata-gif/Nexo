@@ -55,6 +55,116 @@ class _MissionScreenState extends State<MissionScreen> {
     }
   }
 
+  Future<void> _editAction(MissionAction action) async {
+    final noteController = TextEditingController(text: action.outcomeNote);
+    var status = action.status;
+    DateTime? followUpAt = action.followUpAt;
+    final result =
+        await showModalBottomSheet<(ActionStatus, String?, DateTime?)>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            20,
+            20,
+            20,
+            MediaQuery.viewInsetsOf(context).bottom + 20,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(action.title,
+                    style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<ActionStatus>(
+                  initialValue: status,
+                  decoration: const InputDecoration(labelText: 'Step status'),
+                  items: [
+                    if (action.status == ActionStatus.authorized)
+                      const DropdownMenuItem(
+                        value: ActionStatus.authorized,
+                        enabled: false,
+                        child: Text('Authorized (execution-owned)'),
+                      ),
+                    if (action.status == ActionStatus.committed)
+                      const DropdownMenuItem(
+                        value: ActionStatus.committed,
+                        enabled: false,
+                        child: Text('Committed (execution-owned)'),
+                      ),
+                    ...const [
+                      ActionStatus.pending,
+                      ActionStatus.running,
+                      ActionStatus.waiting,
+                      ActionStatus.succeeded,
+                      ActionStatus.failed,
+                    ].map((value) => DropdownMenuItem(
+                          value: value,
+                          child: Text(actionStatusLabel(value)),
+                        )),
+                  ],
+                  onChanged: (value) =>
+                      setSheetState(() => status = value ?? status),
+                ),
+                TextField(
+                  controller: noteController,
+                  maxLines: 2,
+                  decoration: const InputDecoration(labelText: 'Outcome note'),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          final picked = await showDatePicker(
+                            context: context,
+                            firstDate: DateTime.now(),
+                            lastDate:
+                                DateTime.now().add(const Duration(days: 365)),
+                            initialDate: followUpAt ?? DateTime.now(),
+                          );
+                          if (picked != null) {
+                            setSheetState(() => followUpAt = picked);
+                          }
+                        },
+                        icon: const Icon(Icons.event_outlined),
+                        label: Text(followUpAt == null
+                            ? 'Set follow-up'
+                            : 'Follow-up ${followUpAt!.toLocal().toString().split(' ').first}'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    FilledButton(
+                      onPressed: () => Navigator.pop(
+                        context,
+                        (status, noteController.text.trim(), followUpAt),
+                      ),
+                      child: const Text('Save'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    Future<void>.delayed(
+        const Duration(milliseconds: 500), noteController.dispose);
+    if (result == null || !mounted) return;
+    await _command((id) => widget.repository.updateActionProgress(
+          id,
+          action.id,
+          status: result.$1,
+          outcomeNote: result.$2?.isEmpty == true ? null : result.$2,
+          followUpAt: result.$3,
+        ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final m = mission;
@@ -168,14 +278,20 @@ class _MissionScreenState extends State<MissionScreen> {
         Text('Actions', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
         ...m.actions.map((a) => Card(
-                child: ListTile(
-              title: Text(a.title),
-              subtitle: Text(
-                  '${a.authorityClass} • ${actionStatusLabel(a.status)}${a.requiresApproval ? ' • Approval required' : ''}'),
-              leading: Icon(a.status == ActionStatus.authorized
-                  ? Icons.lock_open
-                  : Icons.lock_outline),
-            ))),
+              child: ListTile(
+                title: Text(a.title),
+                subtitle: Text(
+                    '${a.authorityClass} • ${actionStatusLabel(a.status)}${a.requiresApproval ? ' • Approval required' : ''}${a.outcomeNote == null ? '' : '\n${a.outcomeNote}'}'),
+                leading: Icon(a.status == ActionStatus.authorized
+                    ? Icons.lock_open
+                    : Icons.lock_outline),
+                trailing: IconButton(
+                  tooltip: 'Update step',
+                  onPressed: () => _editAction(a),
+                  icon: const Icon(Icons.edit_outlined),
+                ),
+              ),
+            )),
         const SizedBox(height: 12),
         const SizedBox(height: 20),
         const _TrustChain(),
