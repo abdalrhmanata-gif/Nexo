@@ -41,7 +41,13 @@ class DemoMissionRepository implements MissionRepository {
   final List<MissionLedgerEntry> _ledger = [];
   int _missionSequence = 0;
 
+  final Map<String, Mission> _missions = {};
+  final Map<String, ExecutionLease?> _leases = {};
+  final Map<String, List<MissionLedgerEntry>> _ledgers = {};
+
   Mission? get currentMission => _mission;
+  List<Mission> get missions => List.unmodifiable(_missions.values);
+  Future<List<Mission>> listMissions() async => missions;
 
   Future<void> restore() async {
     final store = _store;
@@ -49,36 +55,53 @@ class DemoMissionRepository implements MissionRepository {
     final encoded = await store.read();
     if (encoded == null) return;
     try {
-      final state = _codec.decodeState(encoded);
-      final restored = state.mission;
-      _mission =
-          restored.leaseId == null && restored.status != MissionStatus.running
-              ? restored
-              : restored.copyWith(
-                  status: MissionStatus.paused,
-                  authorityApproved: false,
-                  clearLeaseId: true,
-                  clearLeaseExpiresAt: true,
-                  actions: restored.actions
-                      .map((action) => action.status == ActionStatus.authorized
-                          ? action.copyWith(status: ActionStatus.pending)
-                          : action)
-                      .toList(growable: false),
-                );
+      final states = _codec.decodeCollection(encoded);
+      _missions.clear();
+      _ledgers.clear();
+      _leases.clear();
+      for (final state in states) {
+        final restored = state.mission;
+        final safe =
+            restored.leaseId == null && restored.status != MissionStatus.running
+                ? restored
+                : restored.copyWith(
+                    status: MissionStatus.paused,
+                    authorityApproved: false,
+                    clearLeaseId: true,
+                    clearLeaseExpiresAt: true,
+                    actions: restored.actions
+                        .map((action) =>
+                            action.status == ActionStatus.authorized
+                                ? action.copyWith(status: ActionStatus.pending)
+                                : action)
+                        .toList(growable: false),
+                  );
+        _missions[safe.id] = safe;
+        _ledgers[safe.id] = [...state.ledger];
+      }
+      _mission = _missions.values.isEmpty ? null : _missions.values.last;
       _ledger
         ..clear()
-        ..addAll(state.ledger);
+        ..addAll(_mission == null ? const [] : _ledgers[_mission!.id]!);
     } on Object {
+      _missions.clear();
+      _ledgers.clear();
+      _leases.clear();
       _mission = null;
       await store.clear();
     }
   }
 
   Future<void> _persist() async {
+    _saveSelected();
     final store = _store;
-    final mission = _mission;
-    if (store == null || mission == null) return;
-    await store.write(_codec.encodeState(mission, _ledger));
+    if (store == null) return;
+    await store.write(_codec.encodeCollection(_missions.entries.map((entry) {
+      return LocalMissionState(
+        mission: entry.value,
+        ledger: _ledgers[entry.key] ?? const [],
+      );
+    }).toList(growable: false)));
   }
 
   @override
@@ -142,6 +165,9 @@ class DemoMissionRepository implements MissionRepository {
     _record(LedgerEventType.intentCreated, 'Intent converted into a Mission.');
     _record(LedgerEventType.authorityRequested,
         'Requested bounded authority for the mission.');
+    _missions[_mission!.id] = _mission!;
+    _ledgers[_mission!.id] = [..._ledger];
+    _leases[_mission!.id] = null;
     await _persist();
     return _mission!;
   }
@@ -159,16 +185,36 @@ class DemoMissionRepository implements MissionRepository {
       summary: summary,
       data: data,
     ));
+    if (m.id == _mission?.id) {
+      _ledgers[m.id] = _ledger;
+    }
   }
 
   Mission _require(String id) {
-    final m = _mission;
+    final m = _missions[id];
     if (m == null || m.id != id) throw StateError('Mission not found.');
     return m;
   }
 
+  void _select(String id) {
+    _mission = _require(id);
+    _ledger
+      ..clear()
+      ..addAll(_ledgers[id] ?? const []);
+    _lease = _leases[id];
+  }
+
+  void _saveSelected() {
+    final mission = _mission;
+    if (mission == null) return;
+    _missions[mission.id] = mission;
+    _ledgers[mission.id] = [..._ledger];
+    _leases[mission.id] = _lease;
+  }
+
   @override
   Future<Mission> approveAuthority(String missionId) async {
+    _select(missionId);
     final m = _require(missionId);
     if (m.status != MissionStatus.ready && m.status != MissionStatus.paused) {
       throw StateError(
@@ -179,11 +225,14 @@ class DemoMissionRepository implements MissionRepository {
         status: MissionStatus.ready,
         delegationId: 'delegation-${m.id}');
     await _persist();
+    _saveSelected();
+    await _persist();
     return _mission!;
   }
 
   @override
   Future<Mission> startMission(String missionId) async {
+    _select(missionId);
     final m = _require(missionId);
     if (m.status != MissionStatus.ready) {
       throw StateError(
@@ -222,11 +271,14 @@ class DemoMissionRepository implements MissionRepository {
         {'lease_id': _lease!.id});
     _record(LedgerEventType.missionStarted, 'Mission entered RUNNING.');
     await _persist();
+    _saveSelected();
+    await _persist();
     return _mission!;
   }
 
   @override
   Future<Mission> continueMission(String missionId) async {
+    _select(missionId);
     final m = _require(missionId);
     if (m.status != MissionStatus.running) {
       throw StateError('Only a running mission can continue.');
@@ -243,6 +295,8 @@ class DemoMissionRepository implements MissionRepository {
             LedgerEventType.waitingEntered,
             'Mission is waiting for approval before the next action.',
             {'action_id': m.actions[waitingIndex].id});
+        await _persist();
+        _saveSelected();
         await _persist();
         return _mission!;
       }
@@ -262,6 +316,8 @@ class DemoMissionRepository implements MissionRepository {
     _record(LedgerEventType.actionSucceeded, 'Completed demo action.',
         {'action_id': action.id});
     await _persist();
+    _saveSelected();
+    await _persist();
     return _mission!;
   }
 
@@ -273,6 +329,7 @@ class DemoMissionRepository implements MissionRepository {
     String? outcomeNote,
     DateTime? followUpAt,
   }) async {
+    _select(missionId);
     final m = _require(missionId);
     final index = m.actions.indexWhere((action) => action.id == actionId);
     if (index == -1) throw StateError('Action not found.');
@@ -304,11 +361,14 @@ class DemoMissionRepository implements MissionRepository {
       },
     );
     await _persist();
+    _saveSelected();
+    await _persist();
     return _mission!;
   }
 
   @override
   Future<Mission> pauseMission(String missionId) async {
+    _select(missionId);
     final m = _require(missionId);
     if (m.status != MissionStatus.running) {
       throw StateError('Only a running mission can be paused.');
@@ -316,16 +376,21 @@ class DemoMissionRepository implements MissionRepository {
     _mission = m.copyWith(status: MissionStatus.paused);
     _record(LedgerEventType.missionPaused, 'Mission paused by user.');
     await _persist();
+    _saveSelected();
+    await _persist();
     return _mission!;
   }
 
   @override
   Future<Mission> resumeMission(String missionId) async {
+    _select(missionId);
     final m = _require(missionId);
     if (!m.authorityApproved) throw StateError('Authority is not approved.');
     final expiry = m.leaseExpiresAt;
     if (expiry == null || !_isLeaseUsable(expiry)) {
       _expireLease();
+      await _persist();
+      _saveSelected();
       await _persist();
       throw StateError(
           'Execution lease expired. Re-authorization is required.');
@@ -336,6 +401,8 @@ class DemoMissionRepository implements MissionRepository {
     _mission = m.copyWith(status: MissionStatus.running);
     _record(LedgerEventType.missionResumed,
         'Mission resumed under the existing lease.');
+    await _persist();
+    _saveSelected();
     await _persist();
     return _mission!;
   }
@@ -383,6 +450,7 @@ class DemoMissionRepository implements MissionRepository {
 
   @override
   Future<Mission> revokeLease(String missionId) async {
+    _select(missionId);
     final m = _require(missionId);
     final now = _clock();
     final lease = _lease;
@@ -417,19 +485,20 @@ class DemoMissionRepository implements MissionRepository {
     );
     _record(LedgerEventType.leaseRevoked, 'Execution lease revoked.');
     await _persist();
+    _saveSelected();
+    await _persist();
     return _mission!;
   }
 
   @override
   Future<ExecutionLease?> getExecutionLease(String missionId) async {
-    _require(missionId);
-    return _lease;
+    return _leases[missionId];
   }
 
   @override
   Future<List<MissionLedgerEntry>> getLedger(String missionId) async {
     _require(missionId);
-    return List.unmodifiable(_ledger);
+    return List.unmodifiable(_ledgers[missionId] ?? const []);
   }
 
   @override

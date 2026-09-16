@@ -53,6 +53,32 @@ void main() {
     expect((await second.getLedger(mission.id)).length, greaterThan(2));
   });
 
+  test('multiple missions restore independently and preserve order', () async {
+    final store = _MemoryStore();
+    final first = DemoMissionRepository(store: store);
+    final passport = await first.createMission(
+        _draft().withSteps(['Find the form', 'Submit the renewal']));
+    final business = await first.createMission(
+        _draft().withSteps(['Choose a name', 'Register the business']));
+    await first.updateActionProgress(passport.id, 'a1',
+        status: ActionStatus.waiting,
+        followUpAt: DateTime.utc(2026, 11, 1),
+        outcomeNote: 'Waiting for the form.');
+
+    final second = DemoMissionRepository(store: store);
+    await second.restore();
+    final missions = await second.listMissions();
+
+    expect(missions.map((mission) => mission.id).toList(),
+        [passport.id, business.id]);
+    expect((await second.getMission(passport.id)).actions.first.status,
+        ActionStatus.waiting);
+    expect((await second.getMission(business.id)).actions.first.status,
+        ActionStatus.pending);
+    expect((await second.getMission(passport.id)).actions.first.followUpAt,
+        DateTime.utc(2026, 11, 1));
+  });
+
   test('custom step ordering and progress survive restore', () async {
     final store = _MemoryStore();
     final first = DemoMissionRepository(store: store);

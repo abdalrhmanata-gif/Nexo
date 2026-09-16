@@ -5,8 +5,13 @@ import '../domain/mission.dart';
 class MissionScreen extends StatefulWidget {
   final MissionRepository repository;
   final String missionId;
-  const MissionScreen(
-      {super.key, required this.repository, required this.missionId});
+  final VoidCallback? onBack;
+  const MissionScreen({
+    super.key,
+    required this.repository,
+    required this.missionId,
+    this.onBack,
+  });
   @override
   State<MissionScreen> createState() => _MissionScreenState();
 }
@@ -202,7 +207,16 @@ class _MissionScreenState extends State<MissionScreen> {
     }
     final current = m.currentAction;
     return Scaffold(
-      appBar: AppBar(title: const Text('NEXO Follow-through')),
+      appBar: AppBar(
+        title: const Text('NEXO Follow-through'),
+        leading: widget.onBack == null
+            ? null
+            : IconButton(
+                tooltip: 'Back to missions',
+                onPressed: widget.onBack,
+                icon: const Icon(Icons.arrow_back),
+              ),
+      ),
       body: ListView(padding: const EdgeInsets.all(20), children: [
         if (m.status == MissionStatus.paused)
           FilledButton(

@@ -32,10 +32,12 @@ provider state. The application now stores the current mission and its local
 ledger in a versioned JSON value through the `shared_preferences` adapter.
 Storage is isolated behind `LocalMissionStore`, so tests can use an injected
 in-memory store and a future API/database adapter can replace it without
-changing the domain or application boundary. Invalid local data is discarded
-fail-closed rather than used to fabricate mission or authority state.
+changing the domain or application boundary. Multiple missions are stored as
+an ordered local collection; old single-mission envelopes are read as a
+one-mission collection. Invalid local data is discarded fail-closed rather than
+used to fabricate mission or authority state.
 
-The local app still supports one mission at a time and has no multi-device sync,
+The local app has no multi-device sync,
 cloud backup, or server-side durability. Persisted execution leases are not
 re-established as live backend authority; real authorization remains a
 server-side prerequisite.
