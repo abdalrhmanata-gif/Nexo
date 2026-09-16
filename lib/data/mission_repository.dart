@@ -7,6 +7,7 @@ abstract interface class MissionRepository {
   Future<Mission> createMission(IntentDraft draft);
   Future<Mission> approveAuthority(String missionId);
   Future<Mission> startMission(String missionId);
+  Future<Mission> continueMission(String missionId);
   Future<Mission> pauseMission(String missionId);
   Future<Mission> resumeMission(String missionId);
   Future<Mission> revokeLease(String missionId);
@@ -152,6 +153,43 @@ class DemoMissionRepository implements MissionRepository {
     _record(LedgerEventType.leaseIssued, 'Issued a 30-minute execution lease.',
         {'lease_id': _lease!.id});
     _record(LedgerEventType.missionStarted, 'Mission entered RUNNING.');
+    return _mission!;
+  }
+
+  @override
+  Future<Mission> continueMission(String missionId) async {
+    final m = _require(missionId);
+    if (m.status != MissionStatus.running) {
+      throw StateError('Only a running mission can continue.');
+    }
+
+    final nextIndex = m.actions
+        .indexWhere((action) => action.status == ActionStatus.authorized);
+    if (nextIndex == -1) {
+      final waitingIndex =
+          m.actions.indexWhere((action) => action.requiresApproval);
+      if (waitingIndex != -1) {
+        _mission = m.copyWith(status: MissionStatus.needsUser);
+        _record(
+            LedgerEventType.waitingEntered,
+            'Mission is waiting for approval before the next action.',
+            {'action_id': m.actions[waitingIndex].id});
+        return _mission!;
+      }
+      throw StateError('No executable action remains.');
+    }
+
+    final action = m.actions[nextIndex];
+    _record(LedgerEventType.actionStarted, 'Started demo action.',
+        {'action_id': action.id});
+    final actions = [...m.actions];
+    actions[nextIndex] = action.copyWith(status: ActionStatus.succeeded);
+    _mission = m.copyWith(
+      actions: actions,
+      actionCount: m.actionCount + 1,
+    );
+    _record(LedgerEventType.actionSucceeded, 'Completed demo action.',
+        {'action_id': action.id});
     return _mission!;
   }
 

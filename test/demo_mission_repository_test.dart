@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nexo_followthrough/data/mission_repository.dart';
 import 'package:nexo_followthrough/domain/intent.dart';
+import 'package:nexo_followthrough/domain/mission_ledger.dart';
 import 'package:nexo_followthrough/domain/mission.dart';
 import 'package:nexo_followthrough/domain/execution_lease.dart';
 
@@ -99,6 +100,45 @@ void main() {
       await repo.approveAuthority(mission.id);
       await repo.startMission(mission.id);
       expect(() => repo.resumeMission(mission.id), throwsStateError);
+    });
+
+    test('continues authorized actions and waits for approval', () async {
+      final repo = DemoMissionRepository();
+      final mission = await repo.createMission(draft('continue test'));
+      await repo.approveAuthority(mission.id);
+      await repo.startMission(mission.id);
+
+      final afterFirst = await repo.continueMission(mission.id);
+      expect(afterFirst.actions.first.status, ActionStatus.succeeded);
+      expect(afterFirst.actionCount, 1);
+      expect(afterFirst.status, MissionStatus.running);
+
+      final afterSecond = await repo.continueMission(mission.id);
+      expect(afterSecond.actions[1].status, ActionStatus.succeeded);
+      expect(afterSecond.actionCount, 2);
+      expect(afterSecond.status, MissionStatus.running);
+
+      final waiting = await repo.continueMission(mission.id);
+      expect(waiting.status, MissionStatus.needsUser);
+      expect(waiting.actions.last.status, ActionStatus.pending);
+      final types = (await repo.getLedger(mission.id))
+          .map((entry) => entry.type)
+          .toList();
+      expect(
+          types.where((type) => type == LedgerEventType.actionStarted).length,
+          2);
+      expect(
+          types.where((type) => type == LedgerEventType.actionSucceeded).length,
+          2);
+      expect(
+          types.where((type) => type == LedgerEventType.waitingEntered).length,
+          1);
+    });
+
+    test('cannot continue a mission that is not running', () async {
+      final repo = DemoMissionRepository();
+      final mission = await repo.createMission(draft('invalid continue'));
+      expect(() => repo.continueMission(mission.id), throwsStateError);
     });
 
     test('expires the lease exactly at the boundary and invalidates authority',

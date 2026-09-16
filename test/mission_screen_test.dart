@@ -34,4 +34,23 @@ void main() {
     expect(find.text('Resume Mission'), findsOneWidget);
     expect(find.text('Start Mission'), findsNothing);
   });
+
+  testWidgets('running mission shows Continue Mission', (tester) async {
+    final repo = DemoMissionRepository();
+    final mission = await repo.createMission(_draft('continue ui test'));
+    await repo.approveAuthority(mission.id);
+    await repo.startMission(mission.id);
+
+    await tester.pumpWidget(MaterialApp(
+      home: MissionScreen(repository: repo, missionId: mission.id),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.text('Continue Mission'),
+      500,
+      scrollable: find.byType(Scrollable),
+    );
+    expect(find.text('Continue Mission'), findsOneWidget);
+  });
 }
