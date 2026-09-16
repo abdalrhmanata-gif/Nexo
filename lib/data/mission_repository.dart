@@ -41,6 +41,8 @@ class DemoMissionRepository implements MissionRepository {
   final List<MissionLedgerEntry> _ledger = [];
   int _missionSequence = 0;
 
+  Mission? get currentMission => _mission;
+
   Future<void> restore() async {
     final store = _store;
     if (store == null) return;
