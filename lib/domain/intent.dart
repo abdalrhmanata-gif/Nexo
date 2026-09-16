@@ -16,6 +16,7 @@ class IntentDraft {
   final List<String> successCriteria;
   final List<AuthorityRequest> authorityRequests;
   final String? timeWindow;
+  final List<String> steps;
 
   const IntentDraft({
     required this.rawGoal,
@@ -24,7 +25,18 @@ class IntentDraft {
     required this.successCriteria,
     required this.authorityRequests,
     required this.timeWindow,
+    this.steps = const [],
   });
+
+  IntentDraft withSteps(List<String> value) => IntentDraft(
+        rawGoal: rawGoal,
+        objective: objective,
+        constraints: constraints,
+        successCriteria: successCriteria,
+        authorityRequests: authorityRequests,
+        timeWindow: timeWindow,
+        steps: List.unmodifiable(value),
+      );
 }
 
 class AuthorityRequest {

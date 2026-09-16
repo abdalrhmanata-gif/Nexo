@@ -102,29 +102,42 @@ class DemoMissionRepository implements MissionRepository {
       delegationId: null,
       authoritySummary:
           'READ + PREPARE. WRITE requires explicit approval. No FINANCIAL or LEGAL authority.',
-      actions: const [
-        MissionAction(
-            id: 'a1',
-            title: 'Research suitable leads',
-            authorityClass: 'READ',
-            status: ActionStatus.pending,
-            requiresApproval: false,
-            requiresVerification: true),
-        MissionAction(
-            id: 'a2',
-            title: 'Prepare outreach message',
-            authorityClass: 'PREPARE',
-            status: ActionStatus.pending,
-            requiresApproval: false,
-            requiresVerification: true),
-        MissionAction(
-            id: 'a3',
-            title: 'Send approved outreach',
-            authorityClass: 'WRITE',
-            status: ActionStatus.pending,
-            requiresApproval: true,
-            requiresVerification: true),
-      ],
+      actions: draft.steps.isEmpty
+          ? const [
+              MissionAction(
+                  id: 'a1',
+                  title: 'Research suitable leads',
+                  authorityClass: 'READ',
+                  status: ActionStatus.pending,
+                  requiresApproval: false,
+                  requiresVerification: true),
+              MissionAction(
+                  id: 'a2',
+                  title: 'Prepare outreach message',
+                  authorityClass: 'PREPARE',
+                  status: ActionStatus.pending,
+                  requiresApproval: false,
+                  requiresVerification: true),
+              MissionAction(
+                  id: 'a3',
+                  title: 'Send approved outreach',
+                  authorityClass: 'WRITE',
+                  status: ActionStatus.pending,
+                  requiresApproval: true,
+                  requiresVerification: true),
+            ]
+          : draft.steps
+              .asMap()
+              .entries
+              .map((entry) => MissionAction(
+                    id: 'a${entry.key + 1}',
+                    title: entry.value,
+                    authorityClass: 'USER',
+                    status: ActionStatus.pending,
+                    requiresApproval: false,
+                    requiresVerification: true,
+                  ))
+              .toList(growable: false),
     );
     _record(LedgerEventType.intentCreated, 'Intent converted into a Mission.');
     _record(LedgerEventType.authorityRequested,

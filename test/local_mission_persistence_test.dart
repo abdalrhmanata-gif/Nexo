@@ -53,6 +53,39 @@ void main() {
     expect((await second.getLedger(mission.id)).length, greaterThan(2));
   });
 
+  test('custom step ordering and progress survive restore', () async {
+    final store = _MemoryStore();
+    final first = DemoMissionRepository(store: store);
+    final mission = await first.createMission(_draft().withSteps([
+      'Choose a date',
+      'Complete the form',
+      'Submit the request',
+      'Save the confirmation',
+    ]));
+    await first.updateActionProgress(mission.id, 'a1',
+        status: ActionStatus.succeeded);
+    await first.updateActionProgress(mission.id, 'a2',
+        status: ActionStatus.waiting,
+        followUpAt: DateTime.utc(2026, 10, 2),
+        outcomeNote: 'Waiting for the required document.');
+
+    final second = DemoMissionRepository(store: store);
+    await second.restore();
+    final restored = await second.getMission(mission.id);
+
+    expect(restored.actions.map((action) => action.title).toList(), [
+      'Choose a date',
+      'Complete the form',
+      'Submit the request',
+      'Save the confirmation',
+    ]);
+    expect(restored.progress, 0.25);
+    expect(restored.currentAction?.title, 'Complete the form');
+    expect(restored.actions[1].status, ActionStatus.waiting);
+    expect(
+        restored.actions[1].outcomeNote, 'Waiting for the required document.');
+  });
+
   test('corrupt local data is cleared and fails closed', () async {
     final store = _MemoryStore()..value = '{not-valid-json';
     final repository = DemoMissionRepository(store: store);
