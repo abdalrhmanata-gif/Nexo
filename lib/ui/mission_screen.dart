@@ -49,6 +49,11 @@ class _MissionScreenState extends State<MissionScreen> {
           mission = value;
           error = null;
         });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Mission updated')),
+        );
+      }
     } catch (e) {
       if (mounted)
         setState(() => error = e.toString().replaceFirst('Bad state: ', ''));
@@ -197,8 +202,9 @@ class _MissionScreenState extends State<MissionScreen> {
     }
     final leaseActive =
         m.leaseExpiresAt != null && DateTime.now().isBefore(m.leaseExpiresAt!);
+    final current = m.currentAction;
     return Scaffold(
-      appBar: AppBar(title: const Text('NEXO Mission Control')),
+      appBar: AppBar(title: const Text('NEXO Follow-through')),
       body: ListView(padding: const EdgeInsets.all(20), children: [
         if (m.status == MissionStatus.paused)
           FilledButton(
@@ -206,6 +212,38 @@ class _MissionScreenState extends State<MissionScreen> {
               child: const Text('Resume Mission')),
         Text(m.objective, style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 16),
+        _Card(
+          title: 'What needs attention next?',
+          icon: m.hasWaitingAction
+              ? Icons.schedule_outlined
+              : Icons.arrow_forward_outlined,
+          child: current == null
+              ? const Text('All steps have been completed.')
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(current.title,
+                        style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 6),
+                    Text(current.status == ActionStatus.waiting
+                        ? 'Waiting for a response. Add a follow-up date so you know when to check again.'
+                        : 'This is the next step to work on.'),
+                  ],
+                ),
+        ),
+        _Card(
+          title: 'Progress',
+          icon: Icons.insights_outlined,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                  '${m.completedActionCount} of ${m.actions.length} steps completed'),
+              const SizedBox(height: 8),
+              LinearProgressIndicator(value: m.progress),
+            ],
+          ),
+        ),
         _Card(
             title: 'Mission',
             icon: Icons.route,
@@ -280,14 +318,25 @@ class _MissionScreenState extends State<MissionScreen> {
         ...m.actions.map((a) => Card(
               child: ListTile(
                 title: Text(a.title),
-                subtitle: Text(
-                    '${a.authorityClass} • ${actionStatusLabel(a.status)}${a.requiresApproval ? ' • Approval required' : ''}${a.outcomeNote == null ? '' : '\n${a.outcomeNote}'}'),
+                subtitle: Text([
+                  '${a.authorityClass} • ${_userActionStatus(a.status)}',
+                  if (a.requiresApproval) 'Approval required',
+                  if (a.followUpAt != null)
+                    'Follow up ${a.followUpAt!.toLocal().toString().split(' ').first}',
+                  if (a.outcomeNote != null) a.outcomeNote!,
+                ].join(' • ')),
                 leading: Icon(a.status == ActionStatus.authorized
                     ? Icons.lock_open
                     : Icons.lock_outline),
                 trailing: IconButton(
-                  tooltip: 'Update step',
-                  onPressed: () => _editAction(a),
+                  tooltip: a.status == ActionStatus.authorized ||
+                          a.status == ActionStatus.committed
+                      ? 'Managed by execution'
+                      : 'Update step',
+                  onPressed: a.status == ActionStatus.authorized ||
+                          a.status == ActionStatus.committed
+                      ? null
+                      : () => _editAction(a),
                   icon: const Icon(Icons.edit_outlined),
                 ),
               ),
@@ -298,6 +347,20 @@ class _MissionScreenState extends State<MissionScreen> {
       ]),
     );
   }
+
+  String _userActionStatus(ActionStatus status) => switch (status) {
+        ActionStatus.succeeded ||
+        ActionStatus.verified ||
+        ActionStatus.committed =>
+          'Completed',
+        ActionStatus.authorized => 'Ready',
+        ActionStatus.running => 'In progress',
+        ActionStatus.waiting => 'Waiting',
+        ActionStatus.verifying => 'Verifying',
+        ActionStatus.failed => 'Failed',
+        ActionStatus.pending => 'Not started',
+        ActionStatus.cancelled => 'Cancelled',
+      };
 }
 
 class _Card extends StatelessWidget {

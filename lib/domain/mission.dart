@@ -61,6 +61,33 @@ class Mission {
     required this.actions,
   });
 
+  MissionAction? get currentAction {
+    for (final action in actions) {
+      if (action.status == ActionStatus.running ||
+          action.status == ActionStatus.waiting ||
+          action.status == ActionStatus.authorized ||
+          action.status == ActionStatus.pending) {
+        return action;
+      }
+    }
+    return null;
+  }
+
+  int get completedActionCount => actions
+      .where((action) =>
+          action.status == ActionStatus.succeeded ||
+          action.status == ActionStatus.verified ||
+          action.status == ActionStatus.committed)
+      .length;
+
+  double get progress {
+    if (actions.isEmpty) return 0;
+    return completedActionCount / actions.length;
+  }
+
+  bool get hasWaitingAction =>
+      actions.any((action) => action.status == ActionStatus.waiting);
+
   Mission copyWith({
     MissionStatus? status,
     bool? authorityApproved,
