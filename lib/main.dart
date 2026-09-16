@@ -5,6 +5,7 @@ import 'domain/intent.dart';
 import 'domain/mission.dart';
 import 'ui/intent_builder_screen.dart';
 import 'ui/mission_screen.dart';
+import 'ui/workspace_screen.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,23 +38,44 @@ class _Home extends StatefulWidget {
 
 class _HomeState extends State<_Home> {
   Mission? mission;
+  String? openMissionId;
+  bool creating = false;
 
   @override
   void initState() {
     super.initState();
     mission = widget.repository.currentMission;
+    openMissionId = null;
   }
 
   Future<void> _create(IntentDraft draft) async {
     final created = await widget.repository.createMission(draft);
     if (!mounted) return;
-    setState(() => mission = created);
+    setState(() {
+      mission = created;
+      creating = false;
+      openMissionId = created.id;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final m = mission;
-    if (m == null) return IntentBuilderScreen(onApproved: _create);
-    return MissionScreen(repository: widget.repository, missionId: m.id);
+    if (creating) return IntentBuilderScreen(onApproved: _create);
+    final openId = openMissionId;
+    if (openId != null) {
+      return MissionScreen(
+        repository: widget.repository,
+        missionId: openId,
+        onBack: () => setState(() => openMissionId = null),
+      );
+    }
+    return FutureBuilder<List<Mission>>(
+      future: widget.repository.listMissions(),
+      builder: (context, snapshot) => WorkspaceScreen(
+        missions: snapshot.data ?? const [],
+        onNewMission: () => setState(() => creating = true),
+        onOpenMission: (id) => setState(() => openMissionId = id),
+      ),
+    );
   }
 }

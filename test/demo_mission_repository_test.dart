@@ -31,6 +31,22 @@ void main() {
       expect(ledger.every((entry) => entry.missionId == second.id), isTrue);
     });
 
+    test(
+        'lists missions in creation order and updates only the selected mission',
+        () async {
+      final repo = DemoMissionRepository();
+      final first = await repo.createMission(draft('first'));
+      final second = await repo.createMission(draft('second'));
+
+      expect((await repo.listMissions()).map((mission) => mission.id),
+          [first.id, second.id]);
+      await repo.updateActionProgress(first.id, first.actions.first.id,
+          status: ActionStatus.succeeded);
+
+      expect((await repo.getMission(first.id)).completedActionCount, 1);
+      expect((await repo.getMission(second.id)).completedActionCount, 0);
+    });
+
     test('creates the user-defined steps in the supplied order', () async {
       final repo = DemoMissionRepository();
       final mission = await repo.createMission(IntentDraft(

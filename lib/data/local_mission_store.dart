@@ -31,15 +31,23 @@ class SharedPreferencesMissionStore implements LocalMissionStore {
 class MissionStorageCodec {
   const MissionStorageCodec();
 
-  String encode(Mission mission) => encodeState(mission, const []);
+  String encode(Mission mission) =>
+      encodeCollection([LocalMissionState(mission: mission, ledger: const [])]);
 
   String encodeState(
     Mission mission,
     List<MissionLedgerEntry> ledger,
   ) =>
-      jsonEncode({
-        'mission': jsonDecode(_encodeMission(mission)),
-        'ledger': ledger
+      encodeCollection([LocalMissionState(mission: mission, ledger: ledger)]);
+
+  String encodeCollection(List<LocalMissionState> states) => jsonEncode({
+        'version': 2,
+        'missions': states.map(_encodeState).toList(),
+      });
+
+  Map<String, Object?> _encodeState(LocalMissionState state) => {
+        'mission': jsonDecode(_encodeMission(state.mission)),
+        'ledger': state.ledger
             .map((entry) => {
                   'id': entry.id,
                   'missionId': entry.missionId,
@@ -50,7 +58,7 @@ class MissionStorageCodec {
                   'data': entry.data,
                 })
             .toList(),
-      });
+      };
 
   String _encodeMission(Mission mission) => jsonEncode({
         'id': mission.id,
@@ -84,10 +92,27 @@ class MissionStorageCodec {
   Mission decode(String value) => decodeState(value).mission;
 
   LocalMissionState decodeState(String value) {
+    final states = decodeCollection(value);
+    if (states.length != 1) {
+      throw const FormatException('Expected one mission.');
+    }
+    return states.single;
+  }
+
+  List<LocalMissionState> decodeCollection(String value) {
     final raw = jsonDecode(value);
     if (raw is! Map<String, dynamic>) {
       throw const FormatException('Invalid mission storage envelope.');
     }
+    if (raw['missions'] is List) {
+      return (raw['missions'] as List)
+          .map((entry) => _decodeState(entry as Map<String, dynamic>))
+          .toList(growable: false);
+    }
+    return [_decodeState(raw)];
+  }
+
+  LocalMissionState _decodeState(Map<String, dynamic> raw) {
     final missionRaw = raw['mission'] is Map<String, dynamic>
         ? raw['mission'] as Map<String, dynamic>
         : raw;
