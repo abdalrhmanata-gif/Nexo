@@ -155,7 +155,8 @@ class _IntentBuilderScreenState extends State<IntentBuilderScreen> {
             ),
             if (draft != null) ...[
               const SizedBox(height: 24),
-              _Section(title: 'ZAVQERA understood', child: Text(draft.objective)),
+              _Section(
+                  title: 'ZAVQERA understood', child: Text(draft.objective)),
               _Section(
                 title: 'Steps',
                 child: Column(
