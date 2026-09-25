@@ -1,4 +1,4 @@
-name: NEXO Flutter CI
+name: ZAVQERA Flutter CI
 
 on:
   push:
@@ -28,14 +28,14 @@ jobs:
           flutter --version
           dart --version
 
-      - name: Verify NEXO MVP
+      - name: Verify ZAVQERA MVP
         run: ./tool/verify_project.sh
 
       - name: Upload diagnostic bundle on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: nexo-flutter-ci-diagnostics
+          name: zavqera-flutter-ci-diagnostics
           path: |
             pubspec.lock
             .dart_tool/package_config.json

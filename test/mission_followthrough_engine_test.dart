@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexo_followthrough/application/demo_provider_adapters.dart';
-import 'package:nexo_followthrough/application/execution_gateway.dart';
-import 'package:nexo_followthrough/application/mission_followthrough_engine.dart';
-import 'package:nexo_followthrough/domain/action_revision.dart';
-import 'package:nexo_followthrough/domain/authorization.dart';
-import 'package:nexo_followthrough/domain/execution_gateway.dart' as domain;
-import 'package:nexo_followthrough/domain/execution_lease.dart';
-import 'package:nexo_followthrough/domain/verification_outcome.dart';
+import 'package:zavqera_followthrough/application/demo_provider_adapters.dart';
+import 'package:zavqera_followthrough/application/execution_gateway.dart';
+import 'package:zavqera_followthrough/application/mission_followthrough_engine.dart';
+import 'package:zavqera_followthrough/domain/action_revision.dart';
+import 'package:zavqera_followthrough/domain/authorization.dart';
+import 'package:zavqera_followthrough/domain/execution_gateway.dart' as domain;
+import 'package:zavqera_followthrough/domain/execution_lease.dart';
+import 'package:zavqera_followthrough/domain/verification_outcome.dart';
 
 final _now = DateTime.utc(2026, 9, 16, 12);
 

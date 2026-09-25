@@ -1,6 +1,6 @@
-# NEXO Follow-through MVP v1.9
+# ZAVQERA Follow-through MVP v1.9
 
-NEXO is the mission control plane for autonomous AI: it turns human intent into bounded, verifiable authority for long-running AI missions.
+ZAVQERA is the mission control plane for autonomous AI: it turns human intent into bounded, verifiable authority for long-running AI missions.
 
 ## v1.0 — Mission Runtime Contract
 
@@ -20,7 +20,7 @@ This release turns the MVP from a provider-aware execution demo into a durable m
 Intent → Principal → Mission → Delegation → Policy → Authority Passport → Intelligence Router → Execution Gateway → JIT Authorization → Adapter → External System → Evidence → Verification → Outcome
 
 ### Security position
-AI can reason and replan. NEXO remains authoritative over mission identity, delegated authority, budgets, policy, verification and outcome. No model output, tool output, webhook or runtime event is itself permission.
+AI can reason and replan. ZAVQERA remains authoritative over mission identity, delegated authority, budgets, policy, verification and outcome. No model output, tool output, webhook or runtime event is itself permission.
 
 ### Scope
 Local/demo Flutter contract only. No production credentials. No Supabase Main migration. Production certification remains incomplete until PostgreSQL 17 live concurrency, ownership, grants, provider ambiguity, webhook, OAuth, SSRF and secret-boundary tests pass.

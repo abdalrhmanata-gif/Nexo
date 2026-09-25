@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexo_followthrough/application/execution_gateway.dart';
-import 'package:nexo_followthrough/application/demo_provider_adapters.dart';
-import 'package:nexo_followthrough/domain/execution_gateway.dart';
+import 'package:zavqera_followthrough/application/execution_gateway.dart';
+import 'package:zavqera_followthrough/application/demo_provider_adapters.dart';
+import 'package:zavqera_followthrough/domain/execution_gateway.dart';
 
 void main() {
   ExecutionRequest request(String provider) => ExecutionRequest(

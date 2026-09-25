@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexo_followthrough/application/authority_passport_service.dart';
-import 'package:nexo_followthrough/domain/authority_passport.dart';
+import 'package:zavqera_followthrough/application/authority_passport_service.dart';
+import 'package:zavqera_followthrough/domain/authority_passport.dart';
 
 void main() {
   final issued = DateTime.utc(2026, 9, 6, 10);
