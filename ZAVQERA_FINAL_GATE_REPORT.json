@@ -1,7 +1,13 @@
 {
-  "gate": "ZAVQERA Production Readiness Hardening checkpoint",
-  "status": "PASS_WITH_LIVE_EVIDENCE",
-  "generated_from": "W15/W16 Development evidence plus two-session concurrency evidence and provider reconciliation harness evidence",
+  "gate": "ZAVQERA Final Production Readiness Re-evaluation",
+  "status": "NOT_CLAIMED",
+  "generated_from": "W15/W16 Development evidence, two-session concurrency evidence, provider reconciliation harness evidence, CI run #59, and Supabase organization plan verification",
+  "re_evaluation": {
+    "result": "CONDITIONALLY_COMPLETE",
+    "production_readiness_claimed": false,
+    "summary": "All previously completed technical gates remain PASS and CI run #59 succeeded. Leaked-password protection cannot be enabled on the current Supabase Free plan and therefore remains an unmet production-hardening capability for the current environment. Live external-provider reconciliation is intentionally not performed without an appropriate production environment and credentials.",
+    "required_follow_up": "Before any production-readiness claim, use a Pro-or-higher Supabase plan and enable leaked-password protection, then re-check Security Advisor; separately perform live external-provider reconciliation in a controlled production-like environment when appropriate credentials and external-provider evidence exist."
+  },
   "results": [
     {
       "name": "authoritative Web reads",
@@ -82,7 +88,7 @@
     {
       "name": "W14 live browser E2E",
       "status": "PASS",
-      "details": "Executed successfully twice against Development before this gate refresh."
+      "details": "Executed successfully twice against Development before this final re-evaluation."
     },
     {
       "name": "Supabase Development read-only verification",
@@ -97,7 +103,7 @@
     {
       "name": "provider-neutral reconciliation contract",
       "status": "PASS",
-      "details": "Provider-neutral contract verified; added controlled provider ambiguity harness test proving UNKNOWN results require reconciliation and cannot auto-retry, and unapproved provider substitution fails closed. No production credentials or live external provider were used."
+      "details": "Provider-neutral contract verified; controlled provider ambiguity harness proves UNKNOWN results require reconciliation and cannot auto-retry, and unapproved provider substitution fails closed. No production credentials or live external provider were used."
     },
     {
       "name": "provider reconciliation harness",
@@ -105,9 +111,19 @@
       "details": "Controlled adapter test executed through the provider-agnostic gateway; ambiguous provider result became UNKNOWN and required reconciliation without automatic retry; provider substitution was rejected."
     },
     {
+      "name": "GitHub Actions CI #59",
+      "status": "PASS",
+      "details": "Run #59 on head commit 4d53a4ea1d58b8736a187d3bdfe8f54aa6c830a8 completed successfully; verify and Verify ZAVQERA MVP both passed."
+    },
+    {
       "name": "Supabase leaked-password protection",
-      "status": "WARN / ACTION REQUIRED",
-      "details": "Development Security Advisor still reports leaked-password protection disabled. Current Supabase documentation confirms the feature is available on Pro and above and is configured in Auth settings. No dashboard/Management-API credential was available to change this setting from the tool layer, so it was not falsely marked complete."
+      "status": "BLOCKED_BY_PLAN",
+      "details": "Security Advisor still reports leaked-password protection disabled. The Supabase organization is on the Free plan, while current Supabase documentation states this feature is available on Pro and above. No upgrade was made and no credential-based Management API change was attempted."
+    },
+    {
+      "name": "live external-provider reconciliation",
+      "status": "NOT_PERFORMED_BY_DESIGN",
+      "details": "No production credentials, external-provider secrets, or production-like external integration were introduced. The provider-neutral contract and controlled harness remain verified."
     }
   ],
   "development_live_checks": {
@@ -119,9 +135,11 @@
     "action-history delete guard": "PASS",
     "append-only provenance": "PASS",
     "W11 optimized RLS policies": "PASS",
-    "two-session TOCTOU/version race": "PASS"
+    "two-session TOCTOU/version race": "PASS",
+    "GitHub Actions CI #59": "PASS",
+    "Supabase organization plan": "FREE"
   },
   "credentials_recorded": false,
   "production_readiness_claimed": false,
-  "note": "This checkpoint records verified Development evidence and a provider-neutral reconciliation harness. It does not claim live external-provider reconciliation or production readiness. Leaked-password protection remains the only identified Supabase Auth advisor warning requiring a project-setting action before the final readiness re-evaluation."
+  "note": "This final re-evaluation records the verified Development and CI evidence without claiming production readiness. The remaining hardening items are plan-gated leaked-password protection and future live external-provider reconciliation in an appropriate controlled environment. The existing SECURITY DEFINER advisor warnings were previously reviewed and correspond to intentional authoritative mutation RPC boundaries."
 }
