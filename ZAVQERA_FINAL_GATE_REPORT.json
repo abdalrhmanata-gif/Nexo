@@ -1,7 +1,7 @@
 {
   "gate": "ZAVQERA W15 final security and release gate",
   "status": "PASS_WITH_LIVE_EVIDENCE",
-  "generated_from": "W15 static gate plus direct Development verification",
+  "generated_from": "W15 static gate plus direct Development verification and two-session concurrency evidence",
   "results": [
     {"name":"authoritative Web reads","status":"PASS"},
     {"name":"authenticated server identity","status":"PASS"},
@@ -23,7 +23,9 @@
     {"name":"W13 authorization tests","status":"PASS"},
     {"name":"W14 browser E2E configuration","status":"PASS"},
     {"name":"W14 live browser E2E","status":"PASS","details":"Executed successfully twice against Development before this gate refresh."},
-    {"name":"Supabase Development read-only verification","status":"PASS","details":"Direct Development catalog verification completed."}
+    {"name":"Supabase Development read-only verification","status":"PASS","details":"Direct Development catalog verification completed."},
+    {"name":"two-session TOCTOU/version race","status":"PASS","details":"Two concurrent Development database sessions exercised SELECT FOR UPDATE plus version-guarded update on a disposable mission; exactly one writer committed version 2 and the competing stale writer could not overwrite it. Disposable row was removed after the test."},
+    {"name":"provider-neutral reconciliation contract","status":"PASS","details":"Execution protocol statically verified for idempotency/input binding, expiry fail-closed behavior, UNKNOWN outcome reconciliation requirement, and provider adapter isolation. No live external provider reconciliation was performed."}
   ],
   "development_live_checks": {
     "all 7 public tables RLS enabled":"PASS",
@@ -33,9 +35,10 @@
     "W10 RESTRICT FK":"PASS",
     "action-history delete guard":"PASS",
     "append-only provenance":"PASS",
-    "W11 optimized RLS policies":"PASS"
+    "W11 optimized RLS policies":"PASS",
+    "two-session TOCTOU/version race":"PASS"
   },
   "credentials_recorded": false,
   "production_readiness_claimed": false,
-  "note": "This report records verified Development evidence and prior successful W14 E2E runs; it does not claim production deployment readiness."
+  "note": "This report records verified Development evidence, two-session concurrency evidence, provider-neutral contract evidence, and prior successful W14 E2E runs; it does not claim production deployment readiness or live external-provider reconciliation."
 }
