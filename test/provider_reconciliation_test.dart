@@ -15,7 +15,7 @@ class _ControlledProvider implements AgentProviderAdapter {
     return ExecutionResponse(
       provider: providerId,
       model: request.model,
-      providerRunId: 'run-\${request.actionId}',
+      providerRunId: 'run-${request.actionId}',
       output: completed ? 'accepted' : 'ambiguous',
       completed: completed,
     );
@@ -37,7 +37,7 @@ ExecutionRequest request() => const ExecutionRequest(
 
 void main() {
   test('approved provider preserves the ZAVQERA execution boundary', () async {
-    const gateway = ExecutionGateway(
+    final gateway = ExecutionGateway(
       adapters: {
         'provider-a': _ControlledProvider('provider-a', completed: false),
       },
@@ -62,7 +62,7 @@ void main() {
   });
 
   test('provider substitution is fail-closed', () {
-    const gateway = ExecutionGateway(
+    final gateway = ExecutionGateway(
       adapters: {
         'provider-a': _ControlledProvider('provider-a', completed: true),
       },
