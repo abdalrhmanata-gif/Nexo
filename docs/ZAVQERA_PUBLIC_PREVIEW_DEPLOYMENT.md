@@ -44,6 +44,20 @@ This is an account/team authorization setting. It **cannot** be disabled from re
 configuration, from `vercel.json`, or from a GitHub Actions workflow. No repository-side change can
 fix it.
 
+The `302` proves the domain exists and is protected — not that it is missing. A non-existent Vercel
+domain returns `404`. Control test:
+
+| Domain | Result | Meaning |
+| --- | --- | --- |
+| `nexo-git-zavqera-integrate-origin-main-clean-abdalrhmanata-1982.vercel.app` | `302` | exists, protected |
+| `nexo-git-this-branch-does-not-exist-xyz-abdalrhmanata-1982.vercel.app` | `404` | does not exist |
+
+### Do not disable protection globally
+
+Setting **Vercel Authentication** to *Disabled* would expose **production and every preview**. That
+is broader than needed. Vercel supports a Preview-scoped exception that is the correct fix — see
+section 5.
+
 > Note: `https://nexo.vercel.app` responds `200` but serves an unrelated third-party project
 > ("Plataforma para el ecosistema musical"). It is **not** this project and must not be used or
 > referenced as the ZAVQERA preview URL.
@@ -75,34 +89,91 @@ Both are **public, non-secret** client configuration. `isSupabaseConfigured()` m
 degrade gracefully when they are absent, so `npm run build` succeeds with no environment
 configured at all — which is why the Vercel builds already pass.
 
-For a functional signed-in tester flow, these two public values must be set **in the Vercel
-dashboard** for the Preview environment, pointing at the **Development** Supabase project. They are
-deliberately not committed here. No service-role key, database password, or any other secret is
-required by the web app, and none may ever be added.
+For a functional signed-in tester flow these two public values must be set in the Vercel dashboard.
+See section 6 — without them the preview silently serves mock data.
 
-## 5. Remaining manual dashboard step (authorization-gated)
+## 5. Remaining manual step: add a Deployment Protection Exception
 
-This is the only outstanding work, and it must be performed by an account with Vercel project
-access. It is not a code change.
+This is the only outstanding work. It is an authorization-gated dashboard action, not a code
+change, and it must be performed by someone with access to the Vercel project.
 
-1. Open the Vercel project `nexo` (scope `abdalrhmanata-1982`).
-2. Go to **Settings → Deployment Protection**.
-3. Set **Vercel Authentication** to **Disabled** (or restrict protection to Production only, so
-   Preview deployments are publicly reachable).
-4. Optionally, under **Settings → Environment Variables**, add the two `NEXT_PUBLIC_*` values above
-   for the **Preview** environment, scoped to the Development Supabase project.
-5. Re-deploy or push to `zavqera/integrate-origin-main-clean`.
+**Use a Deployment Protection Exception, not a global disable.** An Exception unprotects exactly one
+preview domain and leaves production and every other preview fully protected.
 
-After step 3 the following stable branch alias becomes publicly reachable and is the URL to hand to
-first-user testers:
+Per Vercel's plan matrix, **Deployment Protection Exceptions are "Included" on Hobby, Pro, and
+Enterprise** — no upgrade, no add-on, and no additional cost is required.
+
+### Exact steps
+
+1. Vercel [dashboard](https://vercel.com/dashboard) → select project **`nexo`** (scope
+   `abdalrhmanata-1982`)
+2. Sidebar → **Settings** → **Deployment Protection**
+3. Scroll to the **Deployment Protection Exceptions** section → select **Add Domain**
+4. In the **Unprotect Domain** modal, enter exactly:
+
+   ```
+   nexo-git-zavqera-integrate-origin-main-clean-abdalrhmanata-1982.vercel.app
+   ```
+
+5. Select **Continue**
+6. In the confirmation modal:
+   - re-enter the same domain in the first input
+   - type `unprotect my domain` in the second input
+   - select **Confirm**
+
+Leave **Vercel Authentication** itself **enabled**. Do not change the protection scope.
+
+All existing **and future** deployments for that domain become public, so the URL stays valid across
+subsequent pushes to `zavqera/integrate-origin-main-clean`. To reverse it later, remove the domain
+from the same section (confirmation phrase `reprotect my domain`).
+
+### Tester URL
 
 ```
 https://nexo-git-zavqera-integrate-origin-main-clean-abdalrhmanata-1982.vercel.app
 ```
 
-Until step 3 is performed, that URL returns `302` to Vercel login for anonymous visitors.
+This is the **stable branch alias** — it always points at the latest deployment of
+`zavqera/integrate-origin-main-clean`. Do **not** hand testers a per-deployment URL such as
+`nexo-ddnf84kun-…`; those change on every push.
 
-## 6. Why no GitHub-native fallback was implemented
+### Considered and rejected: Shareable Links
+
+Vercel Shareable Links also bypass protection, but they are rejected here:
+
+- on Hobby they are **limited to one link per account**
+- they are **per-deployment**, so every new push would need a new link re-sent to every tester
+
+A Deployment Protection Exception is domain-scoped and survives redeploys, so it is the correct
+mechanism for an ongoing validation round.
+
+## 6. Environment variables are required for valid evidence
+
+Making the URL public is necessary but **not sufficient**. Verified in code:
+
+- `apps/web/middleware.ts` short-circuits with `NextResponse.next()` when the Supabase variables are
+  absent, so the authenticated route boundary does not engage
+- `app/app/page.tsx` and `app/app/missions/[id]/page.tsx` fall back to `localMockMissionRepository`
+  when `isSupabaseConfigured()` is false
+
+So an unconfigured preview would serve **mock data with no sign-in and no persistence**. Testers
+would appear to complete the loop while nothing was saved, producing **misleading first-user
+evidence**.
+
+Before running validation, set both values for the **Preview** environment
+(**Settings → Environment Variables**), pointed at the **Development** Supabase project:
+
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+
+Both are public, non-secret client configuration and are already documented in
+`apps/web/.env.example`. They are deliberately not committed. No service-role key, database
+password, or other secret is required by the web app, and none may ever be added. Supabase **Main**
+must remain untouched; use **Development** only.
+
+Redeploy after setting them so the build picks up the values.
+
+## 7. Why no GitHub-native fallback was implemented
 
 `apps/web` is a server-rendered Next.js application. It ships:
 
