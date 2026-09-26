@@ -126,6 +126,7 @@ required_migrations = [
     "20260924211000_w9_1_completed_outcome_guard.sql",
     "20260924220000_w10_deletion_integrity_read_boundary.sql",
     "20260924180454_w11_performance_rls_optimization.sql",
+    "20260926100000_w16_audit_history_table_hardening.sql",
 ]
 missing = [name for name in required_migrations if name not in migration_files]
 result("W4-W11 migration inventory", "PASS" if not missing else "NOT_TESTED", f"Missing: {missing}")
@@ -158,6 +159,21 @@ result("W11 RLS/index hardening", "PASS" if
         "mission_events_actor_id_idx" in w11
         and "(select auth.uid())" in w11 else "NOT_TESTED",
         "W11 indexes and optimized authenticated policies are present.")
+
+w16 = read(migration_files.get("20260926100000_w16_audit_history_table_hardening.sql", Path()))
+result("W16 audit-history table hardening", "PASS" if all(
+    token in w16 for token in (
+        "alter table public.mission_events enable row level security",
+        "alter table public.mission_verifications enable row level security",
+        "alter table public.mission_outcomes enable row level security",
+        "revoke all privileges on table public.mission_events from anon, authenticated",
+        "revoke all privileges on table public.mission_verifications from anon, authenticated",
+        "revoke all privileges on table public.mission_outcomes from anon, authenticated",
+        "grant select on table public.mission_events to authenticated",
+        "grant select on table public.mission_verifications to authenticated",
+        "grant select on table public.mission_outcomes to authenticated",
+    )
+) else "NOT_TESTED", "W16 explicitly enables RLS and restricts audit-history table privileges.")
 policy_names = (
     "profiles_select_own", "profiles_update_own",
     "workspaces_select_own", "workspaces_insert_own",
@@ -215,7 +231,7 @@ if not db_url:
     live_checks = {name: {"status": "BLOCKED", "details": "Read-only database URL absent."}
                    for name in (
                        "all 7 public tables RLS enabled", "all 7 public tables zero rows",
-                       "W4-W11 migrations present", "intentional SECURITY DEFINER warnings only",
+                       "W4-W16 migrations present", "intentional SECURITY DEFINER warnings only",
                        "no new security warnings", "W10 RESTRICT FK", "action-history delete guard",
                        "append-only provenance", "W11 optimized RLS policies")}
 elif not psql:
