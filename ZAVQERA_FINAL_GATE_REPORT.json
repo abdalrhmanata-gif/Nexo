@@ -1,0 +1,145 @@
+{
+  "gate": "ZAVQERA Final Production Readiness Re-evaluation",
+  "status": "NOT_CLAIMED",
+  "generated_from": "W15/W16 Development evidence, two-session concurrency evidence, provider reconciliation harness evidence, CI run #59, and Supabase organization plan verification",
+  "re_evaluation": {
+    "result": "CONDITIONALLY_COMPLETE",
+    "production_readiness_claimed": false,
+    "summary": "All previously completed technical gates remain PASS and CI run #59 succeeded. Leaked-password protection cannot be enabled on the current Supabase Free plan and therefore remains an unmet production-hardening capability for the current environment. Live external-provider reconciliation is intentionally not performed without an appropriate production environment and credentials.",
+    "required_follow_up": "Before any production-readiness claim, use a Pro-or-higher Supabase plan and enable leaked-password protection, then re-check Security Advisor; separately perform live external-provider reconciliation in a controlled production-like environment when appropriate credentials and external-provider evidence exist."
+  },
+  "results": [
+    {
+      "name": "authoritative Web reads",
+      "status": "PASS"
+    },
+    {
+      "name": "authenticated server identity",
+      "status": "PASS"
+    },
+    {
+      "name": "browser/server boundary",
+      "status": "PASS"
+    },
+    {
+      "name": "service-role exclusion",
+      "status": "PASS"
+    },
+    {
+      "name": "browser ownership authority exclusion",
+      "status": "PASS"
+    },
+    {
+      "name": "direct mission/action UPDATE exclusion",
+      "status": "PASS"
+    },
+    {
+      "name": "direct verification/outcome/event write exclusion",
+      "status": "PASS"
+    },
+    {
+      "name": "W4-W16 migration inventory",
+      "status": "PASS"
+    },
+    {
+      "name": "authoritative mission/action mutation RPCs",
+      "status": "PASS"
+    },
+    {
+      "name": "verification/outcome command boundaries",
+      "status": "PASS"
+    },
+    {
+      "name": "append-only provenance",
+      "status": "PASS"
+    },
+    {
+      "name": "W10 deletion integrity",
+      "status": "PASS"
+    },
+    {
+      "name": "W11 RLS/index hardening",
+      "status": "PASS"
+    },
+    {
+      "name": "W16 audit-history table hardening",
+      "status": "PASS"
+    },
+    {
+      "name": "RLS ownership isolation",
+      "status": "PASS"
+    },
+    {
+      "name": "internal SECURITY DEFINER execution boundary",
+      "status": "PASS"
+    },
+    {
+      "name": "SECURITY DEFINER search_path hardening",
+      "status": "PASS"
+    },
+    {
+      "name": "W13 authorization tests",
+      "status": "PASS"
+    },
+    {
+      "name": "W14 browser E2E configuration",
+      "status": "PASS"
+    },
+    {
+      "name": "W14 live browser E2E",
+      "status": "PASS",
+      "details": "Executed successfully twice against Development before this final re-evaluation."
+    },
+    {
+      "name": "Supabase Development read-only verification",
+      "status": "PASS",
+      "details": "Direct Development catalog verification completed."
+    },
+    {
+      "name": "two-session TOCTOU/version race",
+      "status": "PASS",
+      "details": "Two concurrent Development database sessions exercised SELECT FOR UPDATE plus version-guarded update on a disposable mission; exactly one writer committed version 2 and the competing stale writer could not overwrite it. Disposable row was removed after the test."
+    },
+    {
+      "name": "provider-neutral reconciliation contract",
+      "status": "PASS",
+      "details": "Provider-neutral contract verified; controlled provider ambiguity harness proves UNKNOWN results require reconciliation and cannot auto-retry, and unapproved provider substitution fails closed. No production credentials or live external provider were used."
+    },
+    {
+      "name": "provider reconciliation harness",
+      "status": "PASS",
+      "details": "Controlled adapter test executed through the provider-agnostic gateway; ambiguous provider result became UNKNOWN and required reconciliation without automatic retry; provider substitution was rejected."
+    },
+    {
+      "name": "GitHub Actions CI #59",
+      "status": "PASS",
+      "details": "Run #59 on head commit 4d53a4ea1d58b8736a187d3bdfe8f54aa6c830a8 completed successfully; verify and Verify ZAVQERA MVP both passed."
+    },
+    {
+      "name": "Supabase leaked-password protection",
+      "status": "BLOCKED_BY_PLAN",
+      "details": "Security Advisor still reports leaked-password protection disabled. The Supabase organization is on the Free plan, while current Supabase documentation states this feature is available on Pro and above. No upgrade was made and no credential-based Management API change was attempted."
+    },
+    {
+      "name": "live external-provider reconciliation",
+      "status": "NOT_PERFORMED_BY_DESIGN",
+      "details": "No production credentials, external-provider secrets, or production-like external integration were introduced. The provider-neutral contract and controlled harness remain verified."
+    }
+  ],
+  "development_live_checks": {
+    "all 7 public tables RLS enabled": "PASS",
+    "audit-history tables authenticated SELECT only": "PASS",
+    "audit-history tables anon access": "PASS: none",
+    "W4-W16 migrations present": "PASS",
+    "W10 RESTRICT FK": "PASS",
+    "action-history delete guard": "PASS",
+    "append-only provenance": "PASS",
+    "W11 optimized RLS policies": "PASS",
+    "two-session TOCTOU/version race": "PASS",
+    "GitHub Actions CI #59": "PASS",
+    "Supabase organization plan": "FREE"
+  },
+  "credentials_recorded": false,
+  "production_readiness_claimed": false,
+  "note": "This final re-evaluation records the verified Development and CI evidence without claiming production readiness. The remaining hardening items are plan-gated leaked-password protection and future live external-provider reconciliation in an appropriate controlled environment. The existing SECURITY DEFINER advisor warnings were previously reviewed and correspond to intentional authoritative mutation RPC boundaries."
+}

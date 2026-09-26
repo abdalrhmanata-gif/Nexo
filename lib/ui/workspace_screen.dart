@@ -16,7 +16,7 @@ class WorkspaceScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Your missions')),
+        appBar: AppBar(title: const Text('Your Missions')),
         body: missions.isEmpty
             ? _EmptyWorkspace(onNewMission: onNewMission)
             : ListView(
@@ -36,7 +36,7 @@ class WorkspaceScreen extends StatelessWidget {
         floatingActionButton: FloatingActionButton.extended(
           onPressed: onNewMission,
           icon: const Icon(Icons.add),
-          label: const Text('New mission'),
+          label: const Text('New Mission'),
         ),
       );
 }
@@ -63,7 +63,7 @@ class _EmptyWorkspace extends StatelessWidget {
               FilledButton.icon(
                 onPressed: onNewMission,
                 icon: const Icon(Icons.add),
-                label: const Text('New mission'),
+                label: const Text('New Mission'),
               ),
             ],
           ),
@@ -97,8 +97,9 @@ class _MissionTile extends StatelessWidget {
             : localFollowUp.isBefore(DateTime.now())
                 ? 'Follow-up overdue (${localFollowUp.toString().split(' ').first})'
                 : 'Follow-up ${localFollowUp.toString().split(' ').first}';
+    final next = current?.title ?? mission.completionSummary;
     final details = <String>[
-      '$state • ${current?.title ?? 'All steps completed'}',
+      '$state • $next',
       '${mission.completedActionCount} of ${mission.actions.length} steps completed',
       if (followUpLabel != null) followUpLabel,
     ];

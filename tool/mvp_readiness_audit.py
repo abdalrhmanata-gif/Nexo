@@ -4,7 +4,7 @@ import json, re, sys
 root = Path(__file__).resolve().parents[1]
 errors=[]; warnings=[]
 files=[p for p in root.rglob('*') if p.is_file() and '.git' not in p.parts and '__pycache__' not in p.parts]
-scan_files=[p for p in files if p != Path(__file__) and p.name not in {'MVP_READINESS_AUDIT.json','NEXO_STATIC_CONTRACT_REPORT.json'}]
+scan_files=[p for p in files if p != Path(__file__) and p.name not in {'MVP_READINESS_AUDIT.json','ZAVQERA_STATIC_CONTRACT_REPORT.json'}]
 text='\n'.join(p.read_text(errors='ignore') for p in scan_files if p.suffix in {'.dart','.yaml','.yml','.md','.sh','.py','.json'})
 required = ['lib','test','tool/verify_project.sh','.github/workflows/flutter.yml','pubspec.yaml']
 for item in required:

@@ -1,0 +1,33 @@
+{
+  "name": "@zavqera/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "build": "next build",
+    "test": "node --test test/*.test.mjs",
+    "test:e2e": "node test/e2e/preflight.mjs && playwright test",
+    "check": "npm run lint && npm run typecheck && npm run build"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.57.0",
+    "next": "15.5.25",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "20.14.12",
+    "@types/react": "18.3.3",
+    "@types/react-dom": "18.3.0",
+    "@playwright/test": "1.55.1",
+    "eslint": "8.57.0",
+    "eslint-config-next": "15.5.25",
+    "typescript": "5.5.4"
+  },
+  "overrides": {
+    "postcss": "8.5.28"
+  }
+}
