@@ -1,0 +1,3 @@
+-- Kept as a migration marker for the W4 privilege hardening step.
+-- The public trigger function is replaced by the private-schema trigger
+-- in 20260921180006_w4_profile_auth_trigger.sql.

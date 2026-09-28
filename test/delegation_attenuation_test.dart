@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexo_followthrough/domain/delegation_attenuation.dart';
+import 'package:zavqera_followthrough/domain/delegation_attenuation.dart';
 
 void main() {
   final expiresAt = DateTime.utc(2026, 12, 31, 23, 59);

@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexo_followthrough/domain/mission_policy.dart';
+import 'package:zavqera_followthrough/domain/mission_policy.dart';
 
 PolicyEvaluationRequest req({bool approval = false, double cost = 10}) =>
     PolicyEvaluationRequest(

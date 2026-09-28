@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexo_followthrough/domain/mission_runtime.dart';
-import 'package:nexo_followthrough/application/mission_runtime_engine.dart';
+import 'package:zavqera_followthrough/domain/mission_runtime.dart';
+import 'package:zavqera_followthrough/application/mission_runtime_engine.dart';
 
 void main() {
   const engine = MissionRuntimeEngine();

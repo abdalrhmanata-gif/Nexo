@@ -1,4 +1,4 @@
-# NEXO CI Handoff
+# ZAVQERA CI Handoff
 
 This package is ready to be placed in a Git repository and executed by GitHub Actions.
 
