@@ -62,6 +62,39 @@ Redeploy after changing build-time variables. The app otherwise builds but
 falls back to mock missions and skips middleware authentication; a passing
 build alone is **not** evidence of a working Development-backed preview.
 
+## Automated deployment
+
+`.github/workflows/web-deploy-netlify.yml` deploys `apps/web` to Netlify. It
+stays inert until the owner adds the repository secrets below, so merging it
+changes nothing on its own:
+
+| Secret | Purpose |
+| --- | --- |
+| `NETLIFY_AUTH_TOKEN` | Netlify personal access token |
+| `NETLIFY_SITE_ID` | Target Netlify site |
+| `NEXT_PUBLIC_SUPABASE_URL` | Must target `mrwmmbytcymqgwvcoywd` |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Development publishable key |
+
+The workflow refuses to deploy when the Supabase variables are missing or do
+not target Development, runs the boundary tests and typecheck first, and then
+asserts that anonymous `/app` really redirects to `/auth/sign-in`. That last
+assertion is what distinguishes a genuine Development-backed deployment from
+the mock fallback, so a green run is meaningful rather than cosmetic.
+
+## Observed state of site `unique-kringle-3ce321` (2026-09-28)
+
+Verified from the public site record and live HTTP checks:
+
+- publishes branch **`main`** at commit `fcac980c…`, not the stable branch;
+- `main` contains no `apps/` directory and no `package.json`, so it cannot
+  build this Next.js app at all;
+- anonymous `/`, `/auth/sign-in`, `/app` all return **401** behind Netlify
+  access control;
+- no branch deploy or deploy preview exists for the stable branch.
+
+The site therefore needs its branch, base/build/publish settings, environment
+variables, and access control corrected before it can serve the MVP.
+
 ## Release gate
 
 Record the actual `*.netlify.app` URL supplied by Netlify; do not guess it.
