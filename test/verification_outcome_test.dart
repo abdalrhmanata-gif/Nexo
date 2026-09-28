@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexo_followthrough/domain/verification_outcome.dart';
+import 'package:zavqera_followthrough/domain/verification_outcome.dart';
 
 VerificationResult passed() => VerificationResult(
       contract: VerificationContract(

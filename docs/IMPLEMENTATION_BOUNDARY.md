@@ -24,7 +24,7 @@ Untrusted model/tool/provider/webhook data cannot mutate:
 - authorization
 - execution security state
 
-Agents may propose strategy. NEXO decides authority.
+Agents may propose strategy. ZAVQERA decides authority.
 
 ## Database rule
 

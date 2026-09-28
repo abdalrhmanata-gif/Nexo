@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexo_followthrough/domain/execution_lease.dart';
-import 'package:nexo_followthrough/domain/lease_fence.dart';
+import 'package:zavqera_followthrough/domain/execution_lease.dart';
+import 'package:zavqera_followthrough/domain/lease_fence.dart';
 
 ExecutionLease testLease({required DateTime expiresAt}) => ExecutionLease(
       id: 'lease-1',

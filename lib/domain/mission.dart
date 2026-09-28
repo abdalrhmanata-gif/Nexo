@@ -85,6 +85,23 @@ class Mission {
     return completedActionCount / actions.length;
   }
 
+  bool get allActionsCompleted =>
+      actions.isNotEmpty && completedActionCount == actions.length;
+
+  String get completionSummary {
+    if (allActionsCompleted) return 'All steps have been completed.';
+    if (completedActionCount == 0) {
+      return actions.isEmpty
+          ? 'No steps have been added.'
+          : '0 of ${actions.length} steps completed. '
+              '${actions.length} ${actions.length == 1 ? 'step' : 'steps'} '
+              'still need attention.';
+    }
+    final remaining = actions.length - completedActionCount;
+    return '$completedActionCount of ${actions.length} steps completed. '
+        '$remaining ${remaining == 1 ? 'step' : 'steps'} still need attention.';
+  }
+
   bool get hasWaitingAction =>
       actions.any((action) => action.status == ActionStatus.waiting);
 

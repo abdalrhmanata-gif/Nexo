@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexo_followthrough/domain/execution_protocol.dart';
+import 'package:zavqera_followthrough/domain/execution_protocol.dart';
 
 ExecutionInvocationEnvelope envelope({DateTime? expiresAt}) =>
     ExecutionInvocationEnvelope(

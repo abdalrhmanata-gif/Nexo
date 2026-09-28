@@ -1,4 +1,4 @@
-# NEXO Flutter CI Runbook
+# ZAVQERA Flutter CI Runbook
 
 ## Official execution target
 Flutter stable 3.47.2. The Flutter documentation currently reflects 3.47.2 and the SDK archive lists the 3.47 stable line for August 2026.
