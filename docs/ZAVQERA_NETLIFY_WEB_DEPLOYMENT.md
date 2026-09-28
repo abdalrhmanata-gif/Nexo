@@ -83,17 +83,35 @@ the mock fallback, so a green run is meaningful rather than cosmetic.
 
 ## Observed state of site `unique-kringle-3ce321` (2026-09-28)
 
-Verified from the public site record and live HTTP checks:
+The site **is** connected to this repository and builds this branch
+successfully. Two defects were found and one was fixed here.
 
-- publishes branch **`main`** at commit `fcac980c…`, not the stable branch;
-- `main` contains no `apps/` directory and no `package.json`, so it cannot
-  build this Next.js app at all;
-- anonymous `/`, `/auth/sign-in`, `/app` all return **401** behind Netlify
-  access control;
-- no branch deploy or deploy preview exists for the stable branch.
+### Fixed: the adapter was never provisioning anything
 
-The site therefore needs its branch, base/build/publish settings, environment
-variables, and access control corrected before it can serve the MVP.
+The first branch deploy of this branch completed, but its summary reported
+**"No functions deployed"** and **"No edge functions deployed"**, and it served
+`.next/server/app/*.html` directly. Netlify had published the raw `.next`
+directory as static files, so there was no SSR, no middleware, and no Route
+Handlers — a deploy that looks green while serving a broken shell.
+
+Framework auto-detection does not run for this site (it was originally created
+via Netlify Drop), so the OpenNext adapter was never installed. Declaring it
+explicitly in `netlify.toml` fixes this. After the fix the deploy reports
+**1 function** (SSR + Route Handlers) and **1 edge function** (middleware).
+
+### Outstanding: site-wide visitor access protection
+
+Every URL — production, branch deploys, deploy previews, and deploy
+permalinks — returns **401** and redirects to `app.netlify.com/edge-access`.
+This is site-level visitor access protection, not a build problem, and it
+blocks anonymous tester validation entirely.
+
+Clear it under **Site configuration → Access & security → Visitor access**.
+Note the team banner also reports it is running on operational credits, which
+may be what enabled the restriction.
+
+Until that is cleared, no anonymous verification of the deployed app is
+possible, so readiness cannot be claimed regardless of build health.
 
 ## Release gate
 
