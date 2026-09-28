@@ -1,0 +1,11 @@
+[build]
+  base = "apps/web"
+  command = "npm run build"
+  publish = ".next"
+
+# Framework auto-detection does not run for this site, so the deploy published
+# raw .next assets with no Functions or Edge Functions. Declaring the adapter
+# explicitly provisions SSR, Middleware, and Route Handlers. Left unpinned so
+# Netlify keeps it current.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
