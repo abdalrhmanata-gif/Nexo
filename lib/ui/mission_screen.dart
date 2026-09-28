@@ -208,7 +208,7 @@ class _MissionScreenState extends State<MissionScreen> {
     final current = m.currentAction;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('NEXO Follow-through'),
+        title: const Text('ZAVQERA Follow-through'),
         leading: widget.onBack == null
             ? null
             : IconButton(
@@ -216,12 +216,25 @@ class _MissionScreenState extends State<MissionScreen> {
                 onPressed: widget.onBack,
                 icon: const Icon(Icons.arrow_back),
               ),
+        actions: [
+          IconButton(
+            tooltip: 'Delete Mission',
+            onPressed: () => _confirmDelete(m.id),
+            icon: const Icon(Icons.delete_outline),
+          ),
+        ],
       ),
       body: ListView(padding: const EdgeInsets.all(20), children: [
-        if (m.status == MissionStatus.paused)
+        if (m.status == MissionStatus.paused && m.authorityApproved)
           FilledButton(
               onPressed: () => _command(widget.repository.resumeMission),
               child: const Text('Resume Mission')),
+        if (m.status == MissionStatus.paused && !m.authorityApproved)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child:
+                Text('Approval is required before this Mission can continue.'),
+          ),
         Text(m.objective, style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 16),
         _Card(
@@ -230,7 +243,7 @@ class _MissionScreenState extends State<MissionScreen> {
               ? Icons.schedule_outlined
               : Icons.arrow_forward_outlined,
           child: current == null
-              ? const Text('All steps have been completed.')
+              ? Text(m.completionSummary)
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -249,8 +262,7 @@ class _MissionScreenState extends State<MissionScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                  '${m.completedActionCount} of ${m.actions.length} steps completed'),
+              Text(m.completionSummary),
               const SizedBox(height: 8),
               LinearProgressIndicator(value: m.progress),
             ],
@@ -266,7 +278,7 @@ class _MissionScreenState extends State<MissionScreen> {
               const SizedBox(height: 8),
               Text(m.authorityApproved
                   ? 'Authority approved'
-                  : 'Authority approval required'),
+                  : 'Approval is required before this Mission can continue.'),
             ])),
         if (error != null)
           Padding(
@@ -281,7 +293,7 @@ class _MissionScreenState extends State<MissionScreen> {
           FilledButton.icon(
               onPressed: () => _command(widget.repository.approveAuthority),
               icon: const Icon(Icons.verified_user_outlined),
-              label: const Text('Prepare this plan')),
+              label: const Text('Approve Mission')),
         if (m.authorityApproved && m.status == MissionStatus.ready)
           FilledButton.icon(
               onPressed: () => _command(widget.repository.startMission),
@@ -332,6 +344,34 @@ class _MissionScreenState extends State<MissionScreen> {
         const SizedBox(height: 20),
       ]),
     );
+  }
+
+  Future<void> _confirmDelete(String missionId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Mission?'),
+        content: const Text(
+            'This Mission and its progress will be permanently removed from this device.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel')),
+          FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Delete')),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    try {
+      await widget.repository.deleteMission(missionId);
+      if (mounted) widget.onBack?.call();
+    } catch (e) {
+      if (mounted) {
+        setState(() => error = e.toString().replaceFirst('Bad state: ', ''));
+      }
+    }
   }
 
   String _userActionStatus(ActionStatus status) => switch (status) {
