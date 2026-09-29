@@ -3,6 +3,7 @@ import { DeleteMissionForm } from "../../../../components/delete-mission-form";
 import { localMockMissionRepository } from "../../../../lib/local-mock-repository";
 import { isSupabaseConfigured } from "../../../../lib/supabase/config";
 import { createSupabaseMissionRepository } from "../../../../lib/supabase/mission-repository";
+import { actionStatusHint, actionStatusLabel, nextStepFor } from "../../../../lib/mission-content.mjs";
 import { StatusPill } from "../../../../components/shell";
 import { VerificationControls } from "../../../../components/verification-controls";
 import { MissionMutationControls } from "../../../../components/mission-mutation-controls";
@@ -15,14 +16,101 @@ export default async function MissionDetailPage({
 }) {
   const repository = isSupabaseConfigured() ? await createSupabaseMissionRepository() : localMockMissionRepository;
   const mission = await repository.getMission((await params).id);
-  if (!mission) return <div className="container"><p className="eyebrow">Mission unavailable</p><h1 className="detail-title">We could not find that mission.</h1><p className="detail-intent">This mission does not exist in your workspace.</p><Link className="button" href="/app">Back to workspace</Link></div>;
-  return <div className="container"><p className="eyebrow"><Link href="/app">Workspace</Link> / Mission detail</p>
-    <div className="detail-layout"><div className="detail-stack"><section className="card"><div className="card-heading"><div><h1 className="detail-title">{mission.name}</h1><p className="detail-intent">{mission.intent}</p></div><StatusPill status={mission.status} /></div><div className="progress-row"><span>Mission progress</span><strong>{mission.progress}%</strong></div><div className="progress"><span style={{ width: `${mission.progress}%` }} /></div></section>
-      <section className="card"><p className="eyebrow">Actions</p><h2>What good looks like</h2><ul className="list">{mission.actions.map((action) => <li key={action.id}><div className="card-heading"><span>{action.title}</span><ActionMutationControls missionId={mission.id} action={action} /></div></li>)}</ul></section>
-      {repository.updateMission && <section className="card"><p className="eyebrow">Authoritative mutation</p><h2>Mission controls</h2><p>Updates are accepted only after the server confirms the current version.</p><MissionMutationControls missionId={mission.id} objective={mission.intent} status={mission.lifecycleStatus} version={mission.version} /></section>}
-      <section className="card"><p className="eyebrow">Activity</p><h2>Recent checkpoints</h2><div className="timeline">{mission.activity.map((item) => <div className="timeline-item" key={item.label}><strong>{item.label}</strong><span>{item.detail} · {item.time}</span></div>)}</div></section>
-      <section className="card"><p className="eyebrow">Verification</p><h2>{mission.verifications.length ? mission.verifications[0].status : "Record terminal verification"}</h2>{mission.verifications.length ? <><p>Evidence and confidence were recorded through the authenticated server boundary.</p>{!mission.outcomes.length && <VerificationControls missionId={mission.id} verification={mission.verifications[0]} />}</> : <VerificationControls missionId={mission.id} />}</section>
-      {mission.outcomes.length > 0 && <section className="card"><p className="eyebrow">Outcome</p><h2>{mission.outcomes[0].status}</h2><p>Verified outcome committed with score {mission.outcomes[0].successScore}.</p></section>}
-    </div><aside className="card"><p className="eyebrow">Boundary</p><h2>Authority stays explicit.</h2><p>This preview shows the mission context without granting execution authority.</p><ul className="list"><li><strong>Budget</strong><br />{mission.budget}</li><li><strong>Risk</strong><br />{mission.risk}</li><li><strong>Owner</strong><br />{mission.owner}</li></ul><DeleteMissionForm missionId={mission.id} /></aside></div>
+  if (!mission) return <div className="container"><p className="eyebrow">Mission unavailable</p><h1 className="detail-title">We could not find that mission.</h1><p className="detail-intent">It may have been deleted, or it belongs to another workspace.</p><Link className="button" href="/app">Back to workspace</Link></div>;
+
+  const next = nextStepFor(mission);
+  const verification = mission.verifications[0];
+  const outcome = mission.outcomes[0];
+
+  return <div className="container">
+    <p className="eyebrow"><Link href="/app">Workspace</Link> / Mission detail</p>
+    <div className="detail-layout">
+      <div className="detail-stack">
+        <section className="card">
+          <div className="card-heading">
+            <div><h1 className="detail-title">{mission.name}</h1></div>
+            <StatusPill status={mission.status} />
+          </div>
+          {mission.intent
+            ? <><p className="eyebrow">Intent</p><p className="detail-intent">{mission.intent}</p></>
+            : <p className="detail-intent">No intent was recorded for this mission.</p>}
+          <p className={`next-step next-step-${next.tone}`}>
+            <span className="next-step-label">Next: {next.label}</span>
+            <span className="next-step-detail">{next.detail}</span>
+          </p>
+          <div className="progress-row">
+            <span>{mission.actionsTotal ? `${mission.actionsCompleted} of ${mission.actionsTotal} actions complete` : "No actions yet"}</span>
+            <strong>{mission.progress}%</strong>
+          </div>
+          <div className="progress"><span style={{ width: `${mission.progress}%` }} /></div>
+        </section>
+
+        <section className="card">
+          <p className="eyebrow">Success criteria</p>
+          <h2>What good looks like</h2>
+          {mission.criteria.length
+            ? <ul className="list criteria-list">{mission.criteria.map((criterion) => <li key={criterion}>{criterion}</li>)}</ul>
+            : <p className="detail-intent">No success criteria were recorded for this mission.</p>}
+        </section>
+
+        <section className="card">
+          <p className="eyebrow">Actions</p>
+          <h2>The work this mission needs</h2>
+          {mission.actions.length
+            ? <ul className="list">{mission.actions.map((action) => <li key={action.id}>
+              <div className="card-heading">
+                <div>
+                  <span className="action-title">{action.title}</span>
+                  <span className={`status status-action-${action.status.toLowerCase()}`}>{actionStatusLabel(action.status)}</span>
+                  <small className="action-hint">{actionStatusHint(action.status)}</small>
+                </div>
+                <ActionMutationControls missionId={mission.id} action={action} />
+              </div>
+            </li>)}</ul>
+            : <p className="detail-intent">No actions have been added yet.</p>}
+        </section>
+
+        {repository.updateMission && <section className="card"><p className="eyebrow">Authoritative mutation</p><h2>Mission controls</h2><p>Updates are accepted only after the server confirms the current version.</p><MissionMutationControls missionId={mission.id} objective={mission.intent} status={mission.lifecycleStatus} version={mission.version} /></section>}
+
+        <section className="card">
+          <p className="eyebrow">Verification</p>
+          <h2>{verification ? `Verification ${verification.status.toLowerCase()}` : "Record terminal verification"}</h2>
+          <p>A mission is only verified once evidence has been recorded through the authenticated server boundary. Work being reported as finished is not the same as ZAVQERA considering it verified.</p>
+          {verification
+            ? <>{!outcome && <VerificationControls missionId={mission.id} verification={verification} />}</>
+            : <VerificationControls missionId={mission.id} />}
+        </section>
+
+        <section className="card">
+          <p className="eyebrow">Outcome</p>
+          <h2>{outcome ? `Outcome ${outcome.status.toLowerCase()}` : "No outcome yet"}</h2>
+          {outcome
+            ? <p>Verified outcome committed with score {outcome.successScore}.</p>
+            : <p className="detail-intent">An outcome can only be committed after a verification is recorded.</p>}
+        </section>
+
+        <section className="card">
+          <p className="eyebrow">Activity</p>
+          <h2>Recent checkpoints</h2>
+          {mission.activity.length
+            ? <div className="timeline">{mission.activity.map((item, index) => <div className="timeline-item" key={`${item.label}-${item.time}-${index}`}><strong>{item.label}</strong><span>{item.detail} · {item.time}</span></div>)}</div>
+            : <p className="detail-intent">No history has been recorded for this mission yet.</p>}
+        </section>
+      </div>
+
+      <aside className="card">
+        <p className="eyebrow">Boundary</p>
+        <h2>Authority stays explicit.</h2>
+        <p>This preview shows the mission context without granting execution authority.</p>
+        <ul className="list">
+          <li><strong>Lifecycle state</strong><br />{mission.lifecycleStatus}</li>
+          <li><strong>Actions</strong><br />{mission.actionsCompleted} complete of {mission.actionsTotal}</li>
+          <li><strong>Verified</strong><br />{verification ? "Yes" : "Not yet"}</li>
+          <li><strong>Last updated</strong><br />{mission.updated}</li>
+          <li><strong>Owner</strong><br />{mission.owner}</li>
+        </ul>
+        <DeleteMissionForm missionId={mission.id} missionName={mission.name} />
+      </aside>
+    </div>
   </div>;
 }

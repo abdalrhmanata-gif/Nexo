@@ -56,7 +56,12 @@ export async function POST(
   if (form.get("_method") !== "DELETE") {
     return NextResponse.json({ error: "Unsupported method" }, { status: 405 });
   }
-  return DELETE(request, context);
+  // The delete form is a plain HTML submission, so a failure must land the user
+  // back on a page rather than rendering a raw JSON error body.
+  const response = await DELETE(request, context);
+  if (response.status === 303) return response;
+  const reason = response.status === 401 ? "authentication" : "mission-delete";
+  return NextResponse.redirect(new URL(`/app?error=${reason}`, request.url), 303);
 }
 
 export async function PATCH(

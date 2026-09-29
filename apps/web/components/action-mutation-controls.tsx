@@ -2,8 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import type { ActionStatus, MissionAction } from "../lib/view-models";
-
-const statuses: ActionStatus[] = ["PENDING", "RUNNING", "COMPLETED", "BLOCKED", "CANCELLED"];
+import { ACTION_STATUS_ORDER, actionStatusLabel } from "../lib/mission-content.mjs";
 
 export function ActionMutationControls({ missionId, action }: { missionId: string; action: MissionAction }) {
   const [busy, setBusy] = useState(false);
@@ -34,10 +33,11 @@ export function ActionMutationControls({ missionId, action }: { missionId: strin
   }
 
   return <form onSubmit={submit} className="action-control">
-    <select name="status" defaultValue={action.status} aria-label={`Status for ${action.title}`} disabled={busy}>
-      {statuses.map((status) => <option key={status} value={status}>{status}</option>)}
+    <label className="visually-hidden" htmlFor={`status-${action.id}`}>Status for {action.title}</label>
+    <select id={`status-${action.id}`} name="status" defaultValue={action.status} disabled={busy}>
+      {(ACTION_STATUS_ORDER as ActionStatus[]).map((status) => <option key={status} value={status}>{actionStatusLabel(status)}</option>)}
     </select>
-    <button className="button button-small" type="submit" disabled={busy}>Save</button>
+    <button className="button button-small" type="submit" disabled={busy}>{busy ? "Saving…" : "Save"}</button>
     {message && <span className="field-error" role="alert">{message}</span>}
   </form>;
 }

@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createSupabaseMissionRepository } from "../../../../lib/supabase/mission-repository";
+import { composeMissionObjective } from "../../../../lib/mission-content.mjs";
 
 async function createMission(formData: FormData) {
   "use server";
@@ -11,7 +12,7 @@ async function createMission(formData: FormData) {
   }
   const repository = await createSupabaseMissionRepository();
   const actions = criteria.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
-  const mission = await repository.createMission!({ objective: `${name}\n\n${intent}\n\nSuccess criteria:\n${criteria}`, actions });
+  const mission = await repository.createMission!({ objective: composeMissionObjective({ name, intent, criteria }), actions });
   redirect(`/app/missions/${mission.id}`);
 }
 
@@ -27,7 +28,7 @@ export default async function NewMissionPage({ searchParams }: { searchParams: P
     <form className="form-grid" action={createMission} noValidate>
       <div className="field"><label htmlFor="name">Mission name</label><input id="name" name="name" placeholder="e.g. Launch brief synthesis" required /></div>
       <div className="field"><label htmlFor="intent">Intent</label><textarea id="intent" name="intent" placeholder="What should this mission help you accomplish?" required /><small>Use plain language. Keep the decision you want to make visible.</small></div>
-      <div className="field"><label htmlFor="criteria">Success criteria</label><textarea id="criteria" name="criteria" placeholder="One criterion per line" required /></div>
+      <div className="field"><label htmlFor="criteria">Success criteria</label><textarea id="criteria" name="criteria" placeholder="One criterion per line" required /><small>Each line becomes both a success criterion and an action you can track.</small></div>
       <input type="hidden" name="review" value="bounded" />
       <SubmitButton />
     </form>
