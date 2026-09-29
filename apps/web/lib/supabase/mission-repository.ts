@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "./server";
 import { MissionMutationConflictError, type MissionRepository, type NewMission, type NewOutcome, type NewVerification, type UpdateMission } from "../mission-repository";
 import type { ActionStatus, Mission, MissionAction, MissionActivity, MissionOutcome, MissionVerification, MissionLifecycleStatus } from "../view-models";
+import { humaniseEventType, parseMissionObjective, summariseEventPayload } from "../mission-content.mjs";
 
 type MissionRow = {
   id: string;
@@ -53,7 +54,7 @@ function toOutcome(row: OutcomeRow): MissionOutcome {
 }
 
 function toActivity(row: EventRow): MissionActivity {
-  return { label: row.event_type.replaceAll("_", " "), detail: Object.keys(row.payload).length ? JSON.stringify(row.payload) : "Mission history event", time: new Date(row.created_at).toLocaleString() };
+  return { label: humaniseEventType(row.event_type), detail: summariseEventPayload(row.payload), time: new Date(row.created_at).toLocaleString() };
 }
 
 function toAction(row: ActionRow): MissionAction {
@@ -63,19 +64,21 @@ function toAction(row: ActionRow): MissionAction {
 function toMission(row: MissionRow, actions: ActionRow[] = [], verifications: MissionVerification[] = [], outcomes: MissionOutcome[] = [], activity: MissionActivity[] = []): Mission {
   const status = row.status === "WAITING" || row.status === "NEEDS_USER" ? "WAITING" : row.status === "COMPLETED" ? "COMPLETED" : "ACTIVE";
   const completed = actions.filter((action) => action.status === "COMPLETED").length;
+  const resolved = actions.filter((action) => action.status === "COMPLETED" || action.status === "CANCELLED").length;
+  const { name, intent, criteria } = parseMissionObjective(row.objective);
   return {
     id: row.id,
     version: row.version,
     lifecycleStatus: row.status as MissionLifecycleStatus,
-    name: row.objective.split("\n")[0].slice(0, 200),
-    intent: row.objective,
+    name,
+    intent,
     status,
-    risk: "LOW",
-    progress: actions.length ? Math.round((completed / actions.length) * 100) : status === "COMPLETED" ? 100 : 0,
-    budget: "Not set",
+    progress: actions.length ? Math.round((resolved / actions.length) * 100) : status === "COMPLETED" ? 100 : 0,
+    actionsTotal: actions.length,
+    actionsCompleted: completed,
     updated: new Date(row.updated_at).toLocaleString(),
     owner: "You",
-    criteria: actions.map((action) => action.title),
+    criteria,
     actions: actions.map(toAction),
     activity,
     verifications,
@@ -141,9 +144,24 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
     async listMissions() {
       const result = await supabase.from("missions").select(missionSelect).eq("workspace_id", workspaceId).order("updated_at", { ascending: false });
       if (result.error) throw result.error;
-      return Promise.all((result.data as MissionRow[]).map(async (row) => {
-        return completeMission(row);
-      }));
+      const rows = result.data as MissionRow[];
+      if (!rows.length) return [];
+      // The workspace list only needs enough state to show progress and the
+      // next step, so actions are fetched once for every mission rather than
+      // loading each mission's full verification and event history.
+      const actions = await supabase
+        .from("mission_actions")
+        .select("id, title, status, version, mission_id")
+        .in("mission_id", rows.map((row) => row.id))
+        .order("position");
+      if (actions.error) throw actions.error;
+      const byMission = new Map<string, ActionRow[]>();
+      for (const action of actions.data as (ActionRow & { mission_id: string })[]) {
+        const bucket = byMission.get(action.mission_id);
+        if (bucket) bucket.push(action);
+        else byMission.set(action.mission_id, [action]);
+      }
+      return rows.map((row) => toMission(row, byMission.get(row.id) ?? []));
     },
     async getMission(id) {
       const result = await supabase.from("missions").select(missionSelect).eq("id", id).eq("workspace_id", workspaceId).maybeSingle();

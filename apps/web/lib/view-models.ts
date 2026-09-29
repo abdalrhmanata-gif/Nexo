@@ -3,7 +3,6 @@ export type MissionLifecycleStatus =
   | "DRAFT" | "PLANNING" | "READY" | "RUNNING" | "WAITING"
   | "NEEDS_USER" | "VERIFYING" | "COMPLETED" | "PAUSED"
   | "BLOCKED" | "FAILED" | "CANCELLED";
-export type MissionRisk = "LOW" | "MEDIUM";
 export type ActionStatus = "PENDING" | "RUNNING" | "COMPLETED" | "BLOCKED" | "CANCELLED";
 
 export type MissionAction = {
@@ -46,9 +45,9 @@ export type Mission = {
   name: string;
   intent: string;
   status: MissionStatus;
-  risk: MissionRisk;
   progress: number;
-  budget: string;
+  actionsTotal: number;
+  actionsCompleted: number;
   updated: string;
   owner: string;
   criteria: string[];
