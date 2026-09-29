@@ -16,9 +16,9 @@ const localMissions: Mission[] = [
     owner: "Product strategy",
     criteria: ["Cite source notes", "Separate facts from recommendations", "Flag open decisions"],
     actions: [
-      { id: "launch-brief-1", title: "Group research notes by theme", status: "COMPLETED", version: 1 },
-      { id: "launch-brief-2", title: "Draft the decision summary", status: "RUNNING", version: 1 },
-      { id: "launch-brief-3", title: "Flag the open pricing decision", status: "PENDING", version: 1 },
+      { id: "launch-brief-1", title: "Group research notes by theme", status: "COMPLETED", version: 1, followUpAt: null },
+      { id: "launch-brief-2", title: "Draft the decision summary", status: "RUNNING", version: 1, followUpAt: null },
+      { id: "launch-brief-3", title: "Flag the open pricing decision", status: "PENDING", version: 1, followUpAt: null },
     ],
     activity: [
       { label: "Checkpoint verified", detail: "Research set is within the approved scope.", time: "8 min ago" },
@@ -41,8 +41,8 @@ const localMissions: Mission[] = [
     owner: "Security operations",
     criteria: ["Preserve questionnaire evidence", "Request approval before outreach", "Record unknowns"],
     actions: [
-      { id: "vendor-review-1", title: "Collect public security documentation", status: "COMPLETED", version: 1 },
-      { id: "vendor-review-2", title: "Confirm the data-retention answer", status: "BLOCKED", version: 1 },
+      { id: "vendor-review-1", title: "Collect public security documentation", status: "COMPLETED", version: 1, followUpAt: null },
+      { id: "vendor-review-2", title: "Confirm the data-retention answer", status: "BLOCKED", version: 1, followUpAt: new Date(Date.now() + 3 * 86400000).toISOString() },
     ],
     activity: [
       { label: "Needs user input", detail: "A missing data-retention answer needs a decision.", time: "31 min ago" },

@@ -43,3 +43,10 @@ main { flex:1; }.footer { width:min(1120px, calc(100% - 40px)); margin:0 auto; p
 .detail-title { overflow-wrap:anywhere; }
 a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible { outline:3px solid var(--teal); outline-offset:2px; }
 @media (max-width:700px) { .next-step { padding:10px; }.card-heading { flex-direction:column; gap:10px; }.action-control { width:100%; }.action-control select { flex:1 1 auto; min-width:0; }.danger-zone .action-control .button { flex:1 1 auto; } }
+.follow-up { display:inline-block; margin-left:8px; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:600; color:#22605a; background:#e5f4f1; }
+.follow-up-overdue { color:#8a2f13; background:#ffe8dd; }
+.action-control-group { display:flex; flex-direction:column; gap:6px; align-items:flex-start; }
+.action-control-group .action-hint { margin:0; }
+.action-control input[type="date"] { padding:6px 8px; border:1px solid var(--line); border-radius:6px; font:inherit; min-width:0; }
+.action-final { margin:0; color:var(--muted); font-size:13px; }
+@media (max-width:700px) { .action-control-group { width:100%; }.action-control { flex-wrap:wrap; } }

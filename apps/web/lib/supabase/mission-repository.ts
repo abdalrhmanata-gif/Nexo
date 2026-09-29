@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "./server";
-import { MissionMutationConflictError, type MissionRepository, type NewMission, type NewOutcome, type NewVerification, type UpdateMission } from "../mission-repository";
+import { MissionMutationConflictError, MissionMutationRejectedError, type MissionRepository, type NewMission, type NewOutcome, type NewVerification, type UpdateMission } from "../mission-repository";
 import type { ActionStatus, Mission, MissionAction, MissionActivity, MissionOutcome, MissionVerification, MissionLifecycleStatus } from "../view-models";
 import { humaniseEventType, parseMissionObjective, summariseEventPayload } from "../mission-content.mjs";
 
@@ -17,6 +17,7 @@ type ActionRow = {
   title: string;
   status: ActionStatus;
   version: number;
+  follow_up_at: string | null;
 };
 
 type VerificationRow = {
@@ -58,7 +59,7 @@ function toActivity(row: EventRow): MissionActivity {
 }
 
 function toAction(row: ActionRow): MissionAction {
-  return { id: row.id, title: row.title, status: row.status, version: row.version };
+  return { id: row.id, title: row.title, status: row.status, version: row.version, followUpAt: row.follow_up_at ?? null };
 }
 
 function toMission(row: MissionRow, actions: ActionRow[] = [], verifications: MissionVerification[] = [], outcomes: MissionOutcome[] = [], activity: MissionActivity[] = []): Mission {
@@ -98,7 +99,7 @@ async function ownedWorkspace(supabase: SupabaseClient, userId: string) {
 async function actionsFor(supabase: SupabaseClient, missionId: string) {
   const result = await supabase
     .from("mission_actions")
-    .select("id, title, status, version")
+    .select("id, title, status, version, follow_up_at")
     .eq("mission_id", missionId)
     .order("position");
   if (result.error) throw result.error;
@@ -133,9 +134,27 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
     return toMission(row, actions, history.verifications, history.outcomes, history.activity);
   }
 
+  const MUTATION_REJECTIONS: Record<string, string> = {
+    INVALID_ACTION_TRANSITION: "That is not a valid next state for this action.",
+    FOLLOW_UP_REQUIRES_WAITING: "A follow-up date can only be set while an action is Waiting.",
+    FOLLOW_UP_IN_PAST: "Choose a follow-up date that has not already passed.",
+    FOLLOW_UP_TOO_DISTANT: "Choose a follow-up date within the next ten years.",
+    INVALID_MISSION_TRANSITION: "That is not a valid next state for this mission.",
+  };
+
   function throwMutationError(error: { code?: string; message?: string }) {
     if (error.code === "P0001" && error.message === "STALE_VERSION") {
       throw new MissionMutationConflictError();
+    }
+    const rejection = MUTATION_REJECTIONS[error.message ?? ""];
+    if (rejection) throw new MissionMutationRejectedError(rejection);
+    // PostgREST reports an unknown function signature as PGRST202. That means
+    // the W18 migration has not been applied to this project yet, which is an
+    // operator problem, not a user error. Never silently drop the follow-up.
+    if (error.code === "PGRST202") {
+      throw new MissionMutationRejectedError(
+        "Follow-up dates are not available on this environment yet. The pending database migration must be applied first.",
+      );
     }
     throw error;
   }
@@ -151,7 +170,7 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       // loading each mission's full verification and event history.
       const actions = await supabase
         .from("mission_actions")
-        .select("id, title, status, version, mission_id")
+        .select("id, title, status, version, follow_up_at, mission_id")
         .in("mission_id", rows.map((row) => row.id))
         .order("position");
       if (actions.error) throw actions.error;
@@ -185,7 +204,7 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
           throw actions.error;
         }
       }
-      return toMission(result.data as MissionRow, actionTitles.map((title, id) => ({ id: `new-${id}`, title, status: "PENDING", version: 1 })));
+      return toMission(result.data as MissionRow, actionTitles.map((title, id) => ({ id: `new-${id}`, title, status: "PENDING", version: 1, follow_up_at: null })));
     },
     async updateMission(id: string, input: UpdateMission) {
       if (input.objective !== undefined && input.status !== undefined) {
@@ -210,11 +229,19 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       if (result.error) throw result.error;
     },
     async updateAction(input) {
-      const result = await supabase.rpc("transition_mission_action", {
+      // The two follow-up parameters are only sent when the caller is actually
+      // changing a follow-up date. A plain status change therefore keeps using
+      // the exact pre-W18 three-argument call and cannot be affected by it.
+      const args: Record<string, unknown> = {
         p_action_id: input.actionId,
         p_to_status: input.status,
         p_expected_version: input.expectedVersion,
-      });
+      };
+      if (input.setFollowUp) {
+        args.p_follow_up_at = input.followUpAt ?? null;
+        args.p_set_follow_up = true;
+      }
+      const result = await supabase.rpc("transition_mission_action", args);
       if (result.error) throwMutationError(result.error);
       return toAction(result.data as ActionRow);
     },

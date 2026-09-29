@@ -59,6 +59,63 @@ export function actionStatusHint(status) {
 export const ACTION_STATUS_ORDER = ["PENDING", "RUNNING", "BLOCKED", "COMPLETED", "CANCELLED"];
 
 /**
+ * Mirrors the transition table enforced by `transition_mission_action`. The
+ * database remains authoritative; this exists so the interface does not offer
+ * a choice that is guaranteed to be rejected. Keep the two in step.
+ */
+const ALLOWED_ACTION_TRANSITIONS = {
+  PENDING: ["RUNNING", "BLOCKED", "CANCELLED"],
+  RUNNING: ["COMPLETED", "BLOCKED", "CANCELLED"],
+  BLOCKED: ["RUNNING", "PENDING", "CANCELLED"],
+  COMPLETED: [],
+  CANCELLED: [],
+};
+
+export function allowedNextStatuses(from) {
+  return ALLOWED_ACTION_TRANSITIONS[from] ?? [];
+}
+
+export function isActionTransitionAllowed(from, to) {
+  if (from === to) return from === "BLOCKED";
+  return allowedNextStatuses(from).includes(to);
+}
+
+export function isTerminalActionStatus(status) {
+  return allowedNextStatuses(status).length === 0;
+}
+
+/**
+ * A follow-up date only exists while an action is Waiting. Every other status
+ * clears it, so the interface must never offer the field elsewhere.
+ */
+export function supportsFollowUp(status) {
+  return status === "BLOCKED";
+}
+
+export function formatFollowUp(value, now = new Date()) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const date0 = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  const now0 = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const days = Math.round((date0 - now0) / 86400000);
+  const absolute = date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  if (days < 0) return { absolute, relative: days === -1 ? "yesterday" : `${Math.abs(days)} days ago`, overdue: true };
+  if (days === 0) return { absolute, relative: "today", overdue: false };
+  if (days === 1) return { absolute, relative: "tomorrow", overdue: false };
+  return { absolute, relative: `in ${days} days`, overdue: false };
+}
+
+/** Converts a stored timestamp into the value a `date` input expects. */
+export function followUpInputValue(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+/**
  * Deterministically describes the single next step for a mission using only
  * persisted data. There is no inference or recommendation here: each branch
  * reports a fact that is already true of the mission.
@@ -80,9 +137,22 @@ export function nextStepFor(mission) {
     return { label: "In progress", detail: running.title, tone: "info" };
   }
 
-  const blocked = actions.find((action) => action.status === "BLOCKED");
-  if (blocked) {
-    return { label: "Waiting on you", detail: blocked.title, tone: "attention" };
+  const blocked = actions.filter((action) => action.status === "BLOCKED");
+  if (blocked.length) {
+    // An overdue follow-up is the most actionable thing on the mission, so it
+    // outranks other waiting work.
+    const dated = blocked
+      .filter((action) => action.followUpAt)
+      .sort((a, b) => new Date(a.followUpAt).getTime() - new Date(b.followUpAt).getTime());
+    const due = dated.find((action) => formatFollowUp(action.followUpAt)?.overdue);
+    if (due) {
+      return { label: "Follow-up due", detail: `${due.title} — due ${formatFollowUp(due.followUpAt).relative}`, tone: "attention" };
+    }
+    const next = dated[0];
+    if (next) {
+      return { label: "Waiting", detail: `${next.title} — check back ${formatFollowUp(next.followUpAt).relative}`, tone: "info" };
+    }
+    return { label: "Waiting on you", detail: blocked[0].title, tone: "attention" };
   }
 
   const pending = actions.find((action) => action.status === "PENDING");

@@ -10,6 +10,7 @@ export type MissionAction = {
   title: string;
   status: ActionStatus;
   version: number;
+  followUpAt: string | null;
 };
 
 export type MissionActivity = {

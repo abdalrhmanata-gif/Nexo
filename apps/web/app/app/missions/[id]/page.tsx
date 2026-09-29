@@ -3,7 +3,7 @@ import { DeleteMissionForm } from "../../../../components/delete-mission-form";
 import { localMockMissionRepository } from "../../../../lib/local-mock-repository";
 import { isSupabaseConfigured } from "../../../../lib/supabase/config";
 import { createSupabaseMissionRepository } from "../../../../lib/supabase/mission-repository";
-import { actionStatusHint, actionStatusLabel, nextStepFor } from "../../../../lib/mission-content.mjs";
+import { actionStatusHint, actionStatusLabel, formatFollowUp, nextStepFor } from "../../../../lib/mission-content.mjs";
 import { StatusPill } from "../../../../components/shell";
 import { VerificationControls } from "../../../../components/verification-controls";
 import { MissionMutationControls } from "../../../../components/mission-mutation-controls";
@@ -57,16 +57,22 @@ export default async function MissionDetailPage({
           <p className="eyebrow">Actions</p>
           <h2>The work this mission needs</h2>
           {mission.actions.length
-            ? <ul className="list">{mission.actions.map((action) => <li key={action.id}>
+            ? <ul className="list">{mission.actions.map((action) => {
+              const followUp = formatFollowUp(action.followUpAt);
+              return <li key={action.id}>
               <div className="card-heading">
                 <div>
                   <span className="action-title">{action.title}</span>
                   <span className={`status status-action-${action.status.toLowerCase()}`}>{actionStatusLabel(action.status)}</span>
+                  {followUp && <span className={`follow-up${followUp.overdue ? " follow-up-overdue" : ""}`}>
+                    {followUp.overdue ? "Follow-up was due" : "Follow up"} {followUp.relative} · {followUp.absolute}
+                  </span>}
                   <small className="action-hint">{actionStatusHint(action.status)}</small>
                 </div>
                 <ActionMutationControls missionId={mission.id} action={action} />
               </div>
-            </li>)}</ul>
+            </li>;
+            })}</ul>
             : <p className="detail-intent">No actions have been added yet.</p>}
         </section>
 

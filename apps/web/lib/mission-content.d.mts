@@ -28,3 +28,17 @@ export declare function nextStepFor(
 
 export declare function summariseEventPayload(payload: unknown): string;
 export declare function humaniseEventType(eventType: string): string;
+
+export declare function allowedNextStatuses(from: ActionStatus | string): ActionStatus[];
+export declare function isActionTransitionAllowed(from: ActionStatus | string, to: ActionStatus | string): boolean;
+export declare function isTerminalActionStatus(status: ActionStatus | string): boolean;
+export declare function supportsFollowUp(status: ActionStatus | string): boolean;
+
+export type FollowUpDisplay = {
+  absolute: string;
+  relative: string;
+  overdue: boolean;
+};
+
+export declare function formatFollowUp(value: string | null | undefined, now?: Date): FollowUpDisplay | null;
+export declare function followUpInputValue(value: string | null | undefined): string;

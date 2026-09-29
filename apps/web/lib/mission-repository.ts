@@ -16,6 +16,13 @@ export type UpdateAction = {
   actionId: string;
   status: "PENDING" | "RUNNING" | "COMPLETED" | "BLOCKED" | "CANCELLED";
   expectedVersion: number;
+  /**
+   * Only sent when the caller is deliberately setting or removing a follow-up
+   * date. Omitting it means "leave the stored follow-up alone", which keeps the
+   * request identical to the pre-W18 contract.
+   */
+  setFollowUp?: boolean;
+  followUpAt?: string | null;
 };
 export type UpdateMission = {
   objective?: string;
@@ -26,6 +33,16 @@ export class MissionMutationConflictError extends Error {
   constructor() {
     super("Mission changed elsewhere. Refresh and try again.");
     this.name = "MissionMutationConflictError";
+  }
+}
+/**
+ * The database rejected the mutation for a stated, user-correctable reason.
+ * Distinct from an authorization failure, which must stay opaque.
+ */
+export class MissionMutationRejectedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "MissionMutationRejectedError";
   }
 }
 export type NewVerification = {
