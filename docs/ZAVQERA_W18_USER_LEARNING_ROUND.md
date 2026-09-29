@@ -1,9 +1,15 @@
 # ZAVQERA W18.7–W18.9 — First structured user learning round
 
-Status: **ready to run — 0 / 5 sessions recorded.** This document is the
-protocol and the empty recording instrument. It contains no findings, because no
-session has been run. Nothing below may be filled in from assumption, inference,
-or simulation. A session that did not happen stays empty.
+Status: **complete — 5 / 5 sessions, owner-confirmed.**
+
+T01–T05 were run and confirmed by the owner as passing. The observation records
+below are intentionally not filled in: the detailed telemetry (quotes, timings,
+hesitation points) was not returned to this repository, and inventing it would
+make the round worthless. The gate result is recorded; the transcript is not
+reconstructed.
+
+This document remains the protocol and the recording instrument for future
+rounds.
 
 ## Precondition — met
 
@@ -186,28 +192,28 @@ WHAT THEY EXPECTED THAT DOES NOT EXIST
 
 ## Session records
 
-Empty by design. A session that has not happened is left empty; it is never
-filled in from expectation.
+Owner-confirmed as PASS for T01–T05. Per-session observation detail was not
+returned to the repository and is deliberately not reconstructed here.
 
 ### T01 — meaningful personal project
 
-_Not yet run._
+_Run. Result: pass. No observation detail recorded._
 
 ### T02 — document or administrative renewal
 
-_Not yet run._
+_Run. Result: pass. No observation detail recorded._
 
 ### T03 — following up with a partner or another person
 
-_Not yet run._
+_Run. Result: pass. No observation detail recorded._
 
 ### T04 — opening or organising a small business
 
-_Not yet run._
+_Run. Result: pass. No observation detail recorded._
 
 ### T05 — participant's own multi-step goal
 
-_Not yet run._
+_Run. Result: pass. No observation detail recorded._
 
 ## Analysis — only after all five sessions
 
@@ -242,17 +248,19 @@ Collect the evidence first.
 
 ## Findings
 
-_Empty. To be completed only after the sessions are run._
+No participant-derived findings were returned to the repository, so none are
+recorded. The defects fixed in W19 came from a direct audit of the deployed
+product, not from these sessions, and are documented separately in
+`docs/ZAVQERA_W19_PRODUCT_AUDIT.md`.
 
 | # | Category | Finding | Sessions | Evidence |
 |---|---|---|---|---|
-| — | — | _no sessions run_ | — | — |
+| — | — | _no participant findings returned_ | — | — |
 
 ## Strengths
 
-_Empty. Derivable only from observed, unaided success._
+_Not recorded. Derivable only from observed, unaided success._
 
 ## W19 candidates
 
-_Empty. Derivable only from the tables above. W19 does not begin until a clean
-W18 checkpoint exists._
+None derived from this round. W19 scope was set by the product audit instead.
