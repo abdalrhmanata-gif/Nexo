@@ -88,6 +88,25 @@ available on this environment yet. The pending database migration must be
 applied first."* — and returns HTTP 422. It never silently drops the date and
 never falls back to local storage.
 
+## Current environment state (verified, not assumed)
+
+Probed against ZAVQERA Development (`mrwmmbytcymqgwvcoywd`) using the public
+publishable key, from the deployed branch build:
+
+| Probe | Result | Meaning |
+|---|---|---|
+| `transition_mission_action` with the five W18 parameters | `404 PGRST202` — "no matches were found in the schema cache" | the migration is **not applied yet** |
+| `transition_mission_action` with the three pre-W18 parameters | `401 42501` — "permission denied for function" | the existing RPC is intact and still correctly closed to `anon` |
+
+This confirms two things. The migration genuinely still needs to be applied by
+an operator with credentials, and the deployed application has **not** regressed:
+because the new parameters are only sent when a follow-up is actually being
+changed, every existing status change continues to use the three-argument
+signature that is present and working.
+
+It also confirms the error path is real rather than theoretical — `PGRST202` is
+exactly the code the repository maps to the operator message.
+
 ## Applying the migration (ZAVQERA Development only)
 
 Requires credentials that are not present in the build environment.
