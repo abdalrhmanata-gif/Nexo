@@ -29,7 +29,120 @@ export function parseMissionObjective(objective) {
 }
 
 export function composeMissionObjective({ name, intent, criteria }) {
-  return `${name}\n\n${intent}${CRITERIA_MARKER}${criteria}`;
+  const lines = Array.isArray(criteria) ? criteria.join("\n") : criteria ?? "";
+  return `${name}\n\n${intent}${CRITERIA_MARKER}${lines}`;
+}
+
+const MISSION_STATUS_LABELS = {
+  DRAFT: "Draft",
+  PLANNING: "Planning",
+  READY: "Ready to start",
+  RUNNING: "In progress",
+  WAITING: "Waiting",
+  NEEDS_USER: "Needs your input",
+  VERIFYING: "Checking the evidence",
+  COMPLETED: "Complete",
+  PAUSED: "Paused",
+  BLOCKED: "Blocked",
+  FAILED: "Did not succeed",
+  CANCELLED: "Cancelled",
+};
+
+export function missionStatusLabel(status) {
+  return MISSION_STATUS_LABELS[status] ?? status;
+}
+
+/**
+ * Mirrors the transition table enforced by `transition_mission`. The database
+ * remains authoritative; this exists so the interface never offers a mission
+ * state that is guaranteed to be rejected. Keep the two in step.
+ */
+const ALLOWED_MISSION_TRANSITIONS = {
+  DRAFT: ["PLANNING", "CANCELLED"],
+  PLANNING: ["READY", "PAUSED", "BLOCKED", "CANCELLED"],
+  READY: ["RUNNING", "PAUSED", "BLOCKED", "CANCELLED"],
+  RUNNING: ["WAITING", "NEEDS_USER", "VERIFYING", "PAUSED", "BLOCKED", "FAILED", "CANCELLED"],
+  WAITING: ["RUNNING", "NEEDS_USER", "PAUSED", "BLOCKED", "CANCELLED"],
+  NEEDS_USER: ["RUNNING", "PAUSED", "BLOCKED", "CANCELLED"],
+  VERIFYING: ["COMPLETED", "FAILED", "PAUSED", "BLOCKED", "CANCELLED"],
+  PAUSED: ["RUNNING", "CANCELLED"],
+  BLOCKED: ["PLANNING", "READY", "RUNNING", "CANCELLED"],
+  COMPLETED: [],
+  FAILED: [],
+  CANCELLED: [],
+};
+
+export function allowedNextMissionStatuses(from) {
+  return ALLOWED_MISSION_TRANSITIONS[from] ?? [];
+}
+
+export function isMissionTransitionAllowed(from, to) {
+  return allowedNextMissionStatuses(from).includes(to);
+}
+
+export function isTerminalMissionStatus(status) {
+  const next = ALLOWED_MISSION_TRANSITIONS[status];
+  // An unrecognised status is not terminal. Treating it as terminal would let
+  // a missing value silently close a mission that is still in flight.
+  return Array.isArray(next) && next.length === 0;
+}
+
+/**
+ * The shortest legal route from the mission's current state to `VERIFYING`,
+ * which is the only state in which the database accepts a verification or an
+ * outcome. Returns an empty array when the mission is already there, and null
+ * when no route exists (a terminal mission).
+ */
+export function routeToVerifying(from) {
+  if (from === "VERIFYING") return [];
+  const queue = [[from, []]];
+  const seen = new Set([from]);
+  while (queue.length) {
+    const [status, path] = queue.shift();
+    for (const next of allowedNextMissionStatuses(status)) {
+      if (seen.has(next)) continue;
+      const route = [...path, next];
+      if (next === "VERIFYING") return route;
+      seen.add(next);
+      queue.push([next, route]);
+    }
+  }
+  return null;
+}
+
+/**
+ * Explains, from persisted state alone, whether a verification can be recorded
+ * right now. The database enforces both of these rules; surfacing them here
+ * stops the interface from presenting a form that is certain to be rejected.
+ */
+export function verificationReadiness(mission) {
+  const status = mission.lifecycleStatus;
+  const actions = mission.actions ?? [];
+  const unresolved = actions.filter((action) => action.status !== "COMPLETED" && action.status !== "CANCELLED");
+
+  if (status === "VERIFYING") {
+    return { ready: true, reason: "", nextStatus: null, unresolved };
+  }
+  if (isTerminalMissionStatus(status)) {
+    return {
+      ready: false,
+      reason: `This mission is ${missionStatusLabel(status).toLowerCase()}, so no further evidence can be recorded.`,
+      nextStatus: null,
+      unresolved,
+    };
+  }
+  const route = routeToVerifying(status);
+  if (!route || !route.length) {
+    return { ready: false, reason: "This mission cannot move to checking the evidence from its current state.", nextStatus: null, unresolved };
+  }
+  return {
+    ready: false,
+    reason: route.length === 1
+      ? "Move this mission to checking the evidence before recording verification."
+      : `This mission is ${missionStatusLabel(status).toLowerCase()}. It moves to checking the evidence through ${route.slice(0, -1).map(missionStatusLabel).join(", then ")}.`,
+    nextStatus: route[0],
+    unresolved,
+  };
 }
 
 const ACTION_STATUS_LABELS = {
@@ -124,6 +237,17 @@ export function nextStepFor(mission) {
   const actions = mission.actions ?? [];
   const outcomes = mission.outcomes ?? [];
   const verifications = mission.verifications ?? [];
+  const lifecycle = mission.lifecycleStatus;
+
+  // The workspace list loads actions but not verification or outcome history,
+  // so lifecycle state is the only reliable signal there that a mission is
+  // finished. Without this, a completed mission still asks for verification.
+  if (isTerminalMissionStatus(lifecycle)) {
+    if (lifecycle === "COMPLETED") {
+      return { label: "Complete", detail: "This mission reached its stated outcome.", tone: "done" };
+    }
+    return { label: missionStatusLabel(lifecycle), detail: "This mission is closed. No further work is expected.", tone: "done" };
+  }
 
   if (outcomes.length) {
     return { label: "Outcome recorded", detail: "This mission has a verified outcome.", tone: "done" };
@@ -164,6 +288,13 @@ export function nextStepFor(mission) {
     return { label: "No actions yet", detail: "Add the work this mission needs.", tone: "attention" };
   }
 
+  if (lifecycle !== "VERIFYING") {
+    return {
+      label: "Ready to check",
+      detail: "Every action is resolved. Move this mission to checking the evidence.",
+      tone: "attention",
+    };
+  }
   return { label: "Record verification", detail: "Every action is resolved. Record the evidence that proves the outcome.", tone: "attention" };
 }
 

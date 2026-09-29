@@ -6,12 +6,19 @@ export interface MissionRepository {
   createMission?(input: NewMission): Promise<Mission>;
   updateMission?(id: string, input: UpdateMission): Promise<Mission>;
   deleteMission?(id: string): Promise<void>;
+  addAction?(input: NewAction): Promise<MissionAction>;
   updateAction?(input: UpdateAction): Promise<MissionAction>;
   recordVerification?(input: NewVerification): Promise<MissionVerification>;
   commitOutcome?(input: NewOutcome): Promise<MissionOutcome>;
 }
 
 export type NewMission = { objective: string; actions?: string[] };
+/**
+ * A plan is not fixed at creation time. Adding an action later uses the same
+ * insert path and the same row-level policies that mission creation already
+ * relies on; ownership still comes from the session, never from the caller.
+ */
+export type NewAction = { missionId: string; title: string };
 export type UpdateAction = {
   actionId: string;
   status: "PENDING" | "RUNNING" | "COMPLETED" | "BLOCKED" | "CANCELLED";

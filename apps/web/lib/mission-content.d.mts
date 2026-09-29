@@ -1,4 +1,4 @@
-import type { ActionStatus, Mission } from "./view-models";
+import type { ActionStatus, Mission, MissionLifecycleStatus } from "./view-models";
 
 export declare function parseMissionObjective(objective: string): {
   name: string;
@@ -9,7 +9,7 @@ export declare function parseMissionObjective(objective: string): {
 export declare function composeMissionObjective(input: {
   name: string;
   intent: string;
-  criteria: string;
+  criteria: string | string[];
 }): string;
 
 export declare function actionStatusLabel(status: ActionStatus | string): string;
@@ -23,7 +23,7 @@ export type MissionNextStep = {
 };
 
 export declare function nextStepFor(
-  mission: Pick<Mission, "actions" | "verifications" | "outcomes">,
+  mission: Pick<Mission, "actions" | "verifications" | "outcomes"> & Partial<Pick<Mission, "lifecycleStatus">>,
 ): MissionNextStep;
 
 export declare function summariseEventPayload(payload: unknown): string;
@@ -42,3 +42,20 @@ export type FollowUpDisplay = {
 
 export declare function formatFollowUp(value: string | null | undefined, now?: Date): FollowUpDisplay | null;
 export declare function followUpInputValue(value: string | null | undefined): string;
+
+export declare function missionStatusLabel(status: MissionLifecycleStatus | string): string;
+export declare function allowedNextMissionStatuses(from: MissionLifecycleStatus | string): MissionLifecycleStatus[];
+export declare function isMissionTransitionAllowed(from: MissionLifecycleStatus | string, to: MissionLifecycleStatus | string): boolean;
+export declare function isTerminalMissionStatus(status: MissionLifecycleStatus | string): boolean;
+export declare function routeToVerifying(from: MissionLifecycleStatus | string): MissionLifecycleStatus[] | null;
+
+export type VerificationReadiness = {
+  ready: boolean;
+  reason: string;
+  nextStatus: MissionLifecycleStatus | null;
+  unresolved: Mission["actions"];
+};
+
+export declare function verificationReadiness(
+  mission: Pick<Mission, "lifecycleStatus" | "actions">,
+): VerificationReadiness;

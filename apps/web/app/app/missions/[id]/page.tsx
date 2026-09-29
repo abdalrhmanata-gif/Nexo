@@ -3,11 +3,12 @@ import { DeleteMissionForm } from "../../../../components/delete-mission-form";
 import { localMockMissionRepository } from "../../../../lib/local-mock-repository";
 import { isSupabaseConfigured } from "../../../../lib/supabase/config";
 import { createSupabaseMissionRepository } from "../../../../lib/supabase/mission-repository";
-import { actionStatusHint, actionStatusLabel, formatFollowUp, nextStepFor } from "../../../../lib/mission-content.mjs";
+import { actionStatusHint, actionStatusLabel, formatFollowUp, missionStatusLabel, nextStepFor, verificationReadiness } from "../../../../lib/mission-content.mjs";
 import { StatusPill } from "../../../../components/shell";
 import { VerificationControls } from "../../../../components/verification-controls";
 import { MissionMutationControls } from "../../../../components/mission-mutation-controls";
 import { ActionMutationControls } from "../../../../components/action-mutation-controls";
+import { AddActionForm } from "../../../../components/add-action-form";
 
 export default async function MissionDetailPage({
   params,
@@ -21,6 +22,7 @@ export default async function MissionDetailPage({
   const next = nextStepFor(mission);
   const verification = mission.verifications[0];
   const outcome = mission.outcomes[0];
+  const readiness = verificationReadiness(mission);
 
   return <div className="container">
     <p className="eyebrow"><Link href="/app">Workspace</Link> / Mission detail</p>
@@ -74,24 +76,33 @@ export default async function MissionDetailPage({
             </li>;
             })}</ul>
             : <p className="detail-intent">No actions have been added yet.</p>}
+          {repository.addAction && <AddActionForm missionId={mission.id} />}
         </section>
 
-        {repository.updateMission && <section className="card"><p className="eyebrow">Authoritative mutation</p><h2>Mission controls</h2><p>Updates are accepted only after the server confirms the current version.</p><MissionMutationControls missionId={mission.id} objective={mission.intent} status={mission.lifecycleStatus} version={mission.version} /></section>}
+        {repository.updateMission && <section className="card"><p className="eyebrow">Mission setup</p><h2>Edit this mission</h2><p>Changes are accepted only after the server confirms the current version.</p><MissionMutationControls missionId={mission.id} name={mission.name} intent={mission.intent} criteria={mission.criteria} status={mission.lifecycleStatus} version={mission.version} /></section>}
 
         <section className="card">
           <p className="eyebrow">Verification</p>
-          <h2>{verification ? `Verification ${verification.status.toLowerCase()}` : "Record terminal verification"}</h2>
+          <h2>{verification ? `Verification ${verification.status.toLowerCase()}` : "Record what you checked"}</h2>
           <p>A mission is only verified once evidence has been recorded through the authenticated server boundary. Work being reported as finished is not the same as ZAVQERA considering it verified.</p>
-          {verification
-            ? <>{!outcome && <VerificationControls missionId={mission.id} verification={verification} />}</>
-            : <VerificationControls missionId={mission.id} />}
+          {readiness.ready
+            ? (verification
+              ? <>{!outcome && <VerificationControls missionId={mission.id} verification={verification} />}</>
+              : <VerificationControls missionId={mission.id} />)
+            : <div className="readiness" role="status">
+              <p>{readiness.reason}</p>
+              {readiness.unresolved.length > 0 && <p className="action-hint">
+                {readiness.unresolved.length === 1 ? "1 action is" : `${readiness.unresolved.length} actions are`} still open: {readiness.unresolved.map((action) => action.title).join(", ")}.
+              </p>}
+              {readiness.nextStatus && <p className="action-hint">Use “Edit this mission” above to move it to {missionStatusLabel(readiness.nextStatus).toLowerCase()}.</p>}
+            </div>}
         </section>
 
         <section className="card">
           <p className="eyebrow">Outcome</p>
           <h2>{outcome ? `Outcome ${outcome.status.toLowerCase()}` : "No outcome yet"}</h2>
           {outcome
-            ? <p>Verified outcome committed with score {outcome.successScore}.</p>
+            ? <p>{outcome.status === "COMPLETED" ? "This mission reached its stated outcome." : "This mission closed without reaching its stated outcome."} Recorded confidence {Math.round(outcome.successScore * 100)}%.</p>
             : <p className="detail-intent">An outcome can only be committed after a verification is recorded.</p>}
         </section>
 
@@ -105,11 +116,10 @@ export default async function MissionDetailPage({
       </div>
 
       <aside className="card">
-        <p className="eyebrow">Boundary</p>
-        <h2>Authority stays explicit.</h2>
-        <p>This preview shows the mission context without granting execution authority.</p>
+        <p className="eyebrow">At a glance</p>
+        <h2>Where this mission stands</h2>
         <ul className="list">
-          <li><strong>Lifecycle state</strong><br />{mission.lifecycleStatus}</li>
+          <li><strong>Mission state</strong><br />{missionStatusLabel(mission.lifecycleStatus)}</li>
           <li><strong>Actions</strong><br />{mission.actionsCompleted} complete of {mission.actionsTotal}</li>
           <li><strong>Verified</strong><br />{verification ? "Yes" : "Not yet"}</li>
           <li><strong>Last updated</strong><br />{mission.updated}</li>

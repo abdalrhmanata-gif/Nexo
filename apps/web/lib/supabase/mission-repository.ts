@@ -1,7 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "./server";
-import { MissionMutationConflictError, MissionMutationRejectedError, type MissionRepository, type NewMission, type NewOutcome, type NewVerification, type UpdateMission } from "../mission-repository";
-import type { ActionStatus, Mission, MissionAction, MissionActivity, MissionOutcome, MissionVerification, MissionLifecycleStatus } from "../view-models";
+import { MissionMutationConflictError, MissionMutationRejectedError, type MissionRepository, type NewMission, type NewOutcome, type NewVerification, type UpdateMission } from "../mission-repository";import type { ActionStatus, Mission, MissionAction, MissionActivity, MissionOutcome, MissionVerification, MissionLifecycleStatus } from "../view-models";
 import { humaniseEventType, parseMissionObjective, summariseEventPayload } from "../mission-content.mjs";
 
 type MissionRow = {
@@ -140,6 +139,17 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
     FOLLOW_UP_IN_PAST: "Choose a follow-up date that has not already passed.",
     FOLLOW_UP_TOO_DISTANT: "Choose a follow-up date within the next ten years.",
     INVALID_MISSION_TRANSITION: "That is not a valid next state for this mission.",
+    // Verification and outcome are only accepted while the mission is being
+    // checked. Without these the raw database label reached the user.
+    MISSION_NOT_VERIFYING: "Move this mission to checking the evidence before recording verification or an outcome.",
+    ALL_ACTIONS_MUST_BE_COMPLETED: "Every action must be complete before this mission can be recorded as complete.",
+    VERIFICATION_NOT_VERIFIED: "This outcome needs a verification that passed.",
+    INVALID_VERIFICATION_STATUS: "A verification must record either a pass or a failure.",
+    INVALID_VERIFICATION_PAYLOAD: "Describe both what you checked and the evidence you saw.",
+    INVALID_VERIFICATION_CONFIDENCE: "Confidence must be between 0 and 1.",
+    INVALID_OUTCOME_RESULT: "Describe what the outcome actually was.",
+    INVALID_OUTCOME_SCORE: "The success score must be between 0 and 1.",
+    INVALID_OUTCOME_STATUS: "An outcome must record either completion or failure.",
   };
 
   function throwMutationError(error: { code?: string; message?: string }) {
@@ -228,6 +238,23 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       const result = await supabase.from("missions").delete().eq("id", id).eq("workspace_id", workspaceId);
       if (result.error) throw result.error;
     },
+    async addAction(input) {
+      // The mission is re-read through the workspace-scoped boundary first, so
+      // an action can never be attached to a mission the session does not own.
+      const mission = await supabase.from("missions").select("id").eq("id", input.missionId).eq("workspace_id", workspaceId).maybeSingle();
+      if (mission.error) throw mission.error;
+      if (!mission.data) throw new MissionMutationRejectedError("That mission is no longer available.");
+      const last = await supabase.from("mission_actions").select("position").eq("mission_id", input.missionId).order("position", { ascending: false }).limit(1).maybeSingle();
+      if (last.error) throw last.error;
+      const position = (last.data?.position ?? -1) + 1;
+      const result = await supabase
+        .from("mission_actions")
+        .insert({ mission_id: input.missionId, title: input.title, position, status: "PENDING" })
+        .select("id, title, status, version, follow_up_at")
+        .single();
+      if (result.error) throwMutationError(result.error);
+      return toAction(result.data as ActionRow);
+    },
     async updateAction(input) {
       // The two follow-up parameters are only sent when the caller is actually
       // changing a follow-up date. A plain status change therefore keeps using
@@ -254,7 +281,7 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
         p_confidence: input.confidence ?? null,
         p_failure_reason: input.failureReason ?? null,
       });
-      if (result.error) throw result.error;
+      if (result.error) throwMutationError(result.error);
       return toVerification(result.data as VerificationRow);
     },
     async commitOutcome(input: NewOutcome) {
@@ -265,7 +292,7 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
         p_success_score: input.successScore ?? 1,
         p_status: input.status ?? "COMPLETED",
       });
-      if (result.error) throw result.error;
+      if (result.error) throwMutationError(result.error);
       return toOutcome(result.data as OutcomeRow);
     },
   };

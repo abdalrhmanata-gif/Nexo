@@ -62,7 +62,8 @@ test("the next step reflects real mission state for every branch", () => {
   assert.equal(nextStepFor({ ...base, actions: [{ status: "PENDING", title: "Draft copy" }] }).detail, "Draft copy");
   assert.equal(nextStepFor({ ...base, actions: [{ status: "BLOCKED", title: "Await legal" }] }).tone, "attention");
   assert.equal(nextStepFor({ ...base, actions: [{ status: "BLOCKED", title: "Await legal" }, { status: "RUNNING", title: "Write spec" }] }).detail, "Write spec");
-  assert.match(nextStepFor({ ...base, actions: [{ status: "COMPLETED", title: "Done" }] }).label, /verification/i);
+  assert.match(nextStepFor({ ...base, actions: [{ status: "COMPLETED", title: "Done" }] }).label, /ready to check/i);
+  assert.match(nextStepFor({ ...base, lifecycleStatus: "VERIFYING", actions: [{ status: "COMPLETED", title: "Done" }] }).label, /verification/i);
   assert.match(nextStepFor({ ...base, verifications: [{ id: "v1" }] }).label, /outcome/i);
   assert.equal(nextStepFor({ ...base, verifications: [{ id: "v1" }], outcomes: [{ id: "o1" }] }).tone, "done");
 });
