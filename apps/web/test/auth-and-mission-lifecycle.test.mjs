@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
-import { DEFAULT_POST_AUTH_PATH, authErrorPath, safeNextPath } from "../lib/auth/redirect.mjs";
+import { DEFAULT_POST_AUTH_PATH, authErrorPath, resolveRequestOrigin, safeNextPath } from "../lib/auth/redirect.mjs";
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const source = (path) => readFile(join(webRoot, path), "utf8");
@@ -65,6 +65,32 @@ test("confirmation redirect targets cannot leave the application origin", () => 
 });
 
 // Defect 2: a created Mission could not be reopened or removed with confidence.
+
+test("confirmation redirects stay on the host the browser is actually using", () => {
+  const permalink = "https://6abbf2ee--unique-kringle-3ce321.netlify.app/auth/callback";
+  const branchHost = "zavqera-alternative-web-deployment--unique-kringle-3ce321.netlify.app";
+
+  assert.equal(
+    resolveRequestOrigin(new Headers({ "x-forwarded-host": branchHost, "x-forwarded-proto": "https" }), permalink),
+    `https://${branchHost}`,
+  );
+  assert.equal(
+    resolveRequestOrigin(new Headers({ host: branchHost }), permalink),
+    `https://${branchHost}`,
+  );
+  assert.equal(
+    resolveRequestOrigin(new Headers(), "http://localhost:3000/auth/callback"),
+    "http://localhost:3000",
+  );
+});
+
+test("confirmation endpoints redirect through the resolved request origin", async () => {
+  for (const file of ["app/auth/callback/route.ts", "app/auth/confirm/route.ts"]) {
+    const text = await source(file);
+    assert.match(text, /const origin = resolveRequestOrigin\(request\.headers, request\.url\)/);
+    assert.doesNotMatch(text, /NextResponse\.redirect\(new URL\([^)]*request\.url\)\)/);
+  }
+});
 
 test("workspace mission cards expose an explicit route into the mission detail page", async () => {
   const card = await source("components/mission-card.tsx");

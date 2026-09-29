@@ -15,3 +15,17 @@ export function safeNextPath(value) {
 export function authErrorPath(reason) {
   return `/auth/sign-in?error=${encodeURIComponent(reason)}`;
 }
+
+/**
+ * Netlify serves a branch deploy behind a proxy, so `request.url` carries the
+ * deploy permalink host rather than the host the browser is on. Redirecting to
+ * that permalink would move the user to a different origin and discard the
+ * session cookie just written by the confirmation exchange, so the public host
+ * from the forwarded headers wins.
+ */
+export function resolveRequestOrigin(headers, fallbackUrl) {
+  const host = headers.get("x-forwarded-host") || headers.get("host");
+  if (!host) return new URL(fallbackUrl).origin;
+  const proto = headers.get("x-forwarded-proto") || new URL(fallbackUrl).protocol.replace(":", "");
+  return `${proto}://${host}`;
+}
