@@ -28,3 +28,6 @@ main { flex:1; }.footer { width:min(1120px, calc(100% - 40px)); margin:0 auto; p
 @media (max-width:700px) { .topbar { width:calc(100% - 28px); padding:18px 0; }.topbar nav a:not(.button) { display:none; }.container { width:calc(100% - 28px); padding-top:34px; }.hero { padding:35px 0 54px; }.hero p { font-size:17px; }.grid,.detail-layout { grid-template-columns:1fr; }.stats { grid-template-columns:1fr; margin-bottom:30px; }.section-heading { align-items:start; flex-direction:column; }.footer { width:calc(100% - 28px); } }
 @media (max-width:700px) { .attention-panel { align-items:stretch; flex-direction:column; gap:14px; padding:18px; }.attention-panel .button { text-align:center; }.card { padding:18px; }.detail-title { font-size:clamp(30px, 11vw, 44px); } }
 @media (prefers-reduced-motion:reduce) { * { scroll-behavior:auto !important; transition:none !important; } }
+.mission-card { display:flex; flex-direction:column; }.mission-open { align-self:flex-start; margin-top:auto; }
+.button-danger { background:#a34425; border-color:#a34425; color:var(--white); }.button-danger:hover { background:#8a3820; border-color:#8a3820; }
+.danger-zone { margin-top:22px; padding-top:18px; border-top:1px solid var(--line); }.danger-copy { color:#a34425; font-size:13px; margin:0 0 12px; }

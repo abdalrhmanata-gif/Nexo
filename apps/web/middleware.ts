@@ -24,7 +24,9 @@ export async function middleware(request: NextRequest) {
     url.searchParams.set("next", request.nextUrl.pathname);
     return NextResponse.redirect(url);
   }
-  if (request.nextUrl.pathname.startsWith("/auth/") && user) {
+  const isConfirmationEndpoint = request.nextUrl.pathname === "/auth/callback"
+    || request.nextUrl.pathname === "/auth/confirm";
+  if (request.nextUrl.pathname.startsWith("/auth/") && user && !isConfirmationEndpoint) {
     return NextResponse.redirect(new URL("/app", request.url));
   }
   return response;
