@@ -62,6 +62,8 @@ The Supabase migration registry records:
 
 The repository migration filename has been aligned to that exact applied version so future CLI migration history remains consistent.
 
+Independently re-probed from outside the project (unauthenticated, no credentials used): the five-argument signature now returns `42501 permission denied` where it previously returned `404 PGRST202 no matches were found in the schema cache`. The signature therefore resolves, and correctly refuses anonymous callers. The three-argument call shape still resolves, so pre-W18 call sites are unaffected.
+
 ## Verification
 
 `npm ci` clean · `npm test` 59/59 · `npm run typecheck` clean · `npm run lint` clean · `npm run build` clean.

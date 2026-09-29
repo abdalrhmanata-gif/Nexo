@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import test from "node:test";
@@ -15,10 +15,14 @@ import {
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = join(webRoot, "..", "..");
-const migration = readFileSync(
-  join(repoRoot, "supabase", "migrations", "20260929180000_w18_action_follow_up_persistence.sql"),
-  "utf8",
-);
+const migrationsDir = join(repoRoot, "supabase", "migrations");
+
+// Resolved by content, not by a pinned filename: the applied migration is
+// renamed to match the timestamp Supabase assigns it, so hard-coding the name
+// silently disables this whole suite.
+const migrationFiles = readdirSync(migrationsDir).filter((name) => /_w18_action_follow_up_persistence\.sql$/.test(name));
+assert.equal(migrationFiles.length, 1, `expected exactly one W18 follow-up migration, found ${migrationFiles.length}`);
+const migration = readFileSync(join(migrationsDir, migrationFiles[0]), "utf8");
 const read = (relative) => readFileSync(join(webRoot, relative), "utf8");
 
 const DAY = 86400000;
