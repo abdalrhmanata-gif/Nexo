@@ -187,6 +187,27 @@ export class InMemoryAuthorityStore {
         }
       }
 
+      const priorAttempt = [...this.#attempts.values()].find(
+        (attempt) => attempt.idempotencyKey === request.idempotencyKey,
+      );
+      if (priorAttempt) {
+        const sameBinding = priorAttempt.organizationId === request.organizationId
+          && priorAttempt.principalId === request.principalId
+          && priorAttempt.missionId === request.missionId
+          && priorAttempt.actionId === request.actionId
+          && priorAttempt.actionVersion === request.actionVersion
+          && priorAttempt.inputHash === suppliedHash
+          && priorAttempt.authorityRevision === request.authorityRevision
+          && priorAttempt.leaseId === request.leaseId
+          && priorAttempt.audience === request.audience
+          && priorAttempt.destination === request.destination;
+        if (!sameBinding) return this.#deny("IDEMPOTENCY_BINDING_MISMATCH");
+        if (priorAttempt.state === ATTEMPT_STATES.UNKNOWN) {
+          return { decision: DECISIONS.RECONCILE_REQUIRED, reasonCode: "UNKNOWN_REQUIRES_RECONCILIATION" };
+        }
+        return this.#deny("IDEMPOTENCY_REPLAY");
+      }
+
       if (mission.maxActions !== null && mission.maxActions !== undefined &&
           mission.spentActions >= mission.maxActions) {
         return this.#deny("ACTION_BUDGET_EXHAUSTED");
@@ -195,15 +216,6 @@ export class InMemoryAuthorityStore {
       if (mission.maxSpend !== null && mission.maxSpend !== undefined &&
           mission.spentAmount + (request.amount ?? 0) > mission.maxSpend) {
         return this.#deny("SPEND_BUDGET_EXHAUSTED");
-      }
-
-      for (const attempt of this.#attempts.values()) {
-        if (attempt.idempotencyKey === request.idempotencyKey) {
-          if (attempt.state === ATTEMPT_STATES.UNKNOWN) {
-            return { decision: DECISIONS.RECONCILE_REQUIRED, reasonCode: "UNKNOWN_REQUIRES_RECONCILIATION" };
-          }
-          return this.#deny("IDEMPOTENCY_REPLAY");
-        }
       }
 
       mission.spentActions += 1;
@@ -310,6 +322,9 @@ export class FakeExternalSystem {
     }
     if (outcome.kind === "UNKNOWN_BEFORE_SEND") {
       throw new UnknownExternalResult("Dispatch result cannot be established.");
+    }
+    if (outcome.kind === "TRANSPORT_ERROR") {
+      throw new Error("transport interrupted");
     }
     if (outcome.kind === "FAILED") {
       throw new DefiniteExternalFailure(outcome.message ?? "External execution failed.");
