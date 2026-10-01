@@ -68,7 +68,7 @@ export async function POST(request: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
+        model: process.env.OPENAI_MODEL || "gpt-5.6-luna",
         instructions: [
           "You are ZAVQERA's mission planning copilot.",
           "Turn the user's goal into a practical, safe first plan.",
