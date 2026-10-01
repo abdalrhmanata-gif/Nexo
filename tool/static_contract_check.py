@@ -82,6 +82,12 @@ WEB_FILES = [
     and 'node_modules' not in p.parts
     and '.next' not in p.parts
 ]
+# Boundary checks below protect production Web code. Test and disposable E2E
+# harnesses are intentionally allowed to use privileged fixtures and direct
+# table reads so the checker does not confuse test setup with runtime access.
+WEB_TEST_ROOT = WEB_ROOT / 'test'
+WEB_POLICY_FILES = [p for p in WEB_FILES if WEB_TEST_ROOT not in p.parents]
+
 WEB_REPOSITORY = WEB_ROOT / 'lib' / 'supabase' / 'mission-repository.ts'
 AUTHORITATIVE_TABLES = (
     'workspaces',
@@ -92,7 +98,7 @@ AUTHORITATIVE_TABLES = (
     'mission_outcomes',
 )
 
-for path in WEB_FILES:
+for path in WEB_POLICY_FILES:
     text = path.read_text(encoding='utf-8')
     relpath = path.relative_to(ROOT).as_posix()
     if path.name != 'auth-form.tsx' and path != WEB_REPOSITORY and re.search(
@@ -130,7 +136,8 @@ report = {
     'warnings': warnings,
     'web_read_boundary': {
         'status': 'STATIC_PASS' if not errors else 'STATIC_FAIL',
-        'scanned_files': len(WEB_FILES),
+        'scanned_files': len(WEB_POLICY_FILES),
+        'excluded_test_files': len(WEB_FILES) - len(WEB_POLICY_FILES),
         'repository': 'apps/web/lib/supabase/mission-repository.ts',
         'authoritative_tables': list(AUTHORITATIVE_TABLES),
     },
