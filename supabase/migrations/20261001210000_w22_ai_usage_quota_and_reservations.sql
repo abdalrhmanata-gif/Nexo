@@ -1,0 +1,1 @@
+-- W22 AI usage quota schema for the ZAVQERA Development environment. Canonical SQL is applied to Development first; keep this migration synchronized with that environment.
