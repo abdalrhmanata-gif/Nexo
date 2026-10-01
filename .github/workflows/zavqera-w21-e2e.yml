@@ -2,6 +2,13 @@ name: ZAVQERA W21 Isolated Browser E2E
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - "zavqera/ai-planner-integration"
+    paths:
+      - ".github/workflows/zavqera-w21-e2e.yml"
+      - "apps/web/test/e2e/**"
+      - "supabase/migrations/**"
   pull_request:
     paths:
       - ".github/workflows/zavqera-w21-e2e.yml"
