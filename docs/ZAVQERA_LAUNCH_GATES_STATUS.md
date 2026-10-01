@@ -39,11 +39,14 @@ Current behavior:
 
 Default model: `gpt-6-luna`, configurable with `OPENAI_MODEL`.
 
+Server-side AI usage quota is now implemented in Development: 20 monthly generations for the default free entitlement, atomic reservation/consume/release, and authenticated-only RPC execution. Plus is defined at 300 monthly generations but paid entitlement activation is not implemented yet.
+
 Provider-live verification is still blocked until a valid non-production `OPENAI_API_KEY` is configured in the preview environment. Do not commit or paste the key into source control or chat.
 
 ## Release rule
 Do not merge to `main` or deploy production until:
 1. W21 evidence is PASS.
 2. Required Mission Authority production-server enforcement evidence is complete.
-3. Preview AI request succeeds with a real provider key.
-4. Final CI is green on the resulting head.
+3. AI usage quota tests and preview verification are complete.
+4. Preview AI request succeeds with a real provider key.
+5. Final CI is green on the resulting head.
