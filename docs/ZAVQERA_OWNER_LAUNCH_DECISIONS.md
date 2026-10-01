@@ -1,14 +1,18 @@
 # Owner launch decisions
 
-2026-10-01. **TECHNICAL MVP: PASS. PUBLIC PRODUCTION: OWNER DECISION REQUIRED.**
-Exactly five decisions below remain **UNDECIDED**. No option was selected on
-the owner's behalf. This document is not approval to spend, switch production,
-access Supabase Main, change DNS, rotate secrets or modify protected Git refs.
+2026-10-01. **TECHNICAL MVP: PASS. PUBLIC PRODUCTION: NOT AUTHORIZED YET.**
+The owner selected the preferred strategy for all five decisions: dedicated Supabase
+Production, Netlify paid capacity, Supabase Pro managed backups, a custom domain,
+and local isolated E2E execution. This records the selected direction only; no
+payment, project provisioning, deployment promotion, DNS change, or public launch
+has occurred. Exact domain selection and provider billing completion remain pending.
 
 ## Decision 1: Production backend strategy
 
-- [ ] Dedicated Supabase Production, separately authorized (not Supabase Main).
+- [x] Dedicated Supabase Production, separate from Supabase Main.
 - [ ] Explicitly accept Development for a controlled beta.
+
+**Selected by owner; project creation awaits plan eligibility/billing.**
 
 Production, branch-deploy and deploy-preview contexts currently all target
 Development. A separate production data boundary is preferable for real users.
@@ -22,7 +26,9 @@ Owner selection/approval/date: ___
 ## Decision 2: Netlify deployment capacity
 
 - [ ] Wait for the new billing cycle.
-- [ ] Explicitly upgrade the plan.
+- [x] Upgrade the plan.
+
+**Selected by owner; no upgrade/payment executed in this preparation step.**
 
 Provider reports production deploys paused; no paid action taken. Primary URL
 still serves old main artifact and returns 404; tested branch URL works.
@@ -34,8 +40,10 @@ Owner selection/approval/date: ___
 
 ## Decision 3: Backup strategy
 
-- [ ] Supabase Pro managed backups.
+- [x] Supabase Pro managed backups.
 - [ ] External encrypted `supabase db dump` exports.
+
+**Selected by owner; backups are not active until Production is provisioned and verified.**
 
 Follow [backup/recovery plan](ZAVQERA_PRODUCTION_BACKUP_AND_RECOVERY.md).
 Current recovery coverage is unverified. With the choice, approve RPO/RTO,
@@ -49,7 +57,9 @@ Owner selection/approval/date: ___
 ## Decision 4: Domain
 
 - [ ] Continue the temporary Netlify URL.
-- [ ] Connect a custom domain.
+- [x] Connect a custom domain.
+
+**Selected by owner; exact hostname, purchase and DNS changes remain pending.**
 
 Temporary working URL:
 https://zavqera-alternative-web-deployment--unique-kringle-3ce321.netlify.app
@@ -62,8 +72,10 @@ Owner selection/approval/date: ___
 
 ## Decision 5: E2E
 
-- [ ] Execute the owner-run local Docker test.
+- [x] Execute the owner-run local Docker test.
 - [ ] Explicitly accept unexecuted E2E for the chosen launch stage.
+
+**Selected by owner; execution awaits the local Docker/Supabase prerequisites.**
 
 Use [checklist](ZAVQERA_E2E_OWNER_RUN_CHECKLIST.md). No browser PASS is claimed.
 Acceptance must name the limited stage, residual auth/browser risk and reviewer;
@@ -74,9 +86,9 @@ Owner selection/approval/date: ___
 
 ## Applying the decisions
 
-Return the five numbered selections with approval scope; keep secrets out of
-the response. Record unchosen decisions as pending. Execute only subsequently
-authorized work, collect actual verification evidence and update the
+The strategic options are now selected. Complete the prerequisites listed above,
+confirm exact variable contexts and project refs before any changes, collect actual
+verification evidence, and update the
 [final gate](ZAVQERA_FINAL_LAUNCH_GATE.md). Choices alone do not prove completion
 of infrastructure, restore or deployment work, and do not authorize public launch
 until the agreed prerequisites are satisfied.
