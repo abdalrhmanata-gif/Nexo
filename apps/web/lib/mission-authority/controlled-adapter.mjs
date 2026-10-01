@@ -123,6 +123,9 @@ export class InMemoryAuthorityStore {
       const mission = this.#missions.get(request.missionId);
       if (!mission) return this.#deny("MISSION_NOT_FOUND");
 
+      // Request restrictions may deny, but never override current stored authority.
+      if (mission.revoked || request.revoked === true) return this.#deny("AUTHORITY_REVOKED");
+
       const suppliedHash = hashInput(request.input);
       if (request.inputHash !== suppliedHash) return this.#deny("INPUT_HASH_MISMATCH");
 
@@ -194,11 +197,29 @@ export class InMemoryAuthorityStore {
       }
 
       if (mission.status !== "ACTIVE") return this.#deny("MISSION_NOT_ACTIVE");
-      if (now < new Date(mission.notBefore).getTime()) return this.#deny("NOT_BEFORE");
-      if (now >= new Date(mission.expiresAt).getTime()) return this.#deny("AUTHORITY_EXPIRED");
-      if (now >= new Date(mission.leaseExpiresAt).getTime()) return this.#deny("LEASE_EXPIRED");
-      if (mission.revoked) return this.#deny("AUTHORITY_REVOKED");
-      if (!mission.leaseActive) return this.#deny("LEASE_INACTIVE");
+      if (mission.authorityStatus !== undefined && mission.authorityStatus !== "ACTIVE") {
+        return this.#deny("AUTHORITY_NOT_ACTIVE");
+      }
+      if (!Number.isFinite(now)) return this.#deny("INVALID_CLOCK");
+      for (const [state, required] of [[mission, true], [request, false]]) {
+        for (const [field, reasonCode] of [
+          ["notBefore", "NOT_BEFORE"],
+          ["expiresAt", "AUTHORITY_EXPIRED"],
+          ["leaseExpiresAt", "LEASE_EXPIRED"],
+        ]) {
+          const value = state[field];
+          if (value === undefined && (!required || field === "notBefore")) continue;
+          const boundary = typeof value === "string" ? Date.parse(value) : NaN;
+          if (!Number.isFinite(boundary)) return this.#deny("INVALID_VALIDITY_WINDOW");
+          if (field === "notBefore" ? now < boundary : now >= boundary) {
+            return this.#deny(reasonCode);
+          }
+        }
+      }
+      if (mission.leaseActive !== true ||
+          (request.leaseActive !== undefined && request.leaseActive !== true)) {
+        return this.#deny("LEASE_INACTIVE");
+      }
       if (mission.allowedActions && !mission.allowedActions.includes(request.actionId)) {
         return this.#deny("ACTION_NOT_ALLOWED");
       }

@@ -32,6 +32,20 @@
 
 ## Explicit limits
 
+Revocation is deny-over-allow: stored revocation or `revoked: true` in the request
+denies before idempotency handling, budget reservation or dispatch. Optional
+request validity/lease restrictions can only narrow stored authority; a later
+request expiry, `revoked: false` or `leaseActive: true` cannot restore permission.
+Stored expiry/lease deadlines must be valid, and inactive stored authority or
+lease is denied. Invalid supplied validity bounds fail closed.
+
+Only an authorization decision of ALLOW reaches dispatch. An UNKNOWN/transport
+failure after that authorized dispatch returns RECONCILE_REQUIRED and prevents
+another dispatch on replay; it cannot retroactively undo the first send.
+Regression cases cover both request restrictions and authoritative state,
+exact/missing/mismatched approvals, concurrent budget reservation and no resend
+while reconciliation is required.
+
 This slice is an executable **server-side boundary prototype**, not production persistence. The authority store and attempt journal are in-memory so the exact enforcement semantics can be tested without inventing schema/RPCs prematurely. It is not yet wired to a real provider, hosted environment, or production credentials.
 
 Therefore it does **not** claim:

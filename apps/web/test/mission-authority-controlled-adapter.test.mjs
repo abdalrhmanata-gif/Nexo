@@ -96,6 +96,9 @@ test("fails closed for cross-tenant, stale, revoked, expired, lease-mismatch and
     revoked: { revoked: true },
     expired: { expiresAt: "2026-09-30T23:59:00.000Z" },
     leaseExpired: { leaseExpiresAt: "2026-09-30T11:59:59.000Z" },
+    leaseInactive: { leaseActive: false },
+    notYetValid: { notBefore: "2026-10-01T12:01:00.000Z" },
+    invalidExpiry: { expiresAt: "invalid" },
     leaseMismatch: { leaseId: "lease-b" },
     destination: { destination: "https://evil.example" },
   })) {
@@ -104,6 +107,41 @@ test("fails closed for cross-tenant, stale, revoked, expired, lease-mismatch and
     assert.equal(result.decision, DECISIONS.DENY, name);
     assert.equal(external.calls().length, 0, name);
   }
+
+  for (const [name, overrides, reasonCode] of [
+    ["storedRevoked", { revoked: true }, "AUTHORITY_REVOKED"],
+    ["storedExpired", { expiresAt: new Date(NOW).toISOString() }, "AUTHORITY_EXPIRED"],
+    ["storedLeaseExpired", { leaseExpiresAt: new Date(NOW).toISOString() }, "LEASE_EXPIRED"],
+    ["storedLeaseInactive", { leaseActive: false }, "LEASE_INACTIVE"],
+    ["storedAuthorityInactive", { authorityStatus: "REVOKED" }, "AUTHORITY_NOT_ACTIVE"],
+    ["storedInvalidExpiry", { expiresAt: "invalid" }, "INVALID_VALIDITY_WINDOW"],
+    ["storedMissingExpiry", { expiresAt: undefined }, "INVALID_VALIDITY_WINDOW"],
+    ["storedInvalidLease", { leaseExpiresAt: null }, "INVALID_VALIDITY_WINDOW"],
+  ]) {
+    const { adapter, external, store } = setup({ authorityOverrides: overrides });
+    const result = await adapter.execute(request({
+      revoked: false,
+      leaseActive: true,
+      expiresAt: "2027-01-01T00:00:00.000Z",
+      leaseExpiresAt: "2027-01-01T00:00:00.000Z",
+    }));
+    assert.equal(result.decision, DECISIONS.DENY, name);
+    assert.equal(result.reasonCode, reasonCode, name);
+    assert.equal(external.calls().length, 0, name);
+    assert.equal(store.getJournal().some((entry) => entry.decision === DECISIONS.ALLOW), false, name);
+  }
+
+  const { adapter, external } = setup();
+  const denied = await adapter.execute(request({ revoked: true }));
+  assert.equal(denied.reasonCode, "AUTHORITY_REVOKED");
+  assert.equal(external.calls().length, 0);
+  const valid = await adapter.execute(request());
+  assert.equal(valid.decision, DECISIONS.ALLOW); // Denial must not reserve budget or idempotency.
+  assert.equal(external.calls().length, 1);
+  const revokedReplay = await adapter.execute(request({ revoked: true }));
+  assert.equal(revokedReplay.decision, DECISIONS.DENY);
+  assert.equal(revokedReplay.reasonCode, "AUTHORITY_REVOKED");
+  assert.equal(external.calls().length, 1);
 });
 
 test("requires exact approval binding instead of dispatching when approval is required", async () => {
@@ -122,10 +160,27 @@ test("requires exact approval binding instead of dispatching when approval is re
     expiresAt: "2026-10-01T12:30:00.000Z",
   };
 
-  const denied = setup({ authorityOverrides: { requireApproval: true, approval: { ...validApproval, inputHash: "wrong" } } });
-  const deniedResult = await denied.adapter.execute(request({}, input));
-  assert.equal(deniedResult.decision, DECISIONS.REQUIRE_APPROVAL);
-  assert.equal(denied.external.calls().length, 0);
+  for (const approval of [
+    null,
+    ...Object.entries({
+      active: false,
+      organizationId: "org-b",
+      principalId: "user-b",
+      missionId: "mission-b",
+      missionVersion: 99,
+      actionId: "other",
+      actionVersion: 99,
+      inputHash: "wrong",
+      destination: "https://evil.example",
+      authorityRevision: 99,
+      expiresAt: new Date(NOW).toISOString(),
+    }).map(([field, value]) => ({ ...validApproval, [field]: value })),
+  ]) {
+    const denied = setup({ authorityOverrides: { requireApproval: true, approval } });
+    const deniedResult = await denied.adapter.execute(request({}, input));
+    assert.equal(deniedResult.decision, DECISIONS.REQUIRE_APPROVAL);
+    assert.equal(denied.external.calls().length, 0);
+  }
 
   const allowed = setup({ authorityOverrides: { requireApproval: true, approval: validApproval } });
   const allowedResult = await allowed.adapter.execute(request({}, input));
@@ -166,6 +221,8 @@ test("one remaining action budget cannot authorize two concurrent attempts", asy
   const [a, b] = await Promise.all([adapterExecute(store, external, request()), adapterExecute(store, external, requestB)]);
   const decisions = [a.decision, b.decision];
   assert.equal(decisions.filter((value) => value === DECISIONS.ALLOW).length, 1);
+  assert.equal(decisions.filter((value) => value === DECISIONS.DENY).length, 1);
+  assert.equal([a, b].find((result) => result.decision === DECISIONS.DENY).reasonCode, "ACTION_BUDGET_EXHAUSTED");
   assert.equal(external.calls().length, 1);
 });
 
@@ -195,12 +252,17 @@ test("UNKNOWN with no external record becomes explicitly retryable only after re
   assert.equal(first.decision, DECISIONS.RECONCILE_REQUIRED);
   assert.equal(external.calls().length, 1);
 
+  const blockedRetry = await adapter.execute(request());
+  assert.equal(blockedRetry.decision, DECISIONS.RECONCILE_REQUIRED);
+  assert.equal(external.calls().length, 1);
+
   const reconciled = await adapter.reconcile(first.attemptId);
   assert.equal(reconciled.state, ATTEMPT_STATES.RECONCILED_NOT_SENT);
 
   const retry = await adapter.execute(request({ idempotencyKey: "idem-2" }));
   assert.equal(retry.decision, DECISIONS.DENY); // budget remains consumed until a durable refund policy is designed.
   assert.equal(retry.reasonCode, "ACTION_BUDGET_EXHAUSTED");
+  assert.equal(external.calls().length, 1);
 });
 
 test("decision journal contains no payload, secret, or credential fields", async () => {
@@ -222,5 +284,8 @@ test("unexpected transport failure is fail-closed as UNKNOWN", async () => {
   const result = await adapter.execute(request());
   assert.equal(result.decision, DECISIONS.RECONCILE_REQUIRED);
   assert.equal(result.reasonCode, "UNKNOWN_REQUIRES_RECONCILIATION");
+  assert.equal(external.calls().length, 1);
+  const retry = await adapter.execute(request());
+  assert.equal(retry.decision, DECISIONS.RECONCILE_REQUIRED);
   assert.equal(external.calls().length, 1);
 });
