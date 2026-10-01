@@ -9,6 +9,7 @@ import { VerificationControls } from "../../../../components/verification-contro
 import { MissionMutationControls } from "../../../../components/mission-mutation-controls";
 import { ActionMutationControls } from "../../../../components/action-mutation-controls";
 import { AddActionForm } from "../../../../components/add-action-form";
+import { missionIntelligenceFor } from "../../../../lib/mission-intelligence.mjs";
 
 export default async function MissionDetailPage({
   params,
@@ -23,6 +24,7 @@ export default async function MissionDetailPage({
   const verification = mission.verifications[0];
   const outcome = mission.outcomes[0];
   const readiness = verificationReadiness(mission);
+  const intelligence = missionIntelligenceFor(mission);
 
   return <div className="container">
     <p className="eyebrow"><Link href="/app">Workspace</Link> / Mission detail</p>
@@ -45,6 +47,25 @@ export default async function MissionDetailPage({
             <strong>{mission.progress}%</strong>
           </div>
           <div className="progress"><span style={{ width: `${mission.progress}%` }} /></div>
+        </section>
+
+        <section className="card" aria-labelledby="next-action-heading">
+          <p className="eyebrow">Deterministic guidance</p>
+          <h2 id="next-action-heading">What should I do next?</h2>
+          <p className={`next-step next-step-${intelligence.nextAction.priority === "high" ? "attention" : "info"}`}>
+            <span className="next-step-label">{intelligence.nextAction.nextAction}</span>
+            <span className="next-step-detail">{intelligence.nextAction.reason}</span>
+          </p>
+          {intelligence.nextAction.blockingCondition && <p className="action-hint">Why: {intelligence.nextAction.blockingCondition}</p>}
+          <p className="action-hint">Based on this mission’s saved state: {intelligence.nextAction.currentState}.</p>
+        </section>
+
+        <section className="card" aria-labelledby="plan-health-heading">
+          <p className="eyebrow">Plan health</p>
+          <h2 id="plan-health-heading">{intelligence.planHealth.healthy ? "No issues detected" : "Needs attention"}</h2>
+          {intelligence.planHealth.healthy
+            ? <p className="detail-intent">The saved actions and lifecycle do not show a known planning issue.</p>
+            : <ul className="list">{intelligence.planHealth.findings.map((finding) => <li key={finding.code}>{finding.message}</li>)}</ul>}
         </section>
 
         <section className="card">
