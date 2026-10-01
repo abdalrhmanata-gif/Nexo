@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AiPlanner } from "../../components/ai-planner";
 import { MissionCard } from "../../components/mission-card";
 import { localMockMissionRepository } from "../../lib/local-mock-repository";
 import { isSupabaseConfigured } from "../../lib/supabase/config";
@@ -37,6 +38,8 @@ export default async function WorkspacePage({
       </div>
       <Link className="button" href="/app/missions/new">New mission</Link>
     </div>
+
+    <AiPlanner />
 
     {missions.length > 0 && <section className="attention-panel" aria-labelledby="attention-heading">
       <div>
