@@ -13,17 +13,17 @@ const ERRORS: Record<string, string> = {
 export default async function WorkspacePage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; status?: string }>;
 }) {
   const repository = isSupabaseConfigured() ? await createSupabaseMissionRepository() : localMockMissionRepository;
   const missions = await repository.listMissions();
-  const { error } = await searchParams;
+  const { error, status } = await searchParams;
   const errorMessage = ERRORS[error ?? ""];
 
   const waiting = missions.filter((mission) => mission.status === "WAITING");
   const active = missions.filter((mission) => mission.status === "ACTIVE");
   const completed = missions.filter((mission) => mission.status === "COMPLETED");
-  const unstarted = missions.filter((mission) => mission.actionsTotal === 0);
+  const unstarted = missions.filter((mission) => mission.actionsTotal === 0);\n  const selectedStatus = ["ACTIVE", "WAITING", "COMPLETED"].includes(status ?? "") ? status : "";\n  const visibleMissions = selectedStatus ? missions.filter((mission) => mission.status === selectedStatus) : missions;
 
   return <div className="container">
     {errorMessage && <div className="field-error" role="alert">{errorMessage}</div>}
