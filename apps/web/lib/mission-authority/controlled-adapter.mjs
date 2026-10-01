@@ -126,25 +126,64 @@ export class InMemoryAuthorityStore {
       const suppliedHash = hashInput(request.input);
       if (request.inputHash !== suppliedHash) return this.#deny("INPUT_HASH_MISMATCH");
 
-      const required = [
+      // Validate only the fields needed to identify an idempotency record first.
+      // Revision/version/binding validation must not mask an existing replay.
+      const basicRequired = [
         ["organizationId", request.organizationId],
         ["principalId", request.principalId],
         ["missionId", request.missionId],
         ["actionId", request.actionId],
-        ["authorityRevision", request.authorityRevision],
+        ["leaseId", request.leaseId],
         ["audience", request.audience],
         ["destination", request.destination],
         ["agentId", request.agentId],
         ["idempotencyKey", request.idempotencyKey],
       ];
-      for (const [name, value] of required) {
+      for (const [name, value] of basicRequired) {
         try { assertNonEmpty(value, name); }
         catch (error) { return this.#deny(error.code); }
+      }
+
+      const priorAttempt = [...this.#attempts.values()].find(
+        (attempt) => attempt.idempotencyKey === request.idempotencyKey,
+      );
+      if (priorAttempt) {
+        const sameBinding = priorAttempt.organizationId === request.organizationId
+          && priorAttempt.principalId === request.principalId
+          && priorAttempt.missionId === request.missionId
+          && priorAttempt.missionVersion === request.missionVersion
+          && priorAttempt.actionId === request.actionId
+          && priorAttempt.actionVersion === request.actionVersion
+          && priorAttempt.inputHash === suppliedHash
+          && priorAttempt.authorityRevision === request.authorityRevision
+          && priorAttempt.leaseId === request.leaseId
+          && priorAttempt.policyVersion === request.policyVersion
+          && priorAttempt.audience === request.audience
+          && priorAttempt.destination === request.destination
+          && priorAttempt.agentId === request.agentId;
+        if (!sameBinding) return this.#deny("IDEMPOTENCY_BINDING_MISMATCH");
+        if (priorAttempt.state === ATTEMPT_STATES.UNKNOWN) {
+          return { decision: DECISIONS.RECONCILE_REQUIRED, reasonCode: "UNKNOWN_REQUIRES_RECONCILIATION" };
+        }
+        return this.#deny("IDEMPOTENCY_REPLAY");
+      }
+
+      const revisionRequired = [
+        ["missionVersion", request.missionVersion],
+        ["actionVersion", request.actionVersion],
+        ["authorityRevision", request.authorityRevision],
+        ["policyVersion", request.policyVersion],
+      ];
+      for (const [name, value] of revisionRequired) {
+        if (value === undefined || value === null || (typeof value === "string" && value.trim() === "")) {
+          return this.#deny(`MISSING_${name.toUpperCase()}`);
+        }
       }
 
       if (mission.organizationId !== request.organizationId ||
           mission.principalId !== request.principalId ||
           mission.missionVersion !== request.missionVersion ||
+          mission.actionId !== request.actionId ||
           mission.actionVersion !== request.actionVersion ||
           mission.authorityRevision !== request.authorityRevision ||
           mission.leaseId !== request.leaseId ||
@@ -185,27 +224,6 @@ export class InMemoryAuthorityStore {
           this.#journal.push({ type: "AUTHORIZATION", decision: DECISIONS.REQUIRE_APPROVAL, reason: "APPROVAL_REQUIRED", at: iso(now) });
           return { decision: DECISIONS.REQUIRE_APPROVAL, reasonCode: "APPROVAL_REQUIRED" };
         }
-      }
-
-      const priorAttempt = [...this.#attempts.values()].find(
-        (attempt) => attempt.idempotencyKey === request.idempotencyKey,
-      );
-      if (priorAttempt) {
-        const sameBinding = priorAttempt.organizationId === request.organizationId
-          && priorAttempt.principalId === request.principalId
-          && priorAttempt.missionId === request.missionId
-          && priorAttempt.actionId === request.actionId
-          && priorAttempt.actionVersion === request.actionVersion
-          && priorAttempt.inputHash === suppliedHash
-          && priorAttempt.authorityRevision === request.authorityRevision
-          && priorAttempt.leaseId === request.leaseId
-          && priorAttempt.audience === request.audience
-          && priorAttempt.destination === request.destination;
-        if (!sameBinding) return this.#deny("IDEMPOTENCY_BINDING_MISMATCH");
-        if (priorAttempt.state === ATTEMPT_STATES.UNKNOWN) {
-          return { decision: DECISIONS.RECONCILE_REQUIRED, reasonCode: "UNKNOWN_REQUIRES_RECONCILIATION" };
-        }
-        return this.#deny("IDEMPOTENCY_REPLAY");
       }
 
       if (mission.maxActions !== null && mission.maxActions !== undefined &&
@@ -249,7 +267,6 @@ export class InMemoryAuthorityStore {
       return { decision: DECISIONS.ALLOW, reasonCode: "ALLOW", attemptId: attempt.attemptId };
     });
   }
-
   async markResult(attemptId, result, clock = Date.now) {
     return this.#mutex.run(async () => {
       const attempt = this.#attempts.get(attemptId);
