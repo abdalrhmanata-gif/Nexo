@@ -1,9 +1,11 @@
 # W21 - First-user validation and release readiness
 
 Authority: owner's official W21 scope, 2026-10-01.
-Finalization baseline: `8891cb271ed199cfa6b4615cc07945cd21fcbd72`.
+Blocker-fix baseline: `7342b0371ae5df857f8fb2385ff5bdf736a88f73`.
 Branch: `zavqera/alternative-web-deployment`.
-Status: owner-confirmed product validation PASS; engineering release BLOCKED.
+Status: owner-confirmed product validation PASS; completion integrity fixed and
+live verified. The final blocker-fix mandate accepts the documented reproducible
+owner-run browser setup as an alternative to execution on this host.
 Missing detailed user observations are a limitation, not an engineering blocker.
 The owner's subsequent manager-execution instruction authorizes genuine defect
 fixes and test maintenance independently of repeated participant friction.
@@ -125,7 +127,7 @@ first-user validation, friction, observations, evidence and user sessions.
 | A: current checks | W21_RELEASE_READINESS.md | Local checks, migration hash and public deployment observations with limits |
 | B: owner-confirmed assertions | W18_USER_LEARNING_ROUND.md and W21 finalization instruction | T01-T05 accepted as owner-confirmed PASS |
 | B: owner-confirmed assertions | Owner W20 reconciliation handoff, 2026-10-01 | Earlier live W20 checks passed; separate from current W21 SQL evidence |
-| A: current checks | W21_RELEASE_READINESS.md and supabase/tests/w21_live_rollback.sql | Development schema/ACL audit and rollback-only SQL exercise; direct completion bypass reproduced |
+| A: current checks | W21_RELEASE_READINESS.md and supabase/tests/w21_completion_matrix.sql | Development schema/ACL audit and 19 passing rollback-only SQL checks after the completion fix |
 | C: missing | Evidence template and W18 empty detail sections | Quotes, dates/timings, interventions, independent task completion, return observations and friction frequencies |
 | C: missing | Current round | Current real-auth browser full-loop evidence; detailed aggregate user-learning evidence |
 
@@ -189,16 +191,23 @@ invented participant counts.
 Use [the W21 release checklist](ZAVQERA_W21_RELEASE_READINESS.md). Every check must
 state PASS, owner-confirmed, BLOCKED or not applicable with evidence. Local unit
 or source-contract tests cannot certify live SQL authorization or human understanding.
-W21 release PASS requires the documented product loop and required release checks
-to be evidenced; documentation completion alone does not release the product.
+W21 release PASS requires the product loop and release checks to be evidenced.
+Under the latest owner's explicit Phase 11 gate, the authenticated-browser item
+may instead be satisfied by reproducible isolated owner-run setup, with all test
+code ready and no hidden production dependency. It must remain labelled
+unexecuted, never an E2E PASS. Historical replay differences may remain documented
+if they do not affect current Development correctness.
 
 ## 11. Rollback rule
 
-Finalization contains focused guidance corrections and a test-only harness.
+Finalization contains focused guidance corrections, a test-only harness and the
+independently applied `20261001091146` completion-integrity migration.
 If a fix regresses, stop release, revert its focused commit on this branch and
 revalidate the prior known-good application. Correct documentation without
-rewriting history. SQL checks use exception rollback; no application schema
-or migration history has been changed by finalization.
+rewriting history. SQL fixtures use exception rollback. The new migration was
+applied atomically and recorded as one new history entry; existing history,
+including W20, was not rewritten. Do not revert the guard to the vulnerable
+definition to recover a UI regression. Prefer a reviewed forward correction.
 Never roll back W20 by reapplying SQL; any database rollback requires its own
 review, target verification and data-preserving plan.
 
