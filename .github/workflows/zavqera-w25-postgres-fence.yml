@@ -1,0 +1,53 @@
+name: ZAVQERA W25 Isolated PostgreSQL Atomic Fence
+
+on:
+  push:
+    branches:
+      - zavqera/alternative-web-deployment
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  postgres-fence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: zavqera_w25
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d zavqera_w25"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify PostgreSQL readiness
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 30); do
+            if pg_isready -h 127.0.0.1 -p 5432 -U postgres -d zavqera_w25; then
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1
+
+      - name: Run two-session atomic fence proof
+        env:
+          PGPASSWORD: postgres
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/zavqera_w25
+        run: |
+          set -euo pipefail
+          chmod +x tool/w25_postgres_atomic_fence.sh
+          ./tool/w25_postgres_atomic_fence.sh
