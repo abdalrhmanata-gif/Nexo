@@ -60,17 +60,14 @@ begin
       if sqlerrm <> 'ALL_ACTIONS_MUST_BE_COMPLETED' then raise; end if;
     end;
     results := results || '["PASS: completed + cancelled + pending rejected"]';
-    -- Deliberately roll back this bypass reproduction independently of W20 tests.
+    -- Regression for the direct-completion bypass reproduced before the W21 fix.
     begin
-      select * into mr from public.transition_mission(m,'COMPLETED',mr.version);
-      if mr.status='COMPLETED' and not exists(select 1 from public.mission_outcomes where mission_id=m) then
-        results := results || '["FAIL: direct transition completes mission with pending work and no outcome"]';
-      else
-        raise exception 'TEST_FAILED: unexpected direct-transition result';
-      end if;
-      raise exception using errcode='ZX021',message='Rollback direct-transition reproduction';
-    exception when sqlstate 'ZX021' then null;
+      perform public.transition_mission(m,'COMPLETED',mr.version);
+      raise exception 'TEST_FAILED: direct completion bypass';
+    exception when sqlstate '22023' then
+      if sqlerrm <> 'ALL_ACTIONS_MUST_BE_COMPLETED' then raise; end if;
     end;
+    results := results || '["PASS: direct completion with pending work rejected"]';
     select * into mr from public.missions where id=m;
     select * into mr from public.transition_mission(m,'PAUSED',mr.version);
     begin
