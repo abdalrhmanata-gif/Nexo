@@ -67,7 +67,7 @@ wait "${p1}"; s1=$?
 wait "${p2}"; s2=$?
 set -e
 
-successes=$(( (s1 == 0 ? 1 : 0) + (s2 == 0 ? 1 : 0) ))
+successes=0\n(( s1 == 0 )) && successes=$((successes + 1))\n(( s2 == 0 )) && successes=$((successes + 1))
 if [[ "${successes}" -ne 1 ]]; then
   echo "ASSERTION FAILED: expected exactly one budget reservation winner; statuses=${s1},${s2}"
   cat "${tmpdir}/budget-a.log"
@@ -91,7 +91,7 @@ wait "${p3}"; s3=$?
 wait "${p4}"; s4=$?
 set -e
 
-successes=$(( (s3 == 0 ? 1 : 0) + (s4 == 0 ? 1 : 0) ))
+successes=0\n(( s3 == 0 )) && successes=$((successes + 1))\n(( s4 == 0 )) && successes=$((successes + 1))
 if [[ "${successes}" -ne 1 ]]; then
   echo "ASSERTION FAILED: expected exactly one idempotency winner; statuses=${s3},${s4}"
   cat "${tmpdir}/idem-a.log"
