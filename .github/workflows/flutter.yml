@@ -31,6 +31,29 @@ jobs:
       - name: Verify ZAVQERA MVP
         run: ./tool/verify_project.sh
 
+      - name: Setup Node for web validation
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install web dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Run controlled-adapter tests
+        working-directory: apps/web
+        run: node --test test/mission-authority-controlled-adapter.test.mjs
+
+      - name: Run web tests
+        working-directory: apps/web
+        run: npm test
+
+      - name: Typecheck web app
+        working-directory: apps/web
+        run: npm run typecheck
+
       - name: Upload diagnostic bundle on failure
         if: failure()
         uses: actions/upload-artifact@v4
