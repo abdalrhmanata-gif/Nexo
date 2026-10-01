@@ -1,5 +1,4 @@
 name: ZAVQERA W21 Isolated Browser E2E
-# Disposable stack startup is separated from migration application; see e2e/harness.mjs.
 
 on:
   workflow_dispatch:
