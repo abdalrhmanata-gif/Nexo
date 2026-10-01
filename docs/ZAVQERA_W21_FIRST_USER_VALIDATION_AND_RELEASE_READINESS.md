@@ -1,10 +1,12 @@
 # W21 - First-user validation and release readiness
 
 Authority: owner's official W21 scope, 2026-10-01.
-Baseline: `df77804c828364c3987d98832641b203286b1aec`.
+Finalization baseline: `8891cb271ed199cfa6b4615cc07945cd21fcbd72`.
 Branch: `zavqera/alternative-web-deployment`.
-Status: specification and evidence audit complete; validation/release gate BLOCKED
-by missing detailed observations and current authenticated loop evidence.
+Status: owner-confirmed product validation PASS; engineering release BLOCKED.
+Missing detailed user observations are a limitation, not an engineering blocker.
+The owner's subsequent manager-execution instruction authorizes genuine defect
+fixes and test maintenance independently of repeated participant friction.
 
 ## 1. Objective
 
@@ -32,8 +34,8 @@ No AI features, autonomous execution, notifications, collaboration, payments,
 search, external integrations, new backend architecture or speculative
 expansion. No new capability is justified unless supported by observed repeated
 user evidence. Evidence alone does not authorize expanding this milestone.
-No application, API, database or test changes are currently justified by the
-user-friction audit.
+The user-friction audit does not justify a new feature. Reproducible engineering
+defects and stale automated tests may be repaired under the finalization mandate.
 
 ## 4. Test protocol
 
@@ -104,8 +106,9 @@ cancellation history. Use a reviewed transactional SQL fixture check with
 rollback for database semantics; do not rerun W20 SQL or repair migration history.
 
 Before any authenticated browser fixture creation, establish a cleanup method
-compatible with append-only history. The existing E2E test can leave
-provenance-protected missions and is not a guaranteed-cleanup W21 runner.
+compatible with append-only history. The old E2E test tolerated leftover
+provenance-protected missions. The W21 replacement must fail closed without a
+reviewed isolated cleanup mechanism; its prerequisites are in apps/web/README.md.
 Do not disable history protection or delete real participant records to make
 cleanup pass. Stop if isolated fixture cleanup cannot be guaranteed.
 
@@ -120,10 +123,19 @@ first-user validation, friction, observations, evidence and user sessions.
 | A: inspected artifacts/current checks | W18_USER_LEARNING_ROUND.md | Explicitly records missing session telemetry; not proof of individual behaviors |
 | A: inspected artifacts/current checks | W19_PRODUCT_AUDIT.md and FIRST_USER_VALIDATION_FIXES.md | Historical engineering findings, not repeated participant friction |
 | A: current checks | W21_RELEASE_READINESS.md | Local checks, migration hash and public deployment observations with limits |
-| B: owner-confirmed assertions | W18_USER_LEARNING_ROUND.md | T01-T05: owner-confirmed PASS only |
-| B: owner-confirmed assertions | Owner W20 reconciliation handoff, 2026-10-01 | Live W20 guards/behavior passed and fixtures rolled back; not rerun during W21 |
+| B: owner-confirmed assertions | W18_USER_LEARNING_ROUND.md and W21 finalization instruction | T01-T05 accepted as owner-confirmed PASS |
+| B: owner-confirmed assertions | Owner W20 reconciliation handoff, 2026-10-01 | Earlier live W20 checks passed; separate from current W21 SQL evidence |
+| A: current checks | W21_RELEASE_READINESS.md and supabase/tests/w21_live_rollback.sql | Development schema/ACL audit and rollback-only SQL exercise; direct completion bypass reproduced |
 | C: missing | Evidence template and W18 empty detail sections | Quotes, dates/timings, interventions, independent task completion, return observations and friction frequencies |
-| C: missing | Current round | Current authenticated full-loop evidence and completed aggregate learning decision |
+| C: missing | Current round | Current real-auth browser full-loop evidence; detailed aggregate user-learning evidence |
+
+| Session | Owner decision and evidence limitation |
+|---|---|
+| T01 | Owner-confirmed PASS; detailed session observations were not recorded. |
+| T02 | Owner-confirmed PASS; detailed session observations were not recorded. |
+| T03 | Owner-confirmed PASS; detailed session observations were not recorded. |
+| T04 | Owner-confirmed PASS; detailed session observations were not recorded. |
+| T05 | Owner-confirmed PASS; detailed session observations were not recorded. |
 
 Do not invent quotes, user behavior, timing, frequency, conversion, retention,
 willingness to pay or missing test outputs. A blank register means unknown,
@@ -137,7 +149,8 @@ Waiting/follow-up explanation; attention recognized after return; progress
 understood; outcome recorded unaided; at least half describe follow-through
 rather than only a task list. Record actual denominators and missing values.
 Voluntary second-mission use and reasons to return are signals, not inferred
-retention or commercial demand.
+retention or commercial demand. These remain the protocol for future rounds;
+do not retrospectively infer that each metric was measured in T01-T05.
 
 ## 7. Failure criteria
 
@@ -145,7 +158,8 @@ Apply source plan section 8: inability to create without example steps,
 repeated uncertainty after saving, Waiting mistaken for completion/deletion,
 missed follow-up, misunderstood progress, lost context, generic-todo framing,
 no desire to return, or requests without use of the existing loop.
-Missing evidence blocks validation; it is not a demonstrated product failure.
+Missing detailed observations are not a demonstrated product failure and no
+longer block engineering execution under the owner's explicit PASS decision.
 
 ## 8. Friction register
 
@@ -164,11 +178,11 @@ Follow plan section 10: Continue, Change/narrow, or Hold scope. Only select a
 product fix from the highest-frequency High-severity repeated evidence; use one
 minimal response and a focused follow-up validation. Do not batch unrelated fixes.
 
-Current decision: **Hold scope; no evidence-backed feature change required.**
-Evidence audit is complete; real-user validation is not independently complete.
-If a documented completed round finds no repeated High-severity friction, record
-"Validation complete / no evidence-backed feature change required." Do not apply
-that label to the current missing-observation state.
+Current product decision: **Validation complete (owner-confirmed) / no
+evidence-backed feature change required.** This is not independent research
+certainty. No repeated user problem has been established. Reproduced engineering
+defects are tracked separately in the release checklist; they do not acquire
+invented participant counts.
 
 ## 10. Release-readiness checklist
 
@@ -180,15 +194,17 @@ to be evidenced; documentation completion alone does not release the product.
 
 ## 11. Rollback rule
 
-This W21 change is documentation only: no runtime or schema rollback is needed.
-If documentation is wrong, correct/revert only its focused commit on this branch,
-without rewriting history. If a future evidence-backed product fix regresses,
-stop release, revert that separate fix and revalidate the prior known-good build.
+Finalization contains focused guidance corrections and a test-only harness.
+If a fix regresses, stop release, revert its focused commit on this branch and
+revalidate the prior known-good application. Correct documentation without
+rewriting history. SQL checks use exception rollback; no application schema
+or migration history has been changed by finalization.
 Never roll back W20 by reapplying SQL; any database rollback requires its own
 review, target verification and data-preserving plan.
 
 ## 12. Capability gate
 
 No new capability is justified without observed repeated user evidence.
-No such evidence is currently recorded. W21 adds no capability or product behavior.
+No such evidence is currently recorded. W21 adds no capability; corrections to
+existing guidance and technical regression coverage are not feature expansion.
 Do not begin the next milestone automatically.
