@@ -34,6 +34,18 @@ test("AI plan is draft-only and cannot invoke mission or external-action mutatio
   assert.match(component, /Review each step before adding it to a mission/);
 });
 
+test("AI usage is enforced server-side and not client-controlled", () => {
+  const usage = readFileSync(path.join(root, "lib/ai-usage.ts"), "utf8");
+  assert.match(route, /reserveAiGeneration\(/);
+  assert.match(route, /releaseAiGeneration\(/);
+  assert.match(route, /consumeAiGeneration\(/);
+  assert.match(route, /x-request-id/);
+  assert.match(usage, /reserve_ai_generation/);
+  assert.match(usage, /get_ai_usage/);
+  assert.match(component, /monthly_limit/);
+  assert.match(component, /remaining/);
+});
+
 test("workspace exposes the AI planner to authenticated users", () => {
   assert.match(workspace, /AiPlanner/);
   assert.match(workspace, /<AiPlanner\s*\/>/);
