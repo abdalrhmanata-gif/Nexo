@@ -252,36 +252,30 @@ export function nextStepFor(mission) {
   if (outcomes.length) {
     return { label: "Outcome recorded", detail: "This mission has a verified outcome.", tone: "done" };
   }
-  if (verifications.length) {
-    return { label: "Commit the verified outcome", detail: "Verification is recorded but no outcome has been committed.", tone: "attention" };
+  const blocked = actions.filter((action) => action.status === "BLOCKED");
+  const dated = blocked
+    .filter((action) => action.followUpAt)
+    .sort((a, b) => new Date(a.followUpAt).getTime() - new Date(b.followUpAt).getTime());
+  const due = dated.find((action) => formatFollowUp(action.followUpAt)?.overdue);
+  if (due) {
+    return { label: "Follow-up due", detail: `${due.title} — due ${formatFollowUp(due.followUpAt).relative}`, tone: "attention" };
   }
-
   const running = actions.find((action) => action.status === "RUNNING");
   if (running) {
     return { label: "In progress", detail: running.title, tone: "info" };
   }
 
-  const blocked = actions.filter((action) => action.status === "BLOCKED");
+  const pending = actions.find((action) => action.status === "PENDING");
+  if (pending) {
+    return { label: "Start next action", detail: pending.title, tone: "info" };
+  }
+
   if (blocked.length) {
-    // An overdue follow-up is the most actionable thing on the mission, so it
-    // outranks other waiting work.
-    const dated = blocked
-      .filter((action) => action.followUpAt)
-      .sort((a, b) => new Date(a.followUpAt).getTime() - new Date(b.followUpAt).getTime());
-    const due = dated.find((action) => formatFollowUp(action.followUpAt)?.overdue);
-    if (due) {
-      return { label: "Follow-up due", detail: `${due.title} — due ${formatFollowUp(due.followUpAt).relative}`, tone: "attention" };
-    }
     const next = dated[0];
     if (next) {
       return { label: "Waiting", detail: `${next.title} — check back ${formatFollowUp(next.followUpAt).relative}`, tone: "info" };
     }
     return { label: "Waiting on you", detail: blocked[0].title, tone: "attention" };
-  }
-
-  const pending = actions.find((action) => action.status === "PENDING");
-  if (pending) {
-    return { label: "Start next action", detail: pending.title, tone: "info" };
   }
 
   if (!actions.length) {
@@ -294,6 +288,9 @@ export function nextStepFor(mission) {
       detail: "Every action is resolved. Move this mission to checking the evidence.",
       tone: "attention",
     };
+  }
+  if (verifications.some((verification) => verification.status === "VERIFIED")) {
+    return { label: "Commit the verified outcome", detail: "Passing verification is recorded but no outcome has been committed.", tone: "attention" };
   }
   return { label: "Record verification", detail: "Every action is resolved. Record the evidence that proves the outcome.", tone: "attention" };
 }

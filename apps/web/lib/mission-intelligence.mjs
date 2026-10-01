@@ -1,4 +1,4 @@
-import { formatFollowUp, missionStatusLabel, nextStepFor } from "./mission-content.mjs";
+import { formatFollowUp, isTerminalMissionStatus, missionStatusLabel, nextStepFor } from "./mission-content.mjs";
 
 const OPEN_ACTION_STATUSES = new Set(["PENDING", "RUNNING", "BLOCKED"]);
 
@@ -9,7 +9,6 @@ const OPEN_ACTION_STATUSES = new Set(["PENDING", "RUNNING", "BLOCKED"]);
  */
 export function nextActionFor(mission, now = new Date()) {
   const actions = Array.isArray(mission.actions) ? mission.actions : [];
-  const open = actions.filter((action) => OPEN_ACTION_STATUSES.has(action.status));
   const overdue = actions
     .filter((action) => action.status === "BLOCKED" && formatFollowUp(action.followUpAt, now)?.overdue)
     .sort((a, b) => new Date(a.followUpAt).getTime() - new Date(b.followUpAt).getTime())[0];
@@ -18,11 +17,16 @@ export function nextActionFor(mission, now = new Date()) {
   const blocked = actions.find((action) => action.status === "BLOCKED");
   const base = { currentState: missionStatusLabel(mission.lifecycleStatus), context: mission.name ?? "" };
 
+  if (isTerminalMissionStatus(mission.lifecycleStatus)) {
+    const summary = nextStepFor(mission);
+    return { ...base, nextAction: summary.label, reason: summary.detail, blockingCondition: null, priority: "normal", actionId: null };
+  }
+
   if (overdue) {
     return {
       ...base,
       nextAction: `Follow up: ${overdue.title}`,
-      reason: `The action has been waiting since its follow-up date (${formatFollowUp(overdue.followUpAt, now).relative}).`,
+      reason: `The action is Waiting and its follow-up was due ${formatFollowUp(overdue.followUpAt, now).relative}.`,
       blockingCondition: "An overdue follow-up is unresolved.",
       priority: "high",
       actionId: overdue.id,
@@ -38,17 +42,6 @@ export function nextActionFor(mission, now = new Date()) {
       actionId: running.id,
     };
   }
-  if (blocked) {
-    const followUp = formatFollowUp(blocked.followUpAt, now);
-    return {
-      ...base,
-      nextAction: `Resolve waiting: ${blocked.title}`,
-      reason: followUp ? `The action is waiting until ${followUp.absolute}.` : "The action is waiting for something outside this action.",
-      blockingCondition: "A waiting action remains unresolved.",
-      priority: "high",
-      actionId: blocked.id,
-    };
-  }
   if (pending) {
     return {
       ...base,
@@ -57,6 +50,17 @@ export function nextActionFor(mission, now = new Date()) {
       blockingCondition: null,
       priority: "normal",
       actionId: pending.id,
+    };
+  }
+  if (blocked) {
+    const followUp = formatFollowUp(blocked.followUpAt, now);
+    return {
+      ...base,
+      nextAction: `Resolve waiting: ${blocked.title}`,
+      reason: followUp ? `The action is Waiting; its next follow-up is ${followUp.absolute}.` : "The action is Waiting and no follow-up date is recorded.",
+      blockingCondition: "A waiting action remains unresolved.",
+      priority: followUp ? "normal" : "high",
+      actionId: blocked.id,
     };
   }
   if (!actions.length) {
@@ -69,17 +73,18 @@ export function nextActionFor(mission, now = new Date()) {
       actionId: null,
     };
   }
-  if (mission.lifecycleStatus === "VERIFYING" && !mission.verifications?.length) {
+  const verified = mission.verifications?.some((verification) => verification.status === "VERIFIED");
+  if (mission.lifecycleStatus === "VERIFYING" && !verified) {
     return {
       ...base,
       nextAction: "Record verification",
       reason: "All required actions are resolved and the mission is checking evidence.",
-      blockingCondition: "Verification has not been recorded.",
+      blockingCondition: "A passing verification has not been recorded.",
       priority: "high",
       actionId: null,
     };
   }
-  if (mission.verifications?.length && !mission.outcomes?.length) {
+  if (mission.lifecycleStatus === "VERIFYING" && verified && !mission.outcomes?.length) {
     return {
       ...base,
       nextAction: "Record outcome",
@@ -107,6 +112,13 @@ export function nextActionFor(mission, now = new Date()) {
 export function planHealthFor(mission, now = new Date()) {
   const actions = Array.isArray(mission.actions) ? mission.actions : [];
   const findings = [];
+  const unresolved = actions.filter((action) => OPEN_ACTION_STATUSES.has(action.status));
+  if (isTerminalMissionStatus(mission.lifecycleStatus)) {
+    if (mission.lifecycleStatus === "COMPLETED" && (unresolved.length || !mission.outcomes?.some((outcome) => outcome.status === "COMPLETED"))) {
+      findings.push({ code: "CONTRADICTORY_STATE", severity: "high", message: "The mission is marked complete but still has required work or lacks a completed outcome." });
+    }
+    return { healthy: findings.length === 0, findings };
+  }
   if (!actions.length) {
     findings.push({ code: "NO_ACTIONS", severity: "high", message: "No actions have been added to this mission." });
   }
@@ -114,21 +126,18 @@ export function planHealthFor(mission, now = new Date()) {
   if (overdue.length) {
     findings.push({ code: "OVERDUE_FOLLOW_UP", severity: "high", message: `${overdue.length} waiting action${overdue.length === 1 ? " is" : "s are"} past its follow-up date.` });
   }
-  const unresolved = actions.filter((action) => OPEN_ACTION_STATUSES.has(action.status));
   if (unresolved.length && unresolved.every((action) => action.status === "BLOCKED")) {
     findings.push({ code: "ALL_REMAINING_BLOCKED", severity: "high", message: "All remaining actions are waiting." });
   }
   if (actions.length && !unresolved.length && !["VERIFYING", "COMPLETED", "FAILED", "CANCELLED"].includes(mission.lifecycleStatus)) {
     findings.push({ code: "APPEARS_COMPLETE", severity: "info", message: "All actions are completed or cancelled; the mission is ready for evidence review." });
   }
-  if (mission.lifecycleStatus === "VERIFYING" && !mission.verifications?.length) {
-    findings.push({ code: "VERIFICATION_MISSING", severity: "high", message: "The mission is checking evidence but no verification is recorded." });
+  const verified = mission.verifications?.some((verification) => verification.status === "VERIFIED");
+  if (mission.lifecycleStatus === "VERIFYING" && !verified) {
+    findings.push({ code: "VERIFICATION_MISSING", severity: "high", message: "The mission is checking evidence but no passing verification is recorded." });
   }
-  if (mission.verifications?.length && !mission.outcomes?.length) {
+  if (verified && !mission.outcomes?.length) {
     findings.push({ code: "OUTCOME_MISSING", severity: "high", message: "Verification exists but no outcome is recorded." });
-  }
-  if (mission.lifecycleStatus === "COMPLETED" && !mission.outcomes?.length) {
-    findings.push({ code: "CONTRADICTORY_STATE", severity: "high", message: "The mission is marked complete without a recorded outcome." });
   }
   return { healthy: findings.length === 0, findings };
 }

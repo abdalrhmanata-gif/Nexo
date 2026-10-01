@@ -21,7 +21,7 @@ export default async function MissionDetailPage({
   if (!mission) return <div className="container"><p className="eyebrow">Mission unavailable</p><h1 className="detail-title">We could not find that mission.</h1><p className="detail-intent">It may have been deleted, or it belongs to another workspace.</p><Link className="button" href="/app">Back to workspace</Link></div>;
 
   const next = nextStepFor(mission);
-  const verification = mission.verifications[0];
+  const verification = mission.verifications.find((item) => item.status === "VERIFIED") ?? mission.verifications[0];
   const outcome = mission.outcomes[0];
   const readiness = verificationReadiness(mission);
   const intelligence = missionIntelligenceFor(mission);
@@ -142,7 +142,7 @@ export default async function MissionDetailPage({
         <ul className="list">
           <li><strong>Mission state</strong><br />{missionStatusLabel(mission.lifecycleStatus)}</li>
           <li><strong>Actions</strong><br />{mission.actionsCompleted} complete of {mission.actionsTotal}</li>
-          <li><strong>Verified</strong><br />{verification ? "Yes" : "Not yet"}</li>
+          <li><strong>Verified</strong><br />{verification?.status === "VERIFIED" ? "Yes" : "Not yet"}</li>
           <li><strong>Last updated</strong><br />{mission.updated}</li>
           <li><strong>Owner</strong><br />{mission.owner}</li>
         </ul>

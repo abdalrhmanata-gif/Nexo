@@ -64,8 +64,25 @@ test("the next step reflects real mission state for every branch", () => {
   assert.equal(nextStepFor({ ...base, actions: [{ status: "BLOCKED", title: "Await legal" }, { status: "RUNNING", title: "Write spec" }] }).detail, "Write spec");
   assert.match(nextStepFor({ ...base, actions: [{ status: "COMPLETED", title: "Done" }] }).label, /ready to check/i);
   assert.match(nextStepFor({ ...base, lifecycleStatus: "VERIFYING", actions: [{ status: "COMPLETED", title: "Done" }] }).label, /verification/i);
-  assert.match(nextStepFor({ ...base, verifications: [{ id: "v1" }] }).label, /outcome/i);
+  assert.match(nextStepFor({ ...base, lifecycleStatus: "VERIFYING", actions: [{ status: "COMPLETED", title: "Done" }], verifications: [{ id: "v1", status: "VERIFIED" }] }).label, /outcome/i);
   assert.equal(nextStepFor({ ...base, verifications: [{ id: "v1" }], outcomes: [{ id: "o1" }] }).tone, "done");
+});
+
+test("workspace guidance distinguishes a failed verification from a passing one", () => {
+  const base = { lifecycleStatus: "VERIFYING", actions: [{ status: "COMPLETED", title: "Done" }], outcomes: [] };
+  assert.equal(nextStepFor({ ...base, verifications: [{ status: "FAILED" }] }).label, "Record verification");
+  assert.match(nextStepFor({ ...base, verifications: [{ status: "VERIFIED" }] }).label, /outcome/i);
+  assert.equal(nextStepFor({ ...base, verifications: [{ status: "VERIFIED" }], actions: [{ status: "PENDING", title: "Required" }] }).label, "Start next action");
+});
+
+test("workspace guidance selects available work before a future follow-up", () => {
+  const future = new Date(Date.now() + 86400000 * 2).toISOString();
+  const result = nextStepFor({ lifecycleStatus: "RUNNING", actions: [
+    { status: "BLOCKED", title: "Later", followUpAt: future },
+    { status: "PENDING", title: "Now" },
+  ] });
+  assert.equal(result.label, "Start next action");
+  assert.equal(result.detail, "Now");
 });
 
 test("activity summaries never leak a raw payload dump", () => {

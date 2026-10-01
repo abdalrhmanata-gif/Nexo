@@ -142,7 +142,7 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
     // Verification and outcome are only accepted while the mission is being
     // checked. Without these the raw database label reached the user.
     MISSION_NOT_VERIFYING: "Move this mission to checking the evidence before recording verification or an outcome.",
-    ALL_ACTIONS_MUST_BE_COMPLETED: "Every action must be complete before this mission can be recorded as complete.",
+    ALL_ACTIONS_MUST_BE_COMPLETED: "Every required action must be complete or intentionally cancelled before this mission can be recorded as complete.",
     VERIFICATION_NOT_VERIFIED: "This outcome needs a verification that passed.",
     INVALID_VERIFICATION_STATUS: "A verification must record either a pass or a failure.",
     INVALID_VERIFICATION_PAYLOAD: "Describe both what you checked and the evidence you saw.",

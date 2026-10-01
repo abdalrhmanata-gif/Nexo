@@ -45,7 +45,8 @@ test("running work is reported as the next action without inventing a new task",
 test("future waiting follow-up is distinct from overdue waiting follow-up", () => {
   const future = nextActionFor(mission({ actions: [action("Hear back from office", "BLOCKED", "2026-10-03T09:00:00.000Z")] }), now);
   assert.equal(future.nextAction, "Resolve waiting: Hear back from office");
-  assert.match(future.reason, /waiting until/i);
+  assert.match(future.reason, /next follow-up/i);
+  assert.doesNotMatch(future.reason, /waiting since|waiting until/i);
 
   const overdue = nextActionFor(mission({ actions: [action("Hear back from office", "BLOCKED", "2026-09-28T09:00:00.000Z")] }), now);
   assert.equal(overdue.nextAction, "Follow up: Hear back from office");
@@ -76,10 +77,10 @@ test("verification and outcome readiness are derived from persisted lifecycle da
   const outcome = nextActionFor(mission({
     lifecycleStatus: "VERIFYING",
     actions: [action("Submit form", "COMPLETED")],
-    verifications: [{ id: "v1" }],
+    verifications: [{ id: "v1", status: "VERIFIED" }],
   }), now);
   assert.equal(outcome.nextAction, "Record outcome");
-  assert.ok(planHealthFor({ ...mission({ lifecycleStatus: "VERIFYING", actions: [action("Submit form", "COMPLETED")], verifications: [{ id: "v1" }] }), outcomes: [] }, now)
+  assert.ok(planHealthFor({ ...mission({ lifecycleStatus: "VERIFYING", actions: [action("Submit form", "COMPLETED")], verifications: [{ id: "v1", status: "VERIFIED" }] }), outcomes: [] }, now)
     .findings.some((finding) => finding.code === "OUTCOME_MISSING"));
 });
 
@@ -89,6 +90,55 @@ test("completed, failed and cancelled missions do not invent further work", () =
     assert.equal(result.blockingCondition, null);
     assert.equal(result.priority, "normal");
   }
+});
+
+test("closed missions never recommend open actions or adding work", () => {
+  for (const lifecycleStatus of ["COMPLETED", "FAILED", "CANCELLED"]) {
+    for (const actions of [[], [action("Open", "PENDING")], [action("Started", "RUNNING")], [action("Late", "BLOCKED", "2026-09-01T09:00:00Z")]]) {
+      const result = nextActionFor(mission({ lifecycleStatus, actions }), now);
+      assert.equal(result.actionId, null);
+      assert.equal(result.priority, "normal");
+      assert.doesNotMatch(result.nextAction, /Start:|Continue:|Follow up:|Add an action/);
+      const codes = planHealthFor(mission({ lifecycleStatus, actions }), now).findings.map(f => f.code);
+      assert.deepEqual(codes, lifecycleStatus === "COMPLETED" ? ["CONTRADICTORY_STATE"] : []);
+    }
+  }
+});
+
+test("completed outcome and cancelled work do not create a false health warning", () => {
+  const m = mission({ lifecycleStatus: "COMPLETED", actions: [action("Required", "COMPLETED"), action("Removed", "CANCELLED")], outcomes: [{ status: "COMPLETED" }] });
+  assert.equal(planHealthFor(m, now).healthy, true);
+  assert.equal(nextActionFor(m, now).nextAction, "Complete");
+});
+
+test("failed verification never permits outcome guidance", () => {
+  const m = mission({ lifecycleStatus: "VERIFYING", actions: [action("Done", "COMPLETED")], verifications: [{ id: "v1", status: "FAILED" }] });
+  assert.equal(nextActionFor(m, now).nextAction, "Record verification");
+  assert.deepEqual(planHealthFor(m, now).findings.map(f => f.code), ["VERIFICATION_MISSING"]);
+});
+
+test("a passing verification never hides unresolved required work or an invalid lifecycle", () => {
+  const verifications = [{ id: "v1", status: "VERIFIED" }];
+  assert.equal(nextActionFor(mission({ lifecycleStatus: "VERIFYING", verifications, actions: [action("Required", "PENDING")] }), now).nextAction, "Start: Required");
+  assert.equal(nextActionFor(mission({ lifecycleStatus: "PAUSED", verifications, actions: [action("Done", "COMPLETED")] }), now).nextAction, "Ready to check");
+});
+
+test("pending work is actionable before future waiting work", () => {
+  const m = mission({ actions: [action("Later", "BLOCKED", "2026-10-03T09:00:00Z"), action("Now", "PENDING")] });
+  assert.equal(nextActionFor(m, now).actionId, "Now");
+});
+
+test("overdue follow-up precedes running work without fabricating a wait duration", () => {
+  const m = mission({ actions: [action("Working", "RUNNING"), action("Late", "BLOCKED", "2026-09-28T09:00:00Z")] });
+  const result = nextActionFor(m, now);
+  assert.equal(result.actionId, "Late");
+  assert.match(result.reason, /follow-up was due/);
+  assert.doesNotMatch(result.reason, /since|waiting for .*days/i);
+});
+
+test("the detail aside never labels failed verification as verified", () => {
+  const page = readFileSync(join(webRoot, "app", "app", "missions", "[id]", "page.tsx"), "utf8");
+  assert.match(page, /verification\?\.status === "VERIFIED" \? "Yes" : "Not yet"/);
 });
 
 test("the completion migration excludes cancelled actions but keeps the authoritative guards", () => {
