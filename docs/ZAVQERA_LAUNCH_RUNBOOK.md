@@ -2,6 +2,8 @@
 
 Scope: operations for the tested MVP, not public-launch authorization.
 Read [final launch gate](ZAVQERA_FINAL_LAUNCH_GATE.md) before inviting users.
+Overall public production status is **OWNER DECISION REQUIRED**. Use the
+[owner decision sheet](ZAVQERA_OWNER_LAUNCH_DECISIONS.md); no option is selected.
 Only Development `mrwmmbytcymqgwvcoywd` is authorized for inspection here.
 No main changes, Supabase Main access, paid resources, DNS, credential rotation
 or deployment promotion without explicit owner approval.
@@ -165,6 +167,9 @@ Do not roll back W21's completion guard or reapply W20.
 
 ## Database safety and backup/recovery
 
+Compare the two unselected strategies, proposed recovery targets and restore
+requirements in [backup/recovery](ZAVQERA_PRODUCTION_BACKUP_AND_RECOVERY.md).
+
 Current Development has W20 `20261001081755` and W21 `20261001091146`.
 Verify exact target before each read/write. Existing history mismatch prevents
 trustworthy empty replay: no broad `db push`, no invented old migrations.
@@ -185,6 +190,10 @@ Do not accept public records until backup and restoration evidence meets the
 owner's approved objectives.
 
 ## Domain and owner-only changes
+
+Use the [domain launch plan](ZAVQERA_DOMAIN_LAUNCH_PLAN.md) for hostname,
+DNS/TLS and auth checks. The [operations procedure](ZAVQERA_PRODUCTION_OPERATIONS.md)
+and [E2E checklist](ZAVQERA_E2E_OWNER_RUN_CHECKLIST.md) provide operator handoffs.
 
 Custom domain: **NOT CONFIGURED**. A Netlify branch URL is usable for an approved
 controlled beta, not proof of branded production readiness.

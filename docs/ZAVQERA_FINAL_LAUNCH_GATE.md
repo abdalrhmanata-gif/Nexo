@@ -1,18 +1,22 @@
 # ZAVQERA final launch gate
 
 Audit: 2026-10-01. Repository baseline:
-`6a32654d0ab72c730b1221c7b0b45e8b55f31d79`.
+`3f5fea95b9c17ede66e591b37a9dc64988b5b0de`.
 Branch: `zavqera/alternative-web-deployment`.
 
-**TECHNICAL MVP STATUS: PASS**, with the W21 owner-run E2E alternative retained.
-**PUBLIC PRODUCTION LAUNCH STATUS: BLOCKED.**
+**TECHNICAL MVP: GREEN / PASS**, with the W21 owner-run E2E alternative retained.
+**PUBLIC PRODUCTION: OWNER DECISION REQUIRED; NOT AUTHORIZED.**
 **PRODUCTION BACKEND STATUS: OWNER DECISION REQUIRED before real public users.**
 
 Public launch is not authorized by green code. The primary site returns 404,
 production deploys are reported paused by the provider, and recoverable user-data
 backups are not established. The tested branch is a separate working endpoint.
 No production promotion, database switch, billing change or domain operation was
-performed. See [launch runbook](ZAVQERA_LAUNCH_RUNBOOK.md).
+performed. Per the final pre-launch instruction, these are owner-controlled
+operational prerequisites, not software defects. This classification replaces
+the earlier overall BLOCKED label without claiming that any prerequisite was
+resolved. See [launch runbook](ZAVQERA_LAUNCH_RUNBOOK.md) and the
+[five unselected owner decisions](ZAVQERA_OWNER_LAUNCH_DECISIONS.md).
 
 ## Classification
 
@@ -27,11 +31,11 @@ RED = BLOCKED for public production, not necessarily a code defect.
 | DATABASE | GREEN / READY for Development | W20/W21 present; guards, RLS, grants and history rechecked read-only |
 | AUTH | YELLOW / OWNER DECISION REQUIRED | Source checks and anonymous redirects pass; real-auth browser E2E unexecuted |
 | SECURITY | YELLOW / OWNER DECISION REQUIRED | No source-review finding; 0 advisor errors, 6 warnings including disabled leaked-password protection |
-| DEPLOYMENT | RED / BLOCKED for primary production URL | Tested branch ready; primary old main deployment returns 404; production deployment pause banner |
+| DEPLOYMENT | YELLOW / OWNER DECISION REQUIRED | Primary URL currently unusable (404); tested branch ready; production publishing reported paused |
 | ENVIRONMENT | YELLOW / OWNER DECISION REQUIRED | Netlify production context points to Development; dedicated production backend preferable |
 | DOMAIN | YELLOW / OWNER DECISION REQUIRED | Custom domain NOT CONFIGURED; working branch subdomain can support an explicitly approved controlled beta |
 | MONITORING | YELLOW / OWNER DECISION REQUIRED | Provider dashboards/commit checks exist; no established uptime/error alerting or staffed incident contact |
-| BACKUP/RECOVERY | RED / BLOCKED for real user data | Free plan reports no project backups; no independent backup or restore drill verified |
+| BACKUP/RECOVERY | YELLOW / OWNER DECISION REQUIRED | Recovery not established; choose managed backups or encrypted off-site dumps and prove restore |
 | ROLLBACK | YELLOW / OWNER DECISION REQUIRED | Procedure documented, existing branch artifact ready; production execution/permissions not rehearsed |
 | USER EVIDENCE | GREEN / READY, owner-confirmed | T01-T05 PASS; missing detail is a limitation, not a blocker |
 
@@ -42,12 +46,12 @@ Remote main was read-only checked at
 `89ff12f23fba21eee11aad593275ec23477ec6ec`; it differs from local main and was
 not fetched into, merged into, or pushed from this worktree.
 Initial tracked tree was clean; pre-existing `.agents/` and `skills-lock.json`
-remain untouched. Only the two launch documents are intended changes.
+remain untouched. This follow-up changes documentation/runbooks only.
 The build-generated next-env comment was removed; no runtime correction needed.
 
 Compared all changed paths between current baseline and runtime
 `a89d0a1b1516fffc53c981c594202da602b33808`: only README, tests, SQL test scripts
-and W21 documents differ. App routes, components, libraries, middleware,
+and launch/W21 documents differ. App routes, components, libraries, middleware,
 dependency manifests/lockfile and Netlify build configuration do not.
 **The deployed branch runtime remains functionally identical to current source.**
 No unnecessary deployment was triggered; a documentation push may still invoke
@@ -98,6 +102,21 @@ Production URL setting was compared privately to the expected Development host:
 `/api/status` independently reports configured URL/key, server runtime and
 Development target. Primary `/api/status` is unavailable (404), so its runtime
 backend is not inferred from the setting.
+
+All URL contexts rechecked on 2026-10-01; output retained target labels only:
+
+| Context | Configured backend |
+|---|---|
+| Production | ZAVQERA Development |
+| Branch deploys | ZAVQERA Development |
+| Deploy Previews | ZAVQERA Development |
+| Local development (Netlify CLI) | ZAVQERA Development |
+| Preview Server & Agent Runners | Empty URL setting |
+
+The publishable-key setting is shared across contexts; its value was not read.
+This context audit does not claim every preview URL was executed. In particular,
+Netlify local configuration is not safe E2E configuration: the harness must
+provide its own loopback URL/key and refuses hosted targets.
 
 Production is a Netlify deployment context, not proof of a separate production
 database. A dedicated backend is preferable for real user records, operational
@@ -150,11 +169,13 @@ a backup of user data. Choose and prove a recovery policy before public data int
 
 ## Auth/security and anonymous smoke
 
-Source-only security review of auth signup/signin/signout, callbacks/session
+The preceding source-only security review of auth signup/signin/signout, callbacks/session
 middleware, API boundaries and W21 guard found no high-confidence exploitable
 defect. No secret values inspected. Local regression covers PKCE/token-hash
 callbacks, safe redirects, authoritative identity/ownership and server mutation
-boundaries. No privileged browser credentials or hardcoded access tokens were
+boundaries. Runtime source is unchanged since that review; this follow-up reran
+the source-contract/regression tests, rather than claiming another penetration
+test. No privileged browser credentials or hardcoded access tokens were
 found within the reviewed scope; publishable configuration is permitted.
 
 | # | Severity | File | Lines | Vulnerability | Confidence |
@@ -170,19 +191,20 @@ session refresh, persistence or cross-user behavior in a browser.
 
 ## Owner decisions before public launch
 
-1. Select backend strategy: explicitly approved limited Development beta versus
-   separately authorized dedicated production backend. Include data retention,
-   backup storage/retention, recovery objectives and restore rehearsal.
-2. Resolve Netlify production capacity (wait or authorized plan change), then
-   explicitly authorize publishing tested code to the chosen public URL without
-   modifying protected main. Verify primary routes after that operation.
-3. Select public access/beta restrictions and domain: Netlify URL can serve an
-   approved beta; branded domain/DNS requires ownership and explicit approval.
-4. Assign operational incident contact and backup contact, alert recipients and
-   review cadence; decide leaked-password protection/risk treatment without an
-   implicit billing upgrade.
-5. Schedule owner-run isolated E2E or explicitly accept its unexecuted status
-   for the intended launch stage. Never relabel setup readiness as execution.
+1. Production backend: dedicated Supabase Production, or explicitly accept
+   Development for controlled beta.
+2. Netlify capacity: wait for the new billing cycle, or explicitly upgrade.
+3. Backup strategy: Supabase Pro managed backups, or external encrypted db dumps.
+4. Domain: continue the temporary Netlify URL, or connect a custom domain.
+5. E2E: execute owner-run local Docker tests, or explicitly accept unexecuted E2E.
+
+All five remain UNDECIDED. Contact assignments, capacity/promotion checks,
+restore evidence and limited-beta safeguards are implementation conditions,
+not decisions silently made here. Supporting packages:
+[backup/recovery](ZAVQERA_PRODUCTION_BACKUP_AND_RECOVERY.md),
+[operations](ZAVQERA_PRODUCTION_OPERATIONS.md),
+[domain plan](ZAVQERA_DOMAIN_LAUNCH_PLAN.md) and
+[E2E checklist](ZAVQERA_E2E_OWNER_RUN_CHECKLIST.md).
 
 No paid infrastructure, DNS, auth policy, production deployment or rollback
 was changed. main, Supabase Main and PRs #12/#19/#20 remain untouched.
