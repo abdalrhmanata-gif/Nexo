@@ -150,10 +150,11 @@ test("duplicate idempotency key is rejected before budget is considered", async 
   assert.equal(external.calls().length, 1);
 });
 
-test("idempotency key cannot be rebound to different authority/input/destination", async () => {
-  const { adapter, external } = setup();
+test("idempotency key cannot be rebound after authoritative revision changes", async () => {
+  const { adapter, external, store } = setup();
   await adapter.execute(request());
-  const rebound = await adapter.execute(request({ destination: "https://other.example" }));
+  store.seedAuthority(authority({ authorityRevision: 10, missionVersion: 4 }));
+  const rebound = await adapter.execute(request({ authorityRevision: 10, missionVersion: 4 }));
   assert.equal(rebound.decision, DECISIONS.DENY);
   assert.equal(rebound.reasonCode, "IDEMPOTENCY_BINDING_MISMATCH");
   assert.equal(external.calls().length, 1);
