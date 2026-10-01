@@ -11,6 +11,7 @@ export const OPT_IN_MODE = "disposable-full-loop";
 export const PROJECT_ID_PATTERN = /^zavqera-e2e-[a-z0-9-]{1,40}$/;
 export const MARKER_FILE = "ZAVQERA_E2E_DISPOSABLE";
 export const SCHEMA_DUMP_PATTERN = /^\d{14}_development_schema\.sql$/;
+export const MIGRATION_FILE_PATTERN = /^\d{14}_[a-z0-9_]+\.sql$/;
 export const DEFAULT_BASE_URL = "http://127.0.0.1:3210";
 export const LEDGER_LIMIT = 64;
 export const LEDGER_KINDS = ["user", "mission", "action", "verification", "outcome"];
@@ -162,18 +163,20 @@ export function checkStaticPreconditions(env, { repoRoot, fsApi = { existsSync, 
         reasons.push(`The workdir must contain a ${MARKER_FILE} file whose only content is its project_id. This is the operator's explicit consent that all of its local data may be destroyed.`);
       }
 
-      // The repository migrations cannot rebuild Development (its W5 history
-      // tables were never committed), so the stack must be built from exactly
-      // one operator-supplied schema dump and nothing else.
+      // The disposable stack may be built from one Development dump or from
+      // the repository's ordered migrations. Repository migrations are preferred
+      // because they require no hosted DB credential and are auditable in Git.
       let migrations = [];
       try {
         migrations = fsApi.readdirSync(path.join(resolved, "supabase", "migrations")).filter((name) => name.endsWith(".sql"));
       } catch {
         migrations = [];
       }
-      if (migrations.length !== 1 || !SCHEMA_DUMP_PATTERN.test(migrations[0])) {
+      const validDump = migrations.length === 1 && SCHEMA_DUMP_PATTERN.test(migrations[0]);
+      const validMigrations = migrations.length >= 1 && migrations.every((name) => MIGRATION_FILE_PATTERN.test(name));
+      if (!validDump && !validMigrations) {
         projectId = null;
-        reasons.push("supabase/migrations in the disposable workdir must contain exactly one file, <timestamp>_development_schema.sql, holding the Development schema dump. Do not copy repository migrations there.");
+        reasons.push("supabase/migrations must contain either one Development schema dump or one or more repository-style timestamped SQL migrations.");
       }
       if (fsApi.existsSync(path.join(resolved, "supabase", ".temp", "project-ref"))) {
         projectId = null;
@@ -389,6 +392,12 @@ export function startFreshStack(plan, run, env = {}) {
   if (status.status !== 0) throw new Error("`supabase status -o json` failed for the disposable workdir.");
   const verdict = validateStackStatus(status.stdout, env);
   if (!verdict.ok) throw new HarnessBlockedError(verdict.reasons);
+
+  const reset = run("supabase", supabaseArgs(plan, "db", "reset", "--local", "--no-seed"), { timeoutMs: 900_000 });
+  if (reset.status !== 0) {
+    throw new Error("`supabase db reset --local --no-seed` failed while applying the disposable repository migrations.");
+  }
+
   return verdict.target;
 }
 
