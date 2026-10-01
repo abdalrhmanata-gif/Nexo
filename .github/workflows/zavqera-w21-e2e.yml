@@ -91,7 +91,7 @@ jobs:
           path.write_text("\n".join(lines) + "\n", encoding="utf-8")
           PY
 
-          printf '%s\\n' 'zavqera-e2e-local' > "${workdir}/ZAVQERA_E2E_DISPOSABLE"
+          printf '%s\n' 'zavqera-e2e-local' > "${workdir}/ZAVQERA_E2E_DISPOSABLE"
 
           schema_dir="${workdir}/supabase/migrations"
           schema_file="${schema_dir}/$(date -u +%Y%m%d%H%M%S)_development_schema.sql"
@@ -124,11 +124,20 @@ jobs:
           ZAVQERA_E2E_MODE: disposable-full-loop
           ZAVQERA_E2E_SUPABASE_WORKDIR: ${{ runner.temp }}/zavqera-e2e
         run: |
-          set -euo pipefail
+          set -u
           unset NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
           unset SUPABASE_SERVICE_ROLE_KEY SUPABASE_SECRET_KEY SERVICE_ROLE_KEY SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD
           unset ZAVQERA_E2E_USER_A_EMAIL ZAVQERA_E2E_USER_A_PASSWORD ZAVQERA_E2E_USER_B_EMAIL ZAVQERA_E2E_USER_B_PASSWORD
-          npm run test:e2e
+          log="${RUNNER_TEMP}/w21-e2e.log"
+          npm run test:e2e 2>&1 | tee "${log}"
+          status="${PIPESTATUS[0]}"
+          if grep -q '"cleanup"[[:space:]]*:[[:space:]]*"VERIFIED"' "${log}"; then
+            echo "W21 cleanup proof: VERIFIED"
+          else
+            echo "::error::W21 cleanup proof not found in the test output."
+            status=1
+          fi
+          exit "${status}"
 
       - name: Write W21 evidence
         if: always()
