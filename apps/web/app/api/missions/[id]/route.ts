@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseMissionRepository } from "../../../../lib/supabase/mission-repository";
-import { MissionMutationConflictError } from "../../../../lib/mission-repository";
+import { MissionMutationConflictError, MissionMutationRejectedError } from "../../../../lib/mission-repository";
 import type { MissionLifecycleStatus } from "../../../../lib/view-models";
 
 const statuses = new Set<MissionLifecycleStatus>([
@@ -11,6 +11,9 @@ const statuses = new Set<MissionLifecycleStatus>([
 function errorResponse(error: unknown) {
   if (error instanceof MissionMutationConflictError) {
     return NextResponse.json({ error: "Mission changed elsewhere. Refresh and retry.", code: "STALE_VERSION" }, { status: 409 });
+  }
+  if (error instanceof MissionMutationRejectedError) {
+    return NextResponse.json({ error: error.message }, { status: 422 });
   }
   if (error instanceof Error && error.message === "Authentication required.") {
     return NextResponse.json({ error: "Authentication required." }, { status: 401 });
