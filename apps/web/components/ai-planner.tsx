@@ -1,17 +1,38 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 
 type Plan = {
   summary: string;
   steps: { title: string; reason: string }[];
 };
 
+type Usage = {
+  plan: "free" | "plus";
+  monthly_limit: number;
+  generations_used: number;
+  remaining: number;
+};
+
 export function AiPlanner() {
   const [goal, setGoal] = useState("");
   const [plan, setPlan] = useState<Plan | null>(null);
+  const [usage, setUsage] = useState<Usage | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  async function refreshUsage() {
+    try {
+      const response = await fetch("/api/ai/usage", { cache: "no-store" });
+      if (response.ok) setUsage(await response.json() as Usage);
+    } catch {
+      // Usage status is informative; planner requests remain authoritative.
+    }
+  }
+
+  useEffect(() => {
+    void refreshUsage();
+  }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -21,15 +42,20 @@ export function AiPlanner() {
     try {
       const response = await fetch("/api/ai/plan", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-request-id": crypto.randomUUID(),
+        },
         body: JSON.stringify({ goal }),
       });
       const result = await response.json();
       if (!response.ok) {
+        if (result.usage) setUsage(result.usage as Usage);
         setError(typeof result.error === "string" ? result.error : "Could not create a plan.");
         return;
       }
       setPlan(result as Plan);
+      void refreshUsage();
     } catch {
       setError("Could not reach the AI planner. Please try again.");
     } finally {
@@ -42,6 +68,11 @@ export function AiPlanner() {
       <p className="eyebrow">AI copilot · Draft only</p>
       <h2 id="ai-planner-heading">Turn a goal into a first plan</h2>
       <p>Describe what you want to achieve. ZAVQERA will suggest a short plan for you to review. Nothing is executed or saved automatically.</p>
+      {usage && (
+        <p className="ai-usage" aria-live="polite">
+          {usage.remaining} of {usage.monthly_limit} AI plans remaining this month.
+        </p>
+      )}
       <form className="form-grid" onSubmit={submit}>
         <div className="field">
           <label htmlFor="ai-goal">Your goal</label>
