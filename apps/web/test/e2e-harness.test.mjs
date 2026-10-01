@@ -132,12 +132,7 @@ test("static preconditions refuse workdirs that are not explicitly disposable", 
   };
   t.after(() => Object.values(dirs).forEach((dir) => rmSync(dir, { recursive: true, force: true })));
   for (const [name, dir] of Object.entries(dirs)) {
-    const verdict = checkStaticPreconditions(readyEnv(dir), { repoRoot });
-    if (name === "repository migrations") {
-      assert.equal(verdict.ok, true, name);
-    } else {
-      assert.equal(verdict.ok, false, name);
-    }
+    assert.equal(checkStaticPreconditions(readyEnv(dir), { repoRoot }).ok, false, name);
   }
 });
 
