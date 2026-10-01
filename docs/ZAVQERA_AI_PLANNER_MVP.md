@@ -9,7 +9,7 @@ The first AI integration is a signed-in user's goal-to-plan copilot in the Web w
 Set these in the Web deployment's server-side environment only:
 
 - `OPENAI_API_KEY`: required provider key. Never prefix it with `NEXT_PUBLIC_`, commit it, or expose it to the browser.
-- `OPENAI_MODEL`: optional model override; defaults to `gpt-5.6-luna`.
+- `OPENAI_MODEL`: optional model override; defaults to `gpt-6-luna`.
 
 The API route checks the authenticated Supabase user before checking provider configuration or making an upstream request. Requests are limited to 1,200 characters, the model response is schema-constrained to at most six steps, the call has a 15-second timeout, and responses are not cached. Upstream errors are not relayed verbatim.
 
