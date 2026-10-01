@@ -55,15 +55,24 @@ export default async function WorkspacePage({
       {(waiting[0] ?? unstarted[0]) && <Link className="button button-quiet" href={`/app/missions/${(waiting[0] ?? unstarted[0]).id}`}>Open mission</Link>}
     </section>}
 
-    {missions.length > 0 && <div className="stats">
-      <div className="stat"><strong>{active.length}</strong><span>Active</span></div>
-      <div className="stat"><strong>{waiting.length}</strong><span>Needs your input</span></div>
-      <div className="stat"><strong>{completed.length}</strong><span>Completed</span></div>
+    {missions.length > 0 && <div className="stats" aria-label="Mission status filters">
+      <Link className={`stat${selectedStatus === "ACTIVE" ? " stat-selected" : ""}`} href="/app?status=ACTIVE" aria-current={selectedStatus === "ACTIVE" ? "page" : undefined}>
+        <strong>{active.length}</strong><span>Active</span>
+      </Link>
+      <Link className={`stat${selectedStatus === "WAITING" ? " stat-selected" : ""}`} href="/app?status=WAITING" aria-current={selectedStatus === "WAITING" ? "page" : undefined}>
+        <strong>{waiting.length}</strong><span>Needs your input</span>
+      </Link>
+      <Link className={`stat${selectedStatus === "COMPLETED" ? " stat-selected" : ""}`} href="/app?status=COMPLETED" aria-current={selectedStatus === "COMPLETED" ? "page" : undefined}>
+        <strong>{completed.length}</strong><span>Completed</span>
+      </Link>
     </div>}
 
-    <div className="section-heading"><div><h2>Your missions</h2><p>Most recently updated first.</p></div></div>
-    {missions.length
-      ? <div className="grid">{missions.map((mission) => <MissionCard key={mission.id} mission={mission} />)}</div>
+    <div className="section-heading">
+      <div><h2>{selectedStatus ? `${selectedStatus[0]}${selectedStatus.slice(1).toLowerCase()} missions` : "Your missions"}</h2><p>Most recently updated first.</p></div>
+      {selectedStatus && <Link className="button button-quiet" href="/app">Show all</Link>}
+    </div>
+    {visibleMissions.length
+      ? <div className="grid">{visibleMissions.map((mission) => <MissionCard key={mission.id} mission={mission} />)}</div>
       : <div className="empty-state">
         <h2>No missions yet</h2>
         <p>A mission records an outcome you intend to reach and the work required to reach it. Create your first one to begin.</p>
