@@ -6,28 +6,30 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const route = readFileSync(path.join(root, "app/api/ai/plan/route.ts"), "utf8");
+const planner = readFileSync(path.join(root, "lib/ai-planner.ts"), "utf8");
 const component = readFileSync(path.join(root, "components/ai-planner.tsx"), "utf8");
 const workspace = readFileSync(path.join(root, "app/app/page.tsx"), "utf8");
 
-test("AI route authenticates before calling the provider and keeps the key server-side", () => {
-  assert.ok(route.indexOf("getAuthenticatedUser()") < route.indexOf("fetch(\"https://api.openai.com/v1/responses\""));
+test("AI route authenticates before invoking the provider service and keeps the key server-side", () => {
+  assert.ok(route.indexOf("getAuthenticatedUser()") < route.indexOf("requestMissionPlan("));
   assert.match(route, /process\.env\.OPENAI_API_KEY/);
   assert.doesNotMatch(route, /NEXT_PUBLIC_OPENAI_API_KEY/);
   assert.match(route, /status: 401/);
   assert.match(route, /status: 503/);
 });
 
-test("AI route bounds input, output, time and response caching", () => {
+test("AI planner bounds input, output, time and response caching", () => {
   assert.match(route, /length > 1200/);
-  assert.match(route, /max_output_tokens: 700/);
-  assert.match(route, /AbortSignal\.timeout\(15_000\)/);
+  assert.match(planner, /max_output_tokens: 700/);
+  assert.match(planner, /AbortSignal\.timeout\(15_000\)/);
   assert.match(route, /"Cache-Control": "no-store"/);
-  assert.match(route, /maxItems: 6/);
+  assert.match(planner, /maxItems: 6/);
 });
 
-test("AI plan is a draft only and cannot invoke mission or external-action mutations", () => {
-  assert.match(route, /draft only/i);
+test("AI plan is draft-only and cannot invoke mission or external-action mutations", () => {
+  assert.match(planner, /draft only/i);
   assert.doesNotMatch(route, /createSupabaseMissionRepository|mission_actions|\.insert\(|\.update\(/);
+  assert.doesNotMatch(planner, /tools:\s*\[/);
   assert.match(component, /Nothing is executed or saved automatically/);
   assert.match(component, /Review each step before adding it to a mission/);
 });
