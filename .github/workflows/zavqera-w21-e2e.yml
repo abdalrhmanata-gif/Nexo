@@ -90,6 +90,7 @@ jobs:
           printf '%s\n' 'zavqera-e2e-local' > "${workdir}/ZAVQERA_E2E_DISPOSABLE"
 
           schema_dir="${workdir}/supabase/migrations"
+          mkdir -p "${schema_dir}"
           cp "${GITHUB_WORKSPACE}"/supabase/migrations/*.sql "${schema_dir}/"
 
           grep -q 'VERIFIED_OUTCOME_REQUIRED' "${schema_dir}"/*.sql
