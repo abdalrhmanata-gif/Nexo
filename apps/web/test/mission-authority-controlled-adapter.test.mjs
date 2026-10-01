@@ -34,7 +34,7 @@ function authority(overrides = {}) {
     allowedActions: ["send"],
     deniedActions: [],
     requireApproval: false,
-    approved: true,
+    approval: null,
     maxActions: 1,
     maxSpend: 10,
     spentActions: 0,
@@ -87,7 +87,7 @@ test("allows one exact bound execution and records a correlated receipt", async 
   assert.ok(attempt.receipt.externalId);
 });
 
-test("fails closed for cross-tenant, stale, revoked, expired and destination-mismatch requests", async () => {
+test("fails closed for cross-tenant, stale, revoked, expired, lease-mismatch and destination-mismatch requests", async () => {
   for (const [name, overrides] of Object.entries({
     crossTenant: { organizationId: "org-b", principalId: "user-b" },
     staleMission: { missionVersion: 99 },
@@ -96,6 +96,7 @@ test("fails closed for cross-tenant, stale, revoked, expired and destination-mis
     revoked: { revoked: true },
     expired: { expiresAt: "2026-09-30T23:59:00.000Z" },
     leaseExpired: { leaseExpiresAt: "2026-09-30T11:59:59.000Z" },
+    leaseMismatch: { leaseId: "lease-b" },
     destination: { destination: "https://evil.example" },
   })) {
     const { adapter, external } = setup();
@@ -105,11 +106,31 @@ test("fails closed for cross-tenant, stale, revoked, expired and destination-mis
   }
 });
 
-test("requires approval instead of dispatching when policy demands it", async () => {
-  const { adapter, external } = setup({ authorityOverrides: { requireApproval: true, approved: false } });
-  const result = await adapter.execute(request());
-  assert.equal(result.decision, DECISIONS.REQUIRE_APPROVAL);
-  assert.equal(external.calls().length, 0);
+test("requires exact approval binding instead of dispatching when approval is required", async () => {
+  const input = { message: "hello", count: 1 };
+  const validApproval = {
+    active: true,
+    organizationId: "org-a",
+    principalId: "user-a",
+    missionId: "mission-a",
+    missionVersion: 3,
+    actionId: "send",
+    actionVersion: 7,
+    inputHash: hashInput(input),
+    destination: "https://fake.external.test/action",
+    authorityRevision: 9,
+    expiresAt: "2026-10-01T12:30:00.000Z",
+  };
+
+  const denied = setup({ authorityOverrides: { requireApproval: true, approval: { ...validApproval, inputHash: "wrong" } } });
+  const deniedResult = await denied.adapter.execute(request({}, input));
+  assert.equal(deniedResult.decision, DECISIONS.REQUIRE_APPROVAL);
+  assert.equal(denied.external.calls().length, 0);
+
+  const allowed = setup({ authorityOverrides: { requireApproval: true, approval: validApproval } });
+  const allowedResult = await allowed.adapter.execute(request({}, input));
+  assert.equal(allowedResult.decision, DECISIONS.ALLOW);
+  assert.equal(allowed.external.calls().length, 1);
 });
 
 test("rejects an altered input hash before any external call", async () => {
