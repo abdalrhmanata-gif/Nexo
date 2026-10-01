@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "../../../../lib/supabase/server";
 import { DEFAULT_AI_MODEL, requestMissionPlan } from "../../../../lib/ai-planner";
+import { consumeAiGeneration, releaseAiGeneration, reserveAiGeneration } from "../../../../lib/ai-usage";
 
 export const runtime = "nodejs";
 export const maxDuration = 20;
@@ -38,15 +39,42 @@ export async function POST(request: Request) {
     );
   }
 
+  const requestId = request.headers.get("x-request-id") || crypto.randomUUID();
+  let reservationId: string | null = null;
+
   try {
+    const reservation = await reserveAiGeneration(requestId);
+    if (!reservation.allowed || !reservation.reservation_id) {
+      return NextResponse.json(
+        {
+          error: "Monthly AI limit reached.",
+          usage: {
+            plan: reservation.plan,
+            monthlyLimit: reservation.monthly_limit,
+            generationsUsed: reservation.generations_used,
+            remaining: reservation.remaining,
+          },
+        },
+        { status: 429 },
+      );
+    }
+    reservationId = reservation.reservation_id;
+
     const plan = await requestMissionPlan(goal.trim(), {
       apiKey,
       model: process.env.OPENAI_MODEL || DEFAULT_AI_MODEL,
     });
+
+    await consumeAiGeneration(reservationId);
+
     return NextResponse.json(plan, {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
+    if (reservationId) await releaseAiGeneration(reservationId).catch(() => undefined);
+    if (error instanceof Error && error.message === "AI_USAGE_UNAVAILABLE") {
+      return NextResponse.json({ error: "AI usage service is temporarily unavailable." }, { status: 503 });
+    }
     if (error instanceof Error && error.message === "RATE_LIMITED") {
       return NextResponse.json(
         { error: "AI usage is temporarily limited. Please try again later." },
