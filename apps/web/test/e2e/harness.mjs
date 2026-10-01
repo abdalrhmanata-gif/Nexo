@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import net from "node:net";
 import path from "node:path";
 
@@ -163,21 +163,20 @@ export function checkStaticPreconditions(env, { repoRoot, fsApi = { existsSync, 
         reasons.push(`The workdir must contain a ${MARKER_FILE} file whose only content is its project_id. This is the operator's explicit consent that all of its local data may be destroyed.`);
       }
 
-      // The disposable stack may be built from one Development dump or from
-      // the repository's ordered migrations. Repository migrations are preferred
-      // because they require no hosted DB credential and are auditable in Git.
+      // The disposable workdir must contain exactly one operator-supplied
+      // Development schema dump. Repository migrations alone do not rebuild the
+      // complete Development authorization/history state required by W21.
       let migrations = [];
       try {
         migrations = fsApi.readdirSync(path.join(resolved, "supabase", "migrations")).filter((name) => name.endsWith(".sql"));
       } catch {
         migrations = [];
       }
-      const validDump = migrations.length === 1 && SCHEMA_DUMP_PATTERN.test(migrations[0]);
-      const validMigrations = migrations.length >= 1 && migrations.every((name) => MIGRATION_FILE_PATTERN.test(name));
-      if (!validDump && !validMigrations) {
+      if (migrations.length !== 1 || !SCHEMA_DUMP_PATTERN.test(migrations[0])) {
         projectId = null;
-        reasons.push("supabase/migrations must contain either one Development schema dump or one or more repository-style timestamped SQL migrations.");
+        reasons.push("supabase/migrations must contain exactly one file, <timestamp>_development_schema.sql, created from the Development schema. Do not copy repository migrations there.");
       }
+
       if (fsApi.existsSync(path.join(resolved, "supabase", ".temp", "project-ref"))) {
         projectId = null;
         reasons.push("The disposable workdir is linked to a hosted project (supabase/.temp/project-ref exists). Use an unlinked workdir.");
@@ -384,36 +383,14 @@ export function destroyStack(plan, run) {
  */
 export function startFreshStack(plan, run, env = {}) {
   destroyStack(plan, run);
-
-  // Keep repository migrations out of the way during service startup. The
-  // CLI may apply/inspect migrations while starting; applying them explicitly
-  // after health validation makes failures attributable and deterministic.
-  const migrationsDir = path.join(plan.workdir, "supabase", "migrations");
-  const deferredDir = path.join(plan.workdir, "supabase", "migrations.__zavqera_deferred");
-  const hasMigrations = existsSync(migrationsDir);
-  if (hasMigrations) renameSync(migrationsDir, deferredDir);
-
-  let start;
-  try {
-    start = run("supabase", supabaseArgs(plan, "start"), { timeoutMs: 900_000 });
-  } finally {
-    if (hasMigrations && existsSync(deferredDir)) renameSync(deferredDir, migrationsDir);
-  }
-
+  const start = run("supabase", supabaseArgs(plan, "start"), { timeoutMs: 900_000 });
   if (start.status !== 0) {
     throw new Error("`supabase start` failed for the disposable workdir. Output is suppressed because it contains local keys; run it manually to inspect.");
   }
-
   const status = run("supabase", supabaseArgs(plan, "status", "-o", "json"));
   if (status.status !== 0) throw new Error("`supabase status -o json` failed for the disposable workdir.");
   const verdict = validateStackStatus(status.stdout, env);
   if (!verdict.ok) throw new HarnessBlockedError(verdict.reasons);
-
-  const reset = run("supabase", supabaseArgs(plan, "db", "reset", "--local", "--no-seed"), { timeoutMs: 900_000 });
-  if (reset.status !== 0) {
-    throw new Error("`supabase db reset --local --no-seed` failed while applying the disposable repository migrations.");
-  }
-
   return verdict.target;
 }
 
