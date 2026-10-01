@@ -1,5 +1,5 @@
 import { spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, writeFileSync } from "node:fs";
 import net from "node:net";
 import path from "node:path";
 
@@ -384,10 +384,26 @@ export function destroyStack(plan, run) {
  */
 export function startFreshStack(plan, run, env = {}) {
   destroyStack(plan, run);
-  const start = run("supabase", supabaseArgs(plan, "start"), { timeoutMs: 900_000 });
+
+  // Keep repository migrations out of the way during service startup. The
+  // CLI may apply/inspect migrations while starting; applying them explicitly
+  // after health validation makes failures attributable and deterministic.
+  const migrationsDir = path.join(plan.workdir, "supabase", "migrations");
+  const deferredDir = path.join(plan.workdir, "supabase", "migrations.__zavqera_deferred");
+  const hasMigrations = existsSync(migrationsDir);
+  if (hasMigrations) renameSync(migrationsDir, deferredDir);
+
+  let start;
+  try {
+    start = run("supabase", supabaseArgs(plan, "start"), { timeoutMs: 900_000 });
+  } finally {
+    if (hasMigrations && existsSync(deferredDir)) renameSync(deferredDir, migrationsDir);
+  }
+
   if (start.status !== 0) {
     throw new Error("`supabase start` failed for the disposable workdir. Output is suppressed because it contains local keys; run it manually to inspect.");
   }
+
   const status = run("supabase", supabaseArgs(plan, "status", "-o", "json"));
   if (status.status !== 0) throw new Error("`supabase status -o json` failed for the disposable workdir.");
   const verdict = validateStackStatus(status.stdout, env);
