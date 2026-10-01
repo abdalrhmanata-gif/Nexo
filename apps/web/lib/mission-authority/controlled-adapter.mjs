@@ -147,6 +147,7 @@ export class InMemoryAuthorityStore {
           mission.missionVersion !== request.missionVersion ||
           mission.actionVersion !== request.actionVersion ||
           mission.authorityRevision !== request.authorityRevision ||
+          mission.leaseId !== request.leaseId ||
           mission.policyVersion !== request.policyVersion ||
           mission.audience !== request.audience ||
           mission.destination !== request.destination ||
@@ -165,9 +166,25 @@ export class InMemoryAuthorityStore {
       }
       if (mission.deniedActions?.includes(request.actionId)) return this.#deny("ACTION_DENIED");
 
-      if (mission.requireApproval && !mission.approved) {
-        this.#journal.push({ type: "AUTHORIZATION", decision: DECISIONS.REQUIRE_APPROVAL, reason: "APPROVAL_REQUIRED", at: iso(now) });
-        return { decision: DECISIONS.REQUIRE_APPROVAL, reasonCode: "APPROVAL_REQUIRED" };
+      if (mission.requireApproval) {
+        const approval = mission.approval;
+        const exactApproval = approval
+          && approval.active === true
+          && approval.organizationId === request.organizationId
+          && approval.principalId === request.principalId
+          && approval.missionId === request.missionId
+          && approval.missionVersion === request.missionVersion
+          && approval.actionId === request.actionId
+          && approval.actionVersion === request.actionVersion
+          && approval.inputHash === suppliedHash
+          && approval.destination === request.destination
+          && approval.authorityRevision === request.authorityRevision
+          && approval.expiresAt
+          && now < new Date(approval.expiresAt).getTime();
+        if (!exactApproval) {
+          this.#journal.push({ type: "AUTHORIZATION", decision: DECISIONS.REQUIRE_APPROVAL, reason: "APPROVAL_REQUIRED", at: iso(now) });
+          return { decision: DECISIONS.REQUIRE_APPROVAL, reasonCode: "APPROVAL_REQUIRED" };
+        }
       }
 
       if (mission.maxActions !== null && mission.maxActions !== undefined &&
@@ -193,7 +210,7 @@ export class InMemoryAuthorityStore {
       mission.spentAmount += request.amount ?? 0;
 
       const attempt = {
-        attemptId: request.attemptId ?? randomUUID(),
+        attemptId: randomUUID(),
         organizationId: request.organizationId,
         principalId: request.principalId,
         missionId: request.missionId,
