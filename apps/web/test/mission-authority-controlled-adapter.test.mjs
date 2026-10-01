@@ -1,3 +1,4 @@
+// CI validation marker: no runtime behavior change.
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
