@@ -132,7 +132,12 @@ test("static preconditions refuse workdirs that are not explicitly disposable", 
   };
   t.after(() => Object.values(dirs).forEach((dir) => rmSync(dir, { recursive: true, force: true })));
   for (const [name, dir] of Object.entries(dirs)) {
-    assert.equal(checkStaticPreconditions(readyEnv(dir), { repoRoot }).ok, false, name);
+    const verdict = checkStaticPreconditions(readyEnv(dir), { repoRoot });
+    if (name === "repository migrations") {
+      assert.equal(verdict.ok, true, name);
+    } else {
+      assert.equal(verdict.ok, false, name);
+    }
   }
 });
 
@@ -201,6 +206,7 @@ test("a fresh stack is destroyed and verified empty before it is started", () =>
     `docker volume ls -q --filter label=com.supabase.cli.project=${PROJECT_ID}`,
     "supabase start --workdir /tmp/zavqera-e2e",
     "supabase status -o json --workdir /tmp/zavqera-e2e",
+    "supabase db reset --local --no-seed --workdir /tmp/zavqera-e2e",
   ]);
 });
 
