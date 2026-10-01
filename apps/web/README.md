@@ -14,7 +14,9 @@ All fixtures are created in a **disposable local Supabase stack** whose entire D
 
 ### One-time operator setup
 
-Requires Docker and the native `supabase` CLI executable on `PATH`.
+Requires running Docker, the native `supabase` CLI executable on `PATH` (command
+interfaces checked with 2.119.0), and Chromium (`npx playwright install chromium`
+from apps/web). A `.cmd` shim alone does not satisfy the shell-free runner.
 
 1. Create a directory **outside this repository**, for example `C:\zavqera-e2e`, and run `supabase init --workdir C:\zavqera-e2e`. Never run `supabase link` in it.
 2. In `C:\zavqera-e2e\supabase\config.toml`, set `project_id = "zavqera-e2e-local"` (it must match `zavqera-e2e-<lowercase suffix>`) and keep `[auth.email] enable_confirmations = false`, so sign-up returns a session. If you change `[api] port`, nothing else needs to change.
@@ -22,10 +24,33 @@ Requires Docker and the native `supabase` CLI executable on `PATH`.
 4. Give the stack the current Development schema. Do **not** copy or replay the repository migrations: Development's migration history differs from this repository and its W5 history tables were never committed here, so a replay would build a different database. The harness refuses unless `supabase\migrations` contains exactly one file named `<14-digit timestamp>_development_schema.sql`. The schema must come from Development. The project owner runs this read-only dump (it reads the schema only; never commit the file or paste the connection string anywhere):
 
    ```powershell
-   supabase db dump --db-url "<Development connection string>" -f C:\zavqera-e2e\supabase\migrations\20000101000000_development_schema.sql
+   supabase db dump --db-url "<Development connection string>" --schema public,private -f C:\zavqera-e2e\supabase\migrations\20000101000000_development_schema.sql
    ```
 
-   Re-dump whenever Development's schema changes. The harness checks only the file's presence and name; it cannot prove that the dump matches Development, and a stale dump can change what the test proves.
+   Use the Development ref `mrwmmbytcymqgwvcoywd` only. Enter connection information
+   privately through the owner's secure shell/secret mechanism, never in chat,
+   source control or CI logs. Do not dump data or roles.
+   Re-dump after W21 migration `20261001091146`; the snapshot must include
+   `VERIFIED_OUTCOME_REQUIRED`, policy `missions_initial_state`, and trigger
+   `mission_actions_completion_insert_guard`.
+
+   The managed `auth` schema is intentionally excluded from this dump. Append
+   the current Development application hook below to the same snapshot file
+   (the `private.handle_new_user_profile` function is included in the dump).
+   Do not dump/restore the managed auth schema or overwrite its system tables.
+
+   ```sql
+   CREATE TRIGGER on_auth_user_created
+   AFTER INSERT ON auth.users FOR EACH ROW
+   EXECUTE FUNCTION private.handle_new_user_profile();
+   ```
+
+   Re-dump whenever Development changes; compare the current function definitions,
+   policies and grants in the W21 release checklist before claiming equivalent
+   schema. The filename check alone does not establish snapshot fidelity. The
+   completion checks in the browser test also fail on a pre-W21 snapshot.
+   Keep `[db] major_version` aligned with Development. No old migration is
+   reconstructed or remote history changed by this local snapshot approach.
 
 ### Running
 
@@ -49,4 +74,8 @@ Port `3210` on `127.0.0.1` must be free (override with `ZAVQERA_E2E_BASE_URL=htt
 ### Limits
 
 - If the process is killed hard, the local Docker volumes remain until the next run's preflight removes them, or until you run `supabase stop --no-backup --workdir C:\zavqera-e2e`. Nothing is ever left on a hosted project.
-- Generated users only exist in the disposable stack. The auth-profile trigger lives in the `auth` schema, which `db dump` does not include; the app does not depend on it.
+- Generated users and their profiles exist only in the disposable stack.
+- On this execution host Chromium is installed, but Docker and a native Supabase
+  executable on PATH are absent, and no isolated schema/workdir is configured.
+  `npm run test:e2e` therefore remains BLOCKED, not PASS. The owner-run setup above
+  is the accepted W21 alternative; it does not claim a browser run occurred.

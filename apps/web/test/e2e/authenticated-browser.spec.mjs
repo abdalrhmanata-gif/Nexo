@@ -172,6 +172,7 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       ledger.record("mission", missionId);
       expect(await readMission(owner.client, missionId)).toMatchObject({ status: "DRAFT", version: 1 });
       await expect(page.getByRole("heading", { level: 1, name: tag })).toBeVisible();
+      await expect(page.getByRole("region", { name: "What should I do next?" })).toContainText(`Start: ${titles.first}`);
     });
 
     await test.step("add an action and persist the plan", async () => {
@@ -216,6 +217,11 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       expect(waiting.status).toBe("BLOCKED");
       expect(new Date(waiting.follow_up_at).getTime()).toBe(new Date(`${followUp}T09:00:00`).getTime());
       expect((await readMission(owner.client, missionId)).status).toBe("WAITING");
+      await page.goto("/app");
+      await page.getByRole("heading", { level: 3, name: tag }).getByRole("link").click();
+      await expect(page).toHaveURL(missionUrl);
+      await expect(statusOf(titles.first)).toHaveValue("BLOCKED");
+      await expect(page.getByLabel(`Follow up on ${titles.first}`, { exact: true })).toHaveValue(followUp);
     });
 
     await test.step("resume, finish and cancel work", async () => {
@@ -244,6 +250,15 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       expect(await readRows(owner.client, "mission_verifications", missionId)).toHaveLength(0);
 
       await moveMission("VERIFYING");
+      const before = await readMission(owner.client, missionId);
+      const direct = await owner.client.rpc("transition_mission", {
+        p_mission_id: missionId, p_to_status: "COMPLETED", p_expected_version: before.version,
+      });
+      expect(direct.error?.message).toBe("VERIFIED_OUTCOME_REQUIRED");
+      await page.getByLabel("Mission state", { exact: true }).selectOption("COMPLETED");
+      await submit(page, page.getByLabel("Mission state", { exact: true }), { method: "PATCH", path: missionPath(), expectStatus: 422 });
+      await expect(page.getByRole("alert")).toContainText("Commit a passing verified outcome");
+      expect(await readMission(owner.client, missionId)).toEqual(before);
       await page.getByLabel("Verification criteria", { exact: true }).fill("Each step was observed in persisted state.");
       await page.getByLabel("Evidence summary", { exact: true }).fill("Authoritative reads after every reload.");
       await submit(page, page.getByLabel("Verification criteria", { exact: true }), { method: "POST", path: `${missionPath()}/verification`, expectStatus: 201 });
@@ -280,6 +295,9 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       expect(outcomes[0]).toMatchObject({ status: "COMPLETED", verification_id: verificationId });
       ledger.record("outcome", outcomes[0].id);
       expect((await readMission(owner.client, missionId)).status).toBe("COMPLETED");
+      const lateInsert = await page.request.post(`${missionPath()}/actions`, { data: { title: "Must not reopen completed work" } });
+      expect(lateInsert.status()).toBe(422);
+      expect(await readActions(owner.client, missionId)).toHaveLength(4);
       const cancelled = (await readActions(owner.client, missionId)).filter((action) => action.status === "CANCELLED");
       expect(cancelled.map((action) => action.id).sort()).toEqual([actionId[titles.second], actionId[titles.late]].sort());
       await expect(page.getByLabel("Mission state", { exact: true })).toHaveCount(0);
