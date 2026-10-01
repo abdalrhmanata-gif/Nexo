@@ -131,6 +131,7 @@ jobs:
           log="${RUNNER_TEMP}/w21-e2e.log"
           npm run test:e2e 2>&1 | tee "${log}"
           status="${PIPESTATUS[0]}"
+          printf 'e2e_exit_status=%s\n' "${status}" > "${RUNNER_TEMP}/w21-e2e-result.env"
           if grep -q '"cleanup"[[:space:]]*:[[:space:]]*"VERIFIED"' "${log}"; then
             echo "W21 cleanup proof: VERIFIED"
           else
@@ -144,18 +145,24 @@ jobs:
         run: |
           set -euo pipefail
           {
-            echo "result=completed"
+            echo "result=${{ job.status }}"
             echo "git_sha=${GITHUB_SHA}"
             echo "utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
             echo "node=$(node --version)"
             echo "npm=$(npm --version)"
             echo "supabase_cli=$(supabase --version)"
+            echo "playwright=$(cd apps/web && npx --no-install playwright --version)"
             echo "postgres_major=17"
+            if [ -f "${RUNNER_TEMP}/zavqera-e2e-result.env" ]; then
+              cat "${RUNNER_TEMP}/zavqera-e2e-result.env"
+            else
+              echo "e2e_exit_status=not-recorded"
+            fi
             if [ -f "${RUNNER_TEMP}/zavqera-e2e-schema.sha256" ]; then
               echo -n "schema_sha256="
               cut -d' ' -f1 "${RUNNER_TEMP}/zavqera-e2e-schema.sha256"
             fi
-            if grep -Rqs '"cleanup"[[:space:]]*:[[:space:]]*"VERIFIED"' "${RUNNER_TEMP}/zavqera-e2e" 2>/dev/null; then
+            if [ -f "${RUNNER_TEMP}/w21-e2e.log" ] && grep -q '"cleanup"[[:space:]]*:[[:space:]]*"VERIFIED"' "${RUNNER_TEMP}/w21-e2e.log"; then
               echo "cleanup=VERIFIED"
             else
               echo "cleanup=NOT_VERIFIED_OR_RUN_DID_NOT_REACH_TEARDOWN"
