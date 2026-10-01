@@ -15,7 +15,8 @@ The API route checks the authenticated Supabase user before checking provider co
 
 ## Not yet production-ready
 
-- No per-user durable rate limit or billing/usage ledger exists yet.
+- Server-side monthly AI quota is implemented in Development: 20 generations/month for the default free entitlement, with atomic reservation/consume/release functions and no direct client table access.
+- Paid Plus entitlement is defined as 300 generations/month but checkout/webhook entitlement activation is not implemented yet.
 - Provider-backed success cannot be verified until a valid key and model access are configured in a non-production preview environment.
 - Add automated integration tests with a mocked provider response, monitor failures/usage, and define retention/privacy language before public release.
 - The AI draft must not be described as autonomous execution. Human review is required before users manually adopt suggested steps.
