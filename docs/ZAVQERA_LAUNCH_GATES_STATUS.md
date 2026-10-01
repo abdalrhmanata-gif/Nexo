@@ -4,8 +4,14 @@ Branch: `zavqera/ai-planner-integration`
 Base: `zavqera/alternative-web-deployment`
 Production/main: untouched.
 
+## CI
+PASS on current head `e98cdac92cb608b05f371e147bb0ead8d62fc518`:
+- ZAVQERA Web Unit: PASS
+- ZAVQERA Web CI: PASS
+- ZAVQERA Flutter CI: PASS
+
 ## W25
-PASS for the isolated PostgreSQL two-session atomic fence proof on commit `46dc6029f084fb000ba511478d6e8aec3eb532b3`.
+PASS for the isolated PostgreSQL two-session atomic fence proof on commit `46dc6029f084fb000ba511d6e8aec3eb532b3`.
 
 Evidence:
 - `W25_ATOMIC_FENCE=PASS`
@@ -20,6 +26,8 @@ Scope limit: this proves the isolated budget/idempotency concurrency property on
 OPEN / NOT EXECUTED.
 
 Required evidence remains the disposable local Supabase browser E2E, including authenticated flows and verified Docker cleanup. No hosted Development E2E and no Supabase Main changes.
+
+Execution requires the protected GitHub secret `ZAVQERA_DEVELOPMENT_DB_URL` pointing only to Development project `mrwmmbytcymqgwvcoywd`. Repository migrations are not a substitute because they do not contain the complete historical/auth/provenance schema required by W21.
 
 ## AI planner
 IMPLEMENTED in PR #29 on `zavqera/ai-planner-integration`.
