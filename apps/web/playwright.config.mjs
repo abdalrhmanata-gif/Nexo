@@ -1,33 +1,26 @@
+import os from "node:os";
+import path from "node:path";
 import { defineConfig } from "@playwright/test";
+import { DEFAULT_BASE_URL } from "./test/e2e/harness.mjs";
 
-const required = [
-  "ZAVQERA_E2E_USER_A_EMAIL",
-  "ZAVQERA_E2E_USER_A_PASSWORD",
-  "ZAVQERA_E2E_USER_B_EMAIL",
-  "ZAVQERA_E2E_USER_B_PASSWORD",
-  "NEXT_PUBLIC_SUPABASE_URL",
-  "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
-];
-const missing = required.filter((name) => !process.env[name]);
-if (missing.length) {
-  throw new Error(`Authenticated E2E requires Development environment variables: ${missing.join(", ")}`);
-}
-
+// Loading this config never starts anything. The global setup refuses to run
+// unless every precondition in test/e2e/harness.mjs holds, and it starts the
+// app itself (never reusing an existing server) only after the disposable
+// stack has been reset and verified.
 export default defineConfig({
   testDir: "./test/e2e",
-  timeout: 45_000,
+  outputDir: path.join(os.tmpdir(), "zavqera-e2e", "playwright-results"),
+  globalSetup: "./test/e2e/global-setup.mjs",
+  timeout: 360_000,
+  expect: { timeout: 15_000 },
   fullyParallel: false,
+  workers: 1,
   retries: 0,
+  forbidOnly: true,
   reporter: [["line"]],
   use: {
-    baseURL: process.env.ZAVQERA_E2E_BASE_URL ?? "http://127.0.0.1:3000",
+    baseURL: process.env.ZAVQERA_E2E_BASE_URL || DEFAULT_BASE_URL,
     headless: true,
     trace: "retain-on-failure",
-  },
-  webServer: {
-    command: "npm run dev",
-    url: process.env.ZAVQERA_E2E_BASE_URL ?? "http://127.0.0.1:3000",
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
   },
 });
