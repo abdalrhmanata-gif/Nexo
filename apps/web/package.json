@@ -6,7 +6,7 @@
     "dev": "next dev",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "build": "next build",
+    "build": "npm test && next build",
     "test": "node --test test/*.test.mjs",
     "test:e2e": "node test/e2e/preflight.mjs && playwright test",
     "check": "npm run lint && npm run typecheck && npm run build"
