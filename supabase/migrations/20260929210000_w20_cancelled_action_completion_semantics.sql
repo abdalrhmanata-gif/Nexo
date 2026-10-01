@@ -47,7 +47,6 @@ declare
   v_target_status text;
   v_should_transition boolean;
   v_should_complete boolean;
-  v_cancelled_actions integer;
 begin
   if auth.uid() is null then
     raise exception 'AUTHENTICATION_REQUIRED' using errcode = '42501';
@@ -106,12 +105,6 @@ begin
     raise exception 'MISSION_NOT_VERIFYING' using errcode = '22023';
   end if;
 
-  select count(*)
-    into v_cancelled_actions
-    from public.mission_actions
-   where mission_id = v_mission.id
-     and status = 'CANCELLED';
-
   -- Cancelled work is intentionally out of scope and does not block
   -- completion. Anything still PENDING, RUNNING or BLOCKED does.
   if v_target_status = 'COMPLETED'
@@ -162,8 +155,7 @@ begin
       'verification_id', v_verification.id,
       'status', v_outcome.status,
       'success_score', v_outcome.success_score,
-      'mission_completed', v_should_complete,
-      'cancelled_actions', v_cancelled_actions
+      'mission_completed', v_should_complete
     )
   );
 

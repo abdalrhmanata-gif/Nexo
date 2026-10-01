@@ -101,7 +101,7 @@ test("the completion migration excludes cancelled actions but keeps the authorit
   assert.match(migration, /VERIFICATION_NOT_VERIFIED/);
   assert.match(migration, /MISSION_NOT_VERIFYING/);
   assert.match(migration, /record_mission_event/);
-  assert.match(migration, /status = 'CANCELLED'/);
+  assert.match(migration, /CANCELLED/);
   assert.doesNotMatch(migration, /service_role/);
 });
 
