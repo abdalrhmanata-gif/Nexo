@@ -368,7 +368,16 @@ export class ControlledServerAdapter {
         const attempt = await this.authorityStore.markResult(decision.attemptId, { state: ATTEMPT_STATES.FAILED }, this.clock);
         return { decision: DECISIONS.DENY, attemptId: attempt.attemptId, reasonCode: "EXTERNAL_FAILED", state: attempt.state };
       }
-      throw error;
+      const attempt = await this.authorityStore.markResult(
+        decision.attemptId,
+        { state: ATTEMPT_STATES.UNKNOWN },
+        this.clock,
+      );
+      return {
+        decision: DECISIONS.RECONCILE_REQUIRED,
+        attemptId: attempt.attemptId,
+        reasonCode: "UNKNOWN_REQUIRES_RECONCILIATION",
+      };
     }
   }
 
