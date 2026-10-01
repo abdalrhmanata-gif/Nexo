@@ -26,7 +26,7 @@ const PLAN_SCHEMA = {
   required: ["summary", "steps"],
 } as const;
 
-export const DEFAULT_AI_MODEL = "gpt-5.6-luna";
+export const DEFAULT_AI_MODEL = "gpt-6-luna";
 
 type PlannerResponse = { output_text?: unknown };
 
