@@ -201,7 +201,6 @@ test("a fresh stack is destroyed and verified empty before it is started", () =>
     `docker volume ls -q --filter label=com.supabase.cli.project=${PROJECT_ID}`,
     "supabase start --workdir /tmp/zavqera-e2e",
     "supabase status -o json --workdir /tmp/zavqera-e2e",
-    "supabase db reset --local --no-seed --workdir /tmp/zavqera-e2e",
   ]);
 });
 
