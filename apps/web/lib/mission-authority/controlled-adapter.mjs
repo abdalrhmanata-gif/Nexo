@@ -183,7 +183,6 @@ export class InMemoryAuthorityStore {
       if (mission.organizationId !== request.organizationId ||
           mission.principalId !== request.principalId ||
           mission.missionVersion !== request.missionVersion ||
-          mission.actionId !== request.actionId ||
           mission.actionVersion !== request.actionVersion ||
           mission.authorityRevision !== request.authorityRevision ||
           mission.leaseId !== request.leaseId ||
