@@ -39,7 +39,7 @@ Current behavior:
 
 Default model: `gpt-6-luna`, configurable with `OPENAI_MODEL`.
 
-Server-side AI usage quota is now implemented in Development: 20 monthly generations for the default free entitlement, atomic reservation/consume/release, and authenticated-only RPC execution. Plus is defined at 300 monthly generations but paid entitlement activation is not implemented yet.
+Server-side AI usage quota is implemented in Development: 20 monthly generations for the default free entitlement, atomic reservation/consume/release, and authenticated-only RPC execution. Plus is defined at 300 monthly generations but paid entitlement activation is not implemented yet.
 
 Provider-live verification is still blocked until a valid non-production `OPENAI_API_KEY` is configured in the preview environment. Do not commit or paste the key into source control or chat.
 
