@@ -37,7 +37,7 @@ Current behavior:
 - no external actions
 - human review before adopting suggestions
 
-Default model: `gpt-5.6-luna`, configurable with `OPENAI_MODEL`.
+Default model: `gpt-6-luna`, configurable with `OPENAI_MODEL`.
 
 Provider-live verification is still blocked until a valid non-production `OPENAI_API_KEY` is configured in the preview environment. Do not commit or paste the key into source control or chat.
 
