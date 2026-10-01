@@ -58,45 +58,37 @@ jobs:
 
           python3 - "${workdir}/supabase/config.toml" <<'PY'
           from pathlib import Path
-          import re
           import sys
 
           path = Path(sys.argv[1])
-          text = path.read_text(encoding="utf-8")
+          lines = path.read_text(encoding="utf-8").splitlines()
 
-          text = re.sub(r'^project_id\\s*=.*$', 'project_id = "zavqera-e2e-local"', text, flags=re.M)
+          for i, line in enumerate(lines):
+              if line.startswith("project_id"):
+                  lines[i] = 'project_id = "zavqera-e2e-local"'
+                  break
 
-          if re.search(r'^\\[db\\]$', text, flags=re.M):
-              text = re.sub(
-                  r'(^\\[db\\]$)(.*?)(?=^\\[|\\Z)',
-                  lambda m: (
-                      m.group(1) + "\\n"
-                      + re.sub(r'^major_version\\s*=.*$', 'major_version = 17', m.group(2), flags=re.M)
-                      if re.search(r'^major_version\\s*=', m.group(2), flags=re.M)
-                      else m.group(1) + "\\nmajor_version = 17\\n" + m.group(2)
-                  ),
-                  text,
-                  flags=re.M | re.S,
-              )
-          else:
-              text += "\\n[db]\\nmajor_version = 17\\n"
+          def set_section_value(lines, section, key, value):
+              header = f"[{section}]"
+              start = next((i for i, line in enumerate(lines) if line.strip() == header), None)
+              if start is None:
+                  if lines and lines[-1] != "":
+                      lines.append("")
+                  lines.extend([header, f"{key} = {value}"])
+                  return
 
-          if re.search(r'^\\[auth\\.email\\]$', text, flags=re.M):
-              text = re.sub(
-                  r'(^\\[auth\\.email\\]$)(.*?)(?=^\\[|\\Z)',
-                  lambda m: (
-                      m.group(1) + "\\n"
-                      + (re.sub(r'^enable_confirmations\\s*=.*$', 'enable_confirmations = false', m.group(2), flags=re.M)
-                         if re.search(r'^enable_confirmations\\s*=', m.group(2), flags=re.M)
-                         else 'enable_confirmations = false\\n' + m.group(2))
-                  ),
-                  text,
-                  flags=re.M | re.S,
-              )
-          else:
-              text += "\\n[auth.email]\\nenable_confirmations = false\\n"
+              end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("[")), len(lines))
+              replacement = f"{key} = {value}"
+              for i in range(start + 1, end):
+                  if lines[i].lstrip().startswith(f"{key} ="):
+                      lines[i] = replacement
+                      break
+              else:
+                  lines.insert(start + 1, replacement)
 
-          path.write_text(text, encoding="utf-8")
+          set_section_value(lines, "db", "major_version", "17")
+          set_section_value(lines, "auth.email", "enable_confirmations", "false")
+          path.write_text("\n".join(lines) + "\n", encoding="utf-8")
           PY
 
           printf '%s\\n' 'zavqera-e2e-local' > "${workdir}/ZAVQERA_E2E_DISPOSABLE"
