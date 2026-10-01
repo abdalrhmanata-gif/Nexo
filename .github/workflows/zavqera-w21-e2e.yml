@@ -1,0 +1,170 @@
+name: ZAVQERA W21 Isolated Browser E2E
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  w21-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v3
+        with:
+          version: latest
+
+      - name: Install web dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Verify required Development DB secret
+        env:
+          ZAVQERA_DEVELOPMENT_DB_URL: ${{ secrets.ZAVQERA_DEVELOPMENT_DB_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ZAVQERA_DEVELOPMENT_DB_URL}" ]; then
+            echo "::error::Missing GitHub Actions secret ZAVQERA_DEVELOPMENT_DB_URL."
+            exit 1
+          fi
+          case "${ZAVQERA_DEVELOPMENT_DB_URL}" in
+            *mrwmmbytcymqgwvcoywd.supabase.co*) ;;
+            *) echo "::error::Database URL is not the ZAVQERA Development project."; exit 1 ;;
+          esac
+
+      - name: Create disposable Supabase workdir
+        env:
+          ZAVQERA_DEVELOPMENT_DB_URL: ${{ secrets.ZAVQERA_DEVELOPMENT_DB_URL }}
+        run: |
+          set -euo pipefail
+          workdir="${RUNNER_TEMP}/zavqera-e2e"
+          rm -rf "${workdir}"
+          mkdir -p "${workdir}"
+
+          supabase init --workdir "${workdir}"
+
+          python3 - "${workdir}/supabase/config.toml" <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          path = Path(sys.argv[1])
+          text = path.read_text(encoding="utf-8")
+
+          text = re.sub(r'^project_id\\s*=.*$', 'project_id = "zavqera-e2e-local"', text, flags=re.M)
+
+          if re.search(r'^\\[db\\]$', text, flags=re.M):
+              text = re.sub(
+                  r'(^\\[db\\]$)(.*?)(?=^\\[|\\Z)',
+                  lambda m: (
+                      m.group(1) + "\\n"
+                      + re.sub(r'^major_version\\s*=.*$', 'major_version = 17', m.group(2), flags=re.M)
+                      if re.search(r'^major_version\\s*=', m.group(2), flags=re.M)
+                      else m.group(1) + "\\nmajor_version = 17\\n" + m.group(2)
+                  ),
+                  text,
+                  flags=re.M | re.S,
+              )
+          else:
+              text += "\\n[db]\\nmajor_version = 17\\n"
+
+          if re.search(r'^\\[auth\\.email\\]$', text, flags=re.M):
+              text = re.sub(
+                  r'(^\\[auth\\.email\\]$)(.*?)(?=^\\[|\\Z)',
+                  lambda m: (
+                      m.group(1) + "\\n"
+                      + (re.sub(r'^enable_confirmations\\s*=.*$', 'enable_confirmations = false', m.group(2), flags=re.M)
+                         if re.search(r'^enable_confirmations\\s*=', m.group(2), flags=re.M)
+                         else 'enable_confirmations = false\\n' + m.group(2))
+                  ),
+                  text,
+                  flags=re.M | re.S,
+              )
+          else:
+              text += "\\n[auth.email]\\nenable_confirmations = false\\n"
+
+          path.write_text(text, encoding="utf-8")
+          PY
+
+          printf '%s\\n' 'zavqera-e2e-local' > "${workdir}/ZAVQERA_E2E_DISPOSABLE"
+
+          schema_dir="${workdir}/supabase/migrations"
+          schema_file="${schema_dir}/$(date -u +%Y%m%d%H%M%S)_development_schema.sql"
+
+          supabase db dump \
+            --db-url "${ZAVQERA_DEVELOPMENT_DB_URL}" \
+            --schema public,private \
+            -f "${schema_file}"
+
+          cat >> "${schema_file}" <<'SQL'
+
+          CREATE TRIGGER on_auth_user_created
+          AFTER INSERT ON auth.users FOR EACH ROW
+          EXECUTE FUNCTION private.handle_new_user_profile();
+          SQL
+
+          grep -q 'VERIFIED_OUTCOME_REQUIRED' "${schema_file}"
+          grep -q 'missions_initial_state' "${schema_file}"
+          grep -q 'mission_actions_completion_insert_guard' "${schema_file}"
+          grep -q 'handle_new_user_profile' "${schema_file}"
+
+          echo "${workdir}" > "${RUNNER_TEMP}/zavqera-e2e-workdir"
+          sha256sum "${schema_file}" > "${RUNNER_TEMP}/zavqera-e2e-schema.sha256"
+
+          unset ZAVQERA_DEVELOPMENT_DB_URL
+
+      - name: Run authenticated browser E2E
+        working-directory: apps/web
+        env:
+          ZAVQERA_E2E_MODE: disposable-full-loop
+          ZAVQERA_E2E_SUPABASE_WORKDIR: ${{ runner.temp }}/zavqera-e2e
+        run: |
+          set -euo pipefail
+          unset NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+          unset SUPABASE_SERVICE_ROLE_KEY SUPABASE_SECRET_KEY SERVICE_ROLE_KEY SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD
+          unset ZAVQERA_E2E_USER_A_EMAIL ZAVQERA_E2E_USER_A_PASSWORD ZAVQERA_E2E_USER_B_EMAIL ZAVQERA_E2E_USER_B_PASSWORD
+          npm run test:e2e
+
+      - name: Write W21 evidence
+        if: always()
+        run: |
+          set -euo pipefail
+          {
+            echo "result=completed"
+            echo "git_sha=${GITHUB_SHA}"
+            echo "utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "node=$(node --version)"
+            echo "npm=$(npm --version)"
+            echo "supabase_cli=$(supabase --version)"
+            echo "postgres_major=17"
+            if [ -f "${RUNNER_TEMP}/zavqera-e2e-schema.sha256" ]; then
+              echo -n "schema_sha256="
+              cut -d' ' -f1 "${RUNNER_TEMP}/zavqera-e2e-schema.sha256"
+            fi
+            if grep -Rqs '"cleanup"[[:space:]]*:[[:space:]]*"VERIFIED"' "${RUNNER_TEMP}/zavqera-e2e" 2>/dev/null; then
+              echo "cleanup=VERIFIED"
+            else
+              echo "cleanup=NOT_VERIFIED_OR_RUN_DID_NOT_REACH_TEARDOWN"
+            fi
+          } > "${RUNNER_TEMP}/W21_EVIDENCE.txt"
+
+      - name: Upload sanitized W21 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zavqera-w21-evidence
+          path: ${{ runner.temp }}/W21_EVIDENCE.txt
+          if-no-files-found: error
