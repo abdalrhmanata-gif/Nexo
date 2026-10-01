@@ -40,23 +40,23 @@ SELECT remaining_actions
  WHERE mission_id = '${mission_id}'
  FOR UPDATE;
 SELECT pg_sleep(1);
-DO $$
-BEGIN
-  IF (SELECT remaining_actions FROM authority_state WHERE mission_id = '${mission_id}') < 1 THEN
-    RAISE EXCEPTION 'BUDGET_EXHAUSTED';
-  END IF;
-END
-$$;
-UPDATE authority_state
-   SET remaining_actions = remaining_actions - 1
- WHERE mission_id = '${mission_id}';
+WITH changed AS (
+  UPDATE authority_state
+     SET remaining_actions = remaining_actions - 1
+   WHERE mission_id = '${mission_id}'
+     AND remaining_actions > 0
+  RETURNING mission_id
+)
 INSERT INTO execution_attempts(mission_id, idempotency_key)
-VALUES ('${mission_id}', '${idempotency_key}');
+SELECT mission_id, '${idempotency_key}' FROM changed;
+SELECT 1 / count(*)
+  FROM execution_attempts
+ WHERE mission_id = '${mission_id}'
+   AND idempotency_key = '${idempotency_key}';
 COMMIT;
 SQL
   return $?
 }
-
 run_reservation "budget-one" "budget-idem-a" "${tmpdir}/budget-a.log" &
 p1=$!
 run_reservation "budget-one" "budget-idem-b" "${tmpdir}/budget-b.log" &
