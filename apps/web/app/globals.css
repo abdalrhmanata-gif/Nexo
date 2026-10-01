@@ -60,3 +60,15 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,te
 .readiness p:last-child { margin-bottom:0; }
 .field-optional { margin-left:6px; color:var(--muted); font-weight:400; font-size:12px; }
 @media (max-width:700px) { .add-action .action-control { flex-wrap:wrap; }.add-action input { flex:1 1 100%; }.add-action .button { width:100%; } }
+
+.ai-planner { margin:0 0 28px; }
+.ai-planner h2 { margin:0 0 8px; letter-spacing:-.03em; }
+.ai-planner > p:not(.eyebrow) { color:var(--muted); max-width:760px; }
+.ai-planner .form-grid { gap:14px; }
+.ai-plan-result { margin-top:24px; padding-top:20px; border-top:1px solid var(--line); }
+.ai-plan-result h3 { margin:0 0 8px; }
+.ai-plan-result ol { padding-left:24px; display:grid; gap:14px; }
+.ai-plan-result li { padding-left:4px; }
+.ai-plan-result li strong,.ai-plan-result li span { display:block; }
+.ai-plan-result li span { color:var(--muted); margin-top:3px; }
+.ai-disclaimer { font-size:13px; color:var(--muted); }
