@@ -11,7 +11,6 @@ export const OPT_IN_MODE = "disposable-full-loop";
 export const PROJECT_ID_PATTERN = /^zavqera-e2e-[a-z0-9-]{1,40}$/;
 export const MARKER_FILE = "ZAVQERA_E2E_DISPOSABLE";
 export const SCHEMA_DUMP_PATTERN = /^\d{14}_development_schema\.sql$/;
-export const MIGRATION_FILE_PATTERN = /^\d{14}_[a-z0-9_]+\.sql$/;
 export const DEFAULT_BASE_URL = "http://127.0.0.1:3210";
 export const LEDGER_LIMIT = 64;
 export const LEDGER_KINDS = ["user", "mission", "action", "verification", "outcome"];
