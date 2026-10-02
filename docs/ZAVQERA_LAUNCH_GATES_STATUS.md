@@ -5,13 +5,13 @@ Base: `zavqera/alternative-web-deployment`
 Production/main: untouched.
 
 ## CI
-PASS on candidate head `f202e6f2b07a9841a1aa4a97dbab3b1d12811238` (checked 2026-10-02):
-- [ZAVQERA Web Unit #223](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37054093243): PASS
-- [ZAVQERA Web CI #247](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37054093227): PASS
-- [ZAVQERA Flutter CI #420](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37054093170): PASS
-- [ZAVQERA Flutter CI #419](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37054087446): PASS
+PASS on latest candidate head `afabc1485aa8cba1e8c93f44a0211bea963a3d46` (checked 2026-10-02):
+- [ZAVQERA Web Unit #224](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37054333718): PASS
+- [ZAVQERA Web CI #248](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37054334207): PASS
+- [ZAVQERA Flutter CI #422](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37054334040): PASS
+- [ZAVQERA Flutter CI #421](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37054328126): PASS
 
-These validate the W27/W28 migrations, migration-history alignment, regression test, and current launch-gate documentation. Any subsequent branch change requires fresh CI before release.
+The preceding code/security candidate `f202e6f2b07a9841a1aa4a97dbab3b1d12811238` also passed Web Unit #223, Web CI #247, and Flutter CI #420. The current head has green CI across the required workflows.
 
 ## W25
 PASS for the isolated PostgreSQL two-session atomic fence proof on commit `46dc6029f084fb000ba511478d6e8aec3eb532b3`.
@@ -66,12 +66,6 @@ Keep PR #29 in Draft. Do not merge to `main` or deploy production until:
 5. Final Web Unit, Web CI, and Flutter CI are green on the exact candidate head.
 6. Explicit owner approval is recorded before merge/deploy.
 
-
-## W27 security follow-up (2026-10-02)
-
-A review finding in the W22 AI-usage SECURITY DEFINER functions was that `search_path` placed the writable `public` schema before `pg_catalog`. Added follow-up migration `20261002180000_w27_ai_usage_search_path_hardening.sql` to set all four function paths to `pg_catalog, public` without rewriting the earlier migration history. Applied to Supabase Development project `mrwmmbytcymqgwvcoywd` through the migration tool; catalog verification confirmed all four functions have `search_path=pg_catalog, public`. No production/Main project was changed.
-
-A regression test was added at `apps/web/test/ai-usage-security.test.mjs`; Web Unit, Web CI, and Flutter CI passed on candidate `4b748547248e4f72490fc315fe6040e888ac5dd3`. The latest documentation-only follow-up still requires fresh CI before release. W21, live preview AI verification, and complete Mission Authority evidence remain open. PR #29 remains Draft; no production/main merge, production deployment, or Supabase Main changes.
 
 
 ## W28 audit follow-up (2026-10-02)
