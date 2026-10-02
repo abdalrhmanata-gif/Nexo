@@ -3,140 +3,31 @@
 import { useEffect, useState } from "react";
 import type { AppLanguage } from "./language-switcher";
 
-const TEXTS: Record<AppLanguage, Record<string, string>> = {
-  en: {},
-  nb: {
-    "Mission control for autonomous AI": "Kontrollsenter for autonom KI",
-    "Keep intent clear. Keep authority bounded.": "Hold målet tydelig. Hold myndigheten avgrenset.",
-    "ZAVQERA gives teams a quiet, legible place to shape long-running AI work and see what is happening before it becomes action.": "ZAVQERA gir team et oversiktlig sted for å planlegge langsiktig KI-arbeid og se hva som skjer før det blir til handling.",
-    "Open workspace": "Åpne arbeidsområdet",
-    "MISSION CONTROL": "KONTROLLSENTER",
-    "Workspace": "Arbeidsområde",
-    "New mission": "Nytt oppdrag",
-    "A calm control plane for bounded AI work.": "Et oversiktlig kontrollsenter for avgrenset KI-arbeid.",
-    "Welcome back": "Velkommen tilbake",
-    "Sign in.": "Logg inn.",
-    "Access your workspace and keep authority bounded.": "Åpne arbeidsområdet ditt og behold kontrollen.",
-    "Forgot your password?": "Glemt passordet?",
-    "Need an account?": "Trenger du en konto?",
-    "Create one": "Opprett konto",
-    "Get started": "Kom i gang",
-    "Create your account.": "Opprett kontoen din.",
-    "Your workspace and missions are private to you.": "Arbeidsområdet og oppdragene dine er private.",
-    "Already have an account?": "Har du allerede en konto?",
-    "Sign in": "Logg inn",
-    "Account recovery": "Kontogjenoppretting",
-    "Reset your password.": "Tilbakestill passordet.",
-    "We'll email you a secure link to choose a new password.": "Vi sender deg en sikker lenke for å velge et nytt passord.",
-    "Back to sign in": "Tilbake til innlogging",
-    "Choose a new password.": "Velg et nytt passord.",
-    "Use a password you haven't used elsewhere.": "Bruk et passord du ikke bruker andre steder.",
-    "Request a new reset link": "Be om en ny tilbakestillingslenke",
-    "Loading sign-in…": "Laster innlogging…",
-    "Loading sign-up…": "Laster registrering…",
-    "Loading password reset…": "Laster passordtilbakestilling…",
-    "AI copilot · Draft only": "مساعد الذكاء الاصطناعي · مسودة فقط",
-    "Turn a goal into a first plan": "حوّل هدفك إلى خطة أولية",
-    "Describe what you want to achieve. ZAVQERA will suggest a short plan for you to review. Nothing is executed or saved automatically.": "اشرح ما تريد تحقيقه. سيقترح ZAVQERA خطة مختصرة لمراجعتها. لن يُنفّذ أي شيء أو يُحفظ تلقائيًا.",
-    "Your goal": "هدفك",
-    "Creating plan…": "جارٍ إنشاء الخطة…",
-    "Create plan with AI": "أنشئ خطة بالذكاء الاصطناعي",
-    "Suggested plan": "الخطة المقترحة",
-    "What needs your attention": "ما الذي يحتاج إلى انتباهك",
-    "Every mission below is a stated outcome and the work required to reach it.": "كل مهمة أدناه تحدد النتيجة المطلوبة والعمل اللازم لتحقيقها.",
-    "Next up": "التالي",
-    "Nothing is waiting on you": "لا توجد أمور بانتظارك",
-    "Work is paused until you resolve the open decision.": "العمل متوقف حتى تحسم القرار المفتوح.",
-    "Add the work each mission needs before it can move.": "أضف خطوات العمل اللازمة لكل مهمة قبل المتابعة.",
-    "Your active missions are moving within their stated boundaries.": "تتقدم مهامك النشطة ضمن الحدود المحددة لها.",
-    "Active": "نشطة",
-    "Needs your input": "تحتاج إلى تدخلك",
-    "Completed": "مكتملة",
-    "Your missions": "مهامك",
-    "Most recently updated first.": "الأحدث تحديثًا أولًا.",
-    "Show all": "عرض الكل",
-    "No missions yet": "لا توجد مهام بعد",
-    "Create mission": "إنشاء مهمة",
-    "Open mission": "فتح المهمة",
-    "Needs input": "تحتاج إلى تدخل",
-    "Mission": "مهمة",
-    "No actions yet": "لا توجد إجراءات بعد",
-    "Sign out": "تسجيل الخروج",,
-    "AI copilot · Draft only": "KI-assistent · Kun utkast",
-    "Turn a goal into a first plan": "Gjør et mål om til en første plan",
-    "Describe what you want to achieve. ZAVQERA will suggest a short plan for you to review. Nothing is executed or saved automatically.": "Beskriv hva du vil oppnå. ZAVQERA foreslår en kort plan du kan gjennomgå. Ingenting utføres eller lagres automatisk.",
-    "Your goal": "Målet ditt",
-    "Creating plan…": "Oppretter plan…",
-    "Create plan with AI": "Lag plan med KI",
-    "Suggested plan": "Foreslått plan",
-    "What needs your attention": "Hva krever oppmerksomheten din",
-    "Every mission below is a stated outcome and the work required to reach it.": "Hvert oppdrag nedenfor beskriver et ønsket resultat og arbeidet som kreves.",
-    "Next up": "Neste",
-    "Nothing is waiting on you": "Ingenting venter på deg",
-    "Work is paused until you resolve the open decision.": "Arbeidet er satt på pause til du avklarer den åpne beslutningen.",
-    "Add the work each mission needs before it can move.": "Legg til arbeidet hvert oppdrag trenger før det kan fortsette.",
-    "Your active missions are moving within their stated boundaries.": "De aktive oppdragene følger de fastsatte rammene.",
-    "Active": "Aktiv",
-    "Needs your input": "Trenger din avklaring",
-    "Completed": "Fullført",
-    "Your missions": "Oppdragene dine",
-    "Most recently updated first.": "Sist oppdatert først.",
-    "Show all": "Vis alle",
-    "No missions yet": "Ingen oppdrag ennå",
-    "Create mission": "Opprett oppdrag",
-    "Open mission": "Åpne oppdrag",
-    "Needs input": "Trenger avklaring",
-    "Mission": "Oppdrag",
-    "No actions yet": "Ingen handlinger ennå",
-    "Sign out": "Logg ut",
-  },
-  ar: {
-    "Mission control for autonomous AI": "مركز التحكم بالذكاء الاصطناعي المستقل",
-    "Keep intent clear. Keep authority bounded.": "حافظ على وضوح الهدف وحدود الصلاحيات.",
-    "ZAVQERA gives teams a quiet, legible place to shape long-running AI work and see what is happening before it becomes action.": "يوفر ZAVQERA مساحة واضحة لتنظيم مهام الذكاء الاصطناعي ومتابعتها قبل تحويلها إلى إجراءات.",
-    "Open workspace": "افتح مساحة العمل",
-    "MISSION CONTROL": "مركز التحكم",
-    "Workspace": "مساحة العمل",
-    "New mission": "مهمة جديدة",
-    "A calm control plane for bounded AI work.": "منصة واضحة لإدارة مهام الذكاء الاصطناعي ضمن صلاحيات محددة.",
-    "Welcome back": "مرحبًا بعودتك",
-    "Sign in.": "تسجيل الدخول",
-    "Access your workspace and keep authority bounded.": "ادخل إلى مساحة عملك مع الحفاظ على حدود الصلاحيات.",
-    "Forgot your password?": "هل نسيت كلمة المرور؟",
-    "Need an account?": "ليس لديك حساب؟",
-    "Create one": "أنشئ حسابًا",
-    "Get started": "ابدأ الآن",
-    "Create your account.": "أنشئ حسابك",
-    "Your workspace and missions are private to you.": "مساحة عملك ومهامك خاصة بك.",
-    "Already have an account?": "لديك حساب بالفعل؟",
-    "Sign in": "تسجيل الدخول",
-    "Account recovery": "استعادة الحساب",
-    "Reset your password.": "إعادة تعيين كلمة المرور",
-    "We'll email you a secure link to choose a new password.": "سنرسل إلى بريدك رابطًا آمنًا لاختيار كلمة مرور جديدة.",
-    "Back to sign in": "العودة إلى تسجيل الدخول",
-    "Choose a new password.": "اختر كلمة مرور جديدة",
-    "Use a password you haven't used elsewhere.": "استخدم كلمة مرور لا تستعملها في مواقع أخرى.",
-    "Request a new reset link": "طلب رابط إعادة تعيين جديد",
-    "Loading sign-in…": "جارٍ تحميل تسجيل الدخول…",
-    "Loading sign-up…": "جارٍ تحميل إنشاء الحساب…",
-    "Loading password reset…": "جارٍ تحميل إعادة تعيين كلمة المرور…"
-  }
+const NB: Record<string, string> = {
+"Mission control for autonomous AI":"Kontrollsenter for autonom KI",
+"Keep intent clear. Keep authority bounded.":"Hold målet tydelig. Hold myndigheten avgrenset.",
+"ZAVQERA gives teams a quiet, legible place to shape long-running AI work and see what is happening before it becomes action.":"ZAVQERA gir team et oversiktlig sted for å planlegge langsiktig KI-arbeid og se hva som skjer før det blir til handling.",
+"Open workspace":"Åpne arbeidsområdet","MISSION CONTROL":"KONTROLLSENTER","Workspace":"Arbeidsområde","New mission":"Nytt oppdrag","A calm control plane for bounded AI work.":"Et oversiktlig kontrollsenter for avgrenset KI-arbeid.",
+"Welcome back":"Velkommen tilbake","Sign in.":"Logg inn.","Access your workspace and keep authority bounded.":"Åpne arbeidsområdet ditt og behold kontrollen.","Forgot your password?":"Glemt passordet?","Need an account?":"Trenger du en konto?","Create one":"Opprett konto","Get started":"Kom i gang","Create your account.":"Opprett kontoen din.","Your workspace and missions are private to you.":"Arbeidsområdet og oppdragene dine er private.","Already have an account?":"Har du allerede en konto?","Sign in":"Logg inn","Account recovery":"Kontogjenoppretting","Reset your password.":"Tilbakestill passordet.","We’ll email you a secure link to choose a new password.":"Vi sender deg en sikker lenke for å velge et nytt passord.","Back to sign in":"Tilbake til innlogging","Choose a new password.":"Velg et nytt passord.","Use a password you haven't used elsewhere.":"Bruk et passord du ikke bruker andre steder.","Request a new reset link":"Be om en ny tilbakestillingslenke","Loading sign-in…":"Laster innlogging…","Loading sign-up…":"Laster registrering…","Loading password reset…":"Laster passordtilbakestilling…",
+"AI copilot · Draft only":"KI-assistent · Kun utkast","Turn a goal into a first plan":"Gjør et mål om til en første plan","Describe what you want to achieve. ZAVQERA will suggest a short plan for you to review. Nothing is executed or saved automatically.":"Beskriv hva du vil oppnå. ZAVQERA foreslår en kort plan du kan gjennomgå. Ingenting utføres eller lagres automatisk.","Your goal":"Målet ditt","Creating plan…":"Oppretter plan…","Create plan with AI":"Lag plan med KI","Suggested plan":"Foreslått plan","AI-generated draft. Review each step before adding it to a mission.":"KI-generert utkast. Gjennomgå hvert trinn før du legger det til et oppdrag.","Could not create a plan.":"Kunne ikke opprette en plan.","Could not reach the AI planner. Please try again.":"Fikk ikke kontakt med KI-planleggeren. Prøv igjen.",
+"What needs your attention":"Hva krever oppmerksomheten din","Every mission below is a stated outcome and the work required to reach it.":"Hvert oppdrag nedenfor beskriver et ønsket resultat og arbeidet som kreves.","Next up":"Neste","Nothing is waiting on you":"Ingenting venter på deg","Work is paused until you resolve the open decision.":"Arbeidet er satt på pause til du avklarer den åpne beslutningen.","Add the work each mission needs before it can move.":"Legg til arbeidet hvert oppdrag trenger før det kan fortsette.","Your active missions are moving within their stated boundaries.":"De aktive oppdragene følger de fastsatte rammene.","Active":"Aktiv","Needs your input":"Trenger din avklaring","Completed":"Fullført","Your missions":"Oppdragene dine","Most recently updated first.":"Sist oppdatert først.","Show all":"Vis alle","No missions yet":"Ingen oppdrag ennå","A mission records an outcome you intend to reach and the work required to reach it. Create your first one to begin.":"Et oppdrag beskriver resultatet du vil oppnå og arbeidet som kreves. Opprett ditt første oppdrag for å komme i gang.","Create mission":"Opprett oppdrag","Open mission":"Åpne oppdrag","Needs input":"Trenger avklaring","Mission":"Oppdrag","No actions yet":"Ingen handlinger ennå","Sign out":"Logg ut"
+};
+
+const AR: Record<string, string> = {
+"Mission control for autonomous AI":"مركز التحكم بالذكاء الاصطناعي المستقل","Keep intent clear. Keep authority bounded.":"حافظ على وضوح الهدف وحدود الصلاحيات.","ZAVQERA gives teams a quiet, legible place to shape long-running AI work and see what is happening before it becomes action.":"يوفر ZAVQERA مساحة واضحة لتنظيم مهام الذكاء الاصطناعي ومتابعتها قبل تحويلها إلى إجراءات.","Open workspace":"افتح مساحة العمل","MISSION CONTROL":"مركز التحكم","Workspace":"مساحة العمل","New mission":"مهمة جديدة","A calm control plane for bounded AI work.":"منصة واضحة لإدارة مهام الذكاء الاصطناعي ضمن صلاحيات محددة.",
+"Welcome back":"مرحبًا بعودتك","Sign in.":"تسجيل الدخول","Access your workspace and keep authority bounded.":"ادخل إلى مساحة عملك مع الحفاظ على حدود الصلاحيات.","Forgot your password?":"هل نسيت كلمة المرور؟","Need an account?":"ليس لديك حساب؟","Create one":"أنشئ حسابًا","Get started":"ابدأ الآن","Create your account.":"أنشئ حسابك","Your workspace and missions are private to you.":"مساحة عملك ومهامك خاصة بك.","Already have an account?":"لديك حساب بالفعل؟","Sign in":"تسجيل الدخول","Account recovery":"استعادة الحساب","Reset your password.":"إعادة تعيين كلمة المرور","We’ll email you a secure link to choose a new password.":"سنرسل إلى بريدك رابطًا آمنًا لاختيار كلمة مرور جديدة.","Back to sign in":"العودة إلى تسجيل الدخول","Choose a new password.":"اختر كلمة مرور جديدة","Use a password you haven't used elsewhere.":"استخدم كلمة مرور لا تستعملها في مواقع أخرى.","Request a new reset link":"طلب رابط إعادة تعيين جديد","Loading sign-in…":"جارٍ تحميل تسجيل الدخول…","Loading sign-up…":"جارٍ تحميل إنشاء الحساب…","Loading password reset…":"جارٍ تحميل إعادة تعيين كلمة المرور…",
+"AI copilot · Draft only":"مساعد الذكاء الاصطناعي · مسودة فقط","Turn a goal into a first plan":"حوّل هدفك إلى خطة أولية","Describe what you want to achieve. ZAVQERA will suggest a short plan for you to review. Nothing is executed or saved automatically.":"اشرح ما تريد تحقيقه. سيقترح ZAVQERA خطة مختصرة لمراجعتها. لن يُنفّذ أي شيء أو يُحفظ تلقائيًا.","Your goal":"هدفك","Creating plan…":"جارٍ إنشاء الخطة…","Create plan with AI":"أنشئ خطة بالذكاء الاصطناعي","Suggested plan":"الخطة المقترحة","AI-generated draft. Review each step before adding it to a mission.":"مسودة مولّدة بالذكاء الاصطناعي. راجع كل خطوة قبل إضافتها إلى مهمة.","Could not create a plan.":"تعذر إنشاء الخطة.","Could not reach the AI planner. Please try again.":"تعذر الاتصال بمخطط الذكاء الاصطناعي. حاول مجددًا.",
+"What needs your attention":"ما الذي يحتاج إلى انتباهك","Every mission below is a stated outcome and the work required to reach it.":"كل مهمة أدناه تحدد النتيجة المطلوبة والعمل اللازم لتحقيقها.","Next up":"التالي","Nothing is waiting on you":"لا توجد أمور بانتظارك","Work is paused until you resolve the open decision.":"العمل متوقف حتى تحسم القرار المفتوح.","Add the work each mission needs before it can move.":"أضف خطوات العمل اللازمة لكل مهمة قبل المتابعة.","Your active missions are moving within their stated boundaries.":"تتقدم مهامك النشطة ضمن الحدود المحددة لها.","Active":"نشطة","Needs your input":"تحتاج إلى تدخلك","Completed":"مكتملة","Your missions":"مهامك","Most recently updated first.":"الأحدث تحديثًا أولًا.","Show all":"عرض الكل","No missions yet":"لا توجد مهام بعد","A mission records an outcome you intend to reach and the work required to reach it. Create your first one to begin.":"تسجل المهمة النتيجة التي تريد الوصول إليها والعمل اللازم لتحقيقها. أنشئ مهمتك الأولى للبدء.","Create mission":"إنشاء مهمة","Open mission":"فتح المهمة","Needs input":"تحتاج إلى تدخل","Mission":"مهمة","No actions yet":"لا توجد إجراءات بعد","Sign out":"تسجيل الخروج"
 };
 
 export function LocalizedText({ en, nb, ar }: { en: string; nb?: string; ar?: string }) {
   const [language, setLanguage] = useState<AppLanguage>("en");
   useEffect(() => {
     let saved: string | null = null;
-    try {
-      saved = window.localStorage.getItem("zavqera-language");
-    } catch {
-      // Cookie and browser language remain available if storage is blocked.
-    }
+    try { saved = window.localStorage.getItem("zavqera-language"); } catch { /* storage may be blocked */ }
     const cookie = document.cookie.split("; ").find((part) => part.startsWith("zavqera-language="))?.split("=")[1];
     const candidate = saved || cookie || navigator.language.toLowerCase().split("-")[0];
-    const next: AppLanguage = candidate === "ar" || candidate === "nb" ? candidate : "en";
-    setLanguage(next);
+    setLanguage(candidate === "ar" || candidate === "nb" ? candidate : "en");
   }, []);
-  const source = en;
-  return <>{language === "ar" ? (ar ?? TEXTS.ar[source] ?? en) : language === "nb" ? (nb ?? TEXTS.nb[source] ?? en) : en}</>;
+  return <>{language === "ar" ? (ar ?? AR[en] ?? en) : language === "nb" ? (nb ?? NB[en] ?? en) : en}</>;
 }
