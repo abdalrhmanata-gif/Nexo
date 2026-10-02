@@ -5,12 +5,12 @@ Base: `zavqera/alternative-web-deployment`
 Production/main: untouched.
 
 ## CI
-PASS on current candidate head `5540ec58a6dec528b632675cbae4a8c039cbff90` (checked 2026-10-02):
-- [ZAVQERA Web Unit #203](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37035903898): PASS
-- [ZAVQERA Web CI #227](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37035903920): PASS
-- [ZAVQERA Flutter CI #389](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37035903928): PASS
+PASS on current candidate head `ff77a042b4c82d6e7467800c0598a44f2b447c8e` (checked 2026-10-02):
+- [ZAVQERA Web Unit #204](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37036988806): PASS
+- [ZAVQERA Web CI #228](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37036988796): PASS
+- [ZAVQERA Flutter CI #391](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37036988840): PASS
 
-These runs validate the candidate head above. Re-run all required CI workflows after any further application-code change before release.
+These runs validate the documentation-only candidate head above. Application code previously passed on the preceding candidate; re-run all required CI workflows after any further application-code change before release.
 
 ## W25
 PASS for the isolated PostgreSQL two-session atomic fence proof on commit `46dc6029f084fb000ba511478d6e8aec3eb532b3`.
