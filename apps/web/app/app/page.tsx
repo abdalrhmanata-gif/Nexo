@@ -12,7 +12,7 @@ const ERRORS: Record<string, string> = {
   authentication: "Your session has expired. Sign in again to continue.",
 };
 
-export default async function <LocalizedText en="Workspace" />Page({
+export default async function WorkspacePage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string; status?: string }>;
