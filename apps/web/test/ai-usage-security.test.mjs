@@ -4,7 +4,7 @@ import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const migration = readFileSync(
   path.join(root, "supabase/migrations/20261002180000_w27_ai_usage_search_path_hardening.sql"),
   "utf8",
