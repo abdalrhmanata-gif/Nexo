@@ -37,8 +37,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         email,
         password,
         options: {
-          const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || window.location.origin;
-          emailRedirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
         },
       });
     setLoading(false);
