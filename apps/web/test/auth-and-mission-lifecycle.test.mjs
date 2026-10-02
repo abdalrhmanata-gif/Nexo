@@ -136,3 +136,9 @@ test("configured public origin takes precedence over forwarded host for auth cal
     "http://localhost:3000",
   );
 });
+
+test("mission deletion reports success only after a row is actually deleted", async () => {
+  const repository = await source("lib/supabase/mission-repository.ts");
+  assert.match(repository, /\.delete\(\)[\s\S]*?\.eq\("workspace_id", workspaceId\)[\s\S]*?\.select\("id"\)[\s\S]*?\.maybeSingle\(\)/);
+  assert.match(repository, /if \(!result\.data\) throw new MissionMutationRejectedError/);
+});
