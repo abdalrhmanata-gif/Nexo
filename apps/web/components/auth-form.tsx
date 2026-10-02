@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowserClient } from "../lib/supabase/browser";
 import { safeNextPath } from "../lib/auth/redirect.mjs";
+import { LocalizedText } from "./localized-text";
 
 const CONFIRMATION_ERRORS: Record<string, string> = {
   "confirmation-link": "That confirmation link is invalid or has expired. Request a new one by signing up again.",
@@ -51,11 +52,11 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   }
 
   return <form className="form-grid" onSubmit={submit} noValidate>
-    <div className="field"><label htmlFor="email">Email</label><input id="email" name="email" type="email" autoComplete="email" required /></div>
-    <div className="field"><label htmlFor="password">Password</label><input id="password" name="password" type="password" autoComplete={mode === "sign-in" ? "current-password" : "new-password"} required /><small>Use at least 8 characters.</small></div>
-    {(error || confirmationError) && <div className="field-error" role="alert">{error || confirmationError}</div>}
-    {message && <div className="success-state" role="status">{message}</div>}
-    <button className="button" type="submit" disabled={loading}>{loading ? "Working…" : mode === "sign-in" ? "Sign in" : "Create account"}</button>
+    <div className="field"><label htmlFor="email"><LocalizedText en="Email" /></label><input id="email" name="email" type="email" autoComplete="email" required /></div>
+    <div className="field"><label htmlFor="password"><LocalizedText en="Password" /></label><input id="password" name="password" type="password" autoComplete={mode === "sign-in" ? "current-password" : "new-password"} required /><small><LocalizedText en="Use at least 8 characters." /></small></div>
+    {(error || confirmationError) && <div className="field-error" role="alert"><LocalizedText en={error || confirmationError} /></div>}
+    {message && <div className="success-state" role="status"><LocalizedText en={message} /></div>}
+    <button className="button" type="submit" disabled={loading}>{loading ? <LocalizedText en="Working…" /> : mode === "sign-in" ? <LocalizedText en="Sign in" /> : <LocalizedText en="Create account" />}</button>
   </form>;
 }
 
@@ -81,10 +82,10 @@ export function ForgotPasswordForm() {
   }
 
   return <form className="form-grid" onSubmit={submit} noValidate>
-    <div className="field"><label htmlFor="reset-email">Email</label><input id="reset-email" name="email" type="email" autoComplete="email" required /></div>
+    <div className="field"><label htmlFor="reset-email"><LocalizedText en="Email" /></label><input id="reset-email" name="email" type="email" autoComplete="email" required /></div>
     {error && <div className="field-error" role="alert">{error}</div>}
     {message && <div className="success-state" role="status">{message}</div>}
-    <button className="button" type="submit" disabled={loading}>{loading ? "Sending…" : "Send reset link"}</button>
+    <button className="button" type="submit" disabled={loading}>{loading ? <LocalizedText en="Sending…" /> : <LocalizedText en="Send reset link" />}</button>
   </form>;
 }
 
@@ -113,11 +114,11 @@ export function ResetPasswordForm() {
   }
 
   return <form className="form-grid" onSubmit={submit} noValidate>
-    <div className="field"><label htmlFor="new-password">New password</label><input id="new-password" name="password" type="password" autoComplete="new-password" minLength={8} required /><small>Use at least 8 characters.</small></div>
-    <div className="field"><label htmlFor="confirm-password">Confirm new password</label><input id="confirm-password" name="confirmPassword" type="password" autoComplete="new-password" minLength={8} required /></div>
+    <div className="field"><label htmlFor="new-password"><LocalizedText en="New password" /></label><input id="new-password" name="password" type="password" autoComplete="new-password" minLength={8} required /><small><LocalizedText en="Use at least 8 characters." /></small></div>
+    <div className="field"><label htmlFor="confirm-password"><LocalizedText en="Confirm new password" /></label><input id="confirm-password" name="confirmPassword" type="password" autoComplete="new-password" minLength={8} required /></div>
     {error && <div className="field-error" role="alert">{error}</div>}
     {message && <div className="success-state" role="status">{message}</div>}
-    <button className="button" type="submit" disabled={loading}>{loading ? "Updating…" : "Update password"}</button>
+    <button className="button" type="submit" disabled={loading}>{loading ? <LocalizedText en="Updating…" /> : <LocalizedText en="Update password" />}</button>
   </form>;
 }
 
@@ -130,5 +131,5 @@ export function SignOutButton() {
     router.push("/auth/sign-in");
     router.refresh();
   }
-  return <button className="button button-small" onClick={signOut} disabled={loading}>{loading ? "Signing out…" : "Sign out"}</button>;
+  return <button className="button button-small" onClick={signOut} disabled={loading}>{loading ? <LocalizedText en="Signing out…" /> : <LocalizedText en="Sign out" />}</button>;
 }
