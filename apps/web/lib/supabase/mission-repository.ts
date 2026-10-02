@@ -237,8 +237,17 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       return completeMission(result.data as MissionRow);
     },
     async deleteMission(id: string) {
-      const result = await supabase.from("missions").delete().eq("id", id).eq("workspace_id", workspaceId);
+      const result = await supabase
+        .from("missions")
+        .delete()
+        .eq("id", id)
+        .eq("workspace_id", workspaceId)
+        .select("id")
+        .maybeSingle();
       if (result.error) throw result.error;
+      // PostgREST can report no error when RLS or a stale ID matches no rows.
+      // Do not tell the user deletion succeeded unless a row was actually removed.
+      if (!result.data) throw new MissionMutationRejectedError("That mission is no longer available or cannot be deleted.");
     },
     async addAction(input) {
       // The mission is re-read through the workspace-scoped boundary first, so
