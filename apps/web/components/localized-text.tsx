@@ -72,7 +72,12 @@ const TEXTS: Record<AppLanguage, Record<string, string>> = {
 export function LocalizedText({ en, nb, ar }: { en: string; nb?: string; ar?: string }) {
   const [language, setLanguage] = useState<AppLanguage>("en");
   useEffect(() => {
-    const saved = window.localStorage.getItem("zavqera-language");
+    let saved: string | null = null;
+    try {
+      saved = window.localStorage.getItem("zavqera-language");
+    } catch {
+      // Cookie and browser language remain available if storage is blocked.
+    }
     const cookie = document.cookie.split("; ").find((part) => part.startsWith("zavqera-language="))?.split("=")[1];
     const candidate = saved || cookie || navigator.language.toLowerCase().split("-")[0];
     const next: AppLanguage = candidate === "ar" || candidate === "nb" ? candidate : "en";
