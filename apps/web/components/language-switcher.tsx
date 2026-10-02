@@ -29,7 +29,7 @@ function detectLanguage(): AppLanguage {
 function readPreference(): AppLanguage {
   try {
     const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (validLanguage(saved ?? undefined)) return saved;
+    if (validLanguage(saved ?? undefined)) return saved as AppLanguage;
   } catch {
     // Continue with the cookie or browser language when storage is unavailable.
   }
