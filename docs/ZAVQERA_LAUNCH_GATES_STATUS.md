@@ -5,12 +5,13 @@ Base: `zavqera/alternative-web-deployment`
 Production/main: untouched.
 
 ## CI
-Previously passed on application/security candidate head `4b748547248e4f72490fc315fe6040e888ac5dd3`:
-- [ZAVQERA Web Unit #213](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37040441745): PASS
-- [ZAVQERA Web CI #237](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37040441781): PASS
-- [ZAVQERA Flutter CI #403](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37040441705): PASS
+PASS on candidate head `f202e6f2b07a9841a1aa4a97dbab3b1d12811238` (checked 2026-10-02):
+- [ZAVQERA Web Unit #223](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37054093243): PASS
+- [ZAVQERA Web CI #247](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37054093227): PASS
+- [ZAVQERA Flutter CI #420](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37054093170): PASS
+- [ZAVQERA Flutter CI #419](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37054087446): PASS
 
-Fresh CI for the current head is required because W28 and migration-history alignment changed after those runs. Latest head `81054604d41d8f4a7a4521e05b6bf24a0b4380c0` runs are queued/in progress: Web Unit #222, Web CI #246, Flutter CI #418; push/PR duplicate runs may also appear.
+These validate the W27/W28 migrations, migration-history alignment, regression test, and current launch-gate documentation. Any subsequent branch change requires fresh CI before release.
 
 ## W25
 PASS for the isolated PostgreSQL two-session atomic fence proof on commit `46dc6029f084fb000ba511478d6e8aec3eb532b3`.
@@ -80,3 +81,10 @@ A read-only catalog audit of every public SECURITY DEFINER function in Developme
 Migration history alignment was also corrected: repository migration filenames now match the exact versions recorded by Supabase Development (`20261002172509_w27...` and `20261002192325_w28...`) to avoid false pending-migration drift. Regression test now checks all six hardened functions across W27/W28 migrations.
 
 Latest candidate `81054604d41d8f4a7a4521e05b6bf24a0b4380c0` requires fresh CI completion. W21, live AI preview verification, and full Mission Authority evidence remain open. PR #29 remains Draft.
+
+
+## Owner action required to finish release gates
+
+1. In Netlify project `unique-kringle-3ce321`, add `OPENAI_API_KEY` as a **secret** scoped to `Deploy Previews` (and optionally branch deploy only if deliberately needed). Do not expose it to client code or paste it into GitHub/chat. Redeploy preview after saving.
+2. In GitHub Actions, manually run **ZAVQERA W21 Isolated Browser E2E** against the integration branch after confirming the protected secret `ZAVQERA_DEVELOPMENT_DB_URL` exists and points only to Development project `mrwmmbytcymqgwvcoywd`. The workflow must produce a successful run and a sanitized `zavqera-w21-evidence` artifact with cleanup verified.
+3. After W21 and live AI tests, complete the documented Mission Authority and quota/provider failure-path evidence. Only then consider converting PR #29 from Draft and review merge/deploy separately.
