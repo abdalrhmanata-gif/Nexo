@@ -36,8 +36,8 @@ export default async function NewMissionPage({ searchParams }: { searchParams: P
     <form className="form-grid" action={createMission} noValidate>
       <div className="field"><label htmlFor="name"><LocalizedText en="Mission name" /></label><input id="name" name="name" placeholder="e.g. Renew my passport" required /></div>
       <div className="field"><label htmlFor="intent"><LocalizedText en="Intent" /></label><textarea id="intent" name="intent" placeholder="What should this mission help you accomplish?" required /><small><LocalizedText en="Use plain language. Keep the decision you want to make visible." /></small></div>
-      <div className="field"><label htmlFor="criteria">Success criteria</label><textarea id="criteria" name="criteria" placeholder="One criterion per line" required /><small><LocalizedText en="How you will know this mission succeeded. One per line." /></small></div>
-      <div className="field"><label htmlFor="actions"><LocalizedText en="First steps" /> <span className="field-<LocalizedText en="optional" />">optional</span></label><textarea id="actions" name="actions" placeholder="One step per line" /><small><LocalizedText en="The work you already know about, in the order you would do it. You can add more at any time. Leave empty to start from your success criteria." /></small></div>
+      <div className="field"><label htmlFor="criteria"><LocalizedText en="Success criteria" /></label><textarea id="criteria" name="criteria" placeholder="One criterion per line" required /><small><LocalizedText en="How you will know this mission succeeded. One per line." /></small></div>
+      <div className="field"><label htmlFor="actions"><LocalizedText en="First steps" /> <span className="field-optional"><LocalizedText en="optional" /></span></label><textarea id="actions" name="actions" placeholder="One step per line" /><small><LocalizedText en="The work you already know about, in the order you would do it. You can add more at any time. Leave empty to start from your success criteria." /></small></div>
       <SubmitButton />
       <Link className="button button-quiet" href="/app"><LocalizedText en="Cancel" /></Link>
     </form>
