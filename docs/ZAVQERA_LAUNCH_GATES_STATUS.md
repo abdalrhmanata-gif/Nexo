@@ -74,7 +74,7 @@ A read-only catalog audit of every public SECURITY DEFINER function in Developme
 
 Migration history alignment was also corrected: repository migration filenames now match the exact versions recorded by Supabase Development (`20261002172509_w27...` and `20261002192325_w28...`) to avoid false pending-migration drift. Regression test now checks all six hardened functions across W27/W28 migrations.
 
-Latest candidate `81054604d41d8f4a7a4521e05b6bf24a0b4380c0` requires fresh CI completion. W21, live AI preview verification, and full Mission Authority evidence remain open. PR #29 remains Draft.
+Latest candidate `afabc1485aa8cba1e8c93f44a0211bea963a3d46` passed Web Unit #224, Web CI #248, and Flutter CI #422/#421. Netlify environment metadata was inspected without exposing values; the site currently has no `OPENAI_API_KEY` entry, so live provider verification remains blocked. W21, live preview AI verification, and full Mission Authority evidence remain open. PR #29 remains Draft.
 
 
 ## Owner action required to finish release gates
