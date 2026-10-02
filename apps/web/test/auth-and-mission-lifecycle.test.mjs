@@ -87,7 +87,7 @@ test("confirmation redirects stay on the host the browser is actually using", ()
 test("confirmation endpoints redirect through the resolved request origin", async () => {
   for (const file of ["app/auth/callback/route.ts", "app/auth/confirm/route.ts"]) {
     const text = await source(file);
-    assert.match(text, /const origin = resolveRequestOrigin\(request\.headers, request\.url\)/);
+    assert.match(text, /const origin = resolveAuthCallbackOrigin\(process\.env\.NEXT_PUBLIC_SITE_URL, request\.headers, request\.url\)/);
     assert.doesNotMatch(text, /NextResponse\.redirect\(new URL\([^)]*request\.url\)\)/);
   }
 });
