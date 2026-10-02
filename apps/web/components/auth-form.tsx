@@ -37,11 +37,12 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+          const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || window.location.origin;
+          emailRedirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(nextPath)}`,
         },
       });
     setLoading(false);
-    if (result.error) return setError(result.error.message);
+    if (result.error) return setError(mode === "sign-in" ? "Invalid email or password." : "We could not create the account. Check your details and try again.");
     if (mode === "sign-up" && !result.data.session) {
       setMessage("Check your email to confirm your account, then sign in.");
       return;
