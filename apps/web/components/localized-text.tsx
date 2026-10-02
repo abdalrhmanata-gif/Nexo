@@ -1,5 +1,6 @@
 "use client";
 
+// Client-side dictionary: English is the fallback for any untranslated string.
 import { useEffect, useState } from "react";
 import type { AppLanguage } from "./language-switcher";
 
