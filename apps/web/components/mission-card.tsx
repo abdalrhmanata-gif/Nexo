@@ -27,7 +27,7 @@ export function MissionCard({ mission }: { mission: Mission }) {
       <div className="progress"><span style={{ width: `${mission.progress}%` }} /></div>
       <div className="card-meta"><span>Updated {mission.updated}</span></div>
       <Link className="button button-small mission-open" href={`/app/missions/${mission.id}`}>
-        Open mission<span className="visually-hidden">: {mission.name}</span>
+        <LocalizedText en="Open mission" /><span className="visually-hidden">: {mission.name}</span>
       </Link>
     </article>
   );
