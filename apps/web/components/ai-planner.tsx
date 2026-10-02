@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { LocalizedText } from "./localized-text";
 
 type Plan = {
   summary: string;
@@ -65,9 +66,9 @@ export function AiPlanner() {
 
   return (
     <section className="card ai-planner" aria-labelledby="ai-planner-heading">
-      <p className="eyebrow">AI copilot · Draft only</p>
-      <h2 id="ai-planner-heading">Turn a goal into a first plan</h2>
-      <p>Describe what you want to achieve. ZAVQERA will suggest a short plan for you to review. Nothing is executed or saved automatically.</p>
+      <p className="eyebrow"><LocalizedText en="AI copilot · Draft only" /></p>
+      <h2 id="ai-planner-heading"><LocalizedText en="Turn a goal into a first plan" /></h2>
+      <p><LocalizedText en="Describe what you want to achieve. ZAVQERA will suggest a short plan for you to review. Nothing is executed or saved automatically." /></p>
       {usage && (
         <p className="ai-usage" aria-live="polite">
           {usage.remaining} of {usage.monthly_limit} AI plans remaining this month.
@@ -75,7 +76,7 @@ export function AiPlanner() {
       )}
       <form className="form-grid" onSubmit={submit}>
         <div className="field">
-          <label htmlFor="ai-goal">Your goal</label>
+          <label htmlFor="ai-goal"><LocalizedText en="Your goal" /></label>
           <textarea
             id="ai-goal"
             value={goal}
@@ -89,14 +90,14 @@ export function AiPlanner() {
         </div>
         <div>
           <button className="button" type="submit" disabled={loading || !goal.trim()}>
-            {loading ? "Creating plan…" : "Create plan with AI"}
+            {loading ? "<LocalizedText en="Creating plan…" />" : "<LocalizedText en="Create plan with AI" />"}
           </button>
         </div>
       </form>
       {error && <p className="field-error" role="alert">{error}</p>}
       {plan && (
         <div className="ai-plan-result" aria-live="polite">
-          <h3>Suggested plan</h3>
+          <h3><LocalizedText en="Suggested plan" /></h3>
           <p>{plan.summary}</p>
           <ol>
             {plan.steps.map((step, index) => (
@@ -106,7 +107,7 @@ export function AiPlanner() {
               </li>
             ))}
           </ol>
-          <p className="ai-disclaimer">AI-generated draft. Review each step before adding it to a mission.</p>
+          <p className="ai-disclaimer"><LocalizedText en="AI-generated draft. Review each step before adding it to a mission." /></p>
         </div>
       )}
     </section>
