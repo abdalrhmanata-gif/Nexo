@@ -201,22 +201,24 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       return completeMission(result.data as MissionRow);
     },
     async createMission(input: NewMission) {
-      const result = await supabase.from("missions").insert({ workspace_id: workspaceId, owner_id: user.id, objective: input.objective, status: "DRAFT" }).select(missionSelect).single();
-      if (result.error) throw result.error;
       const actionTitles = (input.actions ?? []).map((title) => title.trim()).filter(Boolean);
-      if (actionTitles.length) {
-        const actions = await supabase.from("mission_actions").insert(actionTitles.map((title, position) => ({
-          mission_id: result.data.id,
+      const result = await supabase.rpc("create_mission_with_actions", {
+        p_workspace_id: workspaceId,
+        p_objective: input.objective,
+        p_actions: actionTitles,
+      });
+      if (result.error) throw result.error;
+      const missionRow = result.data as MissionRow;
+      return toMission(
+        missionRow,
+        actionTitles.map((title, id) => ({
+          id: `new-${id}`,
           title,
-          position,
           status: "PENDING",
-        })));
-        if (actions.error) {
-          await supabase.from("missions").delete().eq("id", result.data.id).eq("workspace_id", workspaceId);
-          throw actions.error;
-        }
-      }
-      return toMission(result.data as MissionRow, actionTitles.map((title, id) => ({ id: `new-${id}`, title, status: "PENDING", version: 1, follow_up_at: null })));
+          version: 1,
+          follow_up_at: null,
+        })),
+      );
     },
     async updateMission(id: string, input: UpdateMission) {
       if (input.objective !== undefined && input.status !== undefined) {
