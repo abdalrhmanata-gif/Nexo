@@ -33,7 +33,7 @@ main { flex:1; }.footer { width:min(1120px, calc(100% - 40px)); margin:0 auto; p
 .danger-zone { margin-top:22px; padding-top:18px; border-top:1px solid var(--line); }.danger-copy { color:#a34425; font-size:13px; margin:0 0 12px; }
 .visually-hidden { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
 .mission-intent { overflow-wrap:anywhere; }.action-title { display:block; font-weight:600; overflow-wrap:anywhere; }.action-hint { display:block; color:var(--muted); font-size:12px; margin-top:4px; }
-.criteria-list li { display:flex; gap:9px; align-items:baseline; overflow-wrap:anywhere; }.criteria-list li::before { content:"\2713"; color:var(--teal); font-weight:700; flex:none; }
+.criteria-list li { display:flex; gap:9px; align-items:baseline; overflow-wrap:anywhere; }.criteria-list li::before { content:"\\2713"; color:var(--teal); font-weight:700; flex:none; }
 .next-step { display:flex; flex-direction:column; gap:2px; margin:16px 0 0; padding:11px 13px; border-radius:6px; border-left:3px solid var(--line); background:#f6f8fa; }
 .next-step-label { font-size:11px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; }.next-step-detail { color:var(--muted); font-size:14px; overflow-wrap:anywhere; }
 .next-step-attention { border-left-color:var(--orange); background:#fff6f0; }.next-step-attention .next-step-label { color:#8a4419; }
@@ -72,3 +72,10 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,te
 .ai-plan-result li strong,.ai-plan-result li span { display:block; }
 .ai-plan-result li span { color:var(--muted); margin-top:3px; }
 .ai-disclaimer { font-size:13px; color:var(--muted); }
+
+.language-switcher select { max-width:118px; padding:8px 10px; border:1px solid var(--line); border-radius:5px; background:var(--white); color:var(--ink); font:inherit; }
+html[dir="rtl"] body { text-align:right; }
+html[dir="rtl"] .hero h1, html[dir="rtl"] .hero p { letter-spacing:normal; }
+html[dir="rtl"] .criteria-list li::before { margin-left:0; }
+html[dir="rtl"] nav { direction:rtl; }
+@media (max-width:700px) { nav { gap:10px; flex-wrap:wrap; justify-content:flex-end; }.language-switcher select { max-width:104px; } }
