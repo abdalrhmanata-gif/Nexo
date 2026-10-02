@@ -71,7 +71,7 @@ export function AiPlanner() {
       <p><LocalizedText en="Describe what you want to achieve. ZAVQERA will suggest a short plan for you to review. Nothing is executed or saved automatically." /></p>
       {usage && (
         <p className="ai-usage" aria-live="polite">
-          {usage.remaining} of {usage.monthly_limit} AI plans remaining this month.
+          {usage.remaining} of {usage.monthly_limit} <LocalizedText en="AI plans remaining this month." />
         </p>
       )}
       <form className="form-grid" onSubmit={submit}>
@@ -94,7 +94,7 @@ export function AiPlanner() {
           </button>
         </div>
       </form>
-      {error && <p className="field-error" role="alert">{error}</p>}
+      {error && <p className="field-error" role="alert"><LocalizedText en={error} /></p>}
       {plan && (
         <div className="ai-plan-result" aria-live="polite">
           <h3><LocalizedText en="Suggested plan" /></h3>
