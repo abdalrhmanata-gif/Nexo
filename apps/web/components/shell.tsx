@@ -24,5 +24,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
 }
 
 export function StatusPill({ status }: { status: string }) {
-  return <span className={`status status-${status.toLowerCase()}`}>{status === "WAITING" ? "Needs input" : status}</span>;
+  const label = status === "WAITING" ? <LocalizedText en="Needs input" /> : status === "ACTIVE" ? <LocalizedText en="Active" /> : status === "COMPLETED" ? <LocalizedText en="Completed" /> : status;
+  return <span className={`status status-${status.toLowerCase()}`}>{label}</span>;
 }
