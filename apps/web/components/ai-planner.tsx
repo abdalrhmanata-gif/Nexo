@@ -90,7 +90,7 @@ export function AiPlanner() {
         </div>
         <div>
           <button className="button" type="submit" disabled={loading || !goal.trim()}>
-            {loading ? "<LocalizedText en="Creating plan…" />" : "<LocalizedText en="Create plan with AI" />"}
+            {loading ? <LocalizedText en="Creating plan…" /> : <LocalizedText en="Create plan with AI" />}
           </button>
         </div>
       </form>
