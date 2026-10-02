@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 export type AppLanguage = "en" | "nb" | "ar";
 
 const STORAGE_KEY = "zavqera-language";
+const COOKIE_KEY = "zavqera-language";
 const SUPPORTED_LANGUAGES: AppLanguage[] = ["en", "nb", "ar"];
 const LABELS: Record<AppLanguage, { language: string; english: string; norwegian: string; arabic: string }> = {
   en: { language: "Language", english: "English", norwegian: "Norsk", arabic: "العربية" },
@@ -12,11 +13,15 @@ const LABELS: Record<AppLanguage, { language: string; english: string; norwegian
   ar: { language: "اللغة", english: "English", norwegian: "Norsk", arabic: "العربية" },
 };
 
+function validLanguage(value: string | undefined): value is AppLanguage {
+  return Boolean(value && SUPPORTED_LANGUAGES.includes(value as AppLanguage));
+}
+
 function detectLanguage(): AppLanguage {
   if (typeof navigator === "undefined") return "en";
   for (const candidate of navigator.languages ?? [navigator.language]) {
     const code = candidate.toLowerCase().split("-")[0];
-    if (SUPPORTED_LANGUAGES.includes(code as AppLanguage)) return code as AppLanguage;
+    if (validLanguage(code)) return code;
   }
   return "en";
 }
@@ -24,11 +29,18 @@ function detectLanguage(): AppLanguage {
 function readPreference(): AppLanguage {
   try {
     const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (saved && SUPPORTED_LANGUAGES.includes(saved as AppLanguage)) return saved as AppLanguage;
+    if (validLanguage(saved ?? undefined)) return saved;
   } catch {
-    // Storage can be unavailable in private or restricted browsing contexts.
+    // Continue with the cookie or browser language when storage is unavailable.
   }
+  const cookie = document.cookie.split("; ").find((part) => part.startsWith(COOKIE_KEY + "="))?.split("=")[1];
+  if (validLanguage(cookie)) return cookie;
   return detectLanguage();
+}
+
+function applyLanguage(language: AppLanguage) {
+  document.documentElement.lang = language;
+  document.documentElement.dir = language === "ar" ? "rtl" : "ltr";
 }
 
 export function LanguageSwitcher() {
@@ -37,21 +49,19 @@ export function LanguageSwitcher() {
   useEffect(() => {
     const preferred = readPreference();
     setLanguage(preferred);
-    document.documentElement.lang = preferred;
-    document.documentElement.dir = preferred === "ar" ? "rtl" : "ltr";
+    applyLanguage(preferred);
   }, []);
 
   function changeLanguage(value: string) {
-    if (!SUPPORTED_LANGUAGES.includes(value as AppLanguage)) return;
-    const next = value as AppLanguage;
-    setLanguage(next);
-    document.documentElement.lang = next;
-    document.documentElement.dir = next === "ar" ? "rtl" : "ltr";
+    if (!validLanguage(value)) return;
+    setLanguage(value);
+    applyLanguage(value);
     try {
-      window.localStorage.setItem(STORAGE_KEY, next);
+      window.localStorage.setItem(STORAGE_KEY, value);
     } catch {
-      // The selection remains active for this page even if storage is unavailable.
+      // Cookie still preserves the selection.
     }
+    document.cookie = `${COOKIE_KEY}=${value}; Path=/; Max-Age=31536000; SameSite=Lax; Secure`;
   }
 
   const labels = LABELS[language];
