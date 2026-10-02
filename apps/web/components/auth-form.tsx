@@ -59,6 +59,67 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   </form>;
 }
 
+export function ForgotPasswordForm() {
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setMessage("");
+    const form = new FormData(event.currentTarget);
+    const email = String(form.get("email") ?? "").trim();
+    if (!email || !email.includes("@")) return setError("Enter a valid email address.");
+    setLoading(true);
+    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent("/auth/reset-password")}`;
+    const { error: requestError } = await createSupabaseBrowserClient().auth.resetPasswordForEmail(email, { redirectTo });
+    setLoading(false);
+    if (requestError) return setError("We couldn't send a reset email. Please try again.");
+    setMessage("If an account exists for this email, a password reset link will arrive shortly. Check your inbox and spam folder.");
+  }
+
+  return <form className="form-grid" onSubmit={submit} noValidate>
+    <div className="field"><label htmlFor="reset-email">Email</label><input id="reset-email" name="email" type="email" autoComplete="email" required /></div>
+    {error && <div className="field-error" role="alert">{error}</div>}
+    {message && <div className="success-state" role="status">{message}</div>}
+    <button className="button" type="submit" disabled={loading}>{loading ? "Sending…" : "Send reset link"}</button>
+  </form>;
+}
+
+export function ResetPasswordForm() {
+  const router = useRouter();
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setMessage("");
+    const form = new FormData(event.currentTarget);
+    const password = String(form.get("password") ?? "");
+    const confirmPassword = String(form.get("confirmPassword") ?? "");
+    if (password.length < 8) return setError("Password must be at least 8 characters.");
+    if (password !== confirmPassword) return setError("Passwords do not match.");
+    setLoading(true);
+    const { error: updateError } = await createSupabaseBrowserClient().auth.updateUser({ password });
+    setLoading(false);
+    if (updateError) return setError("We couldn't update your password. Request a new reset link and try again.");
+    setMessage("Password updated. Redirecting to your workspace…");
+    router.replace("/app");
+    router.refresh();
+  }
+
+  return <form className="form-grid" onSubmit={submit} noValidate>
+    <div className="field"><label htmlFor="new-password">New password</label><input id="new-password" name="password" type="password" autoComplete="new-password" minLength={8} required /><small>Use at least 8 characters.</small></div>
+    <div className="field"><label htmlFor="confirm-password">Confirm new password</label><input id="confirm-password" name="confirmPassword" type="password" autoComplete="new-password" minLength={8} required /></div>
+    {error && <div className="field-error" role="alert">{error}</div>}
+    {message && <div className="success-state" role="status">{message}</div>}
+    <button className="button" type="submit" disabled={loading}>{loading ? "Updating…" : "Update password"}</button>
+  </form>;
+}
+
 export function SignOutButton() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
