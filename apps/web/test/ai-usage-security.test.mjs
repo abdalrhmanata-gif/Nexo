@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const migrations = [
-  "20261002180000_w27_ai_usage_search_path_hardening.sql",
-  "20261002183000_w28_all_definer_search_path_hardening.sql",
+  "20261002172509_w27_ai_usage_search_path_hardening.sql",
+  "20261002192325_w28_all_definer_search_path_hardening.sql",
 ].map((file) => readFileSync(path.join(root, "supabase/migrations", file), "utf8"))
   .join(" ")
   .replace(/\s+/g, " ")
