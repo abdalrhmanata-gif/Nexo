@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
-import { DEFAULT_POST_AUTH_PATH, authErrorPath, resolveRequestOrigin, safeNextPath } from "../lib/auth/redirect.mjs";
+import { DEFAULT_POST_AUTH_PATH, authErrorPath, resolveAuthCallbackOrigin, resolveRequestOrigin, safeNextPath } from "../lib/auth/redirect.mjs";
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const source = (path) => readFile(join(webRoot, path), "utf8");
@@ -123,4 +123,16 @@ test("mission deletion is authorized server-side and never trusts the client", a
 
   const repository = await source("lib/supabase/mission-repository.ts");
   assert.match(repository, /ownedWorkspace\(supabase, user\.id\)/);
+});
+
+test("configured public origin takes precedence over forwarded host for auth callbacks", () => {
+  const headers = new Headers({ "x-forwarded-host": "attacker.example", "x-forwarded-proto": "https" });
+  assert.equal(
+    resolveAuthCallbackOrigin("https://zavqera-preview.netlify.app", headers, "https://attacker.example/auth/callback"),
+    "https://zavqera-preview.netlify.app",
+  );
+  assert.equal(
+    resolveAuthCallbackOrigin("not a url", new Headers({ host: "localhost:3000" }), "http://localhost:3000/auth/callback"),
+    "http://localhost:3000",
+  );
 });
