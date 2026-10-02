@@ -30,10 +30,10 @@ export default async function WorkspacePage({
   const visibleMissions = selectedStatus ? missions.filter((mission) => mission.status === selectedStatus) : missions;
 
   return <div className="container">
-    {errorMessage && <div className="field-error" role="alert">{errorMessage}</div>}
+    {errorMessage && <div className="field-error" role="alert"><LocalizedText en={errorMessage} /></div>}
     <div className="section-heading">
       <div>
-        <p className="eyebrow">Workspace</p>
+        <p className="eyebrow"><LocalizedText en="Workspace" /></p>
         <h1><LocalizedText en="What needs your attention" /></h1>
         <p><LocalizedText en="Every mission below is a stated outcome and the work required to reach it." /></p>
       </div>
@@ -72,7 +72,7 @@ export default async function WorkspacePage({
     </div>}
 
     <div className="section-heading">
-      <div><h2>{selectedStatus ? `${selectedStatus[0]}${selectedStatus.slice(1).toLowerCase()} missions` : <LocalizedText en="Your missions" />}</h2><p><LocalizedText en="Most recently updated first." /></p></div>
+      <div><h2>{selectedStatus ? <LocalizedText en={`${selectedStatus[0]}${selectedStatus.slice(1).toLowerCase()} missions`} /> : <LocalizedText en="Your missions" />}</h2><p><LocalizedText en="Most recently updated first." /></p></div>
       {selectedStatus && <Link className="button button-quiet" href="/app"><LocalizedText en="Show all" /></Link>}
     </div>
     {visibleMissions.length
