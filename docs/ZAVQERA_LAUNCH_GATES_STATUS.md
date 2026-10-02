@@ -5,12 +5,12 @@ Base: `zavqera/alternative-web-deployment`
 Production/main: untouched.
 
 ## CI
-PASS on current candidate head `ff77a042b4c82d6e7467800c0598a44f2b447c8e` (checked 2026-10-02):
-- [ZAVQERA Web Unit #204](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37036988806): PASS
-- [ZAVQERA Web CI #228](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37036988796): PASS
-- [ZAVQERA Flutter CI #391](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37036988840): PASS
+PASS on application/security candidate head `4b748547248e4f72490fc315fe6040e888ac5dd3` (checked 2026-10-02):
+- [ZAVQERA Web Unit #213](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37040441745): PASS
+- [ZAVQERA Web CI #237](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37040441781): PASS
+- [ZAVQERA Flutter CI #403](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37040441705): PASS
 
-These runs validate the documentation-only candidate head above. Application code previously passed on the preceding candidate; re-run all required CI workflows after any further application-code change before release.
+These runs validate the candidate containing W27 and its regression test. Re-run all required CI workflows after any further application-code change before release.
 
 ## W25
 PASS for the isolated PostgreSQL two-session atomic fence proof on commit `46dc6029f084fb000ba511478d6e8aec3eb532b3`.
@@ -68,6 +68,6 @@ Keep PR #29 in Draft. Do not merge to `main` or deploy production until:
 
 ## W27 security follow-up (2026-10-02)
 
-A review finding in the W22 AI-usage SECURITY DEFINER functions was that `search_path` placed the writable `public` schema before `pg_catalog`. Added follow-up migration `20261002180000_w27_ai_usage_search_path_hardening.sql` to set all four function paths to `pg_catalog, public` without rewriting the earlier migration history or touching any hosted database. This is a repository change only until an approved migration workflow applies it to Development.
+A review finding in the W22 AI-usage SECURITY DEFINER functions was that `search_path` placed the writable `public` schema before `pg_catalog`. Added follow-up migration `20261002180000_w27_ai_usage_search_path_hardening.sql` to set all four function paths to `pg_catalog, public` without rewriting the earlier migration history. Applied to Supabase Development project `mrwmmbytcymqgwvcoywd` through the migration tool; catalog verification confirmed all four functions have `search_path=pg_catalog, public`. No production/Main project was changed.
 
-Required after this migration: verify the disposable PostgreSQL migration/test workflow and inspect the final CI runs for the exact PR head. W21, live preview AI verification, and complete Mission Authority evidence remain open. PR #29 remains Draft; no production/main merge, production deployment, or Supabase Main changes.
+A regression test was added at `apps/web/test/ai-usage-security.test.mjs`; Web Unit, Web CI, and Flutter CI passed on candidate `4b748547248e4f72490fc315fe6040e888ac5dd3`. The latest documentation-only follow-up still requires fresh CI before release. W21, live preview AI verification, and complete Mission Authority evidence remain open. PR #29 remains Draft; no production/main merge, production deployment, or Supabase Main changes.
