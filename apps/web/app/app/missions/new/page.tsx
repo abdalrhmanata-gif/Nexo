@@ -15,7 +15,7 @@ async function createMission(formData: FormData) {
   }
   const repository = await createSupabaseMissionRepository();
   const toLines = (value: string) => value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
-  // <LocalizedText en="Success criteria" /> describe what good looks like; actions are the work. When
+  // Success criteria describe what good looks like; actions are the work. When
   // no separate first steps are given the criteria seed the plan, which keeps
   // every mission created before these were separated behaving as it did.
   const actions = steps ? toLines(steps) : toLines(criteria);
