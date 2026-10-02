@@ -37,7 +37,7 @@ test("confirmation endpoints fall back to the sign-in page instead of failing ha
 
 test("sign-up sends the confirmation link back to the deployed origin callback", async () => {
   const form = await source("components/auth-form.tsx");
-  assert.match(form, /emailRedirectTo: `\$\{window\.location\.origin\}\/auth\/callback\?next=/);
+  assert.match(form, /NEXT_PUBLIC_SITE_URL[\s\S]*?emailRedirectTo: `\$\{process\.env\.NEXT_PUBLIC_SITE_URL\?\.replace\(\/\\\$\/, \"\"\) \|\| window\.location\.origin\}\/auth\/callback\?next=/);
 });
 
 test("middleware does not bounce signed-in users away from confirmation endpoints", async () => {
@@ -141,4 +141,19 @@ test("mission deletion reports success only after a row is actually deleted", as
   const repository = await source("lib/supabase/mission-repository.ts");
   assert.match(repository, /\.delete\(\)[\s\S]*?\.eq\("workspace_id", workspaceId\)[\s\S]*?\.select\("id"\)[\s\S]*?\.maybeSingle\(\)/);
   assert.match(repository, /if \(!result\.data\) throw new MissionMutationRejectedError/);
+});
+
+test("sign-in and sign-up map provider auth failures to generic messages", async () => {
+  const form = await source("components/auth-form.tsx");
+  assert.match(form, /Invalid email or password/);
+  assert.match(form, /We could not create the account/);
+  assert.doesNotMatch(form, /setError\(result\.error\.message\)/);
+});
+
+test("mission creation uses the atomic database operation", async () => {
+  const repository = await source("lib/supabase/mission-repository.ts");
+  assert.match(repository, /rpc\("create_mission_with_actions"/);
+  assert.match(repository, /p_workspace_id: workspaceId/);
+  assert.match(repository, /p_objective: input\.objective/);
+  assert.match(repository, /p_actions: actionTitles/);
 });

@@ -18,6 +18,10 @@ export async function middleware(request: NextRequest) {
   });
 
   const { data: { user } } = await supabase.auth.getUser();
+  if (request.nextUrl.pathname === "/auth/reset-password") {
+    response.headers.set("Referrer-Policy", "no-referrer");
+    response.headers.set("Cache-Control", "no-store");
+  }
   if (request.nextUrl.pathname.startsWith("/app") && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/sign-in";
