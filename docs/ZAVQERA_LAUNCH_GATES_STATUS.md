@@ -5,12 +5,12 @@ Base: `zavqera/alternative-web-deployment`
 Production/main: untouched.
 
 ## CI
-PASS on application/security candidate head `4b748547248e4f72490fc315fe6040e888ac5dd3` (checked 2026-10-02):
+Previously passed on application/security candidate head `4b748547248e4f72490fc315fe6040e888ac5dd3`:
 - [ZAVQERA Web Unit #213](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37040441745): PASS
 - [ZAVQERA Web CI #237](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37040441781): PASS
 - [ZAVQERA Flutter CI #403](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37040441705): PASS
 
-These runs validate the candidate containing W27 and its regression test. Re-run all required CI workflows after any further application-code change before release.
+Fresh CI for the current head is required because W28 and migration-history alignment changed after those runs. Latest head `81054604d41d8f4a7a4521e05b6bf24a0b4380c0` runs are queued/in progress: Web Unit #222, Web CI #246, Flutter CI #418; push/PR duplicate runs may also appear.
 
 ## W25
 PASS for the isolated PostgreSQL two-session atomic fence proof on commit `46dc6029f084fb000ba511478d6e8aec3eb532b3`.
@@ -71,3 +71,12 @@ Keep PR #29 in Draft. Do not merge to `main` or deploy production until:
 A review finding in the W22 AI-usage SECURITY DEFINER functions was that `search_path` placed the writable `public` schema before `pg_catalog`. Added follow-up migration `20261002180000_w27_ai_usage_search_path_hardening.sql` to set all four function paths to `pg_catalog, public` without rewriting the earlier migration history. Applied to Supabase Development project `mrwmmbytcymqgwvcoywd` through the migration tool; catalog verification confirmed all four functions have `search_path=pg_catalog, public`. No production/Main project was changed.
 
 A regression test was added at `apps/web/test/ai-usage-security.test.mjs`; Web Unit, Web CI, and Flutter CI passed on candidate `4b748547248e4f72490fc315fe6040e888ac5dd3`. The latest documentation-only follow-up still requires fresh CI before release. W21, live preview AI verification, and complete Mission Authority evidence remain open. PR #29 remains Draft; no production/main merge, production deployment, or Supabase Main changes.
+
+
+## W28 audit follow-up (2026-10-02)
+
+A read-only catalog audit of every public SECURITY DEFINER function in Development found two more functions whose `search_path` placed `public` before `pg_catalog`: `create_mission_with_actions(uuid, text, jsonb)` and `handle_new_user_profile()`. Applied W28 to Development and verified all 15 public SECURITY DEFINER functions now report `search_path=pg_catalog, public`.
+
+Migration history alignment was also corrected: repository migration filenames now match the exact versions recorded by Supabase Development (`20261002172509_w27...` and `20261002192325_w28...`) to avoid false pending-migration drift. Regression test now checks all six hardened functions across W27/W28 migrations.
+
+Latest candidate `81054604d41d8f4a7a4521e05b6bf24a0b4380c0` requires fresh CI completion. W21, live AI preview verification, and full Mission Authority evidence remain open. PR #29 remains Draft.
