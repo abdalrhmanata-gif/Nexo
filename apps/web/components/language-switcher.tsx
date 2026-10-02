@@ -62,6 +62,7 @@ export function LanguageSwitcher() {
       // Cookie still preserves the selection.
     }
     document.cookie = `${COOKIE_KEY}=${value}; Path=/; Max-Age=31536000; SameSite=Lax; Secure`;
+    window.dispatchEvent(new CustomEvent("zavqera-language-change", { detail: value }));
   }
 
   const labels = LABELS[language];
