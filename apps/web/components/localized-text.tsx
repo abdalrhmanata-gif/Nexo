@@ -28,6 +28,12 @@ export function LocalizedText({ en, nb, ar }: { en: string; nb?: string; ar?: st
     const cookie = document.cookie.split("; ").find((part) => part.startsWith("zavqera-language="))?.split("=")[1];
     const candidate = saved || cookie || navigator.language.toLowerCase().split("-")[0];
     setLanguage(candidate === "ar" || candidate === "nb" ? candidate : "en");
+    const onLanguageChange = (event: Event) => {
+      const value = (event as CustomEvent<string>).detail;
+      setLanguage(value === "ar" || value === "nb" ? value : "en");
+    };
+    window.addEventListener("zavqera-language-change", onLanguageChange);
+    return () => window.removeEventListener("zavqera-language-change", onLanguageChange);
   }, []);
   return <>{language === "ar" ? (ar ?? AR[en] ?? en) : language === "nb" ? (nb ?? NB[en] ?? en) : en}</>;
 }
