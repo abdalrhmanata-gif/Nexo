@@ -64,3 +64,10 @@ Keep PR #29 in Draft. Do not merge to `main` or deploy production until:
 4. Preview AI request succeeds with a real non-production provider key, with quota before/after and failure-path results recorded without logging secrets or user content.
 5. Final Web Unit, Web CI, and Flutter CI are green on the exact candidate head.
 6. Explicit owner approval is recorded before merge/deploy.
+
+
+## W27 security follow-up (2026-10-02)
+
+A review finding in the W22 AI-usage SECURITY DEFINER functions was that `search_path` placed the writable `public` schema before `pg_catalog`. Added follow-up migration `20261002180000_w27_ai_usage_search_path_hardening.sql` to set all four function paths to `pg_catalog, public` without rewriting the earlier migration history or touching any hosted database. This is a repository change only until an approved migration workflow applies it to Development.
+
+Required after this migration: verify the disposable PostgreSQL migration/test workflow and inspect the final CI runs for the exact PR head. W21, live preview AI verification, and complete Mission Authority evidence remain open. PR #29 remains Draft; no production/main merge, production deployment, or Supabase Main changes.
