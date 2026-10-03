@@ -6,6 +6,25 @@ import { createSupabaseBrowserClient } from "../lib/supabase/browser";
 import { safeNextPath } from "../lib/auth/redirect.mjs";
 import { LocalizedText } from "./localized-text";
 
+async function verifyNewPassword(password: string): Promise<string> {
+  const response = await fetch("/api/auth/password-policy", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password }),
+  });
+
+  if (response.ok) return "";
+
+  let message = "Password security verification is temporarily unavailable. Please try again.";
+  try {
+    const body = await response.json() as { error?: unknown };
+    if (typeof body.error === "string" && body.error.trim()) message = body.error;
+  } catch {
+    // Keep the safe generic message.
+  }
+  return message;
+}
+
 const CONFIRMATION_ERRORS: Record<string, string> = {
   "confirmation-link": "That confirmation link is invalid or has expired. Request a new one by signing up again.",
   "missing-code": "That confirmation link was incomplete. Open the most recent link from your email.",
@@ -30,6 +49,11 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     if (!email || !email.includes("@")) return setError("Enter a valid email address.");
     if (password.length < 8) return setError("Password must be at least 8 characters.");
     setLoading(true);
+    const passwordPolicyError = await verifyNewPassword(password);
+    if (passwordPolicyError) {
+      setLoading(false);
+      return setError(passwordPolicyError);
+    }
     const supabase = createSupabaseBrowserClient();
     const nextPath = safeNextPath(searchParams.get("next"));
     const result = mode === "sign-in"
@@ -105,6 +129,11 @@ export function ResetPasswordForm() {
     if (password.length < 8) return setError("Password must be at least 8 characters.");
     if (password !== confirmPassword) return setError("Passwords do not match.");
     setLoading(true);
+    const passwordPolicyError = await verifyNewPassword(password);
+    if (passwordPolicyError) {
+      setLoading(false);
+      return setError(passwordPolicyError);
+    }
     const { error: updateError } = await createSupabaseBrowserClient().auth.updateUser({ password });
     setLoading(false);
     if (updateError) return setError("We couldn't update your password. Request a new reset link and try again.");
