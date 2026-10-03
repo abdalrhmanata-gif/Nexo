@@ -123,6 +123,9 @@ export function checkStaticPreconditions(env, { repoRoot, fsApi = { existsSync, 
   }
 
   const workdir = env.ZAVQERA_E2E_SUPABASE_WORKDIR;
+  const migrationSource = env.ZAVQERA_E2E_MIGRATION_SOURCE === REPO_MIGRATION_SOURCE
+    ? REPO_MIGRATION_SOURCE
+    : "development-schema";
   let projectId = null;
   if (!workdir) {
     reasons.push("Set ZAVQERA_E2E_SUPABASE_WORKDIR to the dedicated disposable Supabase workdir (see apps/web/README.md).");
@@ -171,10 +174,6 @@ export function checkStaticPreconditions(env, { repoRoot, fsApi = { existsSync, 
       } catch {
         migrations = [];
       }
-
-      const migrationSource = env.ZAVQERA_E2E_MIGRATION_SOURCE === REPO_MIGRATION_SOURCE
-        ? REPO_MIGRATION_SOURCE
-        : "development-schema";
 
       if (migrationSource === REPO_MIGRATION_SOURCE) {
         let repositoryMigrations = [];
