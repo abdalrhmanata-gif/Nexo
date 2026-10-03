@@ -7,6 +7,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import {
   CleanupNotVerifiedError,
+  E2E_COMPAT_MIGRATION_NAME,
   FORBIDDEN_ENV,
   HarnessBlockedError,
   LEGACY_ENV,
@@ -121,7 +122,7 @@ test("static preconditions refuse each missing or unsafe precondition", (t) => {
 });
 
 test("repo-migrations mode accepts exactly the repository migration set and resets the local DB", (t) => {
-  const workdir = makeWorkdir({ migrations: REPO_MIGRATIONS });
+  const workdir = makeWorkdir({ migrations: [...REPO_MIGRATIONS, E2E_COMPAT_MIGRATION_NAME] });
   t.after(() => rmSync(workdir, { recursive: true, force: true }));
   const env = readyEnv(workdir, { ZAVQERA_E2E_MIGRATION_SOURCE: "repo-migrations" });
   const verdict = checkStaticPreconditions(env, { repoRoot });
