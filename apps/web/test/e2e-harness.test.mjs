@@ -255,7 +255,7 @@ test("command runner only runs supabase/docker without a shell and strips privil
   assert.equal(seen[0].options.shell, false);
   assert.deepEqual(Object.keys(seen[0].options.env), ["PATH"]);
   const missing = createCommandRunner({ spawnSyncImpl: () => ({ status: null, error: { code: "ENOENT" } }) })("supabase", ["--version"]);
-  assert.deepEqual(missing, { status: -1, stdout: "", missing: true });
+  assert.deepEqual(missing, { status: -1, stdout: "", stderr: "", missing: true });
 });
 
 test("app env points only at the disposable stack", () => {
