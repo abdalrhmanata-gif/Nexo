@@ -1,13 +1,6 @@
 import { createHash } from "node:crypto";
 
-export type PasswordPolicyResult =
-  | { allowed: true }
-  | { allowed: false; reason: "COMPROMISED_PASSWORD" };
-
-export async function checkPasswordPolicy(
-  password: string,
-  fetchImpl: typeof fetch = fetch,
-): Promise<PasswordPolicyResult> {
+export async function checkPasswordPolicy(password, fetchImpl = fetch) {
   const hash = createHash("sha1").update(password, "utf8").digest("hex").toUpperCase();
   const prefix = hash.slice(0, 5);
   const suffix = hash.slice(5);
