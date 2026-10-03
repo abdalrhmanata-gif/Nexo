@@ -129,7 +129,7 @@ async function latestResetLink(email) {
         .replaceAll("&quot;", '"');
 
       if (/reset/i.test(subject) && recipients.includes(email)) {
-        const match = combined.match(/https?:\/\/[^\\s"'<>]+\/auth\/v1\/verify\?[^\\s"'<>]+/);
+        const match = combined.match(/https?:\/\/[^\s"'<>]+\/auth\/v1\/verify\?[^\s"'<>]+/);
         if (match) return match[0].replace(/[)>.,]+$/, "");
       }
     }
