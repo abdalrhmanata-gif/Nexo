@@ -11,6 +11,7 @@ export const OPT_IN_MODE = "disposable-full-loop";
 export const PROJECT_ID_PATTERN = /^zavqera-e2e-[a-z0-9-]{1,40}$/;
 export const MARKER_FILE = "ZAVQERA_E2E_DISPOSABLE";
 export const SCHEMA_DUMP_PATTERN = /^\d{14}_development_schema\.sql$/;
+export const REPO_MIGRATION_SOURCE = "repo-migrations";
 export const DEFAULT_BASE_URL = "http://127.0.0.1:3210";
 export const LEDGER_LIMIT = 64;
 export const LEDGER_KINDS = ["user", "mission", "action", "verification", "outcome"];
@@ -162,18 +163,36 @@ export function checkStaticPreconditions(env, { repoRoot, fsApi = { existsSync, 
         reasons.push(`The workdir must contain a ${MARKER_FILE} file whose only content is its project_id. This is the operator's explicit consent that all of its local data may be destroyed.`);
       }
 
-      // The disposable workdir must contain exactly one operator-supplied
-      // Development schema dump. Repository migrations alone do not rebuild the
-      // complete Development authorization/history state required by W21.
       let migrations = [];
       try {
-        migrations = fsApi.readdirSync(path.join(resolved, "supabase", "migrations")).filter((name) => name.endsWith(".sql"));
+        migrations = fsApi.readdirSync(path.join(resolved, "supabase", "migrations"))
+          .filter((name) => name.endsWith(".sql"))
+          .sort();
       } catch {
         migrations = [];
       }
-      if (migrations.length !== 1 || !SCHEMA_DUMP_PATTERN.test(migrations[0])) {
+
+      const migrationSource = env.ZAVQERA_E2E_MIGRATION_SOURCE === REPO_MIGRATION_SOURCE
+        ? REPO_MIGRATION_SOURCE
+        : "development-schema";
+
+      if (migrationSource === REPO_MIGRATION_SOURCE) {
+        let repositoryMigrations = [];
+        try {
+          repositoryMigrations = fsApi.readdirSync(path.join(repoRoot, "supabase", "migrations"))
+            .filter((name) => name.endsWith(".sql"))
+            .sort();
+        } catch {
+          repositoryMigrations = [];
+        }
+        if (!repositoryMigrations.length || migrations.length !== repositoryMigrations.length
+            || migrations.some((name, index) => name !== repositoryMigrations[index])) {
+          projectId = null;
+          reasons.push("repo-migrations mode requires the disposable workdir migrations to match the repository migration set exactly.");
+        }
+      } else if (migrations.length !== 1 || !SCHEMA_DUMP_PATTERN.test(migrations[0])) {
         projectId = null;
-        reasons.push("supabase/migrations must contain exactly one file, <timestamp>_development_schema.sql, created from the Development schema. Do not copy repository migrations there.");
+        reasons.push("supabase/migrations must contain exactly one file, <timestamp>_development_schema.sql, created from the Development schema.");
       }
 
       if (fsApi.existsSync(path.join(resolved, "supabase", ".temp", "project-ref"))) {
@@ -186,7 +205,7 @@ export function checkStaticPreconditions(env, { repoRoot, fsApi = { existsSync, 
   return {
     ok: reasons.length === 0,
     reasons,
-    plan: reasons.length === 0 ? { workdir: path.resolve(workdir), projectId, baseURL: normaliseUrl(baseURL), port } : null,
+    plan: reasons.length === 0 ? { workdir: path.resolve(workdir), projectId, baseURL: normaliseUrl(baseURL), port, migrationSource } : null,
   };
 }
 
@@ -385,6 +404,12 @@ export function startFreshStack(plan, run, env = {}) {
   const start = run("supabase", supabaseArgs(plan, "start"), { timeoutMs: 900_000 });
   if (start.status !== 0) {
     throw new Error("`supabase start` failed for the disposable workdir. Output is suppressed because it contains local keys; run it manually to inspect.");
+  }
+  if (plan.migrationSource === REPO_MIGRATION_SOURCE) {
+    const reset = run("supabase", supabaseArgs(plan, "db", "reset"), { timeoutMs: 900_000 });
+    if (reset.status !== 0) {
+      throw new Error("`supabase db reset` failed while replaying repository migrations. Output is suppressed because local services may include secrets.");
+    }
   }
   const status = run("supabase", supabaseArgs(plan, "status", "-o", "json"));
   if (status.status !== 0) throw new Error("`supabase status -o json` failed for the disposable workdir.");
