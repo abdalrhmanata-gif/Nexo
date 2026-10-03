@@ -1,6 +1,5 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { buildMockMissionPlan } from "../lib/ai-planner";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
