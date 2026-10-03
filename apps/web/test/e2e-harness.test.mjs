@@ -222,7 +222,7 @@ test("a fresh stack is destroyed and verified empty before it is started", () =>
     "supabase stop --no-backup --workdir /tmp/zavqera-e2e",
     `docker ps -aq --filter label=com.supabase.cli.project=${PROJECT_ID}`,
     `docker volume ls -q --filter label=com.supabase.cli.project=${PROJECT_ID}`,
-    "supabase start --workdir /tmp/zavqera-e2e",
+    "supabase start --ignore-health-check -x studio,imgproxy,realtime,storage-api,postgres-meta,edge-runtime,logflare,vector,supavisor --workdir /tmp/zavqera-e2e",
     "supabase status -o json --workdir /tmp/zavqera-e2e",
   ]);
 });
