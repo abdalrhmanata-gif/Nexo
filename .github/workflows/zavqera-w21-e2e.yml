@@ -75,6 +75,27 @@ jobs:
           PY
 
           cp -R supabase/migrations/. "${workdir}/supabase/migrations/"
+
+          cat > "${workdir}/supabase/migrations/20260921180005_e2e_historical_auth_compat.sql" <<'SQL'
+          create schema if not exists private;
+
+          create or replace function public.handle_new_user_profile()
+          returns trigger
+          language plpgsql
+          security definer
+          set search_path = pg_catalog, public
+          as $
+          begin
+            insert into public.profiles (id)
+            values (new.id)
+            on conflict (id) do nothing;
+            return new;
+          end;
+          $;
+
+          revoke all privileges on function public.handle_new_user_profile() from public, anon, authenticated;
+          SQL
+
           printf '%s\n' 'zavqera-e2e-local' > "${workdir}/ZAVQERA_E2E_DISPOSABLE"
           printf '%s\n' "${workdir}" > "${RUNNER_TEMP}/zavqera-e2e-workdir"
           echo "migration_source=repo-migrations" > "${RUNNER_TEMP}/zavqera-e2e-source"
