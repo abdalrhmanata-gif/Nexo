@@ -87,14 +87,14 @@ jobs:
           language plpgsql
           security definer
           set search_path = pg_catalog, public
-          as $
+          as $body$
           begin
             insert into public.profiles (id)
             values (new.id)
             on conflict (id) do nothing;
             return new;
           end;
-          $;
+          $body$;
 
           revoke all privileges on function public.handle_new_user_profile() from public, anon, authenticated;
           SQL
