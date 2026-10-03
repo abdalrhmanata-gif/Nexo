@@ -19,6 +19,7 @@ test("AI route authenticates before invoking the provider service and keeps the 
   assert.ok(route.includes("release: releaseAiGeneration"));
   assert.ok(route.includes("process.env.OPENAI_API_KEY"));
   assert.equal(route.includes("NEXT_PUBLIC_OPENAI_API_KEY"), false);
+  assert.ok(route.includes("ZAVQERA_AI_PROVIDER_MODE"));
   assert.ok(route.includes("status: 401"));
   assert.ok(route.includes("status: 503"));
 });
