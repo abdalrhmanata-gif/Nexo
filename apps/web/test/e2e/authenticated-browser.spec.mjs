@@ -248,6 +248,9 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
     });
 
     await test.step("two independent sessions cannot both pass the same mission-version fence", async () => {
+      await moveMission("PLANNING");
+      await moveMission("READY");
+      await moveMission("RUNNING");
       const sessionA = await ownerSession(userA);
       const sessionB = await ownerSession(userA);
       const before = await readMission(owner.client, missionId);
@@ -274,10 +277,7 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await moveMission("RUNNING");
     });
 
-    await test.step("move the mission to running; a stale version is rejected", async () => {
-      await moveMission("PLANNING");
-      await moveMission("READY");
-      await moveMission("RUNNING");
+    await test.step("a stale mission version is rejected", async () => {
       const before = await readMission(owner.client, missionId);
       const stale = await page.request.patch(missionPath(), { data: { status: "PAUSED", expectedVersion: 1 } });
       expect(stale.status()).toBe(409);
