@@ -12,6 +12,7 @@ export const PROJECT_ID_PATTERN = /^zavqera-e2e-[a-z0-9-]{1,40}$/;
 export const MARKER_FILE = "ZAVQERA_E2E_DISPOSABLE";
 export const SCHEMA_DUMP_PATTERN = /^\d{14}_development_schema\.sql$/;
 export const REPO_MIGRATION_SOURCE = "repo-migrations";
+const E2E_EXCLUDED_SERVICES = "studio,imgproxy,realtime,storage-api,postgres-meta,edge-runtime,logflare,vector,supavisor";
 export const DEFAULT_BASE_URL = "http://127.0.0.1:3210";
 export const LEDGER_LIMIT = 64;
 export const LEDGER_KINDS = ["user", "mission", "action", "verification", "outcome"];
@@ -413,7 +414,11 @@ export function destroyStack(plan, run) {
  */
 export function startFreshStack(plan, run, env = {}) {
   destroyStack(plan, run);
-  const start = run("supabase", supabaseArgs(plan, "start"), { timeoutMs: 900_000 });
+  const start = run(
+    "supabase",
+    supabaseArgs(plan, "start", "--ignore-health-check", "-x", E2E_EXCLUDED_SERVICES),
+    { timeoutMs: 900_000 },
+  );
   if (start.status !== 0) {
     throw new Error(
       `\`supabase start\` failed (exit ${start.status}) for the disposable workdir.\n${redactDiagnostic(start.stderr || start.stdout)}`,
