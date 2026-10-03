@@ -29,7 +29,8 @@ const webRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const repoRoot = path.resolve(webRoot, "..", "..");
 const PROJECT_ID = "zavqera-e2e-unit";
 const UUID_A = "11111111-1111-4111-8111-111111111111";
-const UUID_B = "22222222-2222-4222-8222-222222222222";\nconst REPO_MIGRATIONS = readdirSync(path.join(repoRoot, "supabase", "migrations")).filter((name) => name.endsWith(".sql")).sort();
+const UUID_B = "22222222-2222-4222-8222-222222222222";
+const REPO_MIGRATIONS = readdirSync(path.join(repoRoot, "supabase", "migrations")).filter((name) => name.endsWith(".sql")).sort();
 
 function anonJwt(role = "anon") {
   const encode = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
