@@ -1,0 +1,5 @@
+-- Recovered W5 migration marker.
+-- The authoritative verified-outcome boundary is recreated by
+-- 20260924210000_w9_verification_outcome_lifecycle.sql during clean replay.
+-- This file is intentionally DDL-free because the later W9 replacement is
+-- the first repository artifact containing the complete authoritative body.
