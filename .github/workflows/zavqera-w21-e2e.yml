@@ -34,6 +34,10 @@ jobs:
         working-directory: apps/web
         run: npm ci
 
+      - name: Install Playwright Chromium
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+
       - name: Create disposable Supabase workdir from repository migrations
         run: |
           set -euo pipefail
