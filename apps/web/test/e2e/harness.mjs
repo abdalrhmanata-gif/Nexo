@@ -12,6 +12,7 @@ export const PROJECT_ID_PATTERN = /^zavqera-e2e-[a-z0-9-]{1,40}$/;
 export const MARKER_FILE = "ZAVQERA_E2E_DISPOSABLE";
 export const SCHEMA_DUMP_PATTERN = /^\d{14}_development_schema\.sql$/;
 export const REPO_MIGRATION_SOURCE = "repo-migrations";
+export const E2E_COMPAT_MIGRATION_NAME = "20260921180005_e2e_historical_auth_compat.sql";
 const E2E_EXCLUDED_SERVICES = "studio,imgproxy,realtime,storage-api,postgres-meta,edge-runtime,logflare,vector,supavisor";
 export const DEFAULT_BASE_URL = "http://127.0.0.1:3210";
 export const LEDGER_LIMIT = 64;
@@ -185,10 +186,14 @@ export function checkStaticPreconditions(env, { repoRoot, fsApi = { existsSync, 
         } catch {
           repositoryMigrations = [];
         }
-        if (!repositoryMigrations.length || migrations.length !== repositoryMigrations.length
-            || migrations.some((name, index) => name !== repositoryMigrations[index])) {
+        const repoComparable = migrations.filter((name) => name !== E2E_COMPAT_MIGRATION_NAME);
+        const compatCount = migrations.filter((name) => name === E2E_COMPAT_MIGRATION_NAME).length;
+        if (!repositoryMigrations.length
+            || compatCount !== 1
+            || repoComparable.length !== repositoryMigrations.length
+            || repoComparable.some((name, index) => name !== repositoryMigrations[index])) {
           projectId = null;
-          reasons.push("repo-migrations mode requires the disposable workdir migrations to match the repository migration set exactly.");
+          reasons.push("repo-migrations mode requires the repository migration set plus exactly one disposable historical-auth compatibility migration.");
         }
       } else if (migrations.length !== 1 || !SCHEMA_DUMP_PATTERN.test(migrations[0])) {
         projectId = null;
