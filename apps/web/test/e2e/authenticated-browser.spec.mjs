@@ -111,28 +111,32 @@ async function signOut(page) {
 }
 
 async function latestResetLink(email) {
-  const mailbox = encodeURIComponent(email.split("@")[0]);
-  const base = `http://127.0.0.1:54324/api/v1/mailbox/${mailbox}`;
+  const endpoint = "http://127.0.0.1:54324/api/v1/message/latest";
   const deadline = Date.now() + 30_000;
-  let listed = [];
 
   while (Date.now() < deadline) {
-    const listResponse = await fetch(base, { headers: { Accept: "application/json" } });
-    if (listResponse.ok) {
-      listed = await listResponse.json();
-      if (Array.isArray(listed) && listed.length > 0) break;
+    const response = await fetch(endpoint, { headers: { Accept: "application/json" } });
+    if (response.ok) {
+      const message = await response.json();
+      const subject = typeof message.Subject === "string" ? message.Subject : "";
+      const recipients = Array.isArray(message.To)
+        ? message.To.map((entry) => typeof entry?.Address === "string" ? entry.Address : "")
+        : [];
+      const combined = `${message.Text ?? ""}\n${message.HTML ?? ""}`
+        .replaceAll("&amp;", "&")
+        .replaceAll("&lt;", "<")
+        .replaceAll("&gt;", ">")
+        .replaceAll("&quot;", '"');
+
+      if (/reset/i.test(subject) && recipients.includes(email)) {
+        const match = combined.match(/https?:\/\/[^\\s"'<>]+\/auth\/v1\/verify\?[^\\s"'<>]+/);
+        if (match) return match[0].replace(/[)>.,]+$/, "");
+      }
     }
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
 
-  expect(listed.length, "the disposable Mailpit/Inbucket mailbox must receive the newest reset email").toBeGreaterThan(0);
-  const message = await (await fetch(`${base}/latest`, { headers: { Accept: "application/json" } })).json();
-  expect(message.subject).toMatch(/reset/i);
-
-  const combined = `${message.body?.text ?? ""}\n${message.body?.html ?? ""}`.replaceAll("&amp;", "&");
-  const match = combined.match(/https?:\/\/[^\\s"'<>]+\/auth\/v1\/verify\?[^\\s"'<>]+/);
-  expect(match, "the newest reset email must contain a Supabase recovery verification link").not.toBeNull();
-  return match[0].replace(/[)>.,]+$/, "");
+  throw new Error("The disposable Mailpit mailbox did not expose the newest password-reset email.");
 }
 
 test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outcome and isolation", async ({ browser }) => {
