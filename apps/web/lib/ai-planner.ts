@@ -77,7 +77,9 @@ export async function requestMissionPlan(
   });
 
   if (!response.ok) {
-    throw new Error(response.status === 429 ? "RATE_LIMITED" : "UPSTREAM_FAILED");
+    if (response.status === 429) throw new Error("RATE_LIMITED");
+    if (response.status >= 500) throw new Error("UPSTREAM_OUTCOME_UNKNOWN");
+    throw new Error("UPSTREAM_REJECTED");
   }
 
   const payload = await response.json() as PlannerResponse;
