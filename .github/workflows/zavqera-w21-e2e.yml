@@ -2,6 +2,9 @@ name: ZAVQERA W21 Isolated Browser E2E
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - "zavqera/ai-planner-integration"
 
 permissions:
   contents: read
