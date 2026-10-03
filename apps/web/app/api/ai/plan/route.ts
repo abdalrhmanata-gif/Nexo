@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "../../../../lib/supabase/server";
-import { DEFAULT_AI_MODEL, requestMissionPlan } from "../../../../lib/ai-planner";
+import { DEFAULT_AI_MODEL, buildMockMissionPlan, requestMissionPlan } from "../../../../lib/ai-planner";
 import {
   AI_GENERATION_OUTCOMES,
   runAiGeneration,
@@ -21,8 +21,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
   }
 
+  const providerMode = process.env.ZAVQERA_AI_PROVIDER_MODE || "openai";
   const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
+  if (providerMode !== "mock" && !apiKey) {
     return NextResponse.json({ error: "AI planning is not configured yet." }, { status: 503 });
   }
 
@@ -49,10 +50,12 @@ export async function POST(request: Request) {
     const result = await runAiGeneration({
       requestId,
       reserve: reserveAiGeneration,
-      generate: () => requestMissionPlan(goal.trim(), {
-        apiKey,
-        model: process.env.OPENAI_MODEL || DEFAULT_AI_MODEL,
-      }),
+      generate: () => providerMode === "mock"
+        ? Promise.resolve(buildMockMissionPlan(goal.trim()))
+        : requestMissionPlan(goal.trim(), {
+          apiKey: apiKey as string,
+          model: process.env.OPENAI_MODEL || DEFAULT_AI_MODEL,
+        }),
       consume: consumeAiGeneration,
       release: releaseAiGeneration,
     });
