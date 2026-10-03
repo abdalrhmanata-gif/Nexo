@@ -46,7 +46,7 @@ test("AI usage is enforced server-side and uncertain provider/settlement paths f
   for (const token of ["reserveAiGeneration", "consumeAiGeneration", "releaseAiGeneration", "x-request-id"]) {
     assert.ok(route.includes(token), token);
   }
-  for (const token of ['disposition: "release"', 'disposition: "hold"', "SETTLEMENT_FAILED"]) {
+  for (const token of ['disposition: known.kind === "unknown" ? "hold" : "release"', "SETTLEMENT_FAILED"]) {
     assert.ok(service.includes(token), token);
   }
   assert.ok(usage.includes("reserve_ai_generation"));
