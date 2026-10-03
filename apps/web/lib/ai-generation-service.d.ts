@@ -1,11 +1,23 @@
+import type { MissionPlan } from "./ai-planner";
+
+export type AiReservation = {
+  allowed: boolean;
+  reservation_id: string | null;
+  plan?: string | null;
+  monthly_limit?: number | null;
+  generations_used?: number | null;
+  remaining?: number | null;
+  [key: string]: unknown;
+};
+
 export type AiGenerationOutcome =
   | {
       kind: "success";
-      plan: unknown;
+      plan: MissionPlan;
     }
   | {
       kind: "quota";
-      reservation: unknown;
+      reservation: AiReservation;
     }
   | {
       kind: "provider_error";
@@ -35,12 +47,8 @@ export declare function classifyProviderFailure(error: unknown): {
 
 export declare function runAiGeneration(args: {
   requestId: string;
-  reserve: (requestId: string) => Promise<{
-    allowed: boolean;
-    reservation_id: string | null;
-    [key: string]: unknown;
-  }>;
-  generate: () => Promise<unknown>;
+  reserve: (requestId: string) => Promise<AiReservation>;
+  generate: () => Promise<MissionPlan>;
   consume: (reservationId: string) => Promise<void>;
   release: (reservationId: string) => Promise<void>;
 }): Promise<AiGenerationOutcome>;
