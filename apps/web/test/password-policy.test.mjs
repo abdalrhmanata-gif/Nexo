@@ -24,7 +24,7 @@ test("password policy sends only a five-character SHA-1 range prefix and rejects
 });
 
 test("password policy rejects a suffix that matches the full SHA-1 password hash", async () => {
-  const suffix = "3A2D4E5B6A7B8C9D0E1F2A3B4C5D6E7F8A9B0C1D2";
+  const suffix = "01A5AB1774D418369EAB31C03FD78583A2B";
   const result = await checkPasswordPolicy("example-safe-password", async () => ({
     ok: true,
     text: async () => `${suffix}:1\n`,
