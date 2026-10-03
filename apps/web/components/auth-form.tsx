@@ -49,10 +49,12 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     if (!email || !email.includes("@")) return setError("Enter a valid email address.");
     if (password.length < 8) return setError("Password must be at least 8 characters.");
     setLoading(true);
-    const passwordPolicyError = await verifyNewPassword(password);
-    if (passwordPolicyError) {
-      setLoading(false);
-      return setError(passwordPolicyError);
+    if (mode === "sign-up") {
+      const passwordPolicyError = await verifyNewPassword(password);
+      if (passwordPolicyError) {
+        setLoading(false);
+        return setError(passwordPolicyError);
+      }
     }
     const supabase = createSupabaseBrowserClient();
     const nextPath = safeNextPath(searchParams.get("next"));
