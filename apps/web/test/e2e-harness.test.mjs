@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -29,7 +29,7 @@ const webRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const repoRoot = path.resolve(webRoot, "..", "..");
 const PROJECT_ID = "zavqera-e2e-unit";
 const UUID_A = "11111111-1111-4111-8111-111111111111";
-const UUID_B = "22222222-2222-4222-8222-222222222222";
+const UUID_B = "22222222-2222-4222-8222-222222222222";\nconst REPO_MIGRATIONS = readdirSync(path.join(repoRoot, "supabase", "migrations")).filter((name) => name.endsWith(".sql")).sort();
 
 function anonJwt(role = "anon") {
   const encode = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
@@ -117,6 +117,28 @@ test("static preconditions refuse each missing or unsafe precondition", (t) => {
     assert.ok(verdict.reasons.length > 0, name);
     assert.ok(!verdict.reasons.join(" ").includes("\"x\""), name);
   }
+});
+
+test("repo-migrations mode accepts exactly the repository migration set and resets the local DB", (t) => {
+  const workdir = makeWorkdir({ migrations: REPO_MIGRATIONS });
+  t.after(() => rmSync(workdir, { recursive: true, force: true }));
+  const env = readyEnv(workdir, { ZAVQERA_E2E_MIGRATION_SOURCE: "repo-migrations" });
+  const verdict = checkStaticPreconditions(env, { repoRoot });
+  assert.equal(verdict.ok, true);
+  assert.equal(verdict.plan.migrationSource, "repo-migrations");
+
+  const { run, calls } = fakeRunner();
+  const target = startFreshStack(verdict.plan, run, {});
+  assert.deepEqual(target, { apiUrl: "http://127.0.0.1:54321", publishableKey: "sb_publishable_local" });
+  assert.ok(calls.includes("supabase db reset --workdir "+workdir));
+
+  const wrong = makeWorkdir({ migrations: REPO_MIGRATIONS.slice(0, -1) });
+  t.after(() => rmSync(wrong, { recursive: true, force: true }));
+  const blocked = checkStaticPreconditions(
+    readyEnv(wrong, { ZAVQERA_E2E_MIGRATION_SOURCE: "repo-migrations" }),
+    { repoRoot },
+  );
+  assert.equal(blocked.ok, false);
 });
 
 test("static preconditions refuse workdirs that are not explicitly disposable", (t) => {
