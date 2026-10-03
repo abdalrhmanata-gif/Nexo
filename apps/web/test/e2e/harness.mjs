@@ -406,7 +406,7 @@ export function startFreshStack(plan, run, env = {}) {
     throw new Error("`supabase start` failed for the disposable workdir. Output is suppressed because it contains local keys; run it manually to inspect.");
   }
   if (plan.migrationSource === REPO_MIGRATION_SOURCE) {
-    const reset = run("supabase", supabaseArgs(plan, "db", "reset"), { timeoutMs: 900_000 });
+    const reset = run("supabase", supabaseArgs(plan, "db", "reset", "--yes"), { timeoutMs: 900_000 });
     if (reset.status !== 0) {
       throw new Error("`supabase db reset` failed while replaying repository migrations. Output is suppressed because local services may include secrets.");
     }
