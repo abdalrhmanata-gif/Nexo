@@ -247,34 +247,33 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       for (const title of [titles.first, titles.second, titles.added]) await expect(statusOf(title)).toHaveValue("PENDING");
     });
 
-    await test.step("two independent sessions cannot both pass the same mission-version fence", async () => {
+    await test.step("two independent browser sessions cannot both pass the same mission-version fence", async () => {
       await moveMission("PLANNING");
       await moveMission("READY");
       await moveMission("RUNNING");
-      const sessionA = await ownerSession(userA);
-      const sessionB = await ownerSession(userA);
+
+      await signOut(pageB);
+      await signIn(pageB, userA);
+
       const before = await readMission(owner.client, missionId);
       const [a, b] = await Promise.all([
-        sessionA.client.rpc("transition_mission", {
-          p_mission_id: missionId,
-          p_to_status: "PAUSED",
-          p_expected_version: before.version,
+        page.request.patch(missionPath(), {
+          data: { status: "PAUSED", expectedVersion: before.version },
         }),
-        sessionB.client.rpc("transition_mission", {
-          p_mission_id: missionId,
-          p_to_status: "BLOCKED",
-          p_expected_version: before.version,
+        pageB.request.patch(missionPath(), {
+          data: { status: "BLOCKED", expectedVersion: before.version },
         }),
       ]);
-      const results = [a, b];
-      expect(results.filter((result) => !result.error).length).toBe(1);
-      expect(results.filter((result) => result.error?.message === "STALE_VERSION").length).toBe(1);
+      expect([a.status(), b.status()].filter((status) => status === 200)).toHaveLength(1);
+      expect([a.status(), b.status()].filter((status) => status === 409)).toHaveLength(1);
+
       const after = await readMission(owner.client, missionId);
       expect(after.version).toBe(before.version + 1);
       expect(["PAUSED", "BLOCKED"]).toContain(after.status);
-      await sessionA.client.auth.signOut();
-      await sessionB.client.auth.signOut();
+
       await moveMission("RUNNING");
+      await signOut(pageB);
+      await signIn(pageB, userB);
     });
 
     await test.step("a stale mission version is rejected", async () => {
