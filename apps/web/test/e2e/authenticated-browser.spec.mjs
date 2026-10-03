@@ -259,9 +259,11 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       const [a, b] = await Promise.all([
         page.request.patch(missionPath(), {
           data: { status: "PAUSED", expectedVersion: before.version },
+          timeout: 20_000,
         }),
         pageB.request.patch(missionPath(), {
           data: { status: "BLOCKED", expectedVersion: before.version },
+          timeout: 20_000,
         }),
       ]);
       expect([a.status(), b.status()].filter((status) => status === 200)).toHaveLength(1);
