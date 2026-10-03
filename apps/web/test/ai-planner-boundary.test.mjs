@@ -14,7 +14,9 @@ const workspace = readFileSync(path.join(root, "app/app/page.tsx"), "utf8");
 
 test("AI route authenticates before invoking the provider service and keeps the key server-side", () => {
   assert.ok(route.indexOf("getAuthenticatedUser()") < route.indexOf("runAiGeneration("));
-  assert.ok(route.indexOf("generate:") < route.indexOf("consumeAiGeneration"));
+  assert.ok(route.includes("reserve: reserveAiGeneration"));
+  assert.ok(route.includes("consume: consumeAiGeneration"));
+  assert.ok(route.includes("release: releaseAiGeneration"));
   assert.ok(route.includes("process.env.OPENAI_API_KEY"));
   assert.equal(route.includes("NEXT_PUBLIC_OPENAI_API_KEY"), false);
   assert.ok(route.includes("status: 401"));
