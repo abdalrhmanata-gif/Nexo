@@ -45,6 +45,23 @@ test("definite provider rejection releases the reservation exactly once", async 
   assert.deepEqual(fake.calls.consume, []);
 });
 
+test("provider 5xx is treated as outcome-unknown and does not release the reservation", async () => {
+  const fake = fakes({
+    generate: async () => { throw new Error("UPSTREAM_OUTCOME_UNKNOWN"); },
+  });
+
+  const result = await runAiGeneration({
+    requestId: "request-5xx",
+    ...fake,
+  });
+
+  assert.equal(result.kind, AI_GENERATION_OUTCOMES.PROVIDER_ERROR);
+  assert.equal(result.disposition, "hold");
+  assert.equal(result.code, "UPSTREAM_OUTCOME_UNKNOWN");
+  assert.equal(result.status, 504);
+  assert.deepEqual(fake.calls.release, []);
+});
+
 test("provider timeout/transport uncertainty does not release the reservation", async () => {
   const fake = fakes({
     generate: async () => { throw new Error("This could be a timeout after dispatch"); },
