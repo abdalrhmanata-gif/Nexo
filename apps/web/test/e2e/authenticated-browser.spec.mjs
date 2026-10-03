@@ -247,6 +247,33 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       for (const title of [titles.first, titles.second, titles.added]) await expect(statusOf(title)).toHaveValue("PENDING");
     });
 
+    await test.step("two independent sessions cannot both pass the same mission-version fence", async () => {
+      const sessionA = await ownerSession(userA);
+      const sessionB = await ownerSession(userA);
+      const before = await readMission(owner.client, missionId);
+      const [a, b] = await Promise.all([
+        sessionA.client.rpc("transition_mission", {
+          p_mission_id: missionId,
+          p_to_status: "PAUSED",
+          p_expected_version: before.version,
+        }),
+        sessionB.client.rpc("transition_mission", {
+          p_mission_id: missionId,
+          p_to_status: "BLOCKED",
+          p_expected_version: before.version,
+        }),
+      ]);
+      const results = [a, b];
+      expect(results.filter((result) => !result.error).length).toBe(1);
+      expect(results.filter((result) => result.error?.message === "STALE_VERSION").length).toBe(1);
+      const after = await readMission(owner.client, missionId);
+      expect(after.version).toBe(before.version + 1);
+      expect(["PAUSED", "BLOCKED"]).toContain(after.status);
+      await sessionA.client.auth.signOut();
+      await sessionB.client.auth.signOut();
+      await moveMission("RUNNING");
+    });
+
     await test.step("move the mission to running; a stale version is rejected", async () => {
       await moveMission("PLANNING");
       await moveMission("READY");
