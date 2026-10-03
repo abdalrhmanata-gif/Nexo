@@ -130,7 +130,7 @@ test("repo-migrations mode accepts exactly the repository migration set and rese
   const { run, calls } = fakeRunner();
   const target = startFreshStack(verdict.plan, run, {});
   assert.deepEqual(target, { apiUrl: "http://127.0.0.1:54321", publishableKey: "sb_publishable_local" });
-  assert.ok(calls.includes("supabase db reset --workdir "+workdir));
+  assert.ok(calls.includes("supabase db reset --yes --workdir "+workdir));
 
   const wrong = makeWorkdir({ migrations: REPO_MIGRATIONS.slice(0, -1) });
   t.after(() => rmSync(wrong, { recursive: true, force: true }));
