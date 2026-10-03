@@ -7,8 +7,8 @@ export const AI_GENERATION_OUTCOMES = Object.freeze({
 
 const KNOWN_PROVIDER_FAILURES = new Map([
   ["RATE_LIMITED", { kind: "definite", status: 429 }],
-  ["UPSTREAM_FAILED", { kind: "definite", status: 502 }],
-  ["INVALID_PROVIDER_RESPONSE", { kind: "definite", status: 502 }],
+  ["UPSTREAM_OUTCOME_UNKNOWN", { kind: "unknown", status: 504 }],
+  ["UPSTREAM_REJECTED", { kind: "definite", status: 502 }],
   ["INVALID_PLAN", { kind: "definite", status: 502 }],
 ]);
 
@@ -18,7 +18,7 @@ export function classifyProviderFailure(error) {
   if (known) {
     return {
       kind: AI_GENERATION_OUTCOMES.PROVIDER_ERROR,
-      disposition: "release",
+      disposition: known.kind === "unknown" ? "hold" : "release",
       status: known.status,
       code,
     };
