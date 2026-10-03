@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { buildMockMissionPlan } from "../lib/ai-planner";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -22,4 +23,12 @@ test("provider response parsing is bounded and fail-closed", () => {
   assert.match(source, /title\.slice\(0, 160\)/);
   assert.match(source, /reason\.slice\(0, 300\)/);
   assert.match(source, /AbortSignal\.timeout\(15_000\)/);
+});
+
+
+test("mock provider produces a deterministic draft without external calls", () => {
+  const plan = buildMockMissionPlan("Plan my weekend trip");
+  assert.equal(plan.steps.length, 3);
+  assert.match(plan.summary, /Plan my weekend trip/);
+  assert.doesNotMatch(JSON.stringify(plan), /api\.openai\.com/i);
 });
