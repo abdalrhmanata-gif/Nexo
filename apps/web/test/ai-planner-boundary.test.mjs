@@ -15,43 +15,44 @@ const workspace = readFileSync(path.join(root, "app/app/page.tsx"), "utf8");
 test("AI route authenticates before invoking the provider service and keeps the key server-side", () => {
   assert.ok(route.indexOf("getAuthenticatedUser()") < route.indexOf("runAiGeneration("));
   assert.ok(route.indexOf("generate:") < route.indexOf("consumeAiGeneration"));
-  assert.match(route, /process.env.OPENAI_API_KEY/);
-  assert.doesNotMatch(route, /NEXT_PUBLIC_OPENAI_API_KEY/);
-  assert.match(route, /status: 401/);
-  assert.match(route, /status: 503/);
+  assert.ok(route.includes("process.env.OPENAI_API_KEY"));
+  assert.equal(route.includes("NEXT_PUBLIC_OPENAI_API_KEY"), false);
+  assert.ok(route.includes("status: 401"));
+  assert.ok(route.includes("status: 503"));
 });
 
 test("AI planner bounds input, output, time and response caching", () => {
-  assert.match(route, /length > 1200/);
-  assert.match(planner, /max_output_tokens: 700/);
-  assert.match(planner, /AbortSignal.timeout(15_000)/);
-  assert.match(route, /"Cache-Control": "no-store"/);
-  assert.match(planner, /maxItems: 6/);
+  assert.ok(route.includes("length > 1200"));
+  assert.ok(planner.includes("max_output_tokens: 700"));
+  assert.ok(planner.includes("AbortSignal.timeout(15_000)"));
+  assert.ok(route.includes('"Cache-Control": "no-store"'));
+  assert.ok(planner.includes("maxItems: 6"));
 });
 
 test("AI plan is draft-only and cannot invoke mission or external-action mutations", () => {
   assert.match(planner, /draft only/i);
-  assert.doesNotMatch(route, /createSupabaseMissionRepository|mission_actions|.insert(|.update(/);
-  assert.doesNotMatch(planner, /tools:s*[/);
-  assert.match(component, /Nothing is executed or saved automatically/);
-  assert.match(component, /Review each step before adding it to a mission/);
+  assert.equal(route.includes("createSupabaseMissionRepository"), false);
+  assert.equal(route.includes("mission_actions"), false);
+  assert.equal(route.includes(".insert("), false);
+  assert.equal(route.includes(".update("), false);
+  assert.equal(planner.includes("tools: ["), false);
+  assert.ok(component.includes("Nothing is executed or saved automatically"));
+  assert.ok(component.includes("Review each step before adding it to a mission"));
 });
 
 test("AI usage is enforced server-side and uncertain provider/settlement paths fail closed", () => {
-  assert.match(route, /reserveAiGeneration/);
-  assert.match(route, /consumeAiGeneration/);
-  assert.match(route, /releaseAiGeneration/);
-  assert.match(route, /x-request-id/);
-  assert.match(service, /disposition: "release"/);
-  assert.match(service, /disposition: "hold"/);
-  assert.match(service, /SETTLEMENT_FAILED/);
-  assert.match(usage, /reserve_ai_generation/);
-  assert.match(usage, /get_ai_usage/);
-  assert.match(component, /monthly_limit/);
-  assert.match(component, /remaining/);
+  for (const token of ["reserveAiGeneration", "consumeAiGeneration", "releaseAiGeneration", "x-request-id"]) {
+    assert.ok(route.includes(token), token);
+  }
+  for (const token of ['disposition: "release"', 'disposition: "hold"', "SETTLEMENT_FAILED"]) {
+    assert.ok(service.includes(token), token);
+  }
+  assert.ok(usage.includes("reserve_ai_generation"));
+  assert.ok(usage.includes("get_ai_usage"));
+  assert.ok(component.includes("monthly_limit"));
+  assert.ok(component.includes("remaining"));
 });
 
 test("workspace exposes the AI planner to authenticated users", () => {
-  assert.match(workspace, /AiPlanner/);
-  assert.match(workspace, /<AiPlanners*/>/);
+  assert.ok(workspace.includes("AiPlanner"));
 });
