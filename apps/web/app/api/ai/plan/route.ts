@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "../../../../lib/supabase/server";
 import { DEFAULT_AI_MODEL, requestMissionPlan } from "../../../../lib/ai-planner";
-import { consumeAiGeneration, releaseAiGeneration, reserveAiGeneration } from "../../../../lib/ai-usage";
+import {
+  AI_GENERATION_OUTCOMES,
+  runAiGeneration,
+} from "../../../../lib/ai-generation-service";
+import { reserveAiGeneration, consumeAiGeneration, releaseAiGeneration } from "../../../../lib/ai-usage";
 
 export const runtime = "nodejs";
 export const maxDuration = 20;
@@ -40,46 +44,66 @@ export async function POST(request: Request) {
   }
 
   const requestId = request.headers.get("x-request-id") || crypto.randomUUID();
-  let reservationId: string | null = null;
 
   try {
-    const reservation = await reserveAiGeneration(requestId);
-    if (!reservation.allowed || !reservation.reservation_id) {
+    const result = await runAiGeneration({
+      requestId,
+      reserve: reserveAiGeneration,
+      generate: () => requestMissionPlan(goal.trim(), {
+        apiKey,
+        model: process.env.OPENAI_MODEL || DEFAULT_AI_MODEL,
+      }),
+      consume: consumeAiGeneration,
+      release: releaseAiGeneration,
+    });
+
+    if (result.kind === AI_GENERATION_OUTCOMES.QUOTA) {
       return NextResponse.json(
         {
           error: "Monthly AI limit reached.",
           usage: {
-            plan: reservation.plan,
-            monthlyLimit: reservation.monthly_limit,
-            generationsUsed: reservation.generations_used,
-            remaining: reservation.remaining,
+            plan: result.reservation?.plan,
+            monthlyLimit: result.reservation?.monthly_limit,
+            generationsUsed: result.reservation?.generations_used,
+            remaining: result.reservation?.remaining,
           },
         },
         { status: 429 },
       );
     }
-    reservationId = reservation.reservation_id;
 
-    const plan = await requestMissionPlan(goal.trim(), {
-      apiKey,
-      model: process.env.OPENAI_MODEL || DEFAULT_AI_MODEL,
-    });
+    if (result.kind === AI_GENERATION_OUTCOMES.SETTLEMENT_FAILED) {
+      return NextResponse.json(
+        { error: "AI generation completed, but usage settlement is temporarily unavailable." },
+        { status: 503 },
+      );
+    }
 
-    await consumeAiGeneration(reservationId);
+    if (result.kind === AI_GENERATION_OUTCOMES.PROVIDER_ERROR) {
+      if (result.code === "RATE_LIMITED") {
+        return NextResponse.json(
+          { error: "AI usage is temporarily limited. Please try again later." },
+          { status: 429 },
+        );
+      }
+      if (result.disposition === "hold") {
+        return NextResponse.json(
+          { error: "The AI provider outcome is uncertain; please retry after reconciliation." },
+          { status: 504 },
+        );
+      }
+      return NextResponse.json(
+        { error: "The AI planner is temporarily unavailable." },
+        { status: 502 },
+      );
+    }
 
-    return NextResponse.json(plan, {
+    return NextResponse.json(result.plan, {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
-    if (reservationId) await releaseAiGeneration(reservationId).catch(() => undefined);
     if (error instanceof Error && error.message === "AI_USAGE_UNAVAILABLE") {
       return NextResponse.json({ error: "AI usage service is temporarily unavailable." }, { status: 503 });
-    }
-    if (error instanceof Error && error.message === "RATE_LIMITED") {
-      return NextResponse.json(
-        { error: "AI usage is temporarily limited. Please try again later." },
-        { status: 429 },
-      );
     }
     return NextResponse.json(
       { error: "The AI planner is temporarily unavailable." },
