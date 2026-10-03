@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "../../../lib/supabase/server";
-import { authErrorPath, resolveRequestOrigin, safeNextPath } from "../../../lib/auth/redirect.mjs";
+import { authErrorPath, resolveAuthCallbackOrigin, safeNextPath } from "../../../lib/auth/redirect.mjs";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const next = safeNextPath(searchParams.get("next"));
-  const origin = resolveRequestOrigin(request.headers, request.url);
+  const origin = resolveAuthCallbackOrigin(process.env.NEXT_PUBLIC_SITE_URL, request.headers, request.url);
 
   if (searchParams.get("error")) {
     return NextResponse.redirect(new URL(authErrorPath("confirmation-link"), origin));

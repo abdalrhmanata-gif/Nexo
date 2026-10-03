@@ -29,3 +29,22 @@ export function resolveRequestOrigin(headers, fallbackUrl) {
   const proto = headers.get("x-forwarded-proto") || new URL(fallbackUrl).protocol.replace(":", "");
   return `${proto}://${host}`;
 }
+
+/**
+ * Prefer an explicitly configured public origin for email callbacks. This
+ * prevents an untrusted Host / forwarded-host header from choosing the
+ * destination after an authentication token has been exchanged.
+ */
+export function resolveAuthCallbackOrigin(configuredSiteUrl, headers, fallbackUrl) {
+  if (typeof configuredSiteUrl === "string" && configuredSiteUrl.trim()) {
+    try {
+      const parsed = new URL(configuredSiteUrl);
+      if (parsed.protocol === "https:" || parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
+        return parsed.origin;
+      }
+    } catch {
+      // Fall through to the request origin when the optional value is invalid.
+    }
+  }
+  return resolveRequestOrigin(headers, fallbackUrl);
+}

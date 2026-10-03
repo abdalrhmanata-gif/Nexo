@@ -110,6 +110,35 @@ async function signOut(page) {
   await expect(page).toHaveURL(/\/auth\/sign-in/);
 }
 
+async function latestResetLink(email) {
+  const endpoint = "http://127.0.0.1:54324/api/v1/message/latest";
+  const deadline = Date.now() + 30_000;
+
+  while (Date.now() < deadline) {
+    const response = await fetch(endpoint, { headers: { Accept: "application/json" } });
+    if (response.ok) {
+      const message = await response.json();
+      const subject = typeof message.Subject === "string" ? message.Subject : "";
+      const recipients = Array.isArray(message.To)
+        ? message.To.map((entry) => typeof entry?.Address === "string" ? entry.Address : "")
+        : [];
+      const combined = `${message.Text ?? ""}\n${message.HTML ?? ""}`
+        .replaceAll("&amp;", "&")
+        .replaceAll("&lt;", "<")
+        .replaceAll("&gt;", ">")
+        .replaceAll("&quot;", '"');
+
+      if (/reset/i.test(subject) && recipients.includes(email)) {
+        const match = combined.match(/https?:\/\/[^\s"'<>]+\/auth\/v1\/verify\?[^\s"'<>]+/);
+        if (match) return match[0].replace(/[)>.,]+$/, "");
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+
+  throw new Error("The disposable Mailpit mailbox did not expose the newest password-reset email.");
+}
+
 test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outcome and isolation", async ({ browser }) => {
   assertRuntime();
   const tag = `E2E ${runtime.runId}`;
@@ -159,6 +188,29 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await signIn(page, userA);
     });
 
+    await test.step("password reset uses the newest local email, callback and new password", async () => {
+      await signOut(page);
+      await page.goto("/auth/forgot-password");
+      await page.getByLabel("Email", { exact: true }).fill(userA.email);
+      await page.getByRole("button", { name: "Send reset link" }).click();
+      await expect(page.getByRole("status")).toContainText("reset link");
+
+      const resetLink = await latestResetLink(userA.email);
+      await page.goto(resetLink);
+      await expect(page).toHaveURL(/\/auth\/reset-password/);
+
+      const newPassword = `${randomBytes(18).toString("base64url")}Bb2!`;
+      userA.password = newPassword;
+      await page.getByLabel("New password", { exact: true }).fill(newPassword);
+      await page.getByLabel("Confirm new password", { exact: true }).fill(newPassword);
+      await page.getByRole("button", { name: "Update password" }).click();
+      await expect(page).toHaveURL(/\/app$/);
+
+      await signOut(page);
+      await signIn(page, userA);
+      await expect(page).toHaveURL(/\/app$/);
+    });
+
     await test.step("create a mission with first steps", async () => {
       await page.goto("/app/missions/new");
       await page.getByLabel("Mission name", { exact: true }).fill(tag);
@@ -195,10 +247,36 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       for (const title of [titles.first, titles.second, titles.added]) await expect(statusOf(title)).toHaveValue("PENDING");
     });
 
-    await test.step("move the mission to running; a stale version is rejected", async () => {
+    await test.step("two independent browser sessions cannot both pass the same mission-version fence", async () => {
       await moveMission("PLANNING");
       await moveMission("READY");
       await moveMission("RUNNING");
+
+      await signOut(pageB);
+      await signIn(pageB, userA);
+
+      const before = await readMission(owner.client, missionId);
+      const [a, b] = await Promise.all([
+        page.request.patch(missionPath(), {
+          data: { status: "PAUSED", expectedVersion: before.version },
+        }),
+        pageB.request.patch(missionPath(), {
+          data: { status: "BLOCKED", expectedVersion: before.version },
+        }),
+      ]);
+      expect([a.status(), b.status()].filter((status) => status === 200)).toHaveLength(1);
+      expect([a.status(), b.status()].filter((status) => status === 409)).toHaveLength(1);
+
+      const after = await readMission(owner.client, missionId);
+      expect(after.version).toBe(before.version + 1);
+      expect(["PAUSED", "BLOCKED"]).toContain(after.status);
+
+      await moveMission("RUNNING");
+      await signOut(pageB);
+      await signIn(pageB, userB);
+    });
+
+    await test.step("a stale mission version is rejected", async () => {
       const before = await readMission(owner.client, missionId);
       const stale = await page.request.patch(missionPath(), { data: { status: "PAUSED", expectedVersion: 1 } });
       expect(stale.status()).toBe(409);
