@@ -356,9 +356,22 @@ export function createCommandRunner({ spawnSyncImpl = spawnSync, env = process.e
     return {
       status: typeof result.status === "number" ? result.status : -1,
       stdout: typeof result.stdout === "string" ? result.stdout : "",
+      stderr: typeof result.stderr === "string" ? result.stderr : "",
       missing: result.error?.code === "ENOENT",
     };
   };
+}
+
+function redactDiagnostic(text) {
+  return String(text || "")
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .slice(-24)
+    .join("\n")
+    .replace(/(postgres(?:ql)?:\/\/[^:\s]+:)[^@\s]+(@)/gi, "$1REDACTED$2")
+    .replace(/eyJ[A-Za-z0-9_-]{20,}/g, "REDACTED")
+    .replace(/sb_[A-Za-z0-9_-]{20,}/g, "REDACTED")
+    .replace(/[A-Za-z0-9_-]{96,}/g, "REDACTED");
 }
 
 function supabaseArgs(plan, ...args) {
@@ -402,12 +415,16 @@ export function startFreshStack(plan, run, env = {}) {
   destroyStack(plan, run);
   const start = run("supabase", supabaseArgs(plan, "start"), { timeoutMs: 900_000 });
   if (start.status !== 0) {
-    throw new Error("`supabase start` failed for the disposable workdir. Output is suppressed because it contains local keys; run it manually to inspect.");
+    throw new Error(
+      `\`supabase start\` failed (exit ${start.status}) for the disposable workdir.\n${redactDiagnostic(start.stderr || start.stdout)}`,
+    );
   }
   if (plan.migrationSource === REPO_MIGRATION_SOURCE) {
     const reset = run("supabase", supabaseArgs(plan, "db", "reset", "--yes"), { timeoutMs: 900_000 });
     if (reset.status !== 0) {
-      throw new Error("`supabase db reset` failed while replaying repository migrations. Output is suppressed because local services may include secrets.");
+      throw new Error(
+        `\`supabase db reset\` failed (exit ${reset.status}) while replaying repository migrations.\n${redactDiagnostic(reset.stderr || reset.stdout)}`,
+      );
     }
   }
   const status = run("supabase", supabaseArgs(plan, "status", "-o", "json"));
