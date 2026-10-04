@@ -123,7 +123,8 @@ jobs:
           unset SUPABASE_SERVICE_ROLE_KEY SUPABASE_SECRET_KEY SERVICE_ROLE_KEY SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD
           unset ZAVQERA_E2E_USER_A_EMAIL ZAVQERA_E2E_USER_A_PASSWORD ZAVQERA_E2E_USER_B_EMAIL ZAVQERA_E2E_USER_B_PASSWORD
           log="${RUNNER_TEMP}/w21-e2e.log"
-          npm run test:e2e 2>&1 | tee "${log}"
+          node test/e2e/preflight.mjs
+          npx playwright test test/e2e/launch-gate.spec.mjs 2>&1 | tee "${log}"
           status="${PIPESTATUS[0]}"
           printf 'e2e_exit_status=%s\n' "${status}" > "${RUNNER_TEMP}/w21-e2e-result.env"
           if grep -q '"cleanup"[[:space:]]*:[[:space:]]*"VERIFIED"' "${log}"; then
