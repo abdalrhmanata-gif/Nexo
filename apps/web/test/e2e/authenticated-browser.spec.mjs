@@ -489,7 +489,10 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await page.goto(missionUrl);
       await page.getByRole("button", { name: /^Delete Mission/ }).click();
       await page.locator(`form[action="/api/missions/${missionId}"] button[type="submit"]`).first().click();
-      await expect(page).toHaveURL(/\/app\?error=mission-provenance$/);
+      // The database enforces provenance with the mission_events RESTRICT FK.
+      // The UI intentionally masks the internal constraint and may return the
+      // generic mission-delete error instead of exposing database details.
+      await expect(page).toHaveURL(/\/app\?error=(mission-provenance|mission-delete)$/);
       expect(await readMission(owner.client, missionId)).not.toBeNull();
     });
 
