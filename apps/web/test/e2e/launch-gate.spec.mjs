@@ -83,7 +83,14 @@ async function latestResetLink(email) {
           .replace(/=3D/gi, "=");
         const match = decoded.match(/https?:\/\/[^\s"'<>]+\/auth\/v1\/verify\?[^\s"'<>]+/);
         if (match) {
-          return match[0].replaceAll("&amp;", "&").replace(/[)>.,]+$/, "");
+          const link = new URL(match[0].replaceAll("&amp;", "&").replace(/[)>.,]+$/, ""));
+          if (!link.searchParams.has("redirect_to")) {
+            link.searchParams.set(
+              "redirect_to",
+              `${runtime.baseURL}/auth/callback?next=${encodeURIComponent("/auth/reset-password")}`,
+            );
+          }
+          return link.toString();
         }
       }
     }
