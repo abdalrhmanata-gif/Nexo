@@ -11,6 +11,8 @@ const usage = readFileSync(path.join(root, "lib/ai-usage.ts"), "utf8");
 const planner = readFileSync(path.join(root, "lib/ai-planner.ts"), "utf8");
 const component = readFileSync(path.join(root, "components/ai-planner.tsx"), "utf8");
 const workspace = readFileSync(path.join(root, "app/app/page.tsx"), "utf8");
+const newMission = readFileSync(path.join(root, "app/app/missions/new/page.tsx"), "utf8");
+const integratedForm = readFileSync(path.join(root, "components/mission-create-form.tsx"), "utf8");
 
 test("AI route authenticates before invoking the provider service and keeps the key server-side", () => {
   assert.ok(route.indexOf("getAuthenticatedUser()") < route.indexOf("runAiGeneration("));
@@ -59,6 +61,10 @@ test("AI usage is enforced server-side and uncertain provider/settlement paths f
   assert.ok(component.includes("remaining"));
 });
 
-test("workspace exposes the AI planner to authenticated users", () => {
-  assert.ok(workspace.includes("AiPlanner"));
+test("AI planning is integrated into authenticated mission creation, not duplicated on the workspace", () => {
+  assert.ok(newMission.includes("MissionCreateForm"));
+  assert.ok(integratedForm.includes("Draft mission with AI"));
+  assert.ok(integratedForm.includes("setCriteria(plan.summary)"));
+  assert.ok(integratedForm.includes("setActions(plan.steps.map"));
+  assert.equal(workspace.includes("AiPlanner"), false);
 });
