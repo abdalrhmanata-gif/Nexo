@@ -52,6 +52,13 @@ export class MissionMutationRejectedError extends Error {
     this.name = "MissionMutationRejectedError";
   }
 }
+
+export class MissionProvenanceDeleteError extends Error {
+  constructor() {
+    super("Mission history prevents deletion.");
+    this.name = "MissionProvenanceDeleteError";
+  }
+}
 export type NewVerification = {
   missionId: string;
   status: "VERIFIED" | "FAILED";
