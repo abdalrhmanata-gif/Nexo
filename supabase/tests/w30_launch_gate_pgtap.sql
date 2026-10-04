@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap;
 
-select plan(21);
+select plan(25);
 
 select ok(to_regclass('public.missions') is not null, 'missions exists');
 select ok(to_regclass('public.mission_actions') is not null, 'mission_actions exists');
@@ -59,6 +59,40 @@ select ok(not exists(
       'prevent_mission_action_reparent'
     )
 ), 'public application SECURITY DEFINER runtime functions bind to auth.uid');
+
+select ok(not exists(
+  select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+  where n.nspname='public' and p.prosecdef
+    and has_function_privilege('authenticated', p.oid, 'EXECUTE')
+), 'no public SECURITY DEFINER function is executable by authenticated');
+
+select ok((
+  select count(*)
+  from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+  where n.nspname='public'
+    and p.proname in (
+      'commit_verified_mission_outcome','consume_ai_generation',
+      'create_mission_verification','create_mission_with_actions',
+      'get_ai_usage','release_ai_generation','reserve_ai_generation',
+      'transition_mission','transition_mission_action','update_mission_details'
+    )
+    and not p.prosecdef
+) = 10, 'all application RPC boundaries are SECURITY INVOKER');
+
+select ok((
+  select count(*)
+  from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+  where n.nspname='private'
+    and p.proname in (
+      'commit_verified_mission_outcome','consume_ai_generation',
+      'create_mission_verification','create_mission_with_actions',
+      'get_ai_usage','release_ai_generation','reserve_ai_generation',
+      'transition_mission','transition_mission_action','update_mission_details'
+    )
+    and p.prosecdef
+) = 10, 'all privileged RPC implementations are SECURITY DEFINER in private');
+
+select ok(not has_schema_privilege('anon', 'private', 'USAGE'), 'anon cannot access private RPC schema');
 
 select ok(exists(select 1 from pg_constraint where conname='ai_usage_monthly_pkey'), 'monthly quota primary key exists');
 
