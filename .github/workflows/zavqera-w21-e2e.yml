@@ -2,12 +2,13 @@ name: ZAVQERA W21 Local Launch Gate
 
 on:
   workflow_dispatch:
-  push:
+  pull_request:
     branches:
-      - "zavqera/ai-planner-integration"
+      - "zavqera/alternative-web-deployment"
+    types: [opened, synchronize, reopened]
 
 concurrency:
-  group: zavqera-w21-local-${{ github.sha }}
+  group: zavqera-w21-local-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 
 permissions:
