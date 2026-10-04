@@ -150,7 +150,14 @@ end;
 $function$;
 
 
--- Keep the entitlement source of truth and new monthly ledger rows aligned.
+-- Expand the existing tier constraint to support the five-generation Free plan.
+alter table public.ai_entitlements drop constraint if exists ai_entitlements_monthly_limit_check;
+alter table public.ai_entitlements add constraint ai_entitlements_monthly_limit_check check (monthly_limit in (5, 20, 300));
+alter table public.ai_usage_monthly drop constraint if exists ai_usage_monthly_monthly_limit_check;
+alter table public.ai_usage_monthly add constraint ai_usage_monthly_monthly_limit_check check (monthly_limit in (5, 20, 300));
+
+-- Keep the entitlement source of truth and existing monthly ledger rows aligned.
 update public.ai_entitlements set monthly_limit = 5 where plan = 'free';
+update public.ai_usage_monthly set monthly_limit = 5 where plan = 'free';
 alter table public.ai_entitlements alter column monthly_limit set default 5;
 alter table public.ai_usage_monthly alter column monthly_limit set default 5;
