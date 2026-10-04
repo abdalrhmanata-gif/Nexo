@@ -57,33 +57,28 @@ async function signOut(page) {
 }
 
 async function latestResetLink(email) {
+  const mailbox = encodeURIComponent(email.split("@")[0]);
   const deadline = Date.now() + 15_000;
+
   while (Date.now() < deadline) {
-    const searchUrl = new URL("http://127.0.0.1:54324/api/v1/search");
-    searchUrl.searchParams.set("query", `to:"${email}"`);
-    searchUrl.searchParams.set("limit", "5");
+    const response = await fetch(
+      `http://127.0.0.1:54324/api/v1/mailbox/${mailbox}/latest`,
+      { headers: { Accept: "application/json" } },
+    );
 
-    const searchResponse = await fetch(searchUrl, { headers: { Accept: "application/json" } });
-    if (searchResponse.ok) {
-      const payload = await searchResponse.json();
-      const messages = Array.isArray(payload?.messages) ? payload.messages : [];
-      for (const message of messages) {
-        const id = typeof message?.ID === "string" ? message.ID : "";
-        if (!id) continue;
-
-        const rawResponse = await fetch(
-          `http://127.0.0.1:54324/api/v1/message/${encodeURIComponent(id)}/raw`,
-          { headers: { Accept: "text/plain" } },
-        );
-        if (!rawResponse.ok) continue;
-
-        const raw = await rawResponse.text();
-        const decoded = raw
-          .replace(/=\\r?\\n/g, "")
-          .replace(/=3D/gi, "=");
-        const matches = [...decoded.matchAll(/https?:\/\/[^\s"'<>]+\/auth\/v1\/verify\?[^\s"'<>]+/g)].map((m) => m[0]);
+    if (response.ok) {
+      const message = await response.json();
+      const to = Array.isArray(message?.header?.To) ? message.header.To.join(",") : String(message?.header?.To ?? "");
+      if (to.toLowerCase().includes(email.toLowerCase())) {
+        const text = String(message?.body?.text ?? "");
+        const html = String(message?.body?.html ?? "");
+        const combined = `${text}\n${html}`
+          .replace(/=\r?\n/g, "")
+          .replace(/=3D/gi, "=")
+          .replaceAll("&amp;", "&");
+        const matches = [...combined.matchAll(/https?:\/\/[^\s"'<>]+\/auth\/v1\/verify\?[^\s"'<>]+/g)].map((m) => m[0]);
         const candidate = matches
-          .map((value) => value.replaceAll("&amp;", "&").replace(/[)>.,]+$/, ""))
+          .map((value) => value.replace(/[)>.,]+$/, ""))
           .find((value) => value.includes("type=recovery") && value.includes("redirect_to="));
         if (candidate) return candidate;
       }
@@ -92,7 +87,7 @@ async function latestResetLink(email) {
     await new Promise((resolve) => setTimeout(resolve, 250));
   }
 
-  throw new Error("Newest disposable password-reset email was not received from local Mailpit.");
+  throw new Error("Newest disposable password-reset email was not received from local Inbucket.");
 }
 
 async function readMission(client, missionId) {
