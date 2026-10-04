@@ -6,6 +6,10 @@ on:
     branches:
       - "zavqera/ai-planner-integration"
 
+concurrency:
+  group: zavqera-w21-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
