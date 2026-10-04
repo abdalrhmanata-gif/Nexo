@@ -79,3 +79,22 @@ html[dir="rtl"] body { text-align:right; }
 html[dir="rtl"] .hero h1, html[dir="rtl"] .hero p { letter-spacing:normal; }
 html[dir="rtl"] nav { direction:rtl; }
 @media (max-width:700px) { nav { gap:10px; flex-wrap:wrap; justify-content:flex-end; }.language-switcher select { max-width:104px; } }
+
+
+/* Refined product presentation: calm navy, confident teal, and readable surfaces. */
+:root { --teal:#087f78; --navy:#16324f; --paper:#f4f7f9; }
+html { background:linear-gradient(180deg,#f0f6f7 0%,var(--paper) 380px); }
+.hero { position:relative; }
+.hero h1 { color:var(--navy); text-wrap:balance; }
+.hero .eyebrow { display:inline-flex; align-items:center; gap:8px; padding:7px 11px; border:1px solid #cce5e1; border-radius:999px; background:#e9f5f3; }
+.ai-planner { border-top:3px solid var(--teal); box-shadow:0 12px 34px rgba(22,50,79,.07); }
+.ai-planner h2 { color:var(--navy); }
+.ai-planner textarea { min-height:128px; border-color:#b9cbd3; background:#fcfefe; }
+.ai-planner textarea::placeholder { color:#7a8992; opacity:1; }
+.ai-planner textarea:focus-visible { border-color:var(--teal); box-shadow:0 0 0 3px rgba(8,127,120,.12); }
+.ai-usage { display:inline-block; margin:8px 0 18px; padding:6px 10px; border-radius:999px; background:#edf5f4; color:#315d59; font-size:13px; }
+.ai-plan-result { border-top-color:#cfe2df; }
+@media (prefers-reduced-motion:no-preference) {
+  .button { transition:background-color .18s ease,border-color .18s ease,transform .18s ease; }
+  .button:hover { transform:translateY(-1px); }
+}
