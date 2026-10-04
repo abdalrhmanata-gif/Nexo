@@ -88,6 +88,10 @@ jobs:
           <p><a href="{{ .ConfirmationURL }}">Reset password</a></p>
           </body></html>
           HTML
+          mkdir -p "$workdir/volumes/db/init"
+          cat > "$workdir/volumes/db/init/00_private_schema.sql" <<'SQL'
+          create schema if not exists private;
+          SQL
           cp -R "$GITHUB_WORKSPACE/supabase/migrations/." "$workdir/supabase/migrations/"
           cat > "$workdir/supabase/migrations/20260921180005_e2e_historical_auth_compat.sql" <<'SQL'
           drop trigger if exists on_auth_user_created on auth.users;
