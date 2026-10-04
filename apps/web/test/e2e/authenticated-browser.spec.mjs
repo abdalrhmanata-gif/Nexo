@@ -396,7 +396,7 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       expect(direct.error?.message).toBe("VERIFIED_OUTCOME_REQUIRED");
       await page.getByLabel("Mission state", { exact: true }).selectOption("COMPLETED");
       await submit(page, page.getByLabel("Mission state", { exact: true }), { method: "PATCH", path: missionPath(), expectStatus: 422 });
-      await expect(page.getByRole("alert")).toContainText("Commit a passing verified outcome");
+      await expect(page.getByRole("alert").filter({ hasText: "Commit a passing verified outcome" })).toBeVisible();
       expect(await readMission(owner.client, missionId)).toEqual(before);
       await page.getByLabel("Verification criteria", { exact: true }).fill("Each step was observed in persisted state.");
       await page.getByLabel("Evidence summary", { exact: true }).fill("Authoritative reads after every reload.");
