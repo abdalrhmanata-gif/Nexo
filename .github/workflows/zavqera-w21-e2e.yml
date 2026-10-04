@@ -7,7 +7,7 @@ on:
       - "zavqera/ai-planner-integration"
 
 concurrency:
-  group: zavqera-w21-${{ github.ref }}
+  group: zavqera-w21-${{ github.ref }}-${{ github.sha }}
   cancel-in-progress: true
 
 permissions:
