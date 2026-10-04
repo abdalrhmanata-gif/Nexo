@@ -142,7 +142,10 @@ jobs:
           set -euo pipefail
           trap 'supabase stop --no-backup --workdir "$ZAVQERA_E2E_SUPABASE_WORKDIR" >/dev/null 2>&1 || true' EXIT
           supabase start --ignore-health-check -x "studio,imgproxy,realtime,storage-api,postgres-meta,edge-runtime,logflare,vector,supavisor" --workdir "$ZAVQERA_E2E_SUPABASE_WORKDIR"
-          supabase test db w30_launch_gate_pgtap.sql --workdir "$ZAVQERA_E2E_SUPABASE_WORKDIR"
+          (
+            cd "$ZAVQERA_E2E_SUPABASE_WORKDIR"
+            supabase test db supabase/tests/w30_launch_gate_pgtap.sql
+          )
 
       - name: Run full launch-gate browser E2E
         working-directory: apps/web
