@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "./server";
-import { MissionMutationConflictError, MissionMutationRejectedError, type MissionRepository, type NewMission, type NewOutcome, type NewVerification, type UpdateMission } from "../mission-repository";import type { ActionStatus, Mission, MissionAction, MissionActivity, MissionOutcome, MissionVerification, MissionLifecycleStatus } from "../view-models";
+import { MissionMutationConflictError, MissionMutationRejectedError, MissionProvenanceDeleteError, type MissionRepository, type NewMission, type NewOutcome, type NewVerification, type UpdateMission } from "../mission-repository";import type { ActionStatus, Mission, MissionAction, MissionActivity, MissionOutcome, MissionVerification, MissionLifecycleStatus } from "../view-models";
 import { humaniseEventType, parseMissionObjective, summariseEventPayload } from "../mission-content.mjs";
 
 type MissionRow = {
@@ -246,7 +246,18 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
         .eq("workspace_id", workspaceId)
         .select("id")
         .maybeSingle();
-      if (result.error) throw result.error;
+      if (result.error) {
+        const message = [
+          result.error.code,
+          result.error.message,
+          result.error.details,
+          result.error.hint,
+        ].filter((value): value is string => typeof value === "string").join(" ");
+        if (result.error.code === "23503" && /mission_events(?:_mission_id_fkey)?/i.test(message)) {
+          throw new MissionProvenanceDeleteError();
+        }
+        throw result.error;
+      }
       // PostgREST can report no error when RLS or a stale ID matches no rows.
       // Do not tell the user deletion succeeded unless a row was actually removed.
       if (!result.data) throw new MissionMutationRejectedError("That mission is no longer available or cannot be deleted.");
