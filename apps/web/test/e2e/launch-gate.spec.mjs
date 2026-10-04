@@ -168,14 +168,14 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
     await test.step("server-side AI mock provider, quota and request idempotency", async () => {
       const initial = await pageA.request.get("/api/ai/usage");
       expect(initial.status()).toBe(200);
-      expect(await initial.json()).toMatchObject({ monthly_limit: 20, generations_used: 0, remaining: 20 });
+      expect(await initial.json()).toMatchObject({ monthly_limit: 5, generations_used: 0, remaining: 5 });
 
-      await pageA.goto("/app");
-      await pageA.getByLabel("Your goal", { exact: true }).fill("Prepare a safe launch plan for a small online shop.");
-      await pageA.getByRole("button", { name: "Create plan with AI" }).click();
-      await expect(pageA.locator(".ai-plan-result")).toContainText("Suggested plan");
-      await expect(pageA.locator(".ai-plan-result")).toContainText("Clarify the desired outcome");
-      await expect(pageA.locator(".ai-usage")).toContainText("19 of 20");
+      await pageA.goto("/app/missions/new");
+      await pageA.getByLabel("What do you want to achieve?", { exact: true }).fill("Prepare a safe launch plan for a small online shop.");
+      await pageA.getByRole("button", { name: "Draft mission with AI" }).click();
+      await expect(pageA.getByLabel("Mission name", { exact: true })).not.toHaveValue("");
+      await expect(pageA.getByLabel("Success criteria", { exact: true })).not.toHaveValue("");
+      await expect(pageA.getByLabel(/^First steps/)).not.toHaveValue("");
 
       const requestId = `gate-${runtime.runId}-abcdefghijkl`;
       const first = await pageA.request.post("/api/ai/plan", {
@@ -192,7 +192,7 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
       expect(second.status()).toBe(429);
 
       const final = await (await pageA.request.get("/api/ai/usage", { timeout: 20_000 })).json();
-      expect(final).toMatchObject({ generations_used: 2, remaining: 18 });
+      expect(final).toMatchObject({ monthly_limit: 5, generations_used: 2, remaining: 3 });
     });
 
     let missionId;
