@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "../../../../lib/supabase/server";
-import { DEFAULT_AI_MODEL, requestMissionPlan } from "../../../../lib/ai-planner";
+import { createStubMissionPlan, DEFAULT_AI_MODEL, requestMissionPlan } from "../../../../lib/ai-planner";
 import { buildMockMissionPlan } from "../../../../lib/ai-mock-provider";
 import {
   AI_GENERATION_OUTCOMES,
@@ -102,7 +102,10 @@ export async function POST(request: Request) {
       );
     }
 
-    return NextResponse.json(result.plan, {
+    return NextResponse.json({
+      ...result.plan,
+      provider_mode: providerMode,
+    }, {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
