@@ -11,6 +11,7 @@ export async function checkPasswordPolicy(password, fetchImpl = fetch) {
       "User-Agent": "ZAVQERA/1.0 password-policy",
     },
     cache: "no-store",
+    signal: AbortSignal.timeout(5_000),
   });
 
   if (!response.ok) {
