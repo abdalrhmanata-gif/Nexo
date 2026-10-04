@@ -78,7 +78,10 @@ async function latestResetLink(email) {
         if (!rawResponse.ok) continue;
 
         const raw = await rawResponse.text();
-        const match = raw.match(/https?:\/\/[^\s"'<>]+\/auth\/v1\/verify\?[^\s"'<>]+/);
+        const decoded = raw
+          .replace(/=\\r?\\n/g, "")
+          .replace(/=3D/gi, "=");
+        const match = decoded.match(/https?:\/\/[^\s"'<>]+\/auth\/v1\/verify\?[^\s"'<>]+/);
         if (match) {
           return match[0].replaceAll("&amp;", "&").replace(/[)>.,]+$/, "");
         }
