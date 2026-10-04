@@ -1,5 +1,5 @@
 /// Provider-agnostic execution contract.
-/// NEXO owns mission authority; providers only receive an already-bounded request.
+/// ZAVQERA owns mission authority; providers only receive an already-bounded request.
 class ExecutionRequest {
   final String missionId;
   final String actionId;
