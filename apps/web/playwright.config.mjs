@@ -11,7 +11,7 @@ export default defineConfig({
   testDir: "./test/e2e",
   outputDir: path.join(os.tmpdir(), "zavqera-e2e", "playwright-results"),
   globalSetup: "./test/e2e/global-setup.mjs",
-  timeout: 360_000,
+  timeout: 180_000,
   expect: { timeout: 15_000 },
   fullyParallel: false,
   workers: 1,
