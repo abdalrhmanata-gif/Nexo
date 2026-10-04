@@ -22,13 +22,16 @@ function errorResponse(error: unknown) {
 }
 
 function isProvenanceDeleteError(error: unknown) {
-  return typeof error === "object"
-    && error !== null
-    && "code" in error
-    && error.code === "23503"
-    && "message" in error
-    && typeof error.message === "string"
-    && error.message.includes("mission_events");
+  if (typeof error !== "object" || error === null) return false;
+  const record = error as Record<string, unknown>;
+  const code = typeof record.code === "string" ? record.code : "";
+  const message = [
+    record.message,
+    record.details,
+    record.hint,
+    record.constraint,
+  ].filter((value): value is string => typeof value === "string").join(" ");
+  return code === "23503" && /mission_events(?:_mission_id_fkey)?/i.test(message);
 }
 
 export async function DELETE(
