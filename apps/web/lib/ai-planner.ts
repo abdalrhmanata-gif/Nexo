@@ -28,6 +28,18 @@ const PLAN_SCHEMA = {
 
 export const DEFAULT_AI_MODEL = "gpt-6-luna";
 
+export function createStubMissionPlan(goal: string): MissionPlan {
+  const clean = goal.trim().replace(/\s+/g, " ").slice(0, 600);
+  return {
+    summary: `Draft plan for: ${clean}`,
+    steps: [
+      { title: "Clarify the desired outcome", reason: "Make the result and success criteria explicit." },
+      { title: "Break the goal into small actions", reason: "Create a sequence that can be reviewed before execution." },
+      { title: "Review before committing work", reason: "ZAVQERA keeps planning separate from execution." },
+    ],
+  };
+}
+
 type PlannerResponse = { output_text?: unknown };
 
 export async function requestMissionPlan(
