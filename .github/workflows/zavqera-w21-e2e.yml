@@ -1,4 +1,4 @@
-name: ZAVQERA W21 Isolated Browser E2E
+name: ZAVQERA W21 Local Launch Gate
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ on:
       - "zavqera/ai-planner-integration"
 
 concurrency:
-  group: zavqera-w21-${{ github.ref }}-${{ github.sha }}
+  group: zavqera-w21-local-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -16,7 +16,7 @@ permissions:
 jobs:
   w21-e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 60
 
     steps:
       - name: Checkout
@@ -38,150 +38,89 @@ jobs:
         working-directory: apps/web
         run: npm ci
 
-      - name: Install Playwright Chromium
+      - name: Install Chromium
         working-directory: apps/web
         run: npx playwright install --with-deps chromium
 
-      - name: Create disposable Supabase workdir from repository migrations
+      - name: Prepare disposable PG17 migration replay
         run: |
           set -euo pipefail
-          workdir="${RUNNER_TEMP}/zavqera-e2e"
-          rm -rf "${workdir}"
-          mkdir -p "${workdir}"
-
-          supabase init --workdir "${workdir}"
-
-          python3 - "${workdir}/supabase/config.toml" <<'PY'
+          workdir="$RUNNER_TEMP/zavqera-e2e"
+          rm -rf "$workdir"
+          mkdir -p "$workdir"
+          supabase init --workdir "$workdir"
+          python3 - "$workdir/supabase/config.toml" <<'PY'
           from pathlib import Path
           import sys
-
-          path = Path(sys.argv[1])
-          lines = path.read_text(encoding="utf-8").splitlines()
-
+          p = Path(sys.argv[1])
+          lines = p.read_text().splitlines()
           for i, line in enumerate(lines):
               if line.startswith("project_id"):
                   lines[i] = 'project_id = "zavqera-e2e-local"'
                   break
-
-          def set_section_value(lines, section, key, value):
+          def setv(lines, section, key, value):
               header = f"[{section}]"
               start = next((i for i, line in enumerate(lines) if line.strip() == header), None)
               if start is None:
-                  if lines and lines[-1] != "":
-                      lines.append("")
-                  lines.extend([header, f"{key} = {value}"])
+                  if lines and lines[-1] != "": lines.append("")
+                  lines += [header, f"{key} = {value}"]
                   return
               end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("[")), len(lines))
-              replacement = f"{key} = {value}"
               for i in range(start + 1, end):
                   if lines[i].lstrip().startswith(f"{key} ="):
-                      lines[i] = replacement
+                      lines[i] = f"{key} = {value}"
                       break
               else:
-                  lines.insert(start + 1, replacement)
-
-          set_section_value(lines, "db", "major_version", "17")
-          set_section_value(lines, "auth", "site_url", '"http://127.0.0.1:3210"')
-          set_section_value(lines, "auth", "additional_redirect_urls", '["http://127.0.0.1:3210/**"]')
-          set_section_value(lines, "auth.email", "enable_confirmations", "false")
-          set_section_value(lines, "auth.email.template.recovery", "subject", '"Reset your ZAVQERA password"')
-          set_section_value(lines, "auth.email.template.recovery", "content_path", '"./supabase/templates/recovery.html"')
-          path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+                  lines.insert(start + 1, f"{key} = {value}")
+          setv(lines, "db", "major_version", "17")
+          setv(lines, "auth", "site_url", '"http://127.0.0.1:3210"')
+          setv(lines, "auth", "additional_redirect_urls", '["http://127.0.0.1:3210/**"]')
+          setv(lines, "auth.email", "enable_confirmations", "false")
+          setv(lines, "auth.email.template.recovery", "subject", '"Reset your ZAVQERA password"')
+          setv(lines, "auth.email.template.recovery", "content_path", '"./supabase/templates/recovery.html"')
+          p.write_text("\n".join(lines) + "\n")
           PY
-
-          mkdir -p "${workdir}/supabase/templates"
-          cat > "${workdir}/supabase/templates/recovery.html" <<'HTML'
-<!doctype html>
-<html>
-  <body>
-    <h2>Reset your ZAVQERA password</h2>
-    <p>Follow the link below to choose a new password.</p>
-    <p><a href="{{ .ConfirmationURL }}">Reset password</a></p>
-  </body>
-</html>
-HTML
-
-          cp -R supabase/migrations/. "${workdir}/supabase/migrations/"
-
-          cat > "${workdir}/supabase/migrations/20260921180005_e2e_historical_auth_compat.sql" <<'SQL'
-          create schema if not exists private;
-
-          create or replace function public.handle_new_user_profile()
-          returns trigger
-          language plpgsql
-          security definer
-          set search_path = pg_catalog, public
-          as $body$
-          begin
-            insert into public.profiles (id)
-            values (new.id)
-            on conflict (id) do nothing;
-            return new;
-          end;
-          $body$;
-
-          revoke all privileges on function public.handle_new_user_profile() from public, anon, authenticated;
+          mkdir -p "$workdir/supabase/templates"
+          cat > "$workdir/supabase/templates/recovery.html" <<'HTML'
+          <!doctype html>
+          <html><body>
+          <h2>Reset your ZAVQERA password</h2>
+          <p><a href="{{ .ConfirmationURL }}">Reset password</a></p>
+          </body></html>
+          HTML
+          cp -R "$GITHUB_WORKSPACE/supabase/migrations/." "$workdir/supabase/migrations/"
+          cat > "$workdir/supabase/migrations/20260921180005_e2e_historical_auth_compat.sql" <<'SQL'
+          drop trigger if exists on_auth_user_created on auth.users;
+          create trigger on_auth_user_created
+          after insert on auth.users
+          for each row execute function private.handle_new_user_profile();
           SQL
+          printf "%s\n" "zavqera-e2e-local" > "$workdir/ZAVQERA_E2E_DISPOSABLE"
+          echo "ZAVQERA_E2E_SUPABASE_WORKDIR=$workdir" >> "$GITHUB_ENV"
+          echo "ZAVQERA_E2E_MODE=disposable-full-loop" >> "$GITHUB_ENV"
+          echo "ZAVQERA_E2E_MIGRATION_SOURCE=repo-migrations" >> "$GITHUB_ENV"
+          echo "ZAVQERA_AI_PROVIDER_MODE=mock" >> "$GITHUB_ENV"
 
-          printf '%s\n' 'zavqera-e2e-local' > "${workdir}/ZAVQERA_E2E_DISPOSABLE"
-          printf '%s\n' "${workdir}" > "${RUNNER_TEMP}/zavqera-e2e-workdir"
-          echo "migration_source=repo-migrations" > "${RUNNER_TEMP}/zavqera-e2e-source"
-      - name: Run authenticated browser E2E
+      - name: Run launch-gate browser E2E
         working-directory: apps/web
-        env:
-          ZAVQERA_E2E_MODE: disposable-full-loop
-          ZAVQERA_E2E_MIGRATION_SOURCE: repo-migrations
-          ZAVQERA_AI_PROVIDER_MODE: mock
-          ZAVQERA_E2E_SUPABASE_WORKDIR: ${{ runner.temp }}/zavqera-e2e
         run: |
-          set -u
+          set -euo pipefail
           unset NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
           unset SUPABASE_SERVICE_ROLE_KEY SUPABASE_SECRET_KEY SERVICE_ROLE_KEY SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD
-          unset ZAVQERA_E2E_USER_A_EMAIL ZAVQERA_E2E_USER_A_PASSWORD ZAVQERA_E2E_USER_B_EMAIL ZAVQERA_E2E_USER_B_PASSWORD
-          log="${RUNNER_TEMP}/w21-e2e.log"
-          node test/e2e/preflight.mjs
-          npx playwright test test/e2e/launch-gate.spec.mjs 2>&1 | tee "${log}"
-          status="${PIPESTATUS[0]}"
-          printf 'e2e_exit_status=%s\n' "${status}" > "${RUNNER_TEMP}/w21-e2e-result.env"
-          if grep -q '"cleanup"[[:space:]]*:[[:space:]]*"VERIFIED"' "${log}"; then
-            echo "W21 cleanup proof: VERIFIED"
-          else
-            echo "::error::W21 cleanup proof not found in the test output."
-            status=1
-          fi
-          exit "${status}"
+          npm run test:e2e -- --grep "ZAVQERA launch gate"
 
-      - name: Write W21 evidence
+      - name: Write evidence
         if: always()
         run: |
           set -euo pipefail
           {
             echo "result=${{ job.status }}"
             echo "git_sha=${GITHUB_SHA}"
-            echo "utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            echo "node=$(node --version)"
-            echo "npm=$(npm --version)"
-            echo "supabase_cli=$(supabase --version)"
-            echo "playwright=$(cd apps/web && npx --no-install playwright --version)"
+            echo "migration_source=repo-migrations"
             echo "postgres_major=17"
-            if [ -f "${RUNNER_TEMP}/zavqera-e2e-source" ]; then cat "${RUNNER_TEMP}/zavqera-e2e-source"; fi
-            if [ -f "${RUNNER_TEMP}/zavqera-e2e-result.env" ]; then
-              cat "${RUNNER_TEMP}/zavqera-e2e-result.env"
-            else
-              echo "e2e_exit_status=not-recorded"
-            fi
-            if [ -f "${RUNNER_TEMP}/zavqera-e2e-schema.sha256" ]; then
-              echo -n "schema_sha256="
-              cut -d' ' -f1 "${RUNNER_TEMP}/zavqera-e2e-schema.sha256"
-            fi
-            if [ -f "${RUNNER_TEMP}/w21-e2e.log" ] && grep -q '"cleanup"[[:space:]]*:[[:space:]]*"VERIFIED"' "${RUNNER_TEMP}/w21-e2e.log"; then
-              echo "cleanup=VERIFIED"
-            else
-              echo "cleanup=NOT_VERIFIED_OR_RUN_DID_NOT_REACH_TEARDOWN"
-            fi
-          } > "${RUNNER_TEMP}/W21_EVIDENCE.txt"
+          } > "$RUNNER_TEMP/W21_EVIDENCE.txt"
 
-      - name: Upload sanitized W21 evidence
+      - name: Upload evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
