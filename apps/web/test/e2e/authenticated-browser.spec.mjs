@@ -247,7 +247,7 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       for (const title of [titles.first, titles.second, titles.added]) await expect(statusOf(title)).toHaveValue("PENDING");
     });
 
-    await test.step("two independent browser sessions cannot both pass the same mission-version fence", async () => {
+    await test.step("two independent authenticated sessions cannot both pass the same mission-version fence", async () => {
       await moveMission("PLANNING");
       await moveMission("READY");
       await moveMission("RUNNING");
@@ -255,19 +255,25 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await signOut(pageB);
       await signIn(pageB, userA);
 
+      const concurrentSession = (await ownerSession(userA)).client;
       const before = await readMission(owner.client, missionId);
       const [a, b] = await Promise.all([
-        page.request.patch(missionPath(), {
-          data: { status: "PAUSED", expectedVersion: before.version },
-          timeout: 20_000,
+        owner.client.rpc("transition_mission", {
+          p_mission_id: missionId,
+          p_to_status: "PAUSED",
+          p_expected_version: before.version,
         }),
-        pageB.request.patch(missionPath(), {
-          data: { status: "BLOCKED", expectedVersion: before.version },
-          timeout: 20_000,
+        concurrentSession.rpc("transition_mission", {
+          p_mission_id: missionId,
+          p_to_status: "BLOCKED",
+          p_expected_version: before.version,
         }),
       ]);
-      expect([a.status(), b.status()].filter((status) => status === 200)).toHaveLength(1);
-      expect([a.status(), b.status()].filter((status) => status === 409)).toHaveLength(1);
+
+      const successful = [a, b].filter((result) => result.data && !result.error);
+      const stale = [a, b].filter((result) => result.error?.message === "STALE_VERSION");
+      expect(successful).toHaveLength(1);
+      expect(stale).toHaveLength(1);
 
       const after = await readMission(owner.client, missionId);
       expect(after.version).toBe(before.version + 1);
