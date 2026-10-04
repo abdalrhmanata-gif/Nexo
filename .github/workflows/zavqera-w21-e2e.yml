@@ -111,6 +111,7 @@ jobs:
         env:
           ZAVQERA_E2E_MODE: disposable-full-loop
           ZAVQERA_E2E_MIGRATION_SOURCE: repo-migrations
+          ZAVQERA_AI_PROVIDER_MODE: mock
           ZAVQERA_E2E_SUPABASE_WORKDIR: ${{ runner.temp }}/zavqera-e2e
         run: |
           set -u
