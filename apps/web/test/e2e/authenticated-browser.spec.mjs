@@ -181,6 +181,40 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       ledger.record("user", (await ownerSession(userB)).userId);
     });
 
+    await test.step("AI planner works server-side with isolated mock provider and charges quota once per request", async () => {
+      const initialResponse = await page.request.get("/api/ai/usage");
+      expect(initialResponse.status()).toBe(200);
+      const initialUsage = await initialResponse.json();
+      expect(initialUsage.monthly_limit).toBe(20);
+      expect(initialUsage.generations_used).toBe(0);
+      expect(initialUsage.remaining).toBe(20);
+
+      await page.goto("/app");
+      await page.getByLabel("Your goal", { exact: true }).fill("Prepare a safe first plan for launching a small online shop.");
+      await page.getByRole("button", { name: "Create plan with AI" }).click();
+      await expect(page.locator(".ai-plan-result")).toContainText("Suggested plan");
+      await expect(page.locator(".ai-plan-result")).toContainText("Clarify the desired outcome");
+      await expect(page.locator(".ai-usage")).toContainText("19 of 20");
+
+      const requestId = `w21-ai-idempotency-${runtime.runId}-abcdef`;
+      const first = await page.request.post("/api/ai/plan", {
+        headers: { "x-request-id": requestId },
+        data: { goal: "Create one reversible next step for the same test mission." },
+      });
+      expect(first.status()).toBe(200);
+      const second = await page.request.post("/api/ai/plan", {
+        headers: { "x-request-id": requestId },
+        data: { goal: "Create one reversible next step for the same test mission." },
+      });
+      expect(second.status()).toBe(429);
+
+      const finalResponse = await page.request.get("/api/ai/usage");
+      expect(finalResponse.status()).toBe(200);
+      const finalUsage = await finalResponse.json();
+      expect(finalUsage.generations_used).toBe(2);
+      expect(finalUsage.remaining).toBe(18);
+    });
+
     await test.step("sign out protects the workspace; sign in restores it", async () => {
       await signOut(page);
       await page.goto("/app");
