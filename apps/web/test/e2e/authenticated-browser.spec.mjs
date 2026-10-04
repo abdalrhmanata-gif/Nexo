@@ -309,6 +309,9 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await moveMission("READY");
       await moveMission("RUNNING");
 
+      // Password reset may revoke prior sessions; re-bind the owner to a fresh
+      // authenticated session before the controlled independent-session race.
+      owner = await ownerSession(userA);
       const concurrentSession = (await ownerSession(userA)).client;
       const before = await readMission(owner.client, missionId);
       const [a, b] = await Promise.all([
