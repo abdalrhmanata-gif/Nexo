@@ -81,6 +81,8 @@ jobs:
                   lines.insert(start + 1, replacement)
 
           set_section_value(lines, "db", "major_version", "17")
+          set_section_value(lines, "auth", "site_url", '"http://127.0.0.1:3210"')
+          set_section_value(lines, "auth", "additional_redirect_urls", '["http://127.0.0.1:3210/**"]')
           set_section_value(lines, "auth.email", "enable_confirmations", "false")
           path.write_text("\n".join(lines) + "\n", encoding="utf-8")
           PY
