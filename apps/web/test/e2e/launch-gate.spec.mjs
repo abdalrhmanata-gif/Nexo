@@ -81,24 +81,11 @@ async function latestResetLink(email) {
         const decoded = raw
           .replace(/=\\r?\\n/g, "")
           .replace(/=3D/gi, "=");
-        const matches = [...decoded.matchAll(/https?:\/\/[^\s"\'<>]+\/auth\/v1\/verify\?[^\s"\'<>]+/g)].map((m) => m[0]);
+        const matches = [...decoded.matchAll(/https?:\/\/[^\s"'<>]+\/auth\/v1\/verify\?[^\s"'<>]+/g)].map((m) => m[0]);
         const candidate = matches
           .map((value) => value.replaceAll("&amp;", "&").replace(/[)>.,]+$/, ""))
-          .sort((a, b) => {
-            const score = (value) => Number(value.includes("redirect_to=")) + Number(value.includes("type=recovery"));
-            return score(b) - score(a) || b.length - a.length;
-          })[0];
-        if (candidate) {
-          const link = new URL(candidate);
-          if (!link.searchParams.has("type")) link.searchParams.set("type", "recovery");
-          if (!link.searchParams.has("redirect_to")) {
-            link.searchParams.set(
-              "redirect_to",
-              `${runtime.baseURL}/auth/callback?next=${encodeURIComponent("/auth/reset-password")}`,
-            );
-          }
-          return link.toString();
-        }
+          .find((value) => value.includes("type=recovery") && value.includes("redirect_to="));
+        if (candidate) return candidate;
       }
     }
 
