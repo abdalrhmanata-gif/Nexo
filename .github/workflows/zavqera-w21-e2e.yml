@@ -134,13 +134,13 @@ jobs:
           echo "ZAVQERA_E2E_MIGRATION_SOURCE=repo-migrations" >> "$GITHUB_ENV"
           echo "ZAVQERA_AI_PROVIDER_MODE=mock" >> "$GITHUB_ENV"
 
-      - name: Run launch-gate browser E2E
+      - name: Run full launch-gate browser E2E
         working-directory: apps/web
         run: |
           set -euo pipefail
           unset NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
           unset SUPABASE_SERVICE_ROLE_KEY SUPABASE_SECRET_KEY SERVICE_ROLE_KEY SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD
-          npm run test:e2e -- --grep "ZAVQERA launch gate"
+          npm run test:e2e
 
       - name: Write evidence
         if: always()
