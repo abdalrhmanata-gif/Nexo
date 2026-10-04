@@ -270,11 +270,15 @@ test("the workspace stays reachable on a small screen", () => {
   assert.match(newMission, /href="\/app"/);
 });
 
-test("success criteria and first steps are separate fields", () => {
-  const source = read("app/app/missions/new/page.tsx");
+test("success criteria and first steps are separate fields in the integrated AI mission form", () => {
+  const source = read("components/mission-create-form.tsx");
   assert.match(source, /name="criteria"/);
   assert.match(source, /name="actions"/);
-  assert.doesNotMatch(source, /becomes both a success criterion and an action/);
+  assert.match(source, /Draft mission with AI/);
+  assert.match(source, /setCriteria\(plan\.summary\)/);
+  assert.match(source, /setActions\(plan\.steps\.map/);
   // Omitting the steps must keep the pre-W19 behaviour of seeding from criteria.
-  assert.match(source, /steps \? toLines\(steps\) : toLines\(criteria\)/);
+  const page = read("app/app/missions/new/page.tsx");
+  assert.match(page, /steps \? toLines\(steps\) : toLines\(criteria\)/);
+  assert.doesNotMatch(page, /becomes both a success criterion and an action/);
 });
