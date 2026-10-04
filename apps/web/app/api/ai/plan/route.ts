@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "../../../../lib/supabase/server";
-import { createStubMissionPlan, DEFAULT_AI_MODEL, requestMissionPlan } from "../../../../lib/ai-planner";
+import { DEFAULT_AI_MODEL, requestMissionPlan } from "../../../../lib/ai-planner";
 import { buildMockMissionPlan } from "../../../../lib/ai-mock-provider";
 import {
   AI_GENERATION_OUTCOMES,
