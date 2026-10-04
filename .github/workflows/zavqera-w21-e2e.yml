@@ -84,8 +84,22 @@ jobs:
           set_section_value(lines, "auth", "site_url", '"http://127.0.0.1:3210"')
           set_section_value(lines, "auth", "additional_redirect_urls", '["http://127.0.0.1:3210/**"]')
           set_section_value(lines, "auth.email", "enable_confirmations", "false")
+          set_section_value(lines, "auth.email.template.recovery", "subject", '"Reset your ZAVQERA password"')
+          set_section_value(lines, "auth.email.template.recovery", "content_path", '"./supabase/templates/recovery.html"')
           path.write_text("\n".join(lines) + "\n", encoding="utf-8")
           PY
+
+          mkdir -p "${workdir}/supabase/templates"
+          cat > "${workdir}/supabase/templates/recovery.html" <<'HTML'
+<!doctype html>
+<html>
+  <body>
+    <h2>Reset your ZAVQERA password</h2>
+    <p>Follow the link below to choose a new password.</p>
+    <p><a href="{{ .ConfirmationURL }}">Reset password</a></p>
+  </body>
+</html>
+HTML
 
           cp -R supabase/migrations/. "${workdir}/supabase/migrations/"
 
