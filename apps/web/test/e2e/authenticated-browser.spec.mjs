@@ -496,8 +496,8 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       expect(await readMission(owner.client, missionId)).not.toBeNull();
     });
 
-    await signOut(page);
-    await signOut(pageB);
+    // Browser contexts are disposable test fixtures; explicit final sign-out is
+    // unnecessary after the authenticated sign-out flow was already verified.
     expect(blocked, "requests left the loopback allowlist").toEqual([]);
   } finally {
     await contextA.close();
