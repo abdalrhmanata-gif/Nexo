@@ -93,6 +93,8 @@ jobs:
           create schema if not exists private;
           SQL
           cp -R "$GITHUB_WORKSPACE/supabase/migrations/." "$workdir/supabase/migrations/"
+          mkdir -p "$workdir/supabase/tests"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w30_launch_gate_pgtap.sql" "$workdir/supabase/tests/w30_launch_gate_pgtap.sql"
           cat > "$workdir/supabase/migrations/20260921180005_e2e_historical_auth_compat.sql" <<'SQL'
           create schema if not exists private;
           create or replace function private.handle_new_user_profile()
@@ -133,6 +135,11 @@ jobs:
           echo "ZAVQERA_E2E_MODE=disposable-full-loop" >> "$GITHUB_ENV"
           echo "ZAVQERA_E2E_MIGRATION_SOURCE=repo-migrations" >> "$GITHUB_ENV"
           echo "ZAVQERA_AI_PROVIDER_MODE=mock" >> "$GITHUB_ENV"
+
+      - name: Run disposable PostgreSQL 17 pgTAP launch gate
+        run: |
+          set -euo pipefail
+          supabase test db w30_launch_gate_pgtap.sql --workdir "$ZAVQERA_E2E_SUPABASE_WORKDIR"
 
       - name: Run full launch-gate browser E2E
         working-directory: apps/web
