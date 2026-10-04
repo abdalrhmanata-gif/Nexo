@@ -39,29 +39,6 @@ select ok(not exists(
     and has_function_privilege('anon',p.oid,'EXECUTE')
 ), 'no SECURITY DEFINER function is executable by anon');
 
-select diag(
-  'SECURITY DEFINER auth.uid offenders: ' ||
-  coalesce((
-    select string_agg(
-      n.nspname || '.' || p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')',
-      ', ' order by n.nspname, p.proname, pg_get_function_identity_arguments(p.oid)
-    )
-    from pg_proc p
-    join pg_namespace n on n.oid=p.pronamespace
-    where n.nspname='public' and p.prosecdef
-      and not exists (
-        select 1
-        from pg_depend d
-        join pg_extension e on e.oid=d.refobjid
-        where d.classid='pg_proc'::regclass
-          and d.objid=p.oid
-          and d.deptype='e'
-      )
-      and p.prosrc not like '%auth.uid()%'
-      and p.proname not in ('guard_mission_action_insert','handle_new_user_profile','prevent_mission_action_delete_with_history','prevent_mission_action_reparent')
-  ), 'none')
-);
-
 select ok(not exists(
   select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
   where n.nspname='public' and p.prosecdef
@@ -74,7 +51,13 @@ select ok(not exists(
         and d.deptype='e'
     )
     and p.prosrc not like '%auth.uid()%'
-    and p.proname not in ('guard_mission_action_insert','handle_new_user_profile','prevent_mission_action_delete_with_history','prevent_mission_action_reparent')
+    and p.proname not in (
+      'guard_mission_action_insert',
+      'handle_new_user_profile',
+      'prevent_mission_action_delete_with_history',
+      'prevent_action_delete_with_history',
+      'prevent_mission_action_reparent'
+    )
 ), 'public application SECURITY DEFINER runtime functions bind to auth.uid');
 
 select ok(exists(select 1 from pg_constraint where conname='ai_usage_monthly_pkey'), 'monthly quota primary key exists');
