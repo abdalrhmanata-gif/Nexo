@@ -21,6 +21,10 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
     const cookie = document.cookie.split("; ").find((part) => part.startsWith("zavqera-language="))?.split("=")[1];
     const candidate = saved || cookie || navigator.language.toLowerCase().split("-")[0];
     setLanguage(candidate === "ar" || candidate === "nb" ? candidate : "en");
+    void fetch("/api/ai/usage", { cache: "no-store" })
+      .then(async (response) => response.ok ? response.json() : null)
+      .then((value) => { if (value && typeof value.remaining === "number" && typeof value.monthly_limit === "number") setUsage(value); })
+      .catch(() => undefined);
   }, []);
 
   async function draftWithAi() {
@@ -47,6 +51,10 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
   }
 
   const placeholder = language === "ar" ? "مثال: أريد إطلاق متجر إلكتروني صغير خلال ستة أسابيع" : language === "nb" ? "Eksempel: lanser en liten nettbutikk innen seks uker" : "Example: launch a small online shop in six weeks";
+  const namePlaceholder = language === "ar" ? "مثال: إطلاق متجري الإلكتروني" : language === "nb" ? "For eksempel: Lanser nettbutikken min" : "e.g. Launch my online shop";
+  const intentPlaceholder = language === "ar" ? "ما النتيجة التي تريد الوصول إليها؟" : language === "nb" ? "Hva ønsker du å oppnå med oppdraget?" : "What should this mission help you accomplish?";
+  const criteriaPlaceholder = language === "ar" ? "اكتب معيارًا واحدًا في كل سطر" : language === "nb" ? "Ett kriterium per linje" : "One criterion per line";
+  const actionsPlaceholder = language === "ar" ? "اكتب خطوة واحدة في كل سطر" : language === "nb" ? "Ett steg per linje" : "One step per line";
 
   return <>
     <section className="card ai-planner mission-ai-draft" aria-labelledby="mission-ai-heading">
@@ -60,14 +68,15 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
       <button className="button" type="button" disabled={loading || !goal.trim()} onClick={draftWithAi}>
         {loading ? <LocalizedText en="Creating draft…" /> : <LocalizedText en="Draft mission with AI" />}
       </button>
+      {usage && <p className="ai-usage" aria-live="polite">{usage.remaining} / {usage.monthly_limit} <LocalizedText en="AI plans remaining this month." /></p>}
       {error && <p className="field-error" role="alert"><LocalizedText en={error} /></p>}
     </section>
     <form className="form-grid mission-review-form" action={action}>
       <p className="eyebrow"><LocalizedText en="Review and edit" /></p>
-      <div className="field"><label htmlFor="name"><LocalizedText en="Mission name" /></label><input id="name" name="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Renew my passport" required /></div>
-      <div className="field"><label htmlFor="intent"><LocalizedText en="Intent" /></label><textarea id="intent" name="intent" value={intent} onChange={(e) => setIntent(e.target.value)} placeholder="What should this mission help you accomplish?" required /><small><LocalizedText en="Use plain language. Keep the decision you want to make visible." /></small></div>
-      <div className="field"><label htmlFor="criteria"><LocalizedText en="Success criteria" /></label><textarea id="criteria" name="criteria" value={criteria} onChange={(e) => setCriteria(e.target.value)} placeholder="One criterion per line" required /><small><LocalizedText en="How you will know this mission succeeded. One per line." /></small></div>
-      <div className="field"><label htmlFor="actions"><LocalizedText en="First steps" /> <span className="field-optional"><LocalizedText en="optional" /></span></label><textarea id="actions" name="actions" value={actions} onChange={(e) => setActions(e.target.value)} placeholder="One step per line" /><small><LocalizedText en="The work you already know about, in the order you would do it. You can add more at any time. Leave empty to start from your success criteria." /></small></div>
+      <div className="field"><label htmlFor="name"><LocalizedText en="Mission name" /></label><input id="name" name="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={namePlaceholder} required /></div>
+      <div className="field"><label htmlFor="intent"><LocalizedText en="Intent" /></label><textarea id="intent" name="intent" value={intent} onChange={(e) => setIntent(e.target.value)} placeholder={intentPlaceholder} required /><small><LocalizedText en="Use plain language. Keep the decision you want to make visible." /></small></div>
+      <div className="field"><label htmlFor="criteria"><LocalizedText en="Success criteria" /></label><textarea id="criteria" name="criteria" value={criteria} onChange={(e) => setCriteria(e.target.value)} placeholder={criteriaPlaceholder} required /><small><LocalizedText en="How you will know this mission succeeded. One per line." /></small></div>
+      <div className="field"><label htmlFor="actions"><LocalizedText en="First steps" /> <span className="field-optional"><LocalizedText en="optional" /></span></label><textarea id="actions" name="actions" value={actions} onChange={(e) => setActions(e.target.value)} placeholder={actionsPlaceholder} /><small><LocalizedText en="The work you already know about, in the order you would do it. You can add more at any time. Leave empty to start from your success criteria." /></small></div>
       <button className="button" type="submit"><LocalizedText en="Create mission" /></button>
     </form>
   </>;
