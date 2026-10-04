@@ -1,0 +1,5 @@
+ZAVQERA release-candidate marker
+PR: 29
+Branch: zavqera/ai-planner-integration
+Verified parent: aa8798dc5b031566c4c16288d98c669a630bcb3f
+Purpose: force a concrete Netlify preview artifact for the release candidate.

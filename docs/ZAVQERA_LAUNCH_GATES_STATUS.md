@@ -5,15 +5,15 @@ Base: `zavqera/alternative-web-deployment`
 PR: #29 (Draft / Open / Unmerged)
 Production/main: untouched.
 
-## Candidate verified before this documentation update
+## Latest fully verified candidate
 
-- Candidate head: `2cd7516a017eb238a73944ecc58bdbc144ab389c`
+- Candidate commit: `aa8798dc5b031566c4c16288d98c669a630bcb3f`
 - Web Unit: PASS
 - Web CI / verify: PASS
-- Web verification: PASS
+- Flutter CI: PASS
 - W21 isolated launch gate: PASS
-- W21 run: `37214394083`
-- W21 evidence artifact: `11308255262`
+- W21 run: `37217236167`
+- W21 evidence artifact: `11308423198`
 - Disposable PostgreSQL 17 pgTAP: **21/21 PASS**
 - Browser launch gate: **2/2 tests PASS**
 - Disposable Docker cleanup: **VERIFIED**
@@ -22,7 +22,7 @@ Production/main: untouched.
 
 Project: `mrwmmbytcymqgwvcoywd`
 Status: ACTIVE_HEALTHY
-PostgreSQL: 17.6.1.166
+PostgreSQL: 17.6
 
 Verified live:
 - W21 completion matrix: 19/19 PASS.
@@ -31,9 +31,9 @@ Verified live:
 - Concurrent quota reservation/duplicate-id races: PASS.
 - Full 21-assertion launch pgTAP aggregate: 21/21 PASS.
 - Quota tables are RLS-protected with no direct CRUD privileges for `anon` or `authenticated`.
-- Public SECURITY DEFINER functions: pinned `search_path=pg_catalog, public`; none executable by `anon`.
+- Public SECURITY DEFINER functions use the pinned `search_path=pg_catalog, public`; none is executable by `anon`.
 - W31 Mission transition serialization is active through a transaction-scoped PostgreSQL advisory lock.
-- W31 repository migration is aligned to Development history as `20261004150738_w31_mission_transition_serialization.sql`.
+- W31 repository migration: `20261004150738_w31_mission_transition_serialization.sql`.
 
 ## Mission Authority
 
@@ -48,8 +48,6 @@ Verified:
 - outcome idempotency
 - history-preserving delete protection
 
-The current W21 browser run is the strongest end-to-end evidence for these gates.
-
 ## AI accounting
 
 Implemented and tested:
@@ -62,16 +60,17 @@ Implemented and tested:
 
 ## Security
 
-Supabase Security Advisor still reports:
+Current Supabase Security Advisor findings:
 - Leaked Password Protection: WARN / Disabled.
-- 10 authenticated-executable SECURITY DEFINER warnings. These are intentional server-mediated RPC boundaries; catalog checks confirm `auth.uid()` binding, pinned search paths, and no `anon` execution.
+- 10 authenticated-executable SECURITY DEFINER warnings; these are intentional server-mediated RPC boundaries with `auth.uid()` checks, pinned search paths, and no `anon` execution.
+- 1 unused-index INFO finding.
 
-Leaked Password Protection is a Supabase Pro+ feature. The Development organization remains on the Free plan; no upgrade or billing change was made.
+Leaked Password Protection requires a supported Supabase plan. No upgrade or billing change was made.
 
 ## Remaining release blockers
 
-1. **Real AI Preview:** blocked because no `OPENAI_API_KEY` is configured in the Netlify environment listing available to this session. Deploy Preview uses `ZAVQERA_AI_PROVIDER_MODE=mock`; production defaults to OpenAI and safely returns `503` when no key is configured.not configured in the Netlify Deploy Preview environment. Mock provider is used only for preview testing. Real provider success + quota before/after + failure-path evidence is still required.
-2. **Leaked Password Protection:** requires enabling it on a supported Supabase plan.
-3. **Final release approval:** PR #29 remains Draft/Open/Unmerged. No merge, billing change, DNS change, or Supabase Main change was performed.n Draft until the two external release prerequisites above are completed and the owner explicitly approves merge/deployment.
+1. **Real AI Preview:** no `OPENAI_API_KEY` is present in the Netlify environment listing available to this session. Deploy Preview uses `ZAVQERA_AI_PROVIDER_MODE=mock`; production defaults to OpenAI and safely returns HTTP 503 when no key is configured. Real provider success, quota before/after, and provider-failure accounting still need live evidence.
+2. **Leaked Password Protection:** requires enabling the feature on a supported Supabase plan.
+3. **Release approval/deployment:** PR #29 remains Draft/Open/Unmerged. Supabase Main, billing, DNS, and production deployment have not been changed.
 
-No Supabase Main change, merge, DNS change, billing change, or paid infrastructure change has been performed. Netlify Production remains on the existing `main` deploy; the PR-29 preview is `deploy-preview-29` and its latest attempt was canceled only because Netlify detected no content change.
+Netlify Production remains on the existing `main` deploy. PR-29 Preview is configured, but Netlify skips preview builds when the generated web output has no content change; the application code itself is already covered by the green W21/browser and production-build checks above.
