@@ -84,6 +84,7 @@ async function latestResetLink(email) {
         const match = decoded.match(/https?:\/\/[^\s"'<>]+\/auth\/v1\/verify\?[^\s"'<>]+/);
         if (match) {
           const link = new URL(match[0].replaceAll("&amp;", "&").replace(/[)>.,]+$/, ""));
+          if (!link.searchParams.has("type")) link.searchParams.set("type", "recovery");
           if (!link.searchParams.has("redirect_to")) {
             link.searchParams.set(
               "redirect_to",
