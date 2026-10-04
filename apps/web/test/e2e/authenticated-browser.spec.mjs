@@ -305,13 +305,14 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
     });
 
     await test.step("two independent authenticated HTTP sessions cannot both pass the same mission-version fence", async () => {
-      await moveMission("PLANNING");
-      await moveMission("READY");
-      await moveMission("RUNNING");
+      // Keep the TOCTOU assertion independent from UI reload/load-event timing.
+      for (const toStatus of ["PLANNING", "READY", "RUNNING"]) {
+        const before = await readMission(owner.client, missionId);
+        const moved = await transitionMissionDirect(owner.client, missionId, toStatus, before.version);
+        expect(moved.status, `direct transition to ${toStatus}`).toBe(200);
+        expect((await readMission(owner.client, missionId)).status).toBe(toStatus);
+      }
 
-      // Password reset may revoke prior sessions; re-bind the owner to a fresh
-      // authenticated session before the controlled independent-session race.
-      owner = await ownerSession(userA);
       const concurrentSession = (await ownerSession(userA)).client;
       const before = await readMission(owner.client, missionId);
       const [a, b] = await Promise.all([
@@ -328,7 +329,8 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       expect(after.version).toBe(before.version + 1);
       expect(["PAUSED", "BLOCKED"]).toContain(after.status);
 
-      await moveMission("RUNNING");
+      const restore = await transitionMissionDirect(owner.client, missionId, "RUNNING", after.version);
+      expect(restore.status).toBe(200);
       await signOut(pageB);
       await signIn(pageB, userB);
     });
