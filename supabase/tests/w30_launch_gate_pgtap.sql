@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap;
 
-select plan(25);
+select plan(27);
 
 select ok(to_regclass('public.missions') is not null, 'missions exists');
 select ok(to_regclass('public.mission_actions') is not null, 'mission_actions exists');
@@ -95,6 +95,9 @@ select ok((
 select ok(not has_schema_privilege('anon', 'private', 'USAGE'), 'anon cannot access private RPC schema');
 
 select ok(exists(select 1 from pg_constraint where conname='ai_usage_monthly_pkey'), 'monthly quota primary key exists');
+
+select ok(pg_get_functiondef('private.get_ai_usage()'::regprocedure) like '%coalesce(v_limit, 5)%', 'Free AI quota fallback is five');
+select ok(pg_get_functiondef('private.reserve_ai_generation(text)'::regprocedure) like '%coalesce(v_limit, 5)%', 'reservation enforcement uses five for Free tier');
 
 select * from finish();
 rollback;
