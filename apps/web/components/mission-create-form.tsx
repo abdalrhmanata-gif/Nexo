@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LocalizedText } from "./localized-text";
 
 type Plan = { summary: string; steps: { title: string; reason: string }[] };
@@ -16,15 +16,12 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
   const [error, setError] = useState("");
   const [usage, setUsage] = useState<{remaining:number; monthly_limit:number} | null>(null);
 
-  useState(() => {
-    if (typeof window !== "undefined") {
-      const saved = window.localStorage.getItem("zavqera-language");
-      const cookie = document.cookie.split("; ").find((part) => part.startsWith("zavqera-language="))?.split("=")[1];
-      const candidate = saved || cookie || navigator.language.toLowerCase().split("-")[0];
-      setLanguage(candidate === "ar" || candidate === "nb" ? candidate : "en");
-    }
-    return null;
-  });
+  useEffect(() => {
+    const saved = window.localStorage.getItem("zavqera-language");
+    const cookie = document.cookie.split("; ").find((part) => part.startsWith("zavqera-language="))?.split("=")[1];
+    const candidate = saved || cookie || navigator.language.toLowerCase().split("-")[0];
+    setLanguage(candidate === "ar" || candidate === "nb" ? candidate : "en");
+  }, []);
 
   async function draftWithAi() {
     setLoading(true); setError("");
