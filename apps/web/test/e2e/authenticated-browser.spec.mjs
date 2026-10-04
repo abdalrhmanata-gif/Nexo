@@ -213,16 +213,16 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       const initialResponse = await page.request.get("/api/ai/usage");
       expect(initialResponse.status()).toBe(200);
       const initialUsage = await initialResponse.json();
-      expect(initialUsage.monthly_limit).toBe(20);
+      expect(initialUsage.monthly_limit).toBe(5);
       expect(initialUsage.generations_used).toBe(0);
-      expect(initialUsage.remaining).toBe(20);
+      expect(initialUsage.remaining).toBe(5);
 
-      await page.goto("/app");
-      await page.getByLabel("Your goal", { exact: true }).fill("Prepare a safe first plan for launching a small online shop.");
-      await page.getByRole("button", { name: "Create plan with AI" }).click();
-      await expect(page.locator(".ai-plan-result")).toContainText("Suggested plan");
-      await expect(page.locator(".ai-plan-result")).toContainText("Clarify the desired outcome");
-      await expect(page.locator(".ai-usage")).toContainText("19 of 20");
+      await page.goto("/app/missions/new");
+      await page.getByLabel("What do you want to achieve?", { exact: true }).fill("Prepare a safe first plan for launching a small online shop.");
+      await page.getByRole("button", { name: "Draft mission with AI" }).click();
+      await expect(page.getByLabel("Mission name", { exact: true })).not.toHaveValue("");
+      await expect(page.getByLabel("Success criteria", { exact: true })).not.toHaveValue("");
+      await expect(page.getByLabel(/^First steps/)).not.toHaveValue("");
 
       const requestId = `w21-ai-idempotency-${runtime.runId}-abcdef`;
       const first = await page.request.post("/api/ai/plan", {
@@ -240,7 +240,8 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       expect(finalResponse.status()).toBe(200);
       const finalUsage = await finalResponse.json();
       expect(finalUsage.generations_used).toBe(2);
-      expect(finalUsage.remaining).toBe(18);
+      expect(finalUsage.monthly_limit).toBe(5);
+      expect(finalUsage.remaining).toBe(3);
     });
 
     await test.step("sign out protects the workspace; sign in restores it", async () => {
