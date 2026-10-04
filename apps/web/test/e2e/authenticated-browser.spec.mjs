@@ -88,7 +88,12 @@ async function readRows(client, table, missionId, columns = "id") {
 }
 
 function guardNetwork(context, blocked) {
-  const allowed = new Set([new URL(runtime.baseURL).origin, new URL(runtime.supabaseUrl).origin]);
+  const base = new URL(runtime.baseURL);
+  const allowed = new Set([
+    base.origin,
+    `http://localhost:${base.port}`,
+    new URL(runtime.supabaseUrl).origin,
+  ]);
   return context.route("**/*", (route) => {
     const url = route.request().url();
     if (url.startsWith("data:") || url.startsWith("blob:") || allowed.has(new URL(url).origin)) return route.continue();
