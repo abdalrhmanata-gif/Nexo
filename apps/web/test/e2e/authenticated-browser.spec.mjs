@@ -313,6 +313,8 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
         expect((await readMission(owner.client, missionId)).status).toBe(toStatus);
       }
 
+      // Password reset may revoke prior sessions; re-bind the owner before the race.
+      owner = await ownerSession(userA);
       const concurrentSession = (await ownerSession(userA)).client;
       const before = await readMission(owner.client, missionId);
       const [a, b] = await Promise.all([
