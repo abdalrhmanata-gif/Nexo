@@ -62,6 +62,7 @@ async function transitionMissionDirect(client, missionId, toStatus, expectedVers
       Authorization: `Bearer ${session.access_token}`,
       "Content-Type": "application/json",
     },
+    signal: AbortSignal.timeout(20_000),
     body: JSON.stringify({
       p_mission_id: missionId,
       p_to_status: toStatus,
