@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseMissionRepository } from "../../../../lib/supabase/mission-repository";
-import { MissionMutationConflictError, MissionMutationRejectedError } from "../../../../lib/mission-repository";
+import { MissionMutationConflictError, MissionMutationRejectedError, MissionProvenanceDeleteError } from "../../../../lib/mission-repository";
 import type { MissionLifecycleStatus } from "../../../../lib/view-models";
 
 const statuses = new Set<MissionLifecycleStatus>([
@@ -22,16 +22,7 @@ function errorResponse(error: unknown) {
 }
 
 function isProvenanceDeleteError(error: unknown) {
-  if (typeof error !== "object" || error === null) return false;
-  const record = error as Record<string, unknown>;
-  const code = typeof record.code === "string" ? record.code : "";
-  const message = [
-    record.message,
-    record.details,
-    record.hint,
-    record.constraint,
-  ].filter((value): value is string => typeof value === "string").join(" ");
-  return code === "23503" && /mission_events(?:_mission_id_fkey)?/i.test(message);
+  return error instanceof MissionProvenanceDeleteError;
 }
 
 export async function DELETE(
