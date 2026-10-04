@@ -7,13 +7,13 @@ Production/main: untouched.
 
 ## Candidate verified before this documentation update
 
-- Candidate head: `da930631cbfe0fe1efd15c2304f6d0f347c1fd89`
+- Candidate head: `2cd7516a017eb238a73944ecc58bdbc144ab389c`
 - Web Unit: PASS
 - Web CI / verify: PASS
 - Web verification: PASS
 - W21 isolated launch gate: PASS
-- W21 run: `37213946001`
-- W21 evidence artifact: `11307970818`
+- W21 run: `37214394083`
+- W21 evidence artifact: `11308255262`
 - Disposable PostgreSQL 17 pgTAP: **21/21 PASS**
 - Browser launch gate: **2/2 tests PASS**
 - Disposable Docker cleanup: **VERIFIED**
@@ -70,8 +70,8 @@ Leaked Password Protection is a Supabase Pro+ feature. The Development organizat
 
 ## Remaining release blockers
 
-1. **Real AI Preview:** blocked because `OPENAI_API_KEY` is not configured in the Netlify Deploy Preview environment. Mock provider is used only for preview testing. Real provider success + quota before/after + failure-path evidence is still required.
+1. **Real AI Preview:** blocked because no `OPENAI_API_KEY` is configured in the Netlify environment listing available to this session. Deploy Preview uses `ZAVQERA_AI_PROVIDER_MODE=mock`; production defaults to OpenAI and safely returns `503` when no key is configured.not configured in the Netlify Deploy Preview environment. Mock provider is used only for preview testing. Real provider success + quota before/after + failure-path evidence is still required.
 2. **Leaked Password Protection:** requires enabling it on a supported Supabase plan.
-3. **Final release approval:** PR #29 must remain Draft until the two external release prerequisites above are completed and the owner explicitly approves merge/deployment.
+3. **Final release approval:** PR #29 remains Draft/Open/Unmerged. No merge, billing change, DNS change, or Supabase Main change was performed.n Draft until the two external release prerequisites above are completed and the owner explicitly approves merge/deployment.
 
-No Supabase Main change, merge, production deployment, DNS change, billing change, or paid infrastructure change has been performed.
+No Supabase Main change, merge, DNS change, billing change, or paid infrastructure change has been performed. Netlify Production remains on the existing `main` deploy; the PR-29 preview is `deploy-preview-29` and its latest attempt was canceled only because Netlify detected no content change.
