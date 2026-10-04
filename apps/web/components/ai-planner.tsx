@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import { LocalizedText } from "./localized-text";
+import type { AppLanguage } from "./language-switcher";
 
 type Plan = {
   summary: string;
@@ -17,6 +18,7 @@ type Usage = {
 
 export function AiPlanner() {
   const [goal, setGoal] = useState("");
+  const [language, setLanguage] = useState<AppLanguage>("en");
   const [plan, setPlan] = useState<Plan | null>(null);
   const [usage, setUsage] = useState<Usage | null>(null);
   const [error, setError] = useState("");
@@ -33,6 +35,16 @@ export function AiPlanner() {
 
   useEffect(() => {
     void refreshUsage();
+    const readLanguage = () => {
+      const cookie = document.cookie.split("; ").find((part) => part.startsWith("zavqera-language="))?.split("=")[1];
+      let saved: string | null = null;
+      try { saved = window.localStorage.getItem("zavqera-language"); } catch { /* use cookie/browser fallback */ }
+      const candidate = saved || cookie || navigator.language.toLowerCase().split("-")[0];
+      setLanguage(candidate === "ar" || candidate === "nb" ? candidate : "en");
+    };
+    readLanguage();
+    window.addEventListener("zavqera-language-change", readLanguage);
+    return () => window.removeEventListener("zavqera-language-change", readLanguage);
   }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -83,10 +95,10 @@ export function AiPlanner() {
             onChange={(event) => setGoal(event.target.value)}
             maxLength={1200}
             required
-            placeholder="For example: prepare to launch a small online shop in six weeks"
+            placeholder={language === "ar" ? "مثال: أريد إطلاق متجر إلكتروني صغير خلال ستة أسابيع" : language === "nb" ? "Eksempel: lanser en liten nettbutikk innen seks uker" : "Example: launch a small online shop in six weeks"}
             aria-describedby="ai-goal-help"
           />
-          <small id="ai-goal-help">{goal.length}/1200 characters. Avoid entering secrets or sensitive personal information.</small>
+          <small id="ai-goal-help">{goal.length}/1200 <LocalizedText en="characters. Avoid entering secrets or sensitive personal information." /></small>
         </div>
         <div>
           <button className="button" type="submit" disabled={loading || !goal.trim()}>
