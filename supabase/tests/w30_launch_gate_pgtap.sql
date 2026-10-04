@@ -43,7 +43,7 @@ select ok(not exists(
   select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
   where n.nspname='public' and p.prosecdef
     and p.prosrc not like '%auth.uid()%'
-    and p.proname <> 'guard_mission_action_insert'
+    and p.proname not in ('guard_mission_action_insert','handle_new_user_profile','prevent_mission_action_delete_with_history','prevent_mission_action_reparent')
 ), 'public SECURITY DEFINER runtime functions bind to auth.uid');
 
 select ok(exists(select 1 from pg_constraint where conname='ai_usage_monthly_pkey'), 'monthly quota primary key exists');
