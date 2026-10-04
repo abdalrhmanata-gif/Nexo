@@ -94,6 +94,21 @@ jobs:
           SQL
           cp -R "$GITHUB_WORKSPACE/supabase/migrations/." "$workdir/supabase/migrations/"
           cat > "$workdir/supabase/migrations/20260921180005_e2e_historical_auth_compat.sql" <<'SQL'
+          create schema if not exists private;
+          create or replace function private.handle_new_user_profile()
+          returns trigger
+          language plpgsql
+          security definer
+          set search_path = pg_catalog, public
+          as $body$
+          begin
+            insert into public.profiles (id)
+            values (new.id)
+            on conflict (id) do nothing;
+            return new;
+          end;
+          $body$;
+          revoke all privileges on function private.handle_new_user_profile() from public, anon, authenticated;
           drop trigger if exists on_auth_user_created on auth.users;
           create trigger on_auth_user_created
           after insert on auth.users
