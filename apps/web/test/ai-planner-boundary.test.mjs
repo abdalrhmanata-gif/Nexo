@@ -22,6 +22,8 @@ test("AI route authenticates before invoking the provider service and keeps the 
   assert.ok(route.includes("ZAVQERA_AI_PROVIDER_MODE"));
   assert.ok(route.includes("status: 401"));
   assert.ok(route.includes("status: 503"));
+  assert.match(route, /AI_PROVIDER_MODE/);
+  assert.match(route, /providerMode === "stub"/);
 });
 
 test("AI planner bounds input, output, time and response caching", () => {
