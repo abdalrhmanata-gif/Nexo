@@ -52,6 +52,28 @@ async function readMission(client, missionId) {
   return data;
 }
 
+async function transitionMissionDirect(client, missionId, toStatus, expectedVersion) {
+  const { data: { session }, error } = await client.auth.getSession();
+  if (error || !session?.access_token) throw error ?? new Error("Missing authenticated session.");
+  const response = await fetch(`${runtime.supabaseUrl}/rest/v1/rpc/transition_mission`, {
+    method: "POST",
+    headers: {
+      apikey: runtime.publishableKey,
+      Authorization: `Bearer ${session.access_token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      p_mission_id: missionId,
+      p_to_status: toStatus,
+      p_expected_version: expectedVersion,
+    }),
+  });
+  return {
+    status: response.status,
+    body: await response.text(),
+  };
+}
+
 async function readActions(client, missionId) {
   const { data, error } = await client.from("mission_actions").select("id, title, status, version, follow_up_at").eq("mission_id", missionId).order("position");
   if (error) throw error;
@@ -281,31 +303,20 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       for (const title of [titles.first, titles.second, titles.added]) await expect(statusOf(title)).toHaveValue("PENDING");
     });
 
-    await test.step("two independent authenticated sessions cannot both pass the same mission-version fence", async () => {
+    await test.step("two independent authenticated HTTP sessions cannot both pass the same mission-version fence", async () => {
       await moveMission("PLANNING");
       await moveMission("READY");
       await moveMission("RUNNING");
 
-      await signOut(pageB);
-      await signIn(pageB, userA);
-
       const concurrentSession = (await ownerSession(userA)).client;
       const before = await readMission(owner.client, missionId);
       const [a, b] = await Promise.all([
-        owner.client.rpc("transition_mission", {
-          p_mission_id: missionId,
-          p_to_status: "PAUSED",
-          p_expected_version: before.version,
-        }),
-        concurrentSession.rpc("transition_mission", {
-          p_mission_id: missionId,
-          p_to_status: "BLOCKED",
-          p_expected_version: before.version,
-        }),
+        transitionMissionDirect(owner.client, missionId, "PAUSED", before.version),
+        transitionMissionDirect(concurrentSession, missionId, "BLOCKED", before.version),
       ]);
 
-      const successful = [a, b].filter((result) => result.data && !result.error);
-      const stale = [a, b].filter((result) => result.error?.message === "STALE_VERSION");
+      const successful = [a, b].filter((result) => result.status === 200);
+      const stale = [a, b].filter((result) => result.status >= 400 && /STALE_VERSION/.test(result.body));
       expect(successful).toHaveLength(1);
       expect(stale).toHaveLength(1);
 
