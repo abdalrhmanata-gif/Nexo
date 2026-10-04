@@ -81,9 +81,15 @@ async function latestResetLink(email) {
         const decoded = raw
           .replace(/=\\r?\\n/g, "")
           .replace(/=3D/gi, "=");
-        const match = decoded.match(/https?:\/\/[^\s"'<>]+\/auth\/v1\/verify\?[^\s"'<>]+/);
-        if (match) {
-          const link = new URL(match[0].replaceAll("&amp;", "&").replace(/[)>.,]+$/, ""));
+        const matches = [...decoded.matchAll(/https?:\/\/[^\s"\'<>]+\/auth\/v1\/verify\?[^\s"\'<>]+/g)].map((m) => m[0]);
+        const candidate = matches
+          .map((value) => value.replaceAll("&amp;", "&").replace(/[)>.,]+$/, ""))
+          .sort((a, b) => {
+            const score = (value) => Number(value.includes("redirect_to=")) + Number(value.includes("type=recovery"));
+            return score(b) - score(a) || b.length - a.length;
+          })[0];
+        if (candidate) {
+          const link = new URL(candidate);
           if (!link.searchParams.has("type")) link.searchParams.set("type", "recovery");
           if (!link.searchParams.has("redirect_to")) {
             link.searchParams.set(
