@@ -108,3 +108,28 @@ html { background:linear-gradient(180deg,#f0f6f7 0%,var(--paper) 380px); }
 .mission-ai-draft textarea { min-height:112px; border-color:#b9cbd3; background:#fcfefe; }
 .mission-ai-draft .ai-usage { font-size:13px; margin:10px 0 0; }
 html[dir="rtl"] .mission-create-form { text-align:right; }
+
+
+/* Launch pricing: keep navy/teal as the core identity; use light blue only as a secondary Pro accent. */
+:root { --sky-surface:#eef6ff; --sky-line:#cfe3f7; --sky-ink:#315f87; }
+.pricing { padding:0 0 68px; }
+.pricing-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+.pricing-card { position:relative; display:flex; flex-direction:column; min-height:340px; padding:26px; border:1px solid var(--line); border-radius:10px; background:var(--white); box-shadow:0 8px 24px rgba(22,50,79,.045); }
+.pricing-card::before { content:""; position:absolute; inset:0 0 auto; height:3px; border-radius:10px 10px 0 0; background:var(--line); }
+.pricing-card-featured::before { background:var(--teal); }
+.pricing-card-pro { background:linear-gradient(180deg,var(--sky-surface) 0%,var(--white) 34%); border-color:var(--sky-line); }
+.pricing-card-pro::before { background:var(--sky-ink); }
+.pricing-name { margin:0 0 4px; color:var(--navy); font-weight:800; letter-spacing:.03em; }
+.pricing-price { display:flex; align-items:baseline; gap:7px; margin:2px 0 12px; }
+.pricing-price strong { font-size:36px; letter-spacing:-.04em; color:var(--navy); }
+.pricing-price span { color:var(--muted); font-size:13px; }
+.pricing-allowance { margin:0 0 18px; color:var(--ink); }
+.pricing-allowance strong { color:var(--teal); font-size:20px; }
+.pricing-card-pro .pricing-allowance strong { color:var(--sky-ink); }
+.pricing-card ul { margin:0 0 24px; padding:0; list-style:none; display:grid; gap:10px; color:var(--muted); font-size:14px; }
+.pricing-card li::before { content:"✓"; color:var(--teal); font-weight:800; margin-right:8px; }
+.pricing-card-pro li::before { color:var(--sky-ink); }
+.pricing-cta { margin-top:auto; width:100%; text-align:center; }
+.pricing-cta-muted { display:block; padding:14px 20px; border:1px solid var(--line); border-radius:5px; color:var(--muted); font-weight:700; text-align:center; background:#fafcfd; }
+.pricing-card-pro .pricing-cta-muted { border-color:var(--sky-line); background:#f7fbff; color:var(--sky-ink); }
+@media (max-width:820px) { .pricing-grid { grid-template-columns:1fr; } .pricing-card { min-height:0; } }
