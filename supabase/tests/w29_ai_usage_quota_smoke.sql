@@ -1,5 +1,6 @@
 -- Development/local rollback smoke test for AI quota reservation semantics.
 begin;
+select plan(1);
 do $test$
 declare
   u uuid := gen_random_uuid(); other_u uuid := gen_random_uuid();
@@ -83,4 +84,6 @@ begin
   raise notice 'W29 quota smoke passed: Free=5, idempotency, consume/release, expiry and cross-user fences';
 end;
 $test$;
+select pass('smoke test assertions passed');
+select * from finish();
 rollback;
