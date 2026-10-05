@@ -114,8 +114,8 @@ test("quota denial never calls the provider or settlement functions", async () =
     reserveResult: {
       allowed: false,
       reservation_id: null,
-      monthly_limit: 20,
-      generations_used: 20,
+      monthly_limit: 5,
+      generations_used: 5,
       remaining: 0,
     },
   });
