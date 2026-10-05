@@ -206,6 +206,7 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
     let missionId;
     await test.step("mission creation and independent-session TOCTOU fence", async () => {
       await pageA.goto("/app/missions/new");
+      await pageA.getByRole("button", { name: "Want more control? Add details" }).click();
       await pageA.getByLabel("Mission name", { exact: true }).fill(`Launch gate ${runtime.runId}`);
       await pageA.getByLabel("Intent", { exact: true }).fill("Prove server-authoritative Mission lifecycle and concurrency.");
       await pageA.getByLabel("Success criteria", { exact: true }).fill("Only one concurrent version-fenced transition succeeds.");
