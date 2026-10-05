@@ -1,6 +1,7 @@
 -- W36 AI plan-identity/allowance smoke test.
 -- Disposable transaction only; no fixture survives the rollback.
 begin;
+select plan(1);
 do $test$
 declare
   free_u uuid := gen_random_uuid();
@@ -54,4 +55,6 @@ begin
   end if;
 end;
 $test$;
+select pass('smoke test assertions passed');
+select * from finish();
 rollback;
