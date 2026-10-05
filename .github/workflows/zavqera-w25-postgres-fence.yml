@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - zavqera/alternative-web-deployment
+  pull_request:
+    branches:
+      - zavqera/alternative-web-deployment
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 permissions:
