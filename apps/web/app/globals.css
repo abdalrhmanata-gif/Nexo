@@ -98,3 +98,13 @@ html { background:linear-gradient(180deg,#f0f6f7 0%,var(--paper) 380px); }
   .button { transition:background-color .18s ease,border-color .18s ease,transform .18s ease; }
   .button:hover { transform:translateY(-1px); }
 }
+
+
+/* One cohesive mission-creation surface: AI draft first, editable details below. */
+.mission-create-form { max-width:820px; margin:0 0 28px; gap:22px; }
+.mission-ai-draft { padding:0 0 22px; margin:0 0 2px; border-bottom:1px solid var(--line); }
+.mission-ai-draft h2 { margin:0 0 8px; color:var(--navy); letter-spacing:-.03em; }
+.mission-ai-draft > p:not(.eyebrow) { color:var(--muted); max-width:760px; }
+.mission-ai-draft textarea { min-height:112px; border-color:#b9cbd3; background:#fcfefe; }
+.mission-ai-draft .ai-usage { font-size:13px; margin:10px 0 0; }
+html[dir="rtl"] .mission-create-form { text-align:right; }
