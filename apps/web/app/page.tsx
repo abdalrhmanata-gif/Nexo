@@ -7,7 +7,7 @@ export default function HomePage() {
     <section className="hero">
       <p className="eyebrow"><LocalizedText en="Mission control for autonomous AI" /></p>
       <h1><LocalizedText en="Clear goals. Practical plans. You’re in control." /></h1>
-      <p><LocalizedText en="ZAVQERA gives teams a quiet, legible place to shape long-running AI work and see what is happening before it becomes action." /></p>
+      <p><LocalizedText en="ZAVQERA turns a rough goal into a structured mission you can review before anything moves." /></p>
       <div className="hero-actions">
         <Link className="button" href="/auth/sign-up"><LocalizedText en="Try ZAVQERA free" /></Link>
         <Link className="button button-quiet" href="/pricing"><LocalizedText en="View pricing" /></Link>
@@ -16,11 +16,37 @@ export default function HomePage() {
       <span className="visually-hidden">Free $0 / 5 AI generations. Plus $9 / 50 AI generations. Pro $25 / 300 AI generations. See Pricing for full plan details. Billing is not enabled yet; paid plans are shown for launch planning.</span>
     </section>
 
+    <section className="card ai-value-preview" aria-labelledby="ai-value-heading">
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow"><LocalizedText en="From thought to mission" /></p>
+          <h2 id="ai-value-heading"><LocalizedText en="You explain it. ZAVQERA structures it." /></h2>
+        </div>
+        <p><LocalizedText en="No project-management setup required." /></p>
+      </div>
+      <div className="ai-value-grid">
+        <div className="ai-value-input">
+          <span className="ai-value-label"><LocalizedText en="You say" /></span>
+          <p>“<LocalizedText en="I want to launch a small online shop in six weeks." />”</p>
+        </div>
+        <div className="ai-value-arrow" aria-hidden="true">→</div>
+        <div className="ai-value-output">
+          <span className="ai-value-label"><LocalizedText en="ZAVQERA prepares" /></span>
+          <ul>
+            <li><LocalizedText en="A clear mission and intent" /></li>
+            <li><LocalizedText en="Success criteria" /></li>
+            <li><LocalizedText en="Practical first steps" /></li>
+          </ul>
+        </div>
+      </div>
+      <p className="ai-value-trust"><LocalizedText en="You review and edit the draft. Nothing is created or executed until you decide." /></p>
+    </section>
+
     <section className="value-grid" aria-label="Product principles">
       <article className="card value-card">
         <p className="eyebrow"><LocalizedText en="01 · Intent" /></p>
         <h2><LocalizedText en="Start with the outcome." /></h2>
-        <p><LocalizedText en="Turn a goal into a clear mission before work begins." /></p>
+        <p><LocalizedText en="Tell ZAVQERA what you want in plain language. The structure comes after." /></p>
       </article>
       <article className="card value-card">
         <p className="eyebrow"><LocalizedText en="02 · Control" /></p>
