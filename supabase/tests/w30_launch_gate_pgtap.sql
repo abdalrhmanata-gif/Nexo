@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap;
 
-select plan(33);
+select plan(35);
 
 select ok(to_regclass('public.missions') is not null, 'missions exists');
 select ok(to_regclass('public.mission_actions') is not null, 'mission_actions exists');
@@ -107,6 +107,24 @@ select ok(not exists(
 select ok(not exists(
   select 1 from public.ai_usage_monthly where (plan='free' and monthly_limit<>5) or (plan='plus' and monthly_limit<>50) or (plan='pro' and monthly_limit<>300)
 ), 'all usage ledger rows match plan allowance');
+
+select ok(exists(
+  select 1 from pg_constraint
+  where conrelid='public.ai_entitlements'::regclass
+    and conname='ai_entitlements_plan_check'
+    and pg_get_constraintdef(oid) like '%free%'
+    and pg_get_constraintdef(oid) like '%plus%'
+    and pg_get_constraintdef(oid) like '%pro%'
+), 'entitlements accept Free, Plus, and Pro plan identities');
+
+select ok(exists(
+  select 1 from pg_constraint
+  where conrelid='public.ai_usage_monthly'::regclass
+    and conname='ai_usage_monthly_plan_check'
+    and pg_get_constraintdef(oid) like '%free%'
+    and pg_get_constraintdef(oid) like '%plus%'
+    and pg_get_constraintdef(oid) like '%pro%'
+), 'usage ledger accepts Free, Plus, and Pro plan identities');
 
 select * from finish();
 rollback;
