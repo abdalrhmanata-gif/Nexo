@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { LocalizedText } from "../components/localized-text";
 
-export default function HomePage() {
+// Launch landing: value first; full plan details live on /pricing.\nexport default function HomePage() {
   return <div className="container">
     <section className="hero">
       <p className="eyebrow"><LocalizedText en="Mission control for autonomous AI" /></p>
