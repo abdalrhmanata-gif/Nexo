@@ -71,15 +71,15 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
 
   return <form className="form-grid card mission-create-form" action={action}>
     <section className="mission-ai-draft" aria-labelledby="mission-ai-heading">
-      <p className="eyebrow"><LocalizedText en="AI copilot · Draft only" /></p>
-      <h2 id="mission-ai-heading"><LocalizedText en="Start with your goal" /></h2>
-      <p><LocalizedText en="Tell ZAVQERA what you want to accomplish. One sentence is enough — AI will shape the mission details and first steps for you." /></p>
+      <p className="eyebrow"><LocalizedText en="ZAVQERA AI" nb="ZAVQERA KI" ar="ZAVQERA بالذكاء الاصطناعي" /></p>
+      <h2 id="mission-ai-heading"><LocalizedText en="Tell ZAVQERA what you want." nb="Fortell ZAVQERA hva du vil." ar="أخبر ZAVQERA بما تريد." /></h2>
+      <p><LocalizedText en="Just describe the outcome. ZAVQERA will shape the plan for you." nb="Beskriv bare resultatet. ZAVQERA lager planen for deg." ar="اشرح فقط النتيجة التي تريدها. ZAVQERA ستبني الخطة لك." /></p>
       <div className="field">
-        <label htmlFor="ai-goal"><LocalizedText en="What do you want to achieve?" /></label>
+        <label htmlFor="ai-goal"><LocalizedText en="Your goal" /></label>
         <textarea id="ai-goal" value={goal} onChange={(event) => setGoal(event.target.value)} maxLength={1200} placeholder={placeholder} />
       </div>
       <button className="button" type="button" disabled={loading || !goal.trim()} onClick={draftWithAi}>
-        {loading ? <LocalizedText en="Creating draft…" /> : <LocalizedText en="Draft mission with AI" />}
+        {loading ? <LocalizedText en="Building your plan…" nb="Bygger planen din…" ar="جارٍ بناء خطتك…" /> : <LocalizedText en="Build my plan" nb="Bygg planen min" ar="ابنِ خطتي" />}
       </button>
       {usage && <p className="ai-usage" aria-live="polite">{usage.remaining} / {usage.monthly_limit} <LocalizedText en="AI generations remaining this month." /></p>}
       {error && <p className="field-error" role="alert"><LocalizedText en={error} /></p>}
@@ -87,14 +87,14 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
 
     {!drafted && !manualOpen && (
       <button className="button button-quiet manual-details-trigger" type="button" onClick={() => setManualOpen(true)}>
-        <LocalizedText en="Prefer to shape it yourself? Add details" />
+        <LocalizedText en="Want more control? Add details" nb="Vil du ha mer kontroll? Legg til detaljer" ar="هل تريد تحكمًا أكبر؟ أضف التفاصيل" />
       </button>
     )}
 
     {(drafted || manualOpen) && <>
       <div className="review-heading">
         <p className="eyebrow"><LocalizedText en="Review and edit" /></p>
-        {drafted && <p className="review-note"><LocalizedText en="AI drafted this for you. Change anything before creating the mission." /></p>}
+        {drafted && <p className="review-note"><LocalizedText en="Your plan is ready. Review anything before creating the mission." nb="Planen din er klar. Gå gjennom den før du oppretter oppdraget." ar="خطتك جاهزة. راجعها قبل إنشاء المهمة." /></p>}
       </div>
       <div className="field"><label htmlFor="name"><LocalizedText en="Mission name" /></label><input id="name" name="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={namePlaceholder} required /></div>
       <div className="field"><label htmlFor="intent"><LocalizedText en="Intent" /></label><textarea id="intent" name="intent" value={intent} onChange={(e) => setIntent(e.target.value)} placeholder={intentPlaceholder} required /><small><LocalizedText en="The outcome you want this mission to achieve." /></small></div>
