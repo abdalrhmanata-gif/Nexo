@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SignOutButton } from "./auth-form";
 import { LanguageSwitcher } from "./language-switcher";
 import { LocalizedText } from "./localized-text";
+import { NavLink, WorkspaceNavLink } from "./nav-link";
 
 export function Shell({ children }: { children: React.ReactNode }) {
   return (
@@ -11,9 +12,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
           ZAVQERA <span><LocalizedText en="MISSION CONTROL" /></span>
         </Link>
         <nav aria-label="Primary navigation">
-          <Link href="/pricing"><LocalizedText en="Pricing" /></Link>
-          <Link href="/app"><LocalizedText en="Workspace" /></Link>
           <Link className="button button-small" href="/app/missions/new"><LocalizedText en="New mission" /></Link>
+          <NavLink href="/pricing"><LocalizedText en="Pricing" /></NavLink>
+          <WorkspaceNavLink />
           <LanguageSwitcher />
           <SignOutButton />
         </nav>
