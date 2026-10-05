@@ -73,7 +73,7 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
     : language === "nb"
       ? ["Jeg vil lansere en liten nettbutikk innen seks uker", "Jeg vil gjøre en visumsøknad klar", "Jeg vil organisere et sideprosjekt ved siden av jobben"]
       : ["Launch a small online shop in six weeks", "Get my visa application ready", "Organize a side project alongside my job"];
-  const useExample = (value: string) => {
+  const handleExampleClick = (value: string) => {
     setGoal(value);
     setError("");
   };
@@ -89,7 +89,7 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
         <small id="ai-goal-help"><LocalizedText en="Describe the result, not the project structure. You can be messy." nb="Beskriv resultatet, ikke prosjektstrukturen. Du kan skrive fritt." ar="اشرح النتيجة، وليس هيكل المشروع. يمكنك الكتابة بحرية." /></small>
         <div className="goal-examples" aria-label="Example goals">
           <span><LocalizedText en="Try an example" nb="Prøv et eksempel" ar="جرّب مثالًا" /></span>
-          {examples.map((example) => <button key={example} type="button" className="example-chip" onClick={() => useExample(example)}>{example}</button>)}
+          {examples.map((example) => <button key={example} type="button" className="example-chip" onClick={() => handleExampleClick(example)}>{example}</button>)}
         </div>
       </div>
       <button className="button" type="button" disabled={loading || !goal.trim()} onClick={draftWithAi}>
