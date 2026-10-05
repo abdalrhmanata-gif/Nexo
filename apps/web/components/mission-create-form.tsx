@@ -15,6 +15,8 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [usage, setUsage] = useState<{remaining:number; monthly_limit:number} | null>(null);
+  const [drafted, setDrafted] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
 
   useEffect(() => {
     const syncLanguage = () => {
@@ -55,6 +57,7 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
       setIntent(goal.trim());
       setCriteria(plan.summary);
       setActions(plan.steps.map((step) => step.title + (step.reason ? " — " + step.reason : "")).join("\n"));
+      setDrafted(true);
     } catch {
       setError("Could not reach the AI planner. Please try again.");
     } finally { setLoading(false); }
@@ -70,7 +73,7 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
     <section className="mission-ai-draft" aria-labelledby="mission-ai-heading">
       <p className="eyebrow"><LocalizedText en="AI copilot · Draft only" /></p>
       <h2 id="mission-ai-heading"><LocalizedText en="Start with your goal" /></h2>
-      <p><LocalizedText en="Describe the result you want. AI can draft the mission details and first steps; review everything before creating the mission." /></p>
+      <p><LocalizedText en="Tell ZAVQERA what you want to accomplish. One sentence is enough — AI will shape the mission details and first steps for you." /></p>
       <div className="field">
         <label htmlFor="ai-goal"><LocalizedText en="What do you want to achieve?" /></label>
         <textarea id="ai-goal" value={goal} onChange={(event) => setGoal(event.target.value)} maxLength={1200} placeholder={placeholder} />
@@ -81,11 +84,23 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
       {usage && <p className="ai-usage" aria-live="polite">{usage.remaining} / {usage.monthly_limit} <LocalizedText en="AI generations remaining this month." /></p>}
       {error && <p className="field-error" role="alert"><LocalizedText en={error} /></p>}
     </section>
-      <p className="eyebrow"><LocalizedText en="Review and edit" /></p>
+
+    {!drafted && !manualOpen && (
+      <button className="button button-quiet manual-details-trigger" type="button" onClick={() => setManualOpen(true)}>
+        <LocalizedText en="Prefer to shape it yourself? Add details" />
+      </button>
+    )}
+
+    {(drafted || manualOpen) && <>
+      <div className="review-heading">
+        <p className="eyebrow"><LocalizedText en="Review and edit" /></p>
+        {drafted && <p className="review-note"><LocalizedText en="AI drafted this for you. Change anything before creating the mission." /></p>}
+      </div>
       <div className="field"><label htmlFor="name"><LocalizedText en="Mission name" /></label><input id="name" name="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={namePlaceholder} required /></div>
-      <div className="field"><label htmlFor="intent"><LocalizedText en="Intent" /></label><textarea id="intent" name="intent" value={intent} onChange={(e) => setIntent(e.target.value)} placeholder={intentPlaceholder} required /><small><LocalizedText en="Use plain language. Keep the decision you want to make visible." /></small></div>
+      <div className="field"><label htmlFor="intent"><LocalizedText en="Intent" /></label><textarea id="intent" name="intent" value={intent} onChange={(e) => setIntent(e.target.value)} placeholder={intentPlaceholder} required /><small><LocalizedText en="The outcome you want this mission to achieve.</LocalizedText></small></div>
       <div className="field"><label htmlFor="criteria"><LocalizedText en="Success criteria" /></label><textarea id="criteria" name="criteria" value={criteria} onChange={(e) => setCriteria(e.target.value)} placeholder={criteriaPlaceholder} required /><small><LocalizedText en="How you will know this mission succeeded. One per line." /></small></div>
-      <div className="field"><label htmlFor="actions"><LocalizedText en="First steps" /> <span className="field-optional"><LocalizedText en="optional" /></span></label><textarea id="actions" name="actions" value={actions} onChange={(e) => setActions(e.target.value)} placeholder={actionsPlaceholder} /><small><LocalizedText en="The work you already know about, in the order you would do it. You can add more at any time. Leave empty to start from your success criteria." /></small></div>
+      <div className="field"><label htmlFor="actions"><LocalizedText en="First steps" /> <span className="field-optional"><LocalizedText en="optional" /></span></label><textarea id="actions" name="actions" value={actions} onChange={(e) => setActions(e.target.value)} placeholder={actionsPlaceholder} /><small><LocalizedText en="The work you already know about. You can add more later." /></small></div>
       <button className="button" type="submit"><LocalizedText en="Create mission" /></button>
+    </>}
   </form>;
 }
