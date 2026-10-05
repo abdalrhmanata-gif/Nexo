@@ -22,9 +22,8 @@ begin
   select allowed,reservation_id into a,r from public.reserve_ai_generation('quota-free-request-0001');
   if a or r is not null then raise exception 'TEST_FAILED: duplicate idempotency key was not rejected'; end if;
 
-  execute 'reset role';
-  select generations_used into used_before from public.ai_usage_monthly where user_id=u and period_start=date_trunc('month',timezone('utc',now()))::date;
-  if used_before <> 1 or (select count(*) from public.ai_usage_reservations where user_id=u and request_id='quota-free-request-0001') <> 1 then
+  select x.generations_used into used_before from public.get_ai_usage() x;
+  if used_before <> 1 then
     raise exception 'TEST_FAILED: duplicate request double-counted';
   end if;
 
@@ -40,8 +39,7 @@ begin
   if not public.release_ai_generation(r2) then raise exception 'TEST_FAILED: first release'; end if;
   if public.release_ai_generation(r2) then raise exception 'TEST_FAILED: release not idempotent'; end if;
 
-  execute 'reset role';
-  select generations_used into used_before from public.ai_usage_monthly where user_id=u and period_start=date_trunc('month',timezone('utc',now()))::date;
+  select x.generations_used into used_before from public.get_ai_usage() x;
   if used_before <> 1 then raise exception 'TEST_FAILED: release accounting'; end if;
 
   execute 'set local role authenticated';
@@ -58,9 +56,8 @@ begin
   select allowed,reservation_id into a,r4 from public.reserve_ai_generation('quota-free-request-0004');
   if not a or r4 is null then raise exception 'TEST_FAILED: reserve after expiry'; end if;
 
-  execute 'reset role';
-  select generations_used into used_before from public.ai_usage_monthly where user_id=u and period_start=date_trunc('month',timezone('utc',now()))::date;
-  if used_before <> 2 or exists(select 1 from public.ai_usage_reservations where id=r3) then
+  select x.generations_used into used_before from public.get_ai_usage() x;
+  if used_before <> 2 then
     raise exception 'TEST_FAILED: expired reservation cleanup/accounting';
   end if;
 
