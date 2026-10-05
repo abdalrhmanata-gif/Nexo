@@ -304,7 +304,7 @@ test("homepage communicates the one-goal-first product loop", () => {
   assert.match(page, /Nothing is created or executed until you decide/);
 });
 
-\ntest("AI mission entry removes the blank-page moment with starter goals", () => {
+test("AI mission entry removes the blank-page moment with starter goals", () => {
   const source = read("components/mission-create-form.tsx");
   assert.match(source, /Try an example/);
   assert.match(source, /Launch a small online shop in six weeks/);
