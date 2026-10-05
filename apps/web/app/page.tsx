@@ -12,7 +12,7 @@ export default function HomePage() {
         <Link className="button button-quiet" href="/pricing"><LocalizedText en="View pricing" /></Link>
       </div>
       <p className="hero-free"><strong><LocalizedText en="Free to start." /></strong> <LocalizedText en="5 AI generations each month. No payment required." /></p>
-      <span className="visually-hidden">Free $0. Plus $9. Pro $25. See Pricing for full plan details.</span>
+      <span className="visually-hidden">Free $0 / 5 AI generations. Plus $9 / 50 AI generations. Pro $25 / 300 AI generations. See Pricing for full plan details.</span>
     </section>
 
     <section className="value-grid" aria-label="Product principles">
