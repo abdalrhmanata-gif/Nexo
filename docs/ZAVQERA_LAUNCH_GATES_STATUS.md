@@ -1,76 +1,67 @@
-# ZAVQERA launch gates — final engineering status
+# ZAVQERA launch gates — verified engineering status
 
-Branch: `zavqera/ai-planner-integration`
-Base: `zavqera/alternative-web-deployment`
-PR: #29 (Draft / Open / Unmerged)
-Production/main: untouched.
+Updated: 2026-10-05  
+Branch: `zavqera/ai-planner-integration`  
+PR: [#29](https://github.com/abdalrhmanata-gif/Nexo/pull/29) — Draft / Open / Unmerged  
+Exact candidate HEAD: `1211b74e8e83ac467a40a4269a1a007f53b36f86`
 
-## Latest fully verified candidate
+## CI and isolated launch gate — PASS
 
-- Candidate commit: `aa8798dc5b031566c4c16288d98c669a630bcb3f`
-- Web Unit: PASS
-- Web CI / verify: PASS
-- Flutter CI: PASS
-- W21 isolated launch gate: PASS
-- W21 run: `37217236167`
-- W21 evidence artifact: `11308423198`
-- Disposable PostgreSQL 17 pgTAP: **21/21 PASS**
-- Browser launch gate: **2/2 tests PASS**
-- Disposable Docker cleanup: **VERIFIED**
+All runs below are completed successfully on the exact candidate HEAD:
 
-## Development database
+- [Web Unit #477](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37227511828) — PASS
+- [Web CI #501](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37227511829) — PASS
+- [Flutter CI #749](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37227511799) — PASS
+- [W21 Local Launch Gate #147](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37227511823) — PASS
+- [W21 evidence artifact](https://api.github.com/repos/abdalrhmanata-gif/Nexo/actions/artifacts/11311619818) — retained until 2027-01-02
 
-Project: `mrwmmbytcymqgwvcoywd`
-Status: ACTIVE_HEALTHY
-PostgreSQL: 17.6
+W21 evidence:
+- Disposable PostgreSQL 17 migration replay: PASS.
+- pgTAP launch assertions: 27/27 PASS.
+- Browser E2E: 2/2 PASS.
+- Authenticated browser flows, server-side AI mock/quota/idempotency, mission lifecycle and version-fence coverage ran in the disposable local environment.
+- Disposable fixtures and containers: cleanup verified.
+- This proves the checked-in migrations and isolated test environment; it is not a replacement for a complete production schema snapshot or live-provider test.
 
-Verified live:
-- W21 completion matrix: 19/19 PASS.
-- W21 rollback suite: 7/7 PASS.
-- W29 quota smoke: PASS.
-- Concurrent quota reservation/duplicate-id races: PASS.
-- Full 21-assertion launch pgTAP aggregate: 21/21 PASS.
-- Quota tables are RLS-protected with no direct CRUD privileges for `anon` or `authenticated`.
-- Public SECURITY DEFINER functions use the pinned `search_path=pg_catalog, public`; none is executable by `anon`.
-- W31 Mission transition serialization is active through a transaction-scoped PostgreSQL advisory lock.
-- W31 repository migration: `20261004150738_w31_mission_transition_serialization.sql`.
+## Development database — verified
 
-## Mission Authority
+Project: `mrwmmbytcymqgwvcoywd` (ZAVQERA Development), PostgreSQL 17.  
+Latest applied repository migrations: W34, `20261004191431_w34_plan_quota_constraints`.
 
 Verified:
-- ownership/cross-user isolation
-- authoritative lifecycle transitions
-- stale-version rejection
-- independent-session TOCTOU protection
-- action lifecycle/follow-up persistence
-- verification and verified-outcome completion gates
-- cancellation provenance
-- outcome idempotency
-- history-preserving delete protection
+- W21 mission completion and rollback suites, mission ownership isolation, lifecycle transitions, stale-version/TOCTOU checks, outcome verification guards, cancellation provenance and history-preserving delete protection.
+- W29 quota reservation/duplicate-request/concurrency behavior.
+- W32 moves privileged implementations into `private`; public API wrappers are `SECURITY INVOKER`.
+- Private SECURITY DEFINER functions have pinned `search_path=pg_catalog, public`; no execution grant to `anon`.
+- RLS enabled on `profiles`, `workspaces`, `missions`, `mission_actions`, `ai_entitlements`, and `ai_usage_monthly`.
+- No direct table grants to `anon` or `authenticated` on AI entitlement/usage tables.
+- W33/W34 enforce Free=5 and Plus=300 generations per UTC month server-side and with plan-specific constraints.
 
-## AI accounting
+## Security Advisor — current result
 
-Implemented and tested:
-- definite provider rejection -> release
-- timeout/transport/5xx uncertainty -> hold
-- provider success with settlement failure -> hold
-- successful generation -> consume
-- duplicate request -> fail closed without double charge
-- reservation expiry/release behavior
+The live Development Security Advisor currently returns one finding:
+- `auth_leaked_password_protection` — WARN / Disabled.
 
-## Security
+No SECURITY DEFINER warning is currently returned. The remaining warning requires enabling Supabase leaked-password protection on a supported paid plan. No plan upgrade or billing change was made.
 
-Current Supabase Security Advisor findings:
-- Leaked Password Protection: WARN / Disabled.
-- 10 authenticated-executable SECURITY DEFINER warnings; these are intentional server-mediated RPC boundaries with `auth.uid()` checks, pinned search paths, and no `anon` execution.
-- 1 unused-index INFO finding.
+## Mission Authority — partial, not production-certified
 
-Leaked Password Protection requires a supported Supabase plan. No upgrade or billing change was made.
+PASS evidence exists for the current app's database-backed ownership checks, mission/action lifecycle, stale-version fence, concurrency handling, idempotency and verified-outcome rules.
 
-## Remaining release blockers
+Still BLOCKED / NOT PROVEN:
+- A complete provider-neutral JIT decision gateway immediately before real external side effects.
+- Persistent attempt journal/reconciliation semantics for UNKNOWN external outcomes across independent workers.
+- The complete acceptance matrix in [Issue #23](https://github.com/abdalrhmanata-gif/Nexo/issues/23), [Issue #24](https://github.com/abdalrhmanata-gif/Nexo/issues/24), and [Issue #25](https://github.com/abdalrhmanata-gif/Nexo/issues/25).
+- Do not treat Flutter/domain contracts or local mock tests as proof of server-side external-action enforcement. No new Mission Authority schema/RPC is proposed or applied.
 
-1. **Real AI Preview:** no `OPENAI_API_KEY` is present in the Netlify environment listing available to this session. Deploy Preview uses `ZAVQERA_AI_PROVIDER_MODE=mock`; production defaults to OpenAI and safely returns HTTP 503 when no key is configured. Real provider success, quota before/after, and provider-failure accounting still need live evidence.
-2. **Leaked Password Protection:** requires enabling the feature on a supported Supabase plan.
-3. **Release approval/deployment:** PR #29 remains Draft/Open/Unmerged. Supabase Main, billing, DNS, and production deployment have not been changed.
+## Netlify and real AI provider
 
-Netlify Production remains on the existing `main` deploy. PR-29 Preview is configured, but Netlify skips preview builds when the generated web output has no content change; the application code itself is already covered by the green W21/browser and production-build checks above.
+- Latest Netlify deploy record for commit `1211b74e8e83ac467a40a4269a1a007f53b36f86` was **cancelled at “checking build content for changes” because generated web content was unchanged**. This is not a compile failure, but it is also not a newly published deploy.
+- No `OPENAI_API_KEY` is configured in the available Deploy Preview environment. The preview uses mock mode, so real-provider success, quota-before/after, and real provider failure accounting are BLOCKED / NOT RUN until the owner adds a non-production key.
+- Preview password-reset email delivery/callback through the real hosted email flow is NOT RUN; the local browser suite does not substitute for that check.
+
+## Release decision
+
+**Verified release candidate, not production-certified.**
+
+Do not merge PR #29 or trigger a production deploy until the owner explicitly approves and the remaining applicable gates are resolved. Supabase Main, Git main, production deployment, DNS, billing and paid infrastructure remain unchanged.
