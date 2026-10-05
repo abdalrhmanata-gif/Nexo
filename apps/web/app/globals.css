@@ -195,3 +195,16 @@ nav > a[aria-current="page"]:not(.button) {
   .ai-value-arrow { transform:rotate(90deg); justify-self:center; }
   .ai-value-preview .section-heading { align-items:flex-start; }
 }
+
+
+/* Goal examples: remove the blank-page moment and make the first AI interaction effortless. */
+.goal-examples { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-top:11px; }
+.goal-examples > span { color:var(--muted); font-size:12px; font-weight:700; margin-inline-end:2px; }
+.example-chip { max-width:100%; padding:7px 10px; border:1px solid #cfe2df; border-radius:999px; background:#f4faf9; color:#315d59; font:inherit; font-size:12px; text-align:start; cursor:pointer; }
+.example-chip:hover { border-color:var(--teal); background:#e9f5f3; color:var(--navy); }
+.example-chip:focus-visible { outline:3px solid var(--teal); outline-offset:2px; }
+@media (max-width:700px) {
+  .goal-examples { align-items:stretch; }
+  .goal-examples > span { flex-basis:100%; }
+  .example-chip { width:100%; border-radius:7px; }
+}
