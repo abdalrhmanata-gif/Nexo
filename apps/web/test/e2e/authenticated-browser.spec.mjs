@@ -218,8 +218,8 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       expect(initialUsage.remaining).toBe(5);
 
       await page.goto("/app/missions/new");
-      await page.getByLabel("What do you want to achieve?", { exact: true }).fill("Prepare a safe first plan for launching a small online shop.");
-      await page.getByRole("button", { name: "Draft mission with AI" }).click();
+      await page.getByLabel("Your goal", { exact: true }).fill("Prepare a safe first plan for launching a small online shop.");
+      await page.getByRole("button", { name: "Build my plan" }).click();
       await expect(page.getByLabel("Mission name", { exact: true })).not.toHaveValue("");
       await expect(page.getByLabel("Success criteria", { exact: true })).not.toHaveValue("");
       await expect(page.getByLabel(/^First steps/)).not.toHaveValue("");
@@ -228,11 +228,13 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       const first = await page.request.post("/api/ai/plan", {
         headers: { "x-request-id": requestId },
         data: { goal: "Create one reversible next step for the same test mission." },
+        timeout: 20_000,
       });
       expect(first.status()).toBe(200);
       const second = await page.request.post("/api/ai/plan", {
         headers: { "x-request-id": requestId },
         data: { goal: "Create one reversible next step for the same test mission." },
+        timeout: 20_000,
       });
       expect(second.status()).toBe(429);
 
