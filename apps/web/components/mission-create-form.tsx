@@ -84,8 +84,13 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
       <h2 id="mission-ai-heading"><LocalizedText en="Tell ZAVQERA what you want." nb="Fortell ZAVQERA hva du vil." ar="أخبر ZAVQERA بما تريد." /></h2>
       <p><LocalizedText en="Just describe the outcome. ZAVQERA will shape the plan for you." nb="Beskriv bare resultatet. ZAVQERA lager planen for deg." ar="اشرح فقط النتيجة التي تريدها. ZAVQERA ستبني الخطة لك." /></p>
       <div className="field">
-        <label htmlFor="ai-goal"><LocalizedText en="Your goal" /></label>
-        <textarea id="ai-goal" value={goal} onChange={(event) => setGoal(event.target.value)} maxLength={1200} placeholder={placeholder} />
+        <label htmlFor="ai-goal"><LocalizedText en="Your goal" nb="Målet ditt" ar="هدفك" /></label>
+        <textarea id="ai-goal" value={goal} onChange={(event) => { setGoal(event.target.value); setError(""); }} maxLength={1200} placeholder={placeholder} aria-describedby="ai-goal-help" />
+        <small id="ai-goal-help"><LocalizedText en="Describe the result, not the project structure. You can be messy." nb="Beskriv resultatet, ikke prosjektstrukturen. Du kan skrive fritt." ar="اشرح النتيجة، وليس هيكل المشروع. يمكنك الكتابة بحرية." /></small>
+        <div className="goal-examples" aria-label="Example goals">
+          <span><LocalizedText en="Try an example" nb="Prøv et eksempel" ar="جرّب مثالًا" /></span>
+          {examples.map((example) => <button key={example} type="button" className="example-chip" onClick={() => useExample(example)}>{example}</button>)}
+        </div>
       </div>
       <button className="button" type="button" disabled={loading || !goal.trim()} onClick={draftWithAi}>
         {loading ? <LocalizedText en="Building your plan…" nb="Bygger planen din…" ar="جارٍ بناء خطتك…" /> : <LocalizedText en="Build my plan" nb="Bygg planen min" ar="ابنِ خطتي" />}
