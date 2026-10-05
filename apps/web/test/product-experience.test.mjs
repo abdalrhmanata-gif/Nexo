@@ -293,3 +293,14 @@ test("homepage presents the final launch pricing tiers and quotas", () => {
   }
   assert.ok(page.includes("Billing is not enabled yet"));
 });
+
+test("homepage communicates the one-goal-first product loop", () => {
+  const page = read("app/page.tsx");
+  assert.match(page, /From thought to mission/);
+  assert.match(page, /You explain it\. ZAVQERA structures it\./);
+  assert.match(page, /A clear mission and intent/);
+  assert.match(page, /Success criteria/);
+  assert.match(page, /Practical first steps/);
+  assert.match(page, /Nothing is created or executed until you decide/);
+});
+
