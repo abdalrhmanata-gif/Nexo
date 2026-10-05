@@ -163,3 +163,12 @@ nav > a[aria-current="page"]:not(.button) {
   nav { width:100%; }
   .workspace-nav[aria-current="page"] { order:-1; }
 }
+
+.manual-details-trigger { width:auto; justify-self:start; border-style:solid; font-weight:600; }
+.review-heading { display:flex; align-items:baseline; justify-content:space-between; gap:16px; padding-top:2px; }
+.review-heading .eyebrow { margin:0; }
+.review-note { margin:0; color:var(--muted); font-size:13px; }
+@media (max-width:700px) {
+  .manual-details-trigger { width:100%; text-align:center; }
+  .review-heading { align-items:flex-start; flex-direction:column; gap:4px; }
+}
