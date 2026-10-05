@@ -1,7 +1,7 @@
 -- W36 AI plan-identity/allowance smoke test.
 -- Disposable transaction only; no fixture survives the rollback.
 begin;
-do \$test\$
+do $test$
 declare
   free_u uuid := gen_random_uuid();
   plus_u uuid := gen_random_uuid();
@@ -53,5 +53,5 @@ begin
       reservation.allowed,reservation.monthly_limit,reservation.remaining;
   end if;
 end;
-\$test\$;
+$test$;
 rollback;
