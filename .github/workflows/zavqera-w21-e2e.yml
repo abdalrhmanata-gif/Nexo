@@ -142,7 +142,6 @@ jobs:
       - name: Run disposable PostgreSQL 17 pgTAP launch gate
         run: |
           set -euo pipefail
-          trap 'supabase stop --no-backup --workdir "$ZAVQERA_E2E_SUPABASE_WORKDIR" >/dev/null 2>&1 || true' EXIT
           supabase start --ignore-health-check -x "studio,imgproxy,realtime,storage-api,postgres-meta,edge-runtime,logflare,vector,supavisor" --workdir "$ZAVQERA_E2E_SUPABASE_WORKDIR"
           (
             cd "$ZAVQERA_E2E_SUPABASE_WORKDIR"
@@ -166,6 +165,13 @@ jobs:
           unset SUPABASE_SERVICE_ROLE_KEY SUPABASE_SECRET_KEY SERVICE_ROLE_KEY SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD
           npm run test:e2e
 
+      - name: Cleanup disposable Supabase stack
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -n "${ZAVQERA_E2E_SUPABASE_WORKDIR:-}" ]; then
+            supabase stop --no-backup --workdir "$ZAVQERA_E2E_SUPABASE_WORKDIR" >/dev/null 2>&1 || true
+          fi
       - name: Write evidence
         if: always()
         run: |
