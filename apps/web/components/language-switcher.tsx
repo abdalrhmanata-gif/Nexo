@@ -2,15 +2,15 @@
 
 import { useEffect, useState } from "react";
 
-export type AppLanguage = "en" | "nb" | "ar";
+export type AppLanguage = "en" | "nb" | "ar" | "es" | "fr" | "de";
 
 const STORAGE_KEY = "zavqera-language";
 const COOKIE_KEY = "zavqera-language";
-const SUPPORTED_LANGUAGES: AppLanguage[] = ["en", "nb", "ar"];
-const LABELS: Record<AppLanguage, { language: string; english: string; norwegian: string; arabic: string }> = {
-  en: { language: "Language", english: "English", norwegian: "Norsk", arabic: "العربية" },
-  nb: { language: "Språk", english: "English", norwegian: "Norsk", arabic: "العربية" },
-  ar: { language: "اللغة", english: "English", norwegian: "Norsk", arabic: "العربية" },
+const SUPPORTED_LANGUAGES: AppLanguage[] = ["en", "nb", "ar", "es", "fr", "de"];
+const LABELS: Record<AppLanguage, { language: string; english: string; norwegian: string; arabic: string; spanish: string; french: string; german: string }> = {
+  en: { language: "Language", english: "English", norwegian: "Norsk", arabic: "العربية", spanish: "Español", french: "Français", german: "Deutsch" },
+  nb: { language: "Språk", english: "English", norwegian: "Norsk", arabic: "العربية", spanish: "Español", french: "Français", german: "Deutsch" },
+  ar: { language: "اللغة", english: "English", norwegian: "Norsk", arabic: "العربية", spanish: "Español", french: "Français", german: "Deutsch" },
 };
 
 function validLanguage(value: string | undefined): value is AppLanguage {
@@ -73,6 +73,9 @@ export function LanguageSwitcher() {
         <option value="en">{labels.english}</option>
         <option value="nb">{labels.norwegian}</option>
         <option value="ar">{labels.arabic}</option>
+        <option value="es">{labels.spanish}</option>
+        <option value="fr">{labels.french}</option>
+        <option value="de">{labels.german}</option>
       </select>
     </label>
   );
