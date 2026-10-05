@@ -78,7 +78,7 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
       <button className="button" type="button" disabled={loading || !goal.trim()} onClick={draftWithAi}>
         {loading ? <LocalizedText en="Creating draft…" /> : <LocalizedText en="Draft mission with AI" />}
       </button>
-      {usage && <p className="ai-usage" aria-live="polite">{usage.remaining} / {usage.monthly_limit} <LocalizedText en="AI plans remaining this month." /></p>}
+      {usage && <p className="ai-usage" aria-live="polite">{usage.remaining} / {usage.monthly_limit} <LocalizedText en="AI generations remaining this month." /></p>}
       {error && <p className="field-error" role="alert"><LocalizedText en={error} /></p>}
     </section>
       <p className="eyebrow"><LocalizedText en="Review and edit" /></p>
