@@ -133,3 +133,33 @@ html[dir="rtl"] .mission-create-form { text-align:right; }
 .pricing-cta-muted { display:block; padding:14px 20px; border:1px solid var(--line); border-radius:5px; color:var(--muted); font-weight:700; text-align:center; background:#fafcfd; }
 .pricing-card-pro .pricing-cta-muted { border-color:var(--sky-line); background:#f7fbff; color:var(--sky-ink); }
 @media (max-width:820px) { .pricing-grid { grid-template-columns:1fr; } .pricing-card { min-height:0; } }
+
+/* Primary navigation: make the current workspace unmistakable, especially on mobile. */
+.workspace-nav[aria-current="page"] {
+  background: var(--navy);
+  color: var(--white);
+  border-color: var(--navy);
+  box-shadow: 0 2px 0 rgba(22,50,79,.12);
+}
+.workspace-nav[aria-current="page"]::after {
+  content: "•";
+  margin-inline-start: 7px;
+  color: #78c8c1;
+}
+.workspace-nav:not([aria-current="page"]) {
+  background: transparent;
+  color: var(--navy);
+  border-color: var(--line);
+}
+nav > a[aria-current="page"]:not(.button) {
+  color: var(--navy);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: var(--teal);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 5px;
+}
+@media (max-width:700px) {
+  nav { width:100%; }
+  .workspace-nav[aria-current="page"] { order:-1; }
+}
