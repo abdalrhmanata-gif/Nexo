@@ -282,3 +282,12 @@ test("success criteria and first steps are separate fields in the integrated AI 
   assert.match(page, /steps \? toLines\(steps\) : toLines\(criteria\)/);
   assert.doesNotMatch(page, /becomes both a success criterion and an action/);
 });
+
+
+test("homepage presents the final launch pricing tiers and quotas", () => {
+  const page = read("app/page.tsx");
+  for (const value of ["$0", "$9", "$25", "5", "50", "300", "Free", "Plus", "Pro"]) {
+    assert.ok(page.includes(value), `homepage pricing is missing ${value}`);
+  }
+  assert.ok(page.includes("Billing is not enabled yet"));
+});
