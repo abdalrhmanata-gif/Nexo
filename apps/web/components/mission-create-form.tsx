@@ -73,7 +73,7 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
       <p><LocalizedText en="Describe the result you want. AI can draft the mission details and first steps; review everything before creating the mission." /></p>
       <div className="field">
         <label htmlFor="ai-goal"><LocalizedText en="What do you want to achieve?" /></label>
-        <textarea id="ai-goal" value={goal} onChange={(event) => setGoal(event.target.value)} maxLength={1200} required placeholder={placeholder} />
+        <textarea id="ai-goal" value={goal} onChange={(event) => setGoal(event.target.value)} maxLength={1200} placeholder={placeholder} />
       </div>
       <button className="button" type="button" disabled={loading || !goal.trim()} onClick={draftWithAi}>
         {loading ? <LocalizedText en="Creating draft…" /> : <LocalizedText en="Draft mission with AI" />}
