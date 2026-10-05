@@ -1,4 +1,4 @@
-# NEXO Mission Ledger Contract v0.1
+# ZAVQERA Mission Ledger Contract v0.1
 
 The Mission Ledger is the durable chronological record of the mission's control-relevant lifecycle.
 
@@ -17,4 +17,4 @@ IntentCreated → AuthorityRequested → AuthorityApproved → LeaseIssued → A
 Waiting, retries, revocations, failures and reconciliations are first-class events.
 
 ## Critical distinction
-The ledger records what NEXO knows and why it changed state. It is not a transcript of model thoughts and must not store secrets or hidden chain-of-thought.
+The ledger records what ZAVQERA knows and why it changed state. It is not a transcript of model thoughts and must not store secrets or hidden chain-of-thought.

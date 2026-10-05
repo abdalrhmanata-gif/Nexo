@@ -4,8 +4,13 @@ import '../domain/intent.dart';
 
 class IntentBuilderScreen extends StatefulWidget {
   final void Function(IntentDraft draft) onApproved;
+  final VoidCallback onCancel;
 
-  const IntentBuilderScreen({super.key, required this.onApproved});
+  const IntentBuilderScreen({
+    super.key,
+    required this.onApproved,
+    required this.onCancel,
+  });
 
   @override
   State<IntentBuilderScreen> createState() => _IntentBuilderScreenState();
@@ -17,6 +22,40 @@ class _IntentBuilderScreenState extends State<IntentBuilderScreen> {
   final _stepController = TextEditingController();
   final _steps = <String>[];
   IntentDraft? _draft;
+  bool _exiting = false;
+
+  bool get _hasUnsavedChanges =>
+      _controller.text.trim().isNotEmpty ||
+      _stepController.text.trim().isNotEmpty ||
+      _steps.isNotEmpty ||
+      _draft != null;
+
+  Future<void> _requestExit() async {
+    if (_exiting) return;
+    if (!_hasUnsavedChanges) {
+      widget.onCancel();
+      return;
+    }
+    final exit = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Discard this Mission?'),
+        content: const Text('Your unsaved goal and steps will be lost.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Continue editing')),
+          FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Exit without saving')),
+        ],
+      ),
+    );
+    if (exit == true && mounted) {
+      _exiting = true;
+      widget.onCancel();
+    }
+  }
 
   @override
   void dispose() {
@@ -76,157 +115,173 @@ class _IntentBuilderScreenState extends State<IntentBuilderScreen> {
   @override
   Widget build(BuildContext context) {
     final draft = _draft;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Create a goal')),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          Text('What do you want NEXO to accomplish?',
-              style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: 8),
-          const Text(
-              'Describe the outcome naturally. NEXO will convert it into a bounded Mission.'),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _controller,
-            maxLines: 4,
-            decoration: const InputDecoration(
-              hintText:
-                  'Example: Get 5 new customers from Norway within two weeks.',
-              border: OutlineInputBorder(),
-            ),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _requestExit();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Create a Mission'),
+          leading: IconButton(
+            tooltip: 'Cancel',
+            onPressed: _requestExit,
+            icon: const Icon(Icons.close),
           ),
-          const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: _understand,
-            icon: const Icon(Icons.check),
-            label: const Text('Set goal'),
-          ),
-          if (draft != null) ...[
-            const SizedBox(height: 24),
-            _Section(title: 'NEXO understood', child: Text(draft.objective)),
-            _Section(
-              title: 'Steps',
-              child: Column(
-                children: [
-                  if (_steps.isEmpty)
-                    const Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text('Add at least one step to continue.'),
-                    ),
-                  ..._steps.asMap().entries.map((entry) => ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: CircleAvatar(child: Text('${entry.key + 1}')),
-                        title: Text(entry.value),
-                        trailing: Wrap(
-                          children: [
-                            IconButton(
-                              tooltip: 'Edit step',
-                              onPressed: () => _editStep(entry.key),
-                              icon: const Icon(Icons.edit_outlined),
-                            ),
-                            IconButton(
-                              tooltip: 'Remove step',
-                              onPressed: () =>
-                                  setState(() => _steps.removeAt(entry.key)),
-                              icon: const Icon(Icons.delete_outline),
-                            ),
-                            if (entry.key > 0)
-                              IconButton(
-                                tooltip: 'Move step up',
-                                onPressed: () => setState(() {
-                                  final step = _steps.removeAt(entry.key);
-                                  _steps.insert(entry.key - 1, step);
-                                }),
-                                icon: const Icon(Icons.arrow_upward),
-                              ),
-                            if (entry.key < _steps.length - 1)
-                              IconButton(
-                                tooltip: 'Move step down',
-                                onPressed: () => setState(() {
-                                  final step = _steps.removeAt(entry.key);
-                                  _steps.insert(entry.key + 1, step);
-                                }),
-                                icon: const Icon(Icons.arrow_downward),
-                              ),
-                          ],
-                        ),
-                      )),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _stepController,
-                          onSubmitted: (_) => _addStep(),
-                          decoration: const InputDecoration(
-                            labelText: 'Add a step',
-                            hintText: 'Example: Submit the application',
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: 'Add step',
-                        onPressed: _addStep,
-                        icon: const Icon(Icons.add_circle),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            _Section(
-              title: 'Constraints',
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: draft.constraints.map((x) => _Bullet(x)).toList(),
-              ),
-            ),
-            _Section(
-              title: 'Success criteria',
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: draft.successCriteria.map((x) => _Bullet(x)).toList(),
-              ),
-            ),
-            _Section(
-              title: 'Requested authority',
-              child: Column(
-                children: draft.authorityRequests
-                    .map((r) => ListTile(
-                          contentPadding: EdgeInsets.zero,
-                          leading: CircleAvatar(
-                            child:
-                                Text(authorityClassLabel(r.authorityClass)[0]),
-                          ),
-                          title: Text(r.action),
-                          subtitle: Text(
-                              '${authorityClassLabel(r.authorityClass)} • ${r.reason}'),
-                          trailing: r.requiresApproval
-                              ? const Chip(label: Text('Approval'))
-                              : const Chip(label: Text('No approval')),
-                        ))
-                    .toList(),
-              ),
-            ),
+        ),
+        body: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            Text('What do you want ZAVQERA to accomplish?',
+                style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 8),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  'NEXO will NOT grant itself additional authority, increase the budget, redefine success, or send an external action that requires approval.',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
+            const Text(
+                'Describe the outcome naturally. ZAVQERA will convert it into a bounded Mission.'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _controller,
+              maxLines: 4,
+              decoration: const InputDecoration(
+                hintText:
+                    'Example: Get 5 new customers from Norway within two weeks.',
+                border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 12),
-            FilledButton(
-              onPressed: _steps.isEmpty
-                  ? null
-                  : () => widget.onApproved(draft.withSteps(_steps)),
-              child: const Text('Create this plan'),
+            FilledButton.icon(
+              onPressed: _understand,
+              icon: const Icon(Icons.check),
+              label: const Text('Create Mission'),
             ),
+            if (draft != null) ...[
+              const SizedBox(height: 24),
+              _Section(
+                  title: 'ZAVQERA understood', child: Text(draft.objective)),
+              _Section(
+                title: 'Steps',
+                child: Column(
+                  children: [
+                    if (_steps.isEmpty)
+                      const Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text('Add at least one step to continue.'),
+                      ),
+                    ..._steps.asMap().entries.map((entry) => ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading:
+                              CircleAvatar(child: Text('${entry.key + 1}')),
+                          title: Text(entry.value),
+                          trailing: Wrap(
+                            children: [
+                              IconButton(
+                                tooltip: 'Edit step',
+                                onPressed: () => _editStep(entry.key),
+                                icon: const Icon(Icons.edit_outlined),
+                              ),
+                              IconButton(
+                                tooltip: 'Remove step',
+                                onPressed: () =>
+                                    setState(() => _steps.removeAt(entry.key)),
+                                icon: const Icon(Icons.delete_outline),
+                              ),
+                              if (entry.key > 0)
+                                IconButton(
+                                  tooltip: 'Move step up',
+                                  onPressed: () => setState(() {
+                                    final step = _steps.removeAt(entry.key);
+                                    _steps.insert(entry.key - 1, step);
+                                  }),
+                                  icon: const Icon(Icons.arrow_upward),
+                                ),
+                              if (entry.key < _steps.length - 1)
+                                IconButton(
+                                  tooltip: 'Move step down',
+                                  onPressed: () => setState(() {
+                                    final step = _steps.removeAt(entry.key);
+                                    _steps.insert(entry.key + 1, step);
+                                  }),
+                                  icon: const Icon(Icons.arrow_downward),
+                                ),
+                            ],
+                          ),
+                        )),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _stepController,
+                            onSubmitted: (_) => _addStep(),
+                            decoration: const InputDecoration(
+                              labelText: 'Add a step',
+                              hintText: 'Example: Submit the application',
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Add step',
+                          onPressed: _addStep,
+                          icon: const Icon(Icons.add_circle),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              _Section(
+                title: 'Constraints',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: draft.constraints.map((x) => _Bullet(x)).toList(),
+                ),
+              ),
+              _Section(
+                title: 'Success criteria',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children:
+                      draft.successCriteria.map((x) => _Bullet(x)).toList(),
+                ),
+              ),
+              _Section(
+                title: 'Requested authority',
+                child: Column(
+                  children: draft.authorityRequests
+                      .map((r) => ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: CircleAvatar(
+                              child: Text(
+                                  authorityClassLabel(r.authorityClass)[0]),
+                            ),
+                            title: Text(r.action),
+                            subtitle: Text(
+                                '${authorityClassLabel(r.authorityClass)} • ${r.reason}'),
+                            trailing: r.requiresApproval
+                                ? const Chip(label: Text('Approval'))
+                                : const Chip(label: Text('No approval')),
+                          ))
+                      .toList(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    'ZAVQERA will NOT grant itself additional authority, increase the budget, redefine success, or send an external action that requires approval.',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: _steps.isEmpty
+                    ? null
+                    : () => widget.onApproved(draft.withSteps(_steps)),
+                child: const Text('Create Mission'),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
