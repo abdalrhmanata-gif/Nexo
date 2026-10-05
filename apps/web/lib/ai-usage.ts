@@ -25,7 +25,7 @@ export async function reserveAiGeneration(requestId: string) {
     allowed: boolean;
     reservation_id: string | null;
     period_start: string;
-    plan: "free" | "plus";
+    plan: "free" | "plus" | "pro";
     monthly_limit: number;
     generations_used: number;
     remaining: number;
