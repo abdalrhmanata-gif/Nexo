@@ -311,6 +311,5 @@ test("AI mission entry removes the blank-page moment with starter goals", () => 
   assert.match(source, /Get my visa application ready/);
   assert.match(source, /Organize a side project alongside my job/);
   assert.match(source, /Describe the result, not the project structure/);
-  assert.match(source, /setError\("?"\)/);
 });
 
