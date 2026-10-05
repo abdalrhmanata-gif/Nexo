@@ -17,6 +17,7 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
   const [usage, setUsage] = useState<{remaining:number; monthly_limit:number} | null>(null);
   const [drafted, setDrafted] = useState(false);
   const [manualOpen, setManualOpen] = useState(false);
+  const [planPreview, setPlanPreview] = useState<Plan | null>(null);
 
   useEffect(() => {
     const syncLanguage = () => {
@@ -57,6 +58,7 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
       setIntent(goal.trim());
       setCriteria(plan.summary);
       setActions(plan.steps.map((step) => step.title + (step.reason ? " — " + step.reason : "")).join("\n"));
+      setPlanPreview(plan);
       setDrafted(true);
     } catch {
       setError("Could not reach the AI planner. Please try again.");
@@ -103,6 +105,36 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
       <button className="button button-quiet manual-details-trigger" type="button" onClick={() => setManualOpen(true)}>
         <LocalizedText en="Want more control? Add details" nb="Vil du ha mer kontroll? Legg til detaljer" ar="هل تريد تحكمًا أكبر؟ أضف التفاصيل" />
       </button>
+    )}
+
+    {drafted && planPreview && (
+      <section className="ai-plan-preview" aria-labelledby="ai-plan-preview-heading">
+        <div className="ai-plan-preview-header">
+          <div>
+            <p className="eyebrow"><LocalizedText en="AI draft" nb="KI-utkast" ar="مسودة الذكاء الاصطناعي" /></p>
+            <h3 id="ai-plan-preview-heading"><LocalizedText en="Here is the plan ZAVQERA prepared." nb="Her er planen ZAVQERA har laget." ar="هذه هي الخطة التي أعدتها ZAVQERA." /></h3>
+          </div>
+          <span className="ai-plan-review-badge"><LocalizedText en="Review before creating" nb="Se gjennom før du oppretter" ar="راجع قبل الإنشاء" /></span>
+        </div>
+        <div className="ai-plan-summary">
+          <span className="ai-plan-label"><LocalizedText en="Outcome" nb="Resultat" ar="النتيجة" /></span>
+          <p>{planPreview.summary}</p>
+        </div>
+        {planPreview.steps.length > 0 && (
+          <div className="ai-plan-steps">
+            <span className="ai-plan-label"><LocalizedText en="Suggested first steps" nb="Foreslåtte første steg" ar="الخطوات الأولى المقترحة" /></span>
+            <ol>
+              {planPreview.steps.map((step, index) => (
+                <li key={`${step.title}-${index}`}>
+                  <span className="ai-plan-step-number">{index + 1}</span>
+                  <div><strong>{step.title}</strong>{step.reason && <span>{step.reason}</span>}</div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        )}
+        <p className="ai-plan-control"><LocalizedText en="Nothing is created or executed yet. You decide what stays." nb="Ingenting opprettes eller utføres ennå. Du bestemmer hva som skal beholdes." ar="لم يتم إنشاء أو تنفيذ أي شيء بعد. أنت تقرر ما الذي يبقى." /></p>
+      </section>
     )}
 
     {(drafted || manualOpen) && <>
