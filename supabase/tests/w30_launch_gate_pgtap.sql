@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap;
 
-select plan(31);
+select plan(33);
 
 select ok(to_regclass('public.missions') is not null, 'missions exists');
 select ok(to_regclass('public.mission_actions') is not null, 'mission_actions exists');
@@ -43,19 +43,13 @@ select ok(not exists(
   select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
   where n.nspname='public' and p.prosecdef
     and not exists (
-      select 1
-      from pg_depend d
-      join pg_extension e on e.oid=d.refobjid
-      where d.classid='pg_proc'::regclass
-        and d.objid=p.oid
-        and d.deptype='e'
+      select 1 from pg_depend d join pg_extension e on e.oid=d.refobjid
+      where d.classid='pg_proc'::regclass and d.objid=p.oid and d.deptype='e'
     )
     and p.prosrc not like '%auth.uid()%'
     and p.proname not in (
-      'guard_mission_action_insert',
-      'handle_new_user_profile',
-      'prevent_mission_action_delete_with_history',
-      'prevent_action_delete_with_history',
+      'guard_mission_action_insert','handle_new_user_profile',
+      'prevent_mission_action_delete_with_history','prevent_action_delete_with_history',
       'prevent_mission_action_reparent'
     )
 ), 'public application SECURITY DEFINER runtime functions bind to auth.uid');
@@ -67,56 +61,52 @@ select ok(not exists(
 ), 'no public SECURITY DEFINER function is executable by authenticated');
 
 select ok((
-  select count(*)
-  from pg_proc p join pg_namespace n on n.oid=p.pronamespace
-  where n.nspname='public'
-    and p.proname in (
-      'commit_verified_mission_outcome','consume_ai_generation',
-      'create_mission_verification','create_mission_with_actions',
-      'get_ai_usage','release_ai_generation','reserve_ai_generation',
-      'transition_mission','transition_mission_action','update_mission_details'
-    )
-    and not p.prosecdef
+  select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+  where n.nspname='public' and p.proname in (
+    'commit_verified_mission_outcome','consume_ai_generation','create_mission_verification',
+    'create_mission_with_actions','get_ai_usage','release_ai_generation','reserve_ai_generation',
+    'transition_mission','transition_mission_action','update_mission_details'
+  ) and not p.prosecdef
 ) = 10, 'all application RPC boundaries are SECURITY INVOKER');
 
 select ok((
-  select count(*)
-  from pg_proc p join pg_namespace n on n.oid=p.pronamespace
-  where n.nspname='private'
-    and p.proname in (
-      'commit_verified_mission_outcome','consume_ai_generation',
-      'create_mission_verification','create_mission_with_actions',
-      'get_ai_usage','release_ai_generation','reserve_ai_generation',
-      'transition_mission','transition_mission_action','update_mission_details'
-    )
-    and p.prosecdef
+  select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+  where n.nspname='private' and p.proname in (
+    'commit_verified_mission_outcome','consume_ai_generation','create_mission_verification',
+    'create_mission_with_actions','get_ai_usage','release_ai_generation','reserve_ai_generation',
+    'transition_mission','transition_mission_action','update_mission_details'
+  ) and p.prosecdef
 ) = 10, 'all privileged RPC implementations are SECURITY DEFINER in private');
 
 select ok(not has_schema_privilege('anon', 'private', 'USAGE'), 'anon cannot access private RPC schema');
-
 select ok(exists(select 1 from pg_constraint where conname='ai_usage_monthly_pkey'), 'monthly quota primary key exists');
-
 select ok(pg_get_functiondef('private.get_ai_usage()'::regprocedure) like '%coalesce(v_limit, 5)%', 'Free AI quota fallback is five');
 select ok(pg_get_functiondef('private.reserve_ai_generation(text)'::regprocedure) like '%coalesce(v_limit, 5)%', 'reservation enforcement uses five for Free tier');
-
 select ok(not has_table_privilege('anon','public.ai_entitlements','SELECT'), 'anon has no entitlement table SELECT');
 select ok(not has_table_privilege('authenticated','public.ai_entitlements','SELECT'), 'authenticated has no direct entitlement table SELECT');
 
 select ok(exists(
-  select 1 from pg_constraint
-  where conrelid='public.ai_entitlements'::regclass
+  select 1 from pg_constraint where conrelid='public.ai_entitlements'::regclass
     and conname='ai_entitlements_monthly_limit_check'
     and pg_get_constraintdef(oid) like '%monthly_limit = 5%'
+    and pg_get_constraintdef(oid) like '%monthly_limit = 50%'
     and pg_get_constraintdef(oid) like '%monthly_limit = 300%'
-), 'entitlement constraint enforces Free=5 and Plus=300');
+), 'entitlement constraint enforces Free=5, Plus=50, Pro=300');
 
 select ok(exists(
-  select 1 from pg_constraint
-  where conrelid='public.ai_usage_monthly'::regclass
+  select 1 from pg_constraint where conrelid='public.ai_usage_monthly'::regclass
     and conname='ai_usage_monthly_monthly_limit_check'
     and pg_get_constraintdef(oid) like '%monthly_limit = 5%'
+    and pg_get_constraintdef(oid) like '%monthly_limit = 50%'
     and pg_get_constraintdef(oid) like '%monthly_limit = 300%'
-), 'usage ledger constraint enforces Free=5 and Plus=300');
+), 'usage ledger constraint enforces Free=5, Plus=50, Pro=300');
+
+select ok(not exists(
+  select 1 from public.ai_entitlements where (plan='free' and monthly_limit<>5) or (plan='plus' and monthly_limit<>50) or (plan='pro' and monthly_limit<>300)
+), 'all entitlement rows match plan allowance');
+select ok(not exists(
+  select 1 from public.ai_usage_monthly where (plan='free' and monthly_limit<>5) or (plan='plus' and monthly_limit<>50) or (plan='pro' and monthly_limit<>300)
+), 'all usage ledger rows match plan allowance');
 
 select * from finish();
 rollback;
