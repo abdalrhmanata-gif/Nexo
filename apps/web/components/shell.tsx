@@ -11,6 +11,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           ZAVQERA <span><LocalizedText en="MISSION CONTROL" /></span>
         </Link>
         <nav aria-label="Primary navigation">
+          <Link href="/pricing"><LocalizedText en="Pricing" /></Link>
           <Link href="/app"><LocalizedText en="Workspace" /></Link>
           <Link className="button button-small" href="/app/missions/new"><LocalizedText en="New mission" /></Link>
           <LanguageSwitcher />
