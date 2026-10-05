@@ -78,6 +78,30 @@ BEGIN
     RETURN;
   END IF;
 
+  SELECT * INTO existing
+    FROM execution_attempts
+   WHERE idempotency_key = p_idempotency_key;
+
+  IF FOUND THEN
+    IF existing.organization_id <> p_organization_id
+       OR existing.principal_id <> p_principal_id
+       OR existing.authority_revision <> p_authority_revision
+       OR existing.mission_version <> p_mission_version
+       OR existing.action_version <> p_action_version
+       OR existing.lease_id <> p_lease_id
+       OR existing.destination <> p_destination
+       OR existing.input_hash <> p_input_hash THEN
+      RETURN QUERY SELECT false, 'IDEMPOTENCY_BINDING_MISMATCH', existing.attempt_id;
+      RETURN;
+    END IF;
+    IF existing.state = 'UNKNOWN' THEN
+      RETURN QUERY SELECT false, 'RECONCILE_REQUIRED', existing.attempt_id;
+      RETURN;
+    END IF;
+    RETURN QUERY SELECT false, 'IDEMPOTENCY_REPLAY', existing.attempt_id;
+    RETURN;
+  END IF;
+
   IF v.organization_id <> p_organization_id
      OR v.principal_id <> p_principal_id
      OR v.authority_revision <> p_authority_revision
@@ -86,27 +110,12 @@ BEGIN
      OR v.lease_id <> p_lease_id
      OR v.destination <> p_destination
      OR v.input_hash <> p_input_hash THEN
-    IF EXISTS (SELECT 1 FROM execution_attempts WHERE idempotency_key = p_idempotency_key) THEN
-      RETURN QUERY SELECT false, 'IDEMPOTENCY_BINDING_MISMATCH', NULL::bigint;
-    END IF;
     RETURN QUERY SELECT false, 'BINDING_MISMATCH', NULL::bigint;
     RETURN;
   END IF;
 
   IF v.lease_expires_at <= now() THEN
     RETURN QUERY SELECT false, 'LEASE_EXPIRED', NULL::bigint;
-    RETURN;
-  END IF;
-
-  SELECT * INTO existing
-    FROM execution_attempts
-   WHERE idempotency_key = p_idempotency_key;
-
-  IF FOUND THEN
-    IF existing.state = 'UNKNOWN' THEN
-      RETURN QUERY SELECT false, 'RECONCILE_REQUIRED', existing.attempt_id;
-    END IF;
-    RETURN QUERY SELECT false, 'IDEMPOTENCY_REPLAY', existing.attempt_id;
     RETURN;
   END IF;
 
