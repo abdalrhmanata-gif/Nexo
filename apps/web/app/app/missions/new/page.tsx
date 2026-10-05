@@ -33,7 +33,7 @@ export default async function NewMissionPage({ searchParams }: { searchParams: P
     <p className="eyebrow"><Link href="/app"><LocalizedText en="Workspace" /></Link> / <LocalizedText en="New mission" /></p>
     <h1 className="detail-title"><LocalizedText en="Shape the intent." /></h1>
     <p className="detail-intent"><LocalizedText en="Define what good looks like before anything is allowed to move." /></p>
-    <div className="form-note"><LocalizedText en="Your mission is saved to your private workspace. Ownership comes from your authenticated session." /></div>
+    <div className="form-note"><LocalizedText en="When you create it, your mission is saved to your private workspace. Ownership comes from your authenticated session." /></div>
     <MissionCreateForm action={createMission} />
     {(await searchParams).error === "validation" && <div className="field-error" role="alert"><LocalizedText en="Add a name, an intent of at least 12 characters, and success criteria." /></div>}
   </div></div>;
