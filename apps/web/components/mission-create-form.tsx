@@ -68,6 +68,15 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
   const intentPlaceholder = language === "ar" ? "ما النتيجة التي تريد الوصول إليها؟" : language === "nb" ? "Hva ønsker du å oppnå med oppdraget?" : "What should this mission help you accomplish?";
   const criteriaPlaceholder = language === "ar" ? "اكتب معيارًا واحدًا في كل سطر" : language === "nb" ? "Ett kriterium per linje" : "One criterion per line";
   const actionsPlaceholder = language === "ar" ? "اكتب خطوة واحدة في كل سطر" : language === "nb" ? "Ett steg per linje" : "One step per line";
+  const examples = language === "ar"
+    ? ["أريد إطلاق متجر إلكتروني صغير خلال ستة أسابيع", "أريد تجهيز طلب تأشيرة السفر", "أريد تنظيم مشروع جانبي مع عملي"]
+    : language === "nb"
+      ? ["Jeg vil lansere en liten nettbutikk innen seks uker", "Jeg vil gjøre en visumsøknad klar", "Jeg vil organisere et sideprosjekt ved siden av jobben"]
+      : ["Launch a small online shop in six weeks", "Get my visa application ready", "Organize a side project alongside my job"];
+  const useExample = (value: string) => {
+    setGoal(value);
+    setError("");
+  };
 
   return <form className="form-grid card mission-create-form" action={action}>
     <section className="mission-ai-draft" aria-labelledby="mission-ai-heading">
