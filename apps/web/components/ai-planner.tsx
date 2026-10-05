@@ -10,7 +10,7 @@ type Plan = {
 };
 
 type Usage = {
-  plan: "free" | "plus";
+  plan: "free" | "plus" | "pro";
   monthly_limit: number;
   generations_used: number;
   remaining: number;
