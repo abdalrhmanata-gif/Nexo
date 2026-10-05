@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap;
 
-select plan(27);
+select plan(31);
 
 select ok(to_regclass('public.missions') is not null, 'missions exists');
 select ok(to_regclass('public.mission_actions') is not null, 'mission_actions exists');
@@ -98,6 +98,25 @@ select ok(exists(select 1 from pg_constraint where conname='ai_usage_monthly_pke
 
 select ok(pg_get_functiondef('private.get_ai_usage()'::regprocedure) like '%coalesce(v_limit, 5)%', 'Free AI quota fallback is five');
 select ok(pg_get_functiondef('private.reserve_ai_generation(text)'::regprocedure) like '%coalesce(v_limit, 5)%', 'reservation enforcement uses five for Free tier');
+
+select ok(not has_table_privilege('anon','public.ai_entitlements','SELECT'), 'anon has no entitlement table SELECT');
+select ok(not has_table_privilege('authenticated','public.ai_entitlements','SELECT'), 'authenticated has no direct entitlement table SELECT');
+
+select ok(exists(
+  select 1 from pg_constraint
+  where conrelid='public.ai_entitlements'::regclass
+    and conname='ai_entitlements_monthly_limit_check'
+    and pg_get_constraintdef(oid) like '%monthly_limit = 5%'
+    and pg_get_constraintdef(oid) like '%monthly_limit = 300%'
+), 'entitlement constraint enforces Free=5 and Plus=300');
+
+select ok(exists(
+  select 1 from pg_constraint
+  where conrelid='public.ai_usage_monthly'::regclass
+    and conname='ai_usage_monthly_monthly_limit_check'
+    and pg_get_constraintdef(oid) like '%monthly_limit = 5%'
+    and pg_get_constraintdef(oid) like '%monthly_limit = 300%'
+), 'usage ledger constraint enforces Free=5 and Plus=300');
 
 select * from finish();
 rollback;
