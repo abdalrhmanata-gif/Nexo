@@ -2,7 +2,7 @@ import { createSupabaseServerClient } from "./supabase/server";
 
 export type AiUsage = {
   period_start: string;
-  plan: "free" | "plus";
+  plan: "free" | "plus" | "pro";
   monthly_limit: number;
   generations_used: number;
   remaining: number;
