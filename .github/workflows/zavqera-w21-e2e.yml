@@ -96,6 +96,8 @@ jobs:
           cp -R "$GITHUB_WORKSPACE/supabase/migrations/." "$workdir/supabase/migrations/"
           mkdir -p "$workdir/supabase/tests"
           cp "$GITHUB_WORKSPACE/supabase/tests/w30_launch_gate_pgtap.sql" "$workdir/supabase/tests/w30_launch_gate_pgtap.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w29_ai_usage_quota_smoke.sql" "$workdir/supabase/tests/w29_ai_usage_quota_smoke.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w36_ai_plan_smoke.sql" "$workdir/supabase/tests/w36_ai_plan_smoke.sql"
           cat > "$workdir/supabase/migrations/20260921180005_e2e_historical_auth_compat.sql" <<'SQL'
           create schema if not exists private;
           create or replace function private.handle_new_user_profile()
@@ -145,6 +147,15 @@ jobs:
           (
             cd "$ZAVQERA_E2E_SUPABASE_WORKDIR"
             supabase test db supabase/tests/w30_launch_gate_pgtap.sql
+          )
+
+      - name: Run AI quota and plan smoke tests
+        run: |
+          set -euo pipefail
+          (
+            cd "$ZAVQERA_E2E_SUPABASE_WORKDIR"
+            supabase test db supabase/tests/w29_ai_usage_quota_smoke.sql
+            supabase test db supabase/tests/w36_ai_plan_smoke.sql
           )
 
       - name: Run full launch-gate browser E2E
