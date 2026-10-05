@@ -278,6 +278,7 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
 
     await test.step("create a mission with first steps", async () => {
       await page.goto("/app/missions/new");
+      await page.getByRole("button", { name: "Want more control? Add details" }).click();
       await page.getByLabel("Mission name", { exact: true }).fill(tag);
       await page.getByLabel("Intent", { exact: true }).fill("Prove the authenticated full mission loop end to end.");
       await page.getByLabel("Success criteria", { exact: true }).fill("Every state change is server-authoritative.");
