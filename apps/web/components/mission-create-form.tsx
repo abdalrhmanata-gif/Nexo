@@ -17,14 +17,24 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
   const [usage, setUsage] = useState<{remaining:number; monthly_limit:number} | null>(null);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem("zavqera-language");
-    const cookie = document.cookie.split("; ").find((part) => part.startsWith("zavqera-language="))?.split("=")[1];
-    const candidate = saved || cookie || navigator.language.toLowerCase().split("-")[0];
-    setLanguage(candidate === "ar" || candidate === "nb" ? candidate : "en");
+    const syncLanguage = () => {
+      let saved: string | null = null;
+      try { saved = window.localStorage.getItem("zavqera-language"); } catch { /* storage may be blocked */ }
+      const cookie = document.cookie.split("; ").find((part) => part.startsWith("zavqera-language="))?.split("=")[1];
+      const candidate = saved || cookie || navigator.language.toLowerCase().split("-")[0];
+      setLanguage(candidate === "ar" || candidate === "nb" ? candidate : "en");
+    };
+    syncLanguage();
+    const onLanguageChange = (event: Event) => {
+      const value = (event as CustomEvent<string>).detail;
+      setLanguage(value === "ar" || value === "nb" ? value : "en");
+    };
+    window.addEventListener("zavqera-language-change", onLanguageChange);
     void fetch("/api/ai/usage", { cache: "no-store" })
       .then(async (response) => response.ok ? response.json() : null)
       .then((value) => { if (value && typeof value.remaining === "number" && typeof value.monthly_limit === "number") setUsage(value); })
       .catch(() => undefined);
+    return () => window.removeEventListener("zavqera-language-change", onLanguageChange);
   }, []);
 
   async function draftWithAi() {
@@ -56,8 +66,8 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
   const criteriaPlaceholder = language === "ar" ? "اكتب معيارًا واحدًا في كل سطر" : language === "nb" ? "Ett kriterium per linje" : "One criterion per line";
   const actionsPlaceholder = language === "ar" ? "اكتب خطوة واحدة في كل سطر" : language === "nb" ? "Ett steg per linje" : "One step per line";
 
-  return <>
-    <section className="card ai-planner mission-ai-draft" aria-labelledby="mission-ai-heading">
+  return <form className="form-grid card mission-create-form" action={action}>
+    <section className="mission-ai-draft" aria-labelledby="mission-ai-heading">
       <p className="eyebrow"><LocalizedText en="AI copilot · Draft only" /></p>
       <h2 id="mission-ai-heading"><LocalizedText en="Start with your goal" /></h2>
       <p><LocalizedText en="Describe the result you want. AI can draft the mission details and first steps; review everything before creating the mission." /></p>
@@ -71,13 +81,11 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
       {usage && <p className="ai-usage" aria-live="polite">{usage.remaining} / {usage.monthly_limit} <LocalizedText en="AI plans remaining this month." /></p>}
       {error && <p className="field-error" role="alert"><LocalizedText en={error} /></p>}
     </section>
-    <form className="form-grid mission-review-form" action={action}>
       <p className="eyebrow"><LocalizedText en="Review and edit" /></p>
       <div className="field"><label htmlFor="name"><LocalizedText en="Mission name" /></label><input id="name" name="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={namePlaceholder} required /></div>
       <div className="field"><label htmlFor="intent"><LocalizedText en="Intent" /></label><textarea id="intent" name="intent" value={intent} onChange={(e) => setIntent(e.target.value)} placeholder={intentPlaceholder} required /><small><LocalizedText en="Use plain language. Keep the decision you want to make visible." /></small></div>
       <div className="field"><label htmlFor="criteria"><LocalizedText en="Success criteria" /></label><textarea id="criteria" name="criteria" value={criteria} onChange={(e) => setCriteria(e.target.value)} placeholder={criteriaPlaceholder} required /><small><LocalizedText en="How you will know this mission succeeded. One per line." /></small></div>
       <div className="field"><label htmlFor="actions"><LocalizedText en="First steps" /> <span className="field-optional"><LocalizedText en="optional" /></span></label><textarea id="actions" name="actions" value={actions} onChange={(e) => setActions(e.target.value)} placeholder={actionsPlaceholder} /><small><LocalizedText en="The work you already know about, in the order you would do it. You can add more at any time. Leave empty to start from your success criteria." /></small></div>
       <button className="button" type="submit"><LocalizedText en="Create mission" /></button>
-    </form>
-  </>;
+  </form>;
 }
