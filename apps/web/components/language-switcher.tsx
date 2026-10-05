@@ -11,6 +11,9 @@ const LABELS: Record<AppLanguage, { language: string; english: string; norwegian
   en: { language: "Language", english: "English", norwegian: "Norsk", arabic: "العربية", spanish: "Español", french: "Français", german: "Deutsch" },
   nb: { language: "Språk", english: "English", norwegian: "Norsk", arabic: "العربية", spanish: "Español", french: "Français", german: "Deutsch" },
   ar: { language: "اللغة", english: "English", norwegian: "Norsk", arabic: "العربية", spanish: "Español", french: "Français", german: "Deutsch" },
+  es: { language: "Idioma", english: "English", norwegian: "Norsk", arabic: "العربية", spanish: "Español", french: "Français", german: "Deutsch" },
+  fr: { language: "Langue", english: "English", norwegian: "Norsk", arabic: "العربية", spanish: "Español", french: "Français", german: "Deutsch" },
+  de: { language: "Sprache", english: "English", norwegian: "Norsk", arabic: "العربية", spanish: "Español", french: "Français", german: "Deutsch" },
 };
 
 function validLanguage(value: string | undefined): value is AppLanguage {
