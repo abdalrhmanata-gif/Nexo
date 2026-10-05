@@ -173,14 +173,14 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
       await pageA.goto("/app/missions/new");
       const languageSelect = pageA.locator(".language-switcher select");
       await languageSelect.selectOption("ar");
-      await expect(pageA.getByRole("heading", { name: "ابدأ بهدفك" })).toBeVisible();
+      await expect(pageA.getByRole("heading", { name: "أخبر ZAVQERA بما تريد." })).toBeVisible();
       await expect(pageA.locator("#ai-goal")).toHaveAttribute("placeholder", "مثال: أريد إطلاق متجر إلكتروني صغير خلال ستة أسابيع");
       await languageSelect.selectOption("en");
       await expect(pageA.locator("#ai-goal")).toHaveAttribute("placeholder", "Example: launch a small online shop in six weeks");
       await expect(pageA.locator("form")).toHaveCount(1);
       await expect(pageA.locator("#ai-goal")).toHaveJSProperty("required", false);
-      await pageA.getByLabel("What do you want to achieve?", { exact: true }).fill("Prepare a safe launch plan for a small online shop.");
-      await pageA.getByRole("button", { name: "Draft mission with AI" }).click();
+      await pageA.getByLabel("Your goal", { exact: true }).fill("Prepare a safe launch plan for a small online shop.");
+      await pageA.getByRole("button", { name: "Build my plan" }).click();
       await expect(pageA.getByLabel("Mission name", { exact: true })).not.toHaveValue("");
       await expect(pageA.getByLabel("Success criteria", { exact: true })).not.toHaveValue("");
       await expect(pageA.getByLabel(/^First steps/)).not.toHaveValue("");
