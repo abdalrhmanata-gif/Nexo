@@ -28,6 +28,23 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
       setLanguage(candidate === "ar" || candidate === "nb" ? candidate : "en");
     };
     syncLanguage();
+    try {
+      const saved = window.sessionStorage.getItem("zavqera-anonymous-plan");
+      if (saved) {
+        const parsed = JSON.parse(saved) as { goal?: unknown; plan?: Plan };
+        if (typeof parsed.goal === "string" && parsed.plan?.summary && Array.isArray(parsed.plan.steps)) {
+          const restoredPlan = parsed.plan;
+          setGoal(parsed.goal);
+          setName(parsed.goal.trim().split(/[.!?\\n]/)[0].slice(0, 72));
+          setIntent(parsed.goal.trim());
+          setCriteria(restoredPlan.summary);
+          setActions(restoredPlan.steps.map((step) => step.title + (step.reason ? " — " + step.reason : "")).join("\\n"));
+          setPlanPreview(restoredPlan);
+          setDrafted(true);
+          window.sessionStorage.removeItem("zavqera-anonymous-plan");
+        }
+      }
+    } catch {}
     const onLanguageChange = (event: Event) => {
       const value = (event as CustomEvent<string>).detail;
       setLanguage(value === "ar" || value === "nb" ? value : "en");
