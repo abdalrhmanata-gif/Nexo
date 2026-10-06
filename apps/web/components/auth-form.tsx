@@ -39,6 +39,23 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
+  async function signInWithGoogle() {
+    setError("");
+    setMessage("");
+    setLoading(true);
+    const nextPath = safeNextPath(searchParams.get("next"));
+    const { error: oauthError } = await createSupabaseBrowserClient().auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
+      },
+    });
+    if (oauthError) {
+      setLoading(false);
+      return setError("Google sign-in is temporarily unavailable. Please use email instead.");
+    }
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
@@ -78,6 +95,11 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   }
 
   return <form className="form-grid" onSubmit={submit} noValidate>
+    <button className="button button-google" type="button" onClick={signInWithGoogle} disabled={loading}>
+      <span className="google-mark" aria-hidden="true">G</span>
+      <LocalizedText en="Continue with Google" />
+    </button>
+    <div className="auth-divider" aria-hidden="true"><span><LocalizedText en="or continue with email" /></span></div>
     <div className="field"><label htmlFor="email"><LocalizedText en="Email" /></label><input id="email" name="email" type="email" autoComplete="email" required /></div>
     <div className="field"><label htmlFor="password"><LocalizedText en="Password" /></label><input id="password" name="password" type="password" autoComplete={mode === "sign-in" ? "current-password" : "new-password"} required /><small><LocalizedText en="Use at least 8 characters." /></small></div>
     {(error || confirmationError) && <div className="field-error" role="alert"><LocalizedText en={error || confirmationError} /></div>}
