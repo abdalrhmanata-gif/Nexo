@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../domain/mission.dart';
 
@@ -14,9 +15,30 @@ class WorkspaceScreen extends StatelessWidget {
     required this.onOpenMission,
   });
 
+  Future<void> _signOut(BuildContext context) async {
+    try {
+      await Supabase.instance.client.auth.signOut();
+    } on AuthException catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message)),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Your missions')),
+        appBar: AppBar(
+          title: const Text('Your missions'),
+          actions: [
+            IconButton(
+              tooltip: 'Sign out',
+              onPressed: () => _signOut(context),
+              icon: const Icon(Icons.logout),
+            ),
+          ],
+        ),
         body: missions.isEmpty
             ? _EmptyWorkspace(onNewMission: onNewMission)
             : ListView(
@@ -98,7 +120,7 @@ class _MissionTile extends StatelessWidget {
                 ? 'Follow-up overdue (${localFollowUp.toString().split(' ').first})'
                 : 'Follow-up ${localFollowUp.toString().split(' ').first}';
     final details = <String>[
-      '$state • ${current?.title ?? 'All steps completed'}',
+      '${state} • ${current?.title ?? 'All steps completed'}',
       '${mission.completedActionCount} of ${mission.actions.length} steps completed',
       if (followUpLabel != null) followUpLabel,
     ];
