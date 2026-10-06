@@ -231,3 +231,12 @@ nav > a[aria-current="page"]:not(.button) {
   .ai-plan-review-badge { align-self:flex-start; }
   .ai-plan-summary p { font-size:16px; }
 }
+
+
+/* Low-friction authentication: Google first, email remains available. */
+.button-google { width:100%; display:flex; align-items:center; justify-content:center; gap:10px; background:var(--white); color:var(--navy); border-color:#c9d3da; }
+.button-google:hover { background:#f7fafb; color:var(--navy); border-color:#aebdc6; }
+.google-mark { display:grid; place-items:center; width:20px; height:20px; border-radius:50%; font-size:15px; font-weight:800; font-family:Arial,Helvetica,sans-serif; }
+.auth-divider { display:flex; align-items:center; gap:12px; color:var(--muted); font-size:12px; }
+.auth-divider::before,.auth-divider::after { content:""; height:1px; flex:1; background:var(--line); }
+.auth-divider span { white-space:nowrap; }
