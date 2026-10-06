@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'application/zavqera_ai_planner.dart';
 import 'data/local_mission_store.dart';
 import 'data/mission_repository.dart';
+import 'domain/intent.dart';
 import 'domain/mission.dart';
 import 'infrastructure/supabase_config.dart';
 import 'ui/auth_screen.dart';
