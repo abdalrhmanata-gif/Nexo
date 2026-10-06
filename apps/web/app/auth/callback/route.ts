@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   const origin = resolveAuthCallbackOrigin(process.env.NEXT_PUBLIC_SITE_URL, request.headers, request.url);
 
   if (searchParams.get("error")) {
-    return NextResponse.redirect(new URL(authErrorPath("confirmation-link"), origin));
+    return NextResponse.redirect(new URL(authErrorPath("auth-error"), origin));
   }
   if (!code) {
     return NextResponse.redirect(new URL(authErrorPath("missing-code"), origin));
