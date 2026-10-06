@@ -1,13 +1,13 @@
 import { createHash, createHmac } from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { DEFAULT_AI_MODEL, requestMissionPlan } from "../../../../lib/ai-planner";
-import { buildMockMissionPlan } from "../../../../lib/ai-mock-provider";
+import { DEFAULT_AI_MODEL, requestMissionPlan } from "../../../../../lib/ai-planner";
+import { buildMockMissionPlan } from "../../../../../lib/ai-mock-provider";
 import {
   consumeAnonymousAiGeneration,
   releaseAnonymousAiGeneration,
   reserveAnonymousAiGeneration,
-} from "../../../../lib/anonymous-ai-usage";
+} from "../../../../../lib/anonymous-ai-usage";
 
 export const runtime = "nodejs";
 export const maxDuration = 20;
