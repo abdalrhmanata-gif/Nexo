@@ -9,7 +9,7 @@ export default function HomePage() {
       <h1><LocalizedText en="Clear goals. Practical plans. You’re in control." /></h1>
       <p><LocalizedText en="ZAVQERA turns a rough goal into a structured mission you can review before anything moves." nb="ZAVQERA gjør et enkelt mål om til et strukturert oppdrag du kan gjennomgå før noe settes i gang." ar="يحوّل ZAVQERA هدفك البسيط إلى مهمة منظمة يمكنك مراجعتها قبل أن يبدأ أي شيء." /></p>
       <div className="hero-actions">
-        <Link className="button" href="/auth/sign-up"><LocalizedText en="Try ZAVQERA free" /></Link>
+        <Link className="button" href="/try"><LocalizedText en="Try ZAVQERA free" /></Link>
         <Link className="button button-quiet" href="/pricing"><LocalizedText en="View pricing" /></Link>
       </div>
       <p className="hero-free"><strong><LocalizedText en="Free to start." /></strong> <LocalizedText en="5 AI generations each month. No payment required." /></p>
