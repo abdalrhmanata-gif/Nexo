@@ -1,14 +1,25 @@
-import { createClient } from "@supabase/supabase-js";
 import { supabaseUrl } from "./supabase/config";
 
-function getAdminClient() {
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
-  if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error("ANONYMOUS_AI_GUARD_UNAVAILABLE");
-  }
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
+function getServerDbKey() {
+  const key = process.env.ZAVQERA_SERVER_DB_KEY;
+  if (!supabaseUrl || !key) throw new Error("ANONYMOUS_AI_GUARD_UNAVAILABLE");
+  return key;
+}
+
+async function callRpc<T>(name: string, body: Record<string, unknown>) {
+  const key = getServerDbKey();
+  const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${name}`, {
+    method: "POST",
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
   });
+  if (!response.ok) throw new Error("ANONYMOUS_AI_GUARD_UNAVAILABLE");
+  return await response.json() as T;
 }
 
 export async function reserveAnonymousAiGeneration(
@@ -16,32 +27,29 @@ export async function reserveAnonymousAiGeneration(
   ipHash: string,
   requestId: string,
 ) {
-  const supabase = getAdminClient();
-  const { data, error } = await supabase.rpc("reserve_anonymous_ai_generation", {
-    p_visitor_hash: visitorHash,
-    p_ip_hash: ipHash,
-    p_request_id: requestId,
-  });
-  if (error || !data?.[0]) throw new Error("ANONYMOUS_AI_GUARD_UNAVAILABLE");
-  return data[0] as {
+  const data = await callRpc<Array<{
     allowed: boolean;
     reservation_id: string | null;
     remaining: number;
     reason: string | null;
-  };
+  }>>("reserve_anonymous_ai_generation", {
+    p_visitor_hash: visitorHash,
+    p_ip_hash: ipHash,
+    p_request_id: requestId,
+  });
+  if (!data?.[0]) throw new Error("ANONYMOUS_AI_GUARD_UNAVAILABLE");
+  return data[0];
 }
 
 export async function consumeAnonymousAiGeneration(reservationId: string) {
-  const supabase = getAdminClient();
-  const { data, error } = await supabase.rpc("consume_anonymous_ai_generation", {
+  const data = await callRpc<boolean>("consume_anonymous_ai_generation", {
     p_reservation_id: reservationId,
   });
-  if (error || data !== true) throw new Error("ANONYMOUS_AI_GUARD_UNAVAILABLE");
+  if (data !== true) throw new Error("ANONYMOUS_AI_GUARD_UNAVAILABLE");
 }
 
 export async function releaseAnonymousAiGeneration(reservationId: string) {
-  const supabase = getAdminClient();
-  await supabase.rpc("release_anonymous_ai_generation", {
+  await callRpc<boolean>("release_anonymous_ai_generation", {
     p_reservation_id: reservationId,
   });
 }
