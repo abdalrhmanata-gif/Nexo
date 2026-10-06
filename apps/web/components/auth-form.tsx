@@ -29,6 +29,7 @@ const CONFIRMATION_ERRORS: Record<string, string> = {
   "confirmation-link": "That confirmation link is invalid or has expired. Request a new one by signing up again.",
   "missing-code": "That confirmation link was incomplete. Open the most recent link from your email.",
   "missing-token": "That confirmation link was incomplete. Open the most recent link from your email.",
+  "auth-error": "Authentication could not be completed. Please try again or use email sign-in.",
 };
 
 export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
@@ -180,7 +181,11 @@ export function SignOutButton() {
   const [loading, setLoading] = useState(false);
   async function signOut() {
     setLoading(true);
-    await createSupabaseBrowserClient().auth.signOut();
+    const { error } = await createSupabaseBrowserClient().auth.signOut();
+    if (error) {
+      setLoading(false);
+      return;
+    }
     router.push("/auth/sign-in");
     router.refresh();
   }
