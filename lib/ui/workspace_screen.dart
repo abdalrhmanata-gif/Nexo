@@ -117,11 +117,11 @@ class _MissionTile extends StatelessWidget {
         : DateUtils.isSameDay(localFollowUp, DateTime.now())
             ? 'Follow-up today'
             : localFollowUp.isBefore(DateTime.now())
-                ? 'Follow-up overdue (\${localFollowUp.toString().split(' ').first})'
-                : 'Follow-up \${localFollowUp.toString().split(' ').first}';
+                ? 'Follow-up overdue (${localFollowUp.toString().split(' ').first})'
+                : 'Follow-up ${localFollowUp.toString().split(' ').first}';
     final details = <String>[
-      '\${state} • \${current?.title ?? 'All steps completed'}',
-      '\${mission.completedActionCount} of \${mission.actions.length} steps completed',
+      '${state} • ${current?.title ?? 'All steps completed'}',
+      '${mission.completedActionCount} of ${mission.actions.length} steps completed',
       if (followUpLabel != null) followUpLabel,
     ];
     return Card(
@@ -133,7 +133,7 @@ class _MissionTile extends StatelessWidget {
         isThreeLine: details.length > 2,
         trailing: SizedBox(
           width: 52,
-          child: Text('\${(mission.progress * 100).round()}%',
+          child: Text('${(mission.progress * 100).round()}%',
               textAlign: TextAlign.end,
               style: Theme.of(context).textTheme.titleMedium),
         ),
