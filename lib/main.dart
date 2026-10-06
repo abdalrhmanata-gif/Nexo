@@ -10,6 +10,7 @@ import 'domain/intent.dart';
 import 'domain/mission.dart';
 import 'infrastructure/supabase_config.dart';
 import 'ui/auth_screen.dart';
+import 'ui/reset_password_screen.dart';
 import 'ui/intent_builder_screen.dart';
 import 'ui/mission_screen.dart';
 import 'ui/workspace_screen.dart';
@@ -20,7 +21,7 @@ Future<void> main() async {
   if (SupabaseConfig.isConfigured) {
     await Supabase.initialize(
       url: SupabaseConfig.url,
-      anonKey: SupabaseConfig.publishableKey,
+      publishableKey: SupabaseConfig.publishableKey,
     );
   }
 
@@ -40,7 +41,10 @@ class NexoApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) => MaterialApp(
         title: 'ZAVQERA',
-        theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.indigo),
+        theme: ThemeData(
+          useMaterial3: true,
+          colorSchemeSeed: Colors.indigo,
+        ),
         home: SupabaseConfig.isConfigured
             ? _AuthGate(repository: repository)
             : _Home(repository: repository),
@@ -58,16 +62,24 @@ class _AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<_AuthGate> {
   StreamSubscription<AuthState>? _subscription;
+  bool _passwordRecovery = false;
 
-  bool get _signedIn =>
-      Supabase.instance.client.auth.currentSession != null;
+  SupabaseClient get _client => Supabase.instance.client;
+
+  bool get _signedIn => _client.auth.currentSession != null;
 
   @override
   void initState() {
     super.initState();
-    _subscription =
-        Supabase.instance.client.auth.onAuthStateChange.listen((_) {
-      if (mounted) setState(() {});
+    _subscription = _client.auth.onAuthStateChange.listen((state) {
+      if (!mounted) return;
+      setState(() {
+        if (state.event == AuthChangeEvent.passwordRecovery) {
+          _passwordRecovery = true;
+        } else if (state.event == AuthChangeEvent.signedOut) {
+          _passwordRecovery = false;
+        }
+      });
     });
   }
 
@@ -79,11 +91,22 @@ class _AuthGateState extends State<_AuthGate> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_signedIn) {
-      return AuthScreen(onAuthenticated: () {
-        if (mounted) setState(() {});
-      });
+    if (_passwordRecovery && _signedIn) {
+      return ResetPasswordScreen(
+        onCompleted: () {
+          if (mounted) setState(() => _passwordRecovery = false);
+        },
+      );
     }
+
+    if (!_signedIn) {
+      return AuthScreen(
+        onAuthenticated: () {
+          if (mounted) setState(() {});
+        },
+      );
+    }
+
     return _Home(repository: widget.repository);
   }
 }
