@@ -74,6 +74,12 @@ jobs:
               else:
                   lines.insert(start + 1, f"{key} = {value}")
           setv(lines, "db", "major_version", "17")
+          # Avoid runner-host port collisions by selecting an available local DB port.
+          import socket
+          with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+              s.bind(("127.0.0.1", 0))
+              db_port = s.getsockname()[1]
+          setv(lines, "db", "port", str(db_port))
           setv(lines, "auth", "site_url", '"http://127.0.0.1:3210"')
           setv(lines, "auth", "additional_redirect_urls", '["http://127.0.0.1:3210/**"]')
           setv(lines, "auth.email", "enable_confirmations", "false")
