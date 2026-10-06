@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { supabasePublishableKey, supabaseUrl } from "./supabase/config";
+import { supabaseUrl } from "./supabase/config";
 
 function getAdminClient() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
