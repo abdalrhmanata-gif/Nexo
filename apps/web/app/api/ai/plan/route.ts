@@ -9,7 +9,7 @@ import {
 import { reserveAiGeneration, consumeAiGeneration, releaseAiGeneration } from "../../../../lib/ai-usage";
 
 export const runtime = "nodejs";
-export const maxDuration = 20;
+export const maxDuration = 25;
 
 export async function POST(request: Request) {
   let user: Awaited<ReturnType<typeof getAuthenticatedUser>>;
