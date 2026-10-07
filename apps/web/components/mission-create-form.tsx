@@ -134,8 +134,16 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
           <span className="ai-plan-review-badge"><LocalizedText en="Review before creating" nb="Se gjennom før du oppretter" ar="راجع قبل الإنشاء" /></span>
         </div>
         <div className="ai-plan-summary">
+          <span className="ai-plan-label"><LocalizedText en="Mission" nb="Oppdrag" ar="المهمة" /></span>
+          <h4>{planPreview.title}</h4>
+        </div>
+        <div className="ai-plan-summary">
           <span className="ai-plan-label"><LocalizedText en="Outcome" nb="Resultat" ar="النتيجة" /></span>
           <p>{planPreview.summary}</p>
+        </div>
+        <div className="ai-plan-summary">
+          <span className="ai-plan-label"><LocalizedText en="Success looks like" nb="Slik ser suksess ut" ar="شكل النجاح" /></span>
+          <ul>{planPreview.successCriteria.map((criterion, index) => <li key={index}>{criterion}</li>)}</ul>
         </div>
         {planPreview.steps.length > 0 && (
           <div className="ai-plan-steps">
