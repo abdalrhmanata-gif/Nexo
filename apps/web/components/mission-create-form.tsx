@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { LocalizedText } from "./localized-text";
 
-type Plan = { summary: string; steps: { title: string; reason: string }[] };
+type Plan = { title: string; summary: string; successCriteria: string[]; steps: { title: string; reason: string }[]; clarifyingQuestions: string[] };
 
 export function MissionCreateForm({ action }: { action: (formData: FormData) => void | Promise<void> }) {
   const [goal, setGoal] = useState("");
@@ -32,7 +32,7 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
       const saved = window.sessionStorage.getItem("zavqera-anonymous-plan");
       if (saved) {
         const parsed = JSON.parse(saved) as { goal?: unknown; plan?: Plan };
-        if (typeof parsed.goal === "string" && parsed.plan?.summary && Array.isArray(parsed.plan.steps)) {
+        if (typeof parsed.goal === "string" && parsed.plan?.title && parsed.plan?.summary && Array.isArray(parsed.plan.successCriteria) && Array.isArray(parsed.plan.steps) && Array.isArray(parsed.plan.clarifyingQuestions)) {
           const restoredPlan = parsed.plan;
           setGoal(parsed.goal);
           setName(parsed.goal.trim().split(/[.!?\\n]/)[0].slice(0, 72));
