@@ -86,6 +86,7 @@ export async function requestMissionPlan(
       ].join(" "),
       input: goal,
       max_output_tokens: 900,
+      store: false,
       text: {
         format: {
           type: "json_schema",
