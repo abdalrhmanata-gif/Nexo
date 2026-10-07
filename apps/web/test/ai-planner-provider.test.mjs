@@ -13,6 +13,7 @@ test("provider request contract uses Responses API, low reasoning effort and str
   assert.match(source, /type:\s*"json_schema"/);
   assert.match(source, /name:\s*"zavqera_mission_plan"/);
   assert.match(source, /maxItems:\s*6/);
+  assert.match(source, /store:\s*false/);
 });
 
 test("provider response parsing is bounded and fail-closed", () => {
