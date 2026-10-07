@@ -10,6 +10,9 @@ const KNOWN_PROVIDER_FAILURES = new Map([
   ["UPSTREAM_OUTCOME_UNKNOWN", { kind: "unknown", status: 504 }],
   ["UPSTREAM_REJECTED", { kind: "definite", status: 502 }],
   ["INVALID_PLAN", { kind: "definite", status: 502 }],
+  ["INVALID_PROVIDER_REQUEST", { kind: "definite", status: 502 }],
+  ["INCOMPLETE_PROVIDER_RESPONSE", { kind: "definite", status: 502 }],
+  ["INVALID_PROVIDER_RESPONSE", { kind: "definite", status: 502 }],
 ]);
 
 export function classifyProviderFailure(error) {
