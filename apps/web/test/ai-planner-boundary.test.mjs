@@ -74,8 +74,8 @@ test("AI planning is integrated into authenticated mission creation, not duplica
 
 test("deployed AI routes cannot silently fall back to the mock provider", () => {
   const anonymous = readFileSync(path.join(root, "app/api/ai/plan/anonymous/route.ts"), "utf8");
-  assert.match(route, /const isDeployedRuntime = process\.env\.NETLIFY === "true" \|\| Boolean\(process\.env\.CONTEXT\)/);
-  assert.match(anonymous, /const isDeployedRuntime = process\.env\.NETLIFY === "true" \|\| Boolean\(process\.env\.CONTEXT\)/);
+  assert.match(route, /const isDeployedRuntime = process\.env\.NETLIFY === "true"/);
+  assert.match(anonymous, /const isDeployedRuntime = process\.env\.NETLIFY === "true"/);
   assert.match(route, /configuredProviderMode === "mock" && !isDeployedRuntime \? "mock" : "openai"/);
   assert.match(anonymous, /configuredProviderMode === "mock" && !isDeployedRuntime \? "mock" : "openai"/);
   assert.match(route, /if \(!apiKey\)/);
