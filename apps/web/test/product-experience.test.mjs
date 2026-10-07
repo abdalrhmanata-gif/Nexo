@@ -277,7 +277,7 @@ test("one-goal-first mission creation keeps review fields after the AI draft", (
   assert.match(source, /Build my plan/);
   assert.match(source, /Want more control\? Add details/);
   assert.match(source, /setDrafted\(true\)/);
-  assert.match(source, /setCriteria\(plan\.summary\)/);
+  assert.match(source, /setCriteria\(plan\.successCriteria\.join/);
   assert.match(source, /setActions\(plan\.steps\.map/);
   // Omitting the steps must keep the pre-W19 behaviour of seeding from criteria.
   const page = read("app/app/missions/new/page.tsx");
