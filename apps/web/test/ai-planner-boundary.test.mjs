@@ -70,3 +70,20 @@ test("AI planning is integrated into authenticated mission creation, not duplica
   assert.ok(integratedForm.includes("setActions(plan.steps.map"));
   assert.equal(workspace.includes("AiPlanner"), false);
 });
+
+
+test("deployed AI routes cannot silently fall back to the mock provider", () => {
+  const anonymous = readFileSync(path.join(root, "app/api/ai/plan/anonymous/route.ts"), "utf8");
+  assert.match(route, /const isDeployedRuntime = process\.env\.NETLIFY === "true" \|\| Boolean\(process\.env\.CONTEXT\)/);
+  assert.match(anonymous, /const isDeployedRuntime = process\.env\.NETLIFY === "true" \|\| Boolean\(process\.env\.CONTEXT\)/);
+  assert.match(route, /configuredProviderMode === "mock" && !isDeployedRuntime \? "mock" : "openai"/);
+  assert.match(anonymous, /configuredProviderMode === "mock" && !isDeployedRuntime \? "mock" : "openai"/);
+  assert.match(route, /if \(!apiKey\)/);
+  assert.match(anonymous, /if \(!apiKey\)/);
+});
+
+test("mission creation maps AI success criteria to mission criteria and keeps AI draft versioned", () => {
+  assert.ok(integratedForm.includes('setCriteria(plan.successCriteria.join("\\n"))'));
+  assert.ok(integratedForm.includes('setName((current) => current || plan.title)'));
+  assert.ok(integratedForm.includes('"zavqera-anonymous-plan-v2"'));
+});
