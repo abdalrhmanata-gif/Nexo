@@ -34,7 +34,7 @@ test("AI planner bounds input, output, time and response caching", () => {
   assert.ok(planner.includes("max_output_tokens: 450"));
   assert.ok(planner.includes("AbortSignal.timeout(24_000)"));
   assert.ok(route.includes('"Cache-Control": "no-store"'));
-  assert.ok(planner.includes("maxItems: 6"));
+  assert.ok(!planner.includes("maxItems:"));
   assert.ok(planner.includes("X-Client-Request-Id"));
 });
 
