@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getAuthenticatedUser } from "../../../../../lib/supabase/server";
-import { DEFAULT_AI_MODEL } from "../../../../../lib/ai-planner";
+import { getAuthenticatedUser } from "../../../../lib/supabase/server";
+import { DEFAULT_AI_MODEL } from "../../../../lib/ai-planner";
 
 export const runtime = "nodejs";
 export const maxDuration = 10;
