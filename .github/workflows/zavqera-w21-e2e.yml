@@ -41,7 +41,7 @@ jobs:
 
       - name: Install Chromium
         working-directory: apps/web
-        run: npx playwright install --with-deps chromium
+        run: timeout 10m npx playwright install chromium
 
       - name: Prepare disposable PG17 migration replay
         run: |
