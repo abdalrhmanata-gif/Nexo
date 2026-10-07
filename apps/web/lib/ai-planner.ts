@@ -96,7 +96,7 @@ export async function requestMissionPlan(
         },
       },
     }),
-    signal: AbortSignal.timeout(15_000),
+    signal: AbortSignal.timeout(18_000),
     cache: "no-store",
   });
 
