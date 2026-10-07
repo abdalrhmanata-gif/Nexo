@@ -12,10 +12,10 @@ test("provider request contract uses Responses API, no reasoning, low verbosity 
   assert.match(source, /reasoning:\s*\{\s*effort:\s*"none"/);
   assert.match(source, /type:\s*"json_schema"/);
   assert.match(source, /name:\s*"zavqera_mission_plan"/);
-  assert.match(source, /max_output_tokens:\s*900/);
+  assert.match(source, /max_output_tokens:\s*2000/);
   assert.doesNotMatch(source, /minItems:\s*\d/);
   assert.doesNotMatch(source, /maxItems:\s*\d/);
-  assert.match(source, /verbosity:\s*"low"/);
+  assert.match(source, /text:\s*\{[\s\S]*verbosity:\s*"low"/);
   assert.match(source, /store:\s*false/);
   assert.match(source, /X-Client-Request-Id/);
 });
