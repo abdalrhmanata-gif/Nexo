@@ -5,6 +5,10 @@
 
 [build.environment]
   NODE_VERSION = "20"
+  # The Supabase publishable key is intentionally shipped to the browser.
+  # It is not a secret; Supabase requires RLS/least-privilege policies for
+  # security. Exclude only this public key from Netlify's secret-value scan.
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
 
 # Framework auto-detection does not run for this site, so the deploy published
 # raw .next assets with no Functions or Edge Functions. Declaring the adapter
