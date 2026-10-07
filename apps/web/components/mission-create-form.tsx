@@ -158,6 +158,10 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
             </ol>
           </div>
         )}
+        {planPreview.clarifyingQuestions.length > 0 && <div className="ai-plan-summary">
+          <span className="ai-plan-label"><LocalizedText en="Questions to refine later" nb="Spørsmål som kan avklare planen" ar="أسئلة لتحسين الخطة لاحقًا" /></span>
+          <ul>{planPreview.clarifyingQuestions.map((question, index) => <li key={index}>{question}</li>)}</ul>
+        </div>}
         <p className="ai-plan-control"><LocalizedText en="Nothing is created or executed yet. You decide what stays." nb="Ingenting opprettes eller utføres ennå. Du bestemmer hva som skal beholdes." ar="لم يتم إنشاء أو تنفيذ أي شيء بعد. أنت تقرر ما الذي يبقى." /></p>
       </section>
     )}
