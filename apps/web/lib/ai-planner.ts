@@ -98,7 +98,7 @@ export async function requestMissionPlan(
         "This is a draft only: no tools, external actions, or data writes are available.",
       ].join(" "),
       input: goal,
-      max_output_tokens: 450,
+      max_output_tokens: 900,
       verbosity: "low",
       store: false,
       text: {
@@ -135,10 +135,23 @@ export async function requestMissionPlan(
 
     if (response.status === 429) throw new Error("RATE_LIMITED");
     if (response.status >= 500) throw new Error("UPSTREAM_OUTCOME_UNKNOWN");
+    if (response.status === 400) throw new Error("INVALID_PROVIDER_REQUEST");
     throw new Error("UPSTREAM_REJECTED");
   }
 
-  const payload = await response.json() as PlannerResponse;
+  const payload = await response.json() as PlannerResponse & {
+    status?: unknown;
+    incomplete_details?: { reason?: unknown } | null;
+  };
+
+  if (payload.status === "incomplete") {
+    throw new Error(
+      payload.incomplete_details?.reason === "max_output_tokens"
+        ? "INCOMPLETE_PROVIDER_RESPONSE"
+        : "INVALID_PROVIDER_RESPONSE",
+    );
+  }
+
   const outputText = extractOutputText(payload);
   if (!outputText) {
     throw new Error("INVALID_PROVIDER_RESPONSE");
