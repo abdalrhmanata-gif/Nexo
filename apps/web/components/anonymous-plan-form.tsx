@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LocalizedText } from "./localized-text";
 
-type Plan = { summary: string; steps: { title: string; reason: string }[] };
+type Plan = { title: string; summary: string; successCriteria: string[]; steps: { title: string; reason: string }[]; clarifyingQuestions: string[] };
 
-const DRAFT_KEY = "zavqera-anonymous-plan";
+const DRAFT_KEY = "zavqera-anonymous-plan-v2";
 
 export function AnonymousPlanForm() {
   const [goal, setGoal] = useState("");
@@ -19,7 +19,7 @@ export function AnonymousPlanForm() {
       const saved = sessionStorage.getItem(DRAFT_KEY);
       if (!saved) return;
       const parsed = JSON.parse(saved) as { goal?: unknown; plan?: Plan };
-      if (typeof parsed.goal === "string" && parsed.plan) {
+      if (typeof parsed.goal === "string" && parsed.plan?.title && Array.isArray(parsed.plan.successCriteria) && Array.isArray(parsed.plan.clarifyingQuestions)) {
         setGoal(parsed.goal);
         setPlan(parsed.plan);
       }
@@ -91,7 +91,7 @@ export function AnonymousPlanForm() {
         </div>
         <span className="ai-plan-review-badge"><LocalizedText en="Review before creating" nb="Se gjennom før du oppretter" ar="راجع قبل الإنشاء" /></span>
       </div>
-      <div className="ai-plan-summary">
+      <div className="ai-plan-title"><span className="ai-plan-label"><LocalizedText en="Mission" nb="Oppdrag" ar="المهمة" /></span><h4>{plan.title}</h4></div>\n      <div className="ai-plan-summary">
         <span className="ai-plan-label"><LocalizedText en="Outcome" nb="Resultat" ar="النتيجة" /></span>
         <p>{plan.summary}</p>
       </div>
