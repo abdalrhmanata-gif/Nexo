@@ -81,7 +81,7 @@ export async function POST(request: Request) {
   const configuredProviderMode = process.env.ZAVQERA_AI_PROVIDER_MODE || "openai";
   // Never allow an accidental mock provider in a deployed Netlify runtime.
   // Local development/tests can still opt into mock mode explicitly.
-  const isDeployedRuntime = process.env.NETLIFY === "true" || Boolean(process.env.CONTEXT);
+  const isDeployedRuntime = process.env.NETLIFY === "true";
   const providerMode = configuredProviderMode === "mock" && !isDeployedRuntime ? "mock" : "openai";
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
