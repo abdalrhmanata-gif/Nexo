@@ -29,7 +29,7 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
     };
     syncLanguage();
     try {
-      const saved = window.sessionStorage.getItem("zavqera-anonymous-plan");
+      const saved = window.sessionStorage.getItem("zavqera-anonymous-plan-v2");
       if (saved) {
         const parsed = JSON.parse(saved) as { goal?: unknown; plan?: Plan };
         if (typeof parsed.goal === "string" && parsed.plan?.title && parsed.plan?.summary && Array.isArray(parsed.plan.successCriteria) && Array.isArray(parsed.plan.steps) && Array.isArray(parsed.plan.clarifyingQuestions)) {
