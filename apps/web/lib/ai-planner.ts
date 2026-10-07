@@ -115,6 +115,24 @@ export async function requestMissionPlan(
   });
 
   if (!response.ok) {
+    let providerError: { type?: unknown; code?: unknown; message?: unknown } = {};
+    try {
+      const body = await response.json() as { error?: { type?: unknown; code?: unknown; message?: unknown } };
+      providerError = body.error ?? {};
+    } catch {
+      // Keep the provider failure classification even if the error body is not JSON.
+    }
+
+    console.error("[ZAVQERA_AI_PROVIDER_REJECTED]", {
+      requestId,
+      status: response.status,
+      type: typeof providerError.type === "string" ? providerError.type : undefined,
+      code: typeof providerError.code === "string" ? providerError.code : undefined,
+      message: typeof providerError.message === "string"
+        ? providerError.message.slice(0, 300)
+        : undefined,
+    });
+
     if (response.status === 429) throw new Error("RATE_LIMITED");
     if (response.status >= 500) throw new Error("UPSTREAM_OUTCOME_UNKNOWN");
     throw new Error("UPSTREAM_REJECTED");
