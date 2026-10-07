@@ -15,14 +15,10 @@ const PLAN_SCHEMA = {
     summary: { type: "string" },
     successCriteria: {
       type: "array",
-      minItems: 1,
-      maxItems: 4,
       items: { type: "string" },
     },
     steps: {
       type: "array",
-      minItems: 3,
-      maxItems: 6,
       items: {
         type: "object",
         additionalProperties: false,
@@ -35,7 +31,6 @@ const PLAN_SCHEMA = {
     },
     clarifyingQuestions: {
       type: "array",
-      maxItems: 3,
       items: { type: "string" },
     },
   },
