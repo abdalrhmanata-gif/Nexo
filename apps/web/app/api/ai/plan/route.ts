@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   const isDeployedRuntime = process.env.NETLIFY === "true";
   const providerMode = configuredProviderMode === "mock" && !isDeployedRuntime ? "mock" : "openai";
   const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
+  if (providerMode !== "mock" && !apiKey) {
     return NextResponse.json({ error: "AI planning is not configured yet." }, { status: 503 });
   }
 
