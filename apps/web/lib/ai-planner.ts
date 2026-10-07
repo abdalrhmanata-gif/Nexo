@@ -69,7 +69,7 @@ export async function requestMissionPlan(
     },
     body: JSON.stringify({
       model,
-      reasoning: { effort: "low" },
+      reasoning: { effort: "none" },
       instructions: [
         "You are ZAVQERA's mission planning copilot.",
         "Turn the user's goal into a concrete, outcome-driven mission plan.",
@@ -88,7 +88,7 @@ export async function requestMissionPlan(
         "This is a draft only: no tools, external actions, or data writes are available.",
       ].join(" "),
       input: goal,
-      max_output_tokens: 900,
+      max_output_tokens: 600,
       store: false,
       text: {
         format: {
