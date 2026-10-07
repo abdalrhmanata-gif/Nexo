@@ -71,9 +71,9 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
         return;
       }
       const plan = result as Plan;
-      setName((current) => current || goal.trim().split(/[.!?\n]/)[0].slice(0, 72));
+      setName((current) => current || plan.title);
       setIntent(goal.trim());
-      setCriteria(plan.summary);
+      setCriteria(plan.successCriteria.join("\n"));
       setActions(plan.steps.map((step) => step.title + (step.reason ? " — " + step.reason : "")).join("\n"));
       setPlanPreview(plan);
       setDrafted(true);
