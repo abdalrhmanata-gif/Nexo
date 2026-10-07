@@ -74,12 +74,12 @@ test("AI planning is integrated into authenticated mission creation, not duplica
 
 test("deployed AI routes cannot silently fall back to the mock provider", () => {
   const anonymous = readFileSync(path.join(root, "app/api/ai/plan/anonymous/route.ts"), "utf8");
-  assert.match(route, /const isProductionRuntime = process.env.NODE_ENV === "production"/);
-  assert.match(anonymous, /const isProductionRuntime = process.env.NODE_ENV === "production"/);
+  assert.ok(route.includes('const isProductionRuntime = process.env.NODE_ENV === "production"'));
+  assert.ok(anonymous.includes('const isProductionRuntime = process.env.NODE_ENV === "production"'));
   assert.ok(route.includes('configuredProviderMode === "mock" && !isProductionRuntime ? "mock" : "openai"'));
   assert.ok(anonymous.includes('configuredProviderMode === "mock" && !isProductionRuntime ? "mock" : "openai"'));
-  assert.match(route, /if (providerMode !== "mock" && !apiKey)/);
-  assert.match(anonymous, /if (providerMode !== "mock" && !apiKey)/);
+  assert.ok(route.includes('if (providerMode !== "mock" && !apiKey)'));
+  assert.ok(anonymous.includes('if (providerMode !== "mock" && !apiKey)'));
 });
 
 test("mission creation maps AI success criteria to mission criteria and keeps AI draft versioned", () => {
