@@ -91,7 +91,8 @@ export function AnonymousPlanForm() {
         </div>
         <span className="ai-plan-review-badge"><LocalizedText en="Review before creating" nb="Se gjennom før du oppretter" ar="راجع قبل الإنشاء" /></span>
       </div>
-      <div className="ai-plan-title"><span className="ai-plan-label"><LocalizedText en="Mission" nb="Oppdrag" ar="المهمة" /></span><h4>{plan.title}</h4></div>\n      <div className="ai-plan-summary">
+      <div className="ai-plan-title"><span className="ai-plan-label"><LocalizedText en="Mission" nb="Oppdrag" ar="المهمة" /></span><h4>{plan.title}</h4></div>
+      <div className="ai-plan-summary">
         <span className="ai-plan-label"><LocalizedText en="Outcome" nb="Resultat" ar="النتيجة" /></span>
         <p>{plan.summary}</p>
       </div>
