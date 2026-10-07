@@ -25,3 +25,15 @@ test("provider response parsing is bounded and fail-closed", () => {
 });
 
 
+
+
+test("mission plan contract is outcome-driven and rejects generic template-only behavior", () => {
+  assert.match(source, /title:\s*\{ type: "string" \}/);
+  assert.match(source, /successCriteria:/);
+  assert.match(source, /clarifyingQuestions:/);
+  assert.match(source, /3 to 6 ordered first steps/);
+  assert.match(source, /Avoid generic placeholder steps/);
+  assert.match(source, /plan\.steps\.length < 3/);
+  assert.match(source, /successCriteria\.length < 1/);
+  assert.match(source, /successCriteria\.length > 4/);
+});
