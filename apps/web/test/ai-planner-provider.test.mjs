@@ -30,8 +30,8 @@ test("mission plan contract is outcome-driven and rejects generic template-only 
   assert.match(source, /title:\s*\{ type: "string" \}/);
   assert.match(source, /successCriteria:/);
   assert.match(source, /clarifyingQuestions:/);
-  assert.match(source, /3 to 6 ordered first steps/);
-  assert.match(source, /Avoid generic placeholder steps/);
+  assert.match(source, /3-6 ordered steps/);
+  assert.match(source, /Avoid generic placeholders/);
   assert.match(source, /plan\.steps\.length < 3/);
   assert.match(source, /successCriteria\.length < 1/);
   assert.match(source, /successCriteria\.length > 4/);
