@@ -4,7 +4,7 @@ import { Shell } from "../components/shell";
 
 export const metadata: Metadata = {
   title: "ZAVQERA Mission Control",
-  description: "A calm control plane for bounded AI work.",
+  description: "A calm control plane for bounded, verifiable AI work.",
   applicationName: "ZAVQERA",
   category: "productivity",
 };
