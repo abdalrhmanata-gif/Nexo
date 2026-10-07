@@ -21,7 +21,7 @@ test("provider response parsing is bounded and fail-closed", () => {
   assert.match(source, /plan\.steps\.length > 6/);
   assert.match(source, /summary\.trim\(\)\.slice\(0, 600\)/);
   assert.match(source, /step\.title\.trim\(\)\.slice\(0, 160\)/);
-  assert.match(source, /reason\.slice\(0, 300\)/);
+  assert.match(source, /step\.reason\.trim\(\)\.slice\(0, 300\)/);
   assert.match(source, /AbortSignal\.timeout\(15_000\)/);
 });
 
