@@ -35,7 +35,7 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
         if (typeof parsed.goal === "string" && parsed.plan?.title && parsed.plan?.summary && Array.isArray(parsed.plan.successCriteria) && Array.isArray(parsed.plan.steps) && Array.isArray(parsed.plan.clarifyingQuestions)) {
           const restoredPlan = parsed.plan;
           setGoal(parsed.goal);
-          setName(parsed.goal.trim().split(/[.!?\\n]/)[0].slice(0, 72));
+          setName(restoredPlan.title);
           setIntent(parsed.goal.trim());
           setCriteria(restoredPlan.summary);
           setActions(restoredPlan.steps.map((step) => step.title + (step.reason ? " — " + step.reason : "")).join("\\n"));
