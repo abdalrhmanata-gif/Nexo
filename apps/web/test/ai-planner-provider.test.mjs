@@ -13,6 +13,8 @@ test("provider request contract uses Responses API, no reasoning, low verbosity 
   assert.match(source, /type:\s*"json_schema"/);
   assert.match(source, /name:\s*"zavqera_mission_plan"/);
   assert.match(source, /max_output_tokens:\s*450/);
+  assert.doesNotMatch(source, /minItems:\s*\d/);
+  assert.doesNotMatch(source, /maxItems:\s*\d/);
   assert.match(source, /verbosity:\s*"low"/);
   assert.match(source, /store:\s*false/);
   assert.match(source, /X-Client-Request-Id/);
@@ -26,6 +28,7 @@ test("provider response parsing is bounded and fail-closed", () => {
   assert.match(source, /step\.reason\.trim\(\)\.slice\(0, 300\)/);
   assert.match(source, /AbortSignal\.timeout\(24_000\)/);
   assert.match(source, /part\.type === "output_text"/);
+  assert.match(source, /ZAVQERA_AI_PROVIDER_REJECTED/);
 });
 
 test("mission plan contract is outcome-driven and rejects generic template-only behavior", () => {
