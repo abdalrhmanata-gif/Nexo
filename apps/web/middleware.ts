@@ -1,11 +1,27 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+type RuntimeGlobal = typeof globalThis & {
+  Netlify?: {
+    env?: {
+      get(name: string): string | undefined;
+    };
+  };
+  process?: {
+    env?: Record<string, string | undefined>;
+  };
+};
+
+function getRuntimeEnv(name: string) {
+  const runtimeGlobal = globalThis as RuntimeGlobal;
+  return runtimeGlobal.Netlify?.env?.get(name) ?? runtimeGlobal.process?.env?.[name];
+}
+
 export async function middleware(request: NextRequest) {
-  // Use dynamic environment access here so Next.js does not inline the
-  // public Supabase key into the generated middleware bundle.
-  const supabaseUrl = process.env["NEXT_PUBLIC_SUPABASE_URL"];
-  const supabasePublishableKey = process.env["NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"];
+  // Read the public Supabase values at runtime. This prevents Next.js from
+  // embedding the publishable key into the generated Netlify middleware bundle.
+  const supabaseUrl = getRuntimeEnv("NEXT_PUBLIC_SUPABASE_URL");
+  const supabasePublishableKey = getRuntimeEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY");
 
   if (!supabaseUrl || !supabasePublishableKey) return NextResponse.next();
 
