@@ -10,7 +10,7 @@ import {
 } from "../../../../../lib/anonymous-ai-usage";
 
 export const runtime = "nodejs";
-export const maxDuration = 20;
+export const maxDuration = 25;
 
 const VISITOR_COOKIE = "zavqera-anon-ai";
 const MAX_GOAL_LENGTH = 900;
