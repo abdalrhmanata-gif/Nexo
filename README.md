@@ -52,3 +52,5 @@ This project now includes the v1.7 provenance chain, v1.8 trust graph, and v1.9 
 These contracts do not certify production security and do not replace server-side authorization, PostgreSQL constraints/RLS, live concurrency tests, provider reconciliation, or production evidence gates.
 
 Use `./tool/verify_project.sh` in a Flutter-enabled environment to run dependency resolution, formatting, static analysis, and the complete Dart/Flutter test suite. In a non-Flutter environment the script fails closed with exit code 20 after completing the static contract gate.
+
+<!-- Netlify preview refresh: 2026-10-07 -->
