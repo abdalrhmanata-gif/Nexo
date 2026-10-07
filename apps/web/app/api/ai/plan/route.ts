@@ -59,6 +59,7 @@ export async function POST(request: Request) {
         : requestMissionPlan(goal.trim(), {
           apiKey: apiKey as string,
           model: process.env.OPENAI_MODEL || DEFAULT_AI_MODEL,
+          requestId,
         }),
       consume: consumeAiGeneration,
       release: releaseAiGeneration,
