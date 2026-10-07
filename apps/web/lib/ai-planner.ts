@@ -51,10 +51,12 @@ export async function requestMissionPlan(
   {
     apiKey,
     model = DEFAULT_AI_MODEL,
+    requestId,
     fetchImpl = fetch,
   }: {
     apiKey: string;
     model?: string;
+    requestId?: string;
     fetchImpl?: typeof fetch;
   },
 ): Promise<MissionPlan> {
@@ -63,6 +65,7 @@ export async function requestMissionPlan(
     headers: {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
+      ...(requestId ? { "X-Client-Request-Id": requestId } : {}),
     },
     body: JSON.stringify({
       model,
