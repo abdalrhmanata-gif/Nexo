@@ -9,7 +9,7 @@ const source = readFileSync(path.join(webRoot, "lib/ai-planner.ts"), "utf8");
 
 test("provider request contract uses Responses API, low reasoning effort and structured output with a Netlify-safe timeout", () => {
   assert.match(source, /https:\/\/api\.openai\.com\/v1\/responses/);
-  assert.match(source, /reasoning:\s*\{\s*effort:\s*"low"/);
+  assert.match(source, /reasoning:\s*\{\s*effort:\s*"none"/);
   assert.match(source, /type:\s*"json_schema"/);
   assert.match(source, /name:\s*"zavqera_mission_plan"/);
   assert.match(source, /maxItems:\s*6/);
