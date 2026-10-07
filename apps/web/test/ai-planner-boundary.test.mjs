@@ -31,7 +31,7 @@ test("AI route authenticates before invoking the provider service and keeps the 
 
 test("AI planner bounds input, output, time and response caching", () => {
   assert.ok(route.includes("length > 1200"));
-  assert.ok(planner.includes("max_output_tokens: 600"));
+  assert.ok(planner.includes("max_output_tokens: 450"));
   assert.ok(planner.includes("AbortSignal.timeout(24_000)"));
   assert.ok(route.includes('"Cache-Control": "no-store"'));
   assert.ok(planner.includes("maxItems: 6"));
