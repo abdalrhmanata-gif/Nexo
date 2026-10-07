@@ -22,9 +22,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
   }
 
-  const providerMode = process.env.ZAVQERA_AI_PROVIDER_MODE || "openai";
+  const configuredProviderMode = process.env.ZAVQERA_AI_PROVIDER_MODE || "openai";
+  // Mock mode is reserved for local tests. A deployed runtime must use the real provider.
+  const isDeployedRuntime = process.env.NETLIFY === "true" || Boolean(process.env.CONTEXT);
+  const providerMode = configuredProviderMode === "mock" && !isDeployedRuntime ? "mock" : "openai";
   const apiKey = process.env.OPENAI_API_KEY;
-  if (providerMode !== "mock" && !apiKey) {
+  if (!apiKey) {
     return NextResponse.json({ error: "AI planning is not configured yet." }, { status: 503 });
   }
 
