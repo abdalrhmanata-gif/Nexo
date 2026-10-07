@@ -130,3 +130,22 @@ test("quota denial never calls the provider or settlement functions", async () =
   assert.deepEqual(fake.calls.consume, []);
   assert.deepEqual(fake.calls.release, []);
 });
+
+
+test("invalid provider request releases the reservation exactly once", async () => {
+  const fake = fakes({
+    generate: async () => { throw new Error("INVALID_PROVIDER_REQUEST"); },
+  });
+
+  const result = await runAiGeneration({
+    requestId: "request-invalid-provider-request",
+    ...fake,
+  });
+
+  assert.equal(result.kind, AI_GENERATION_OUTCOMES.PROVIDER_ERROR);
+  assert.equal(result.disposition, "release");
+  assert.equal(result.code, "INVALID_PROVIDER_REQUEST");
+  assert.equal(result.status, 502);
+  assert.deepEqual(fake.calls.release, ["reservation-1"]);
+  assert.deepEqual(fake.calls.consume, []);
+});
