@@ -95,10 +95,18 @@ export function AnonymousPlanForm() {
         <span className="ai-plan-label"><LocalizedText en="Outcome" nb="Resultat" ar="النتيجة" /></span>
         <p>{plan.summary}</p>
       </div>
+      <div className="ai-plan-summary">
+        <span className="ai-plan-label"><LocalizedText en="Success looks like" nb="Slik ser suksess ut" ar="شكل النجاح" /></span>
+        <ul>{plan.successCriteria.map((criterion, index) => <li key={`${criterion}-${index}`}>{criterion}</li>)}</ul>
+      </div>
       <div className="ai-plan-steps">
         <span className="ai-plan-label"><LocalizedText en="Suggested first steps" nb="Foreslåtte første steg" ar="الخطوات الأولى المقترحة" /></span>
         <ol>{plan.steps.map((step, index) => <li key={index}><span className="ai-plan-step-number">{index + 1}</span><div><strong>{step.title}</strong><span>{step.reason}</span></div></li>)}</ol>
       </div>
+      {plan.clarifyingQuestions.length > 0 && <div className="ai-plan-summary">
+        <span className="ai-plan-label"><LocalizedText en="Questions to refine later" nb="Spørsmål som kan avklare planen" ar="أسئلة لتحسين الخطة لاحقًا" /></span>
+        <ul>{plan.clarifyingQuestions.map((question, index) => <li key={`${question}-${index}`}>{question}</li>)}</ul>
+      </div>}
       <p className="ai-plan-control"><LocalizedText en="Nothing has been created or executed. Your next step is your choice." nb="Ingenting er opprettet eller utført. Du bestemmer neste steg." ar="لم يتم إنشاء أو تنفيذ أي شيء. أنت تختار الخطوة التالية." /></p>
       <div className="hero-actions">
         <Link className="button" href="/auth/sign-up?next=/app/missions/new"><LocalizedText en="Create account & save" nb="Opprett konto og lagre" ar="أنشئ حسابًا واحفظ" /></Link>
