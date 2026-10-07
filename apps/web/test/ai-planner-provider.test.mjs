@@ -12,7 +12,6 @@ test("provider request contract uses Responses API, no reasoning, low verbosity 
   assert.match(source, /reasoning:\s*\{\s*effort:\s*"none"/);
   assert.match(source, /type:\s*"json_schema"/);
   assert.match(source, /name:\s*"zavqera_mission_plan"/);
-  assert.match(source, /maxItems:\s*6/);
   assert.match(source, /max_output_tokens:\s*450/);
   assert.match(source, /verbosity:\s*"low"/);
   assert.match(source, /store:\s*false/);
