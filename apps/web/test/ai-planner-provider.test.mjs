@@ -13,7 +13,8 @@ test("provider request contract uses Responses API, low reasoning effort and str
   assert.match(source, /type:\s*"json_schema"/);
   assert.match(source, /name:\s*"zavqera_mission_plan"/);
   assert.match(source, /maxItems:\s*6/);
-  assert.match(source, /store:\s*false/);\n  assert.match(source, /X-Client-Request-Id/);
+  assert.match(source, /store:\s*false/);
+  assert.match(source, /X-Client-Request-Id/);
 });
 
 test("provider response parsing is bounded and fail-closed", () => {
@@ -24,9 +25,6 @@ test("provider response parsing is bounded and fail-closed", () => {
   assert.match(source, /step\.reason\.trim\(\)\.slice\(0, 300\)/);
   assert.match(source, /AbortSignal\.timeout\(18_000\)/);
 });
-
-
-
 
 test("mission plan contract is outcome-driven and rejects generic template-only behavior", () => {
   assert.match(source, /title:\s*\{ type: "string" \}/);
