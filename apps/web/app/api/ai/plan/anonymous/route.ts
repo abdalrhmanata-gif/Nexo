@@ -10,7 +10,7 @@ import {
 } from "../../../../../lib/anonymous-ai-usage";
 
 export const runtime = "nodejs";
-export const maxDuration = 20;
+export const maxDuration = 20; // Preview refresh: environment variables are evaluated on the new deploy.
 
 const VISITOR_COOKIE = "zavqera-anon-ai";
 const MAX_GOAL_LENGTH = 900;
