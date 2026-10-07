@@ -66,7 +66,7 @@ test("AI planning is integrated into authenticated mission creation, not duplica
   assert.ok(integratedForm.includes("Build my plan"));
   assert.ok(integratedForm.includes("Tell ZAVQERA what you want."));
   assert.ok(integratedForm.includes("Want more control? Add details"));
-  assert.ok(integratedForm.includes("setCriteria(plan.summary)"));
+  assert.ok(integratedForm.includes("setCriteria(plan.successCriteria.join"));
   assert.ok(integratedForm.includes("setActions(plan.steps.map"));
   assert.equal(workspace.includes("AiPlanner"), false);
 });
