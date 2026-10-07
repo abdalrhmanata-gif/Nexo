@@ -114,6 +114,7 @@ export async function POST(request: Request) {
       : await requestMissionPlan(goal.trim(), {
         apiKey: apiKey as string,
         model: process.env.OPENAI_MODEL || DEFAULT_AI_MODEL,
+        requestId,
       });
 
     await consumeAnonymousAiGeneration(reservationId);
