@@ -1,8 +1,12 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { supabasePublishableKey, supabaseUrl } from "./lib/supabase/config";
 
 export async function middleware(request: NextRequest) {
+  // Use dynamic environment access here so Next.js does not inline the
+  // public Supabase key into the generated middleware bundle.
+  const supabaseUrl = process.env["NEXT_PUBLIC_SUPABASE_URL"];
+  const supabasePublishableKey = process.env["NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"];
+
   if (!supabaseUrl || !supabasePublishableKey) return NextResponse.next();
 
   let response = NextResponse.next({ request });
