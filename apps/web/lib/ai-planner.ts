@@ -7,7 +7,8 @@ export type MissionPlan = {
   clarifyingQuestions: string[];
 };
 
-// Release-candidate provider contract: keep the live preview on the same verified AI path.\nconst PLAN_SCHEMA = {
+// Release-candidate provider contract: keep the live preview on the same verified AI path.
+const PLAN_SCHEMA = {
   type: "object",
   additionalProperties: false,
   properties: {
