@@ -1,5 +1,5 @@
 ZAVQERA release-candidate marker
 PR: 29
 Branch: zavqera/ai-planner-integration
-Verified parent: aa8798dc5b031566c4c16288d98c669a630bcb3f
-Purpose: force a concrete Netlify preview artifact for the release candidate.
+Candidate: d6b5b555a16204f1020e2c1ba8a11439aaedf1aa
+Purpose: force a concrete Netlify preview artifact after the exact-head CI and launch-gate verification passed.
