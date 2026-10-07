@@ -19,7 +19,7 @@ test("provider request contract uses Responses API, low reasoning effort and str
 test("provider response parsing is bounded and fail-closed", () => {
   assert.match(source, /typeof payload\.output_text !== "string"/);
   assert.match(source, /plan\.steps\.length > 6/);
-  assert.match(source, /summary\.slice\(0, 600\)/);
+  assert.match(source, /summary\.trim\(\)\.slice\(0, 600\)/);
   assert.match(source, /title\.slice\(0, 160\)/);
   assert.match(source, /reason\.slice\(0, 300\)/);
   assert.match(source, /AbortSignal\.timeout\(15_000\)/);
