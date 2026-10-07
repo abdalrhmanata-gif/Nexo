@@ -78,8 +78,8 @@ test("deployed AI routes cannot silently fall back to the mock provider", () => 
   assert.match(anonymous, /const isDeployedRuntime = process\.env\.NETLIFY === "true"/);
   assert.match(route, /configuredProviderMode === "mock" && !isDeployedRuntime \? "mock" : "openai"/);
   assert.match(anonymous, /configuredProviderMode === "mock" && !isDeployedRuntime \? "mock" : "openai"/);
-  assert.match(route, /if \(!apiKey\)/);
-  assert.match(anonymous, /if \(!apiKey\)/);
+  assert.match(route, /if \(providerMode !== "mock" && !apiKey\)/);
+  assert.match(anonymous, /if \(providerMode !== "mock" && !apiKey\)/);
 });
 
 test("mission creation maps AI success criteria to mission criteria and keeps AI draft versioned", () => {
