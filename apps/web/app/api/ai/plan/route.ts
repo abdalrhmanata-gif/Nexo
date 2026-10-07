@@ -23,9 +23,9 @@ export async function POST(request: Request) {
   }
 
   const configuredProviderMode = process.env.ZAVQERA_AI_PROVIDER_MODE || "openai";
-  // Mock mode is reserved for local tests. A deployed runtime must use the real provider.
-  const isDeployedRuntime = process.env.NETLIFY === "true";
-  const providerMode = configuredProviderMode === "mock" && !isDeployedRuntime ? "mock" : "openai";
+  // Mock mode is reserved for non-production tests/development. Production builds must use the real provider.
+  const isProductionRuntime = process.env.NODE_ENV === "production";
+  const providerMode = configuredProviderMode === "mock" && !isProductionRuntime ? "mock" : "openai";
   const apiKey = process.env.OPENAI_API_KEY;
   if (providerMode !== "mock" && !apiKey) {
     return NextResponse.json({ error: "AI planning is not configured yet." }, { status: 503 });
