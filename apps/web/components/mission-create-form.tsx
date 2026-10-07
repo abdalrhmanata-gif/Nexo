@@ -38,7 +38,7 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
           setName(restoredPlan.title);
           setIntent(parsed.goal.trim());
           setCriteria(restoredPlan.successCriteria.join("\n"));
-          setActions(restoredPlan.steps.map((step) => step.title + (step.reason ? " — " + step.reason : "")).join("\\n"));
+          setActions(restoredPlan.steps.map((step) => step.title + (step.reason ? " — " + step.reason : "")).join("\n"));
           setPlanPreview(restoredPlan);
           setDrafted(true);
           window.sessionStorage.removeItem("zavqera-anonymous-plan-v2");
