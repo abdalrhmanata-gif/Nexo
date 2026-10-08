@@ -12,6 +12,9 @@ export interface MissionRepository {
   commitOutcome?(input: NewOutcome): Promise<MissionOutcome>;
   recordResearchRun?(input: NewResearchRun): Promise<void>;
   listResearchRuns?(missionId: string): Promise<MissionResearchRun[]>;
+  listWorkspaceAgents?(): Promise<WorkspaceAgent[]>;
+  listWorkspaceMembers?(): Promise<WorkspaceMember[]>;
+  listPendingApprovals?(): Promise<MissionApproval[]>;
 }
 
 export type NewMission = { objective: string; actions?: string[] };
@@ -94,3 +97,7 @@ export type NewOutcome = {
   successScore?: number;
   status?: "COMPLETED" | "FAILED";
 };
+
+export type WorkspaceAgent = { id: string; name: string; description: string; status: "ACTIVE" | "PAUSED"; authority: Record<string, unknown>; };
+export type WorkspaceMember = { id: string; userId: string; role: "owner" | "admin" | "member" | "viewer"; createdAt: string; };
+export type MissionApproval = { id: string; missionId: string; actionId: string | null; status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED"; requestedBy: string; decidedBy: string | null; requestedScope: Record<string, unknown>; decisionNote: string | null; createdAt: string; decidedAt: string | null; };
