@@ -103,6 +103,21 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     const research = result.plan as MissionResearch;
     const runId = crypto.randomUUID();
+    const executionKey = `research-${requestId}`;
+    const execution = await supabase.rpc("start_agent_execution", {
+      p_mission_id: mission.id,
+      p_action_id: null,
+      p_agent_id: agentId,
+      p_idempotency_key: executionKey,
+      p_request: { type: "read_only_research", request_id: requestId },
+    });
+    if (execution.error) {
+      if (execution.error.message === "APPROVAL_REQUIRED") {
+        return NextResponse.json({ error: "This agent requires human approval before execution." }, { status: 409 });
+      }
+      return NextResponse.json({ error: "The agent execution boundary could not be opened." }, { status: 503 });
+    }
+    const executionId = (execution.data as { id: string }).id;
     const completion = await supabase.rpc("complete_agent_execution", { p_execution_id: executionId, p_status: "SUCCEEDED", p_result: { summary: research.summary, source_count: research.sources.length }, p_evidence: { verified: false, sources: research.sources } });
     if (completion.error) return NextResponse.json({ error: "Research completed but execution evidence could not be recorded." }, { status: 503 });
 
