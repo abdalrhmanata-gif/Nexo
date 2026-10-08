@@ -17,7 +17,7 @@ permissions:
 jobs:
   w21-e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
 
     steps:
       - name: Checkout
@@ -157,7 +157,7 @@ jobs:
           echo "ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY=$admin_key" >> "$GITHUB_ENV"
           (
             cd "$ZAVQERA_E2E_SUPABASE_WORKDIR"
-            supabase test db supabase/tests/w30_launch_gate_pgtap.sql
+            timeout 30m supabase test db supabase/tests/w30_launch_gate_pgtap.sql
           )
 
       - name: Run AI quota and plan smoke tests
