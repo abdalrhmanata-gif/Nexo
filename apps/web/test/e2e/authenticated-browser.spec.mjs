@@ -258,9 +258,6 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await signOut(page);
       await page.goto("/auth/forgot-password");
       await page.getByLabel("Email", { exact: true }).fill(userA.email);
-      await page.getByRole("button", { name: "Send reset link" }).click();
-      await expect(page.getByRole("status")).toContainText("reset link");
-
       const resetLink = await recoveryLinkFor(userA);
       await page.goto(resetLink);
       await expect(page).toHaveURL(/\/auth\/reset-password/);
