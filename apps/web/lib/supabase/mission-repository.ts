@@ -422,6 +422,32 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       if (result.error) throw result.error;
       return (result.data ?? []) as WorkspaceAgent[];
     },
+    async createWorkspaceInvitation(input) {
+      const result = await supabase.rpc("create_workspace_invitation", {
+        p_workspace_id: workspaceId,
+        p_email: input.email,
+        p_role: input.role,
+        p_token_hash: input.tokenHash,
+        p_expires_at: input.expiresAt,
+      });
+      if (result.error || !result.data) throw result.error ?? new Error("Invitation could not be created.");
+      const row = result.data as {
+        id: string;
+        email: string;
+        role: WorkspaceInvitation["role"];
+        status: WorkspaceInvitation["status"];
+        expires_at: string;
+        created_at: string;
+      };
+      return {
+        id: row.id,
+        email: row.email,
+        role: row.role,
+        status: row.status,
+        expiresAt: row.expires_at,
+        createdAt: row.created_at,
+      };
+    },
     async listWorkspaceInvitations() {
       const result = await supabase.from("workspace_invitations").select("id,email,role,status,expires_at,created_at").eq("workspace_id", workspaceId).order("created_at",{ascending:false}).limit(20);
       if (result.error) throw result.error;
