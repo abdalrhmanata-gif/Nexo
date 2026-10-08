@@ -212,7 +212,7 @@ export function formatFollowUp(value, now = new Date()) {
   const date0 = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
   const now0 = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
   const days = Math.round((date0 - now0) / 86400000);
-  const absolute = date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  const absolute = formatDateOnly(value);
   if (days < 0) return { absolute, relative: days === -1 ? "yesterday" : `${Math.abs(days)} days ago`, overdue: true };
   if (days === 0) return { absolute, relative: "today", overdue: false };
   if (days === 1) return { absolute, relative: "tomorrow", overdue: false };
@@ -315,6 +315,13 @@ export function summariseEventPayload(payload) {
   }
   if (!parts.length) return "Mission history event";
   return parts.join(" · ").slice(0, 160);
+}
+
+export function formatDateOnly(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
 }
 
 export function formatDateTime(value) {
