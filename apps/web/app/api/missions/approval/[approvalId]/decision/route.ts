@@ -1,5 +1,5 @@
 import { NextResponse,type NextRequest } from "next/server";
-import { createSupabaseServerClient } from "../../../../../lib/supabase/server";
+import { createSupabaseServerClient } from "../../../../../../lib/supabase/server";
 export async function POST(request:NextRequest,{params}:{params:Promise<{approvalId:string}>}) {
  try {
   const {approvalId}=await params; const body=await request.json() as Record<string,unknown>;
