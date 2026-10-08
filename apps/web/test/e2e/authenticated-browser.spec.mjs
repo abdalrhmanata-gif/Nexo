@@ -155,7 +155,7 @@ async function latestResetLink(email) {
     // Mailpit resolves "latest" using the same query filter, so this is
     // deterministic and avoids depending on search-result JSON ordering.
     const response = await fetch(
-      `http://127.0.0.1:54324/api/v1/message/latest/raw?query=${query}`,
+      `http://127.0.0.1:54324/view/latest.txt?query=${query}`,
       { headers: { Accept: "text/plain" } },
     );
     if (response.ok) {
