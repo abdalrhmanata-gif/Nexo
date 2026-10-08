@@ -18,7 +18,8 @@ const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (relative) => readFileSync(join(webRoot, relative), "utf8");
 
 test("a composed objective round-trips back into its parts", () => {
-  const parts = { name: "Ship onboarding", intent: "New users reach their first mission without help.", criteria: "Sign-up works\nFirst mission created" };
+  const parts = { name: "Ship onboarding", intent: "New users reach their first mission without help.", criteria: "Sign-up works
+First mission created" };
   const parsed = parseMissionObjective(composeMissionObjective(parts));
   assert.equal(parsed.name, parts.name);
   assert.equal(parsed.intent, parts.intent);
@@ -39,7 +40,11 @@ test("free-form and legacy objectives still yield a usable title", () => {
 });
 
 test("blank criteria lines are discarded rather than rendered as empty rows", () => {
-  const parsed = parseMissionObjective(composeMissionObjective({ name: "N", intent: "I", criteria: "One\n\n  \nTwo\n" }));
+  const parsed = parseMissionObjective(composeMissionObjective({ name: "N", intent: "I", criteria: "One
+
+  
+Two
+" }));
   assert.deepEqual(parsed.criteria, ["One", "Two"]);
 });
 
@@ -127,7 +132,8 @@ test("mission lists are fetched without an action query per mission", () => {
 test("the creation form and the parser share one objective format", () => {
   const form = read("app/app/missions/new/page.tsx");
   assert.ok(form.includes("composeMissionObjective"), "the form must not hand-build the stored format");
-  assert.ok(!form.includes("Success criteria:\\n"), "the format must have a single owner");
+  assert.ok(!form.includes("Success criteria:\
+"), "the format must have a single owner");
 });
 
 test("action status controls present human labels", () => {
@@ -256,7 +262,8 @@ test("business collaboration exposes least-privilege invitations", () => {
   const migration = readFileSync(join(webRoot, "../../supabase/migrations/20261008160000_w44_workspace_invitations.sql"), "utf8");
   assert.ok(page.includes("Invite a teammate"));
   assert.ok(invite.includes("member") && invite.includes("viewer") && invite.includes("admin"));
-  assert.ok(route.includes("createSupabaseMissionRepository"));\n  assert.ok(route.includes("createWorkspaceInvitation"));
+  assert.ok(route.includes("createSupabaseMissionRepository"));
+  assert.ok(route.includes("createWorkspaceInvitation"));
   assert.ok(route.includes("7*86400000"));
   assert.ok(migration.includes("WORKSPACE_ADMIN_REQUIRED"));
   assert.ok(migration.includes("INVITATION_ALREADY_PENDING"));
