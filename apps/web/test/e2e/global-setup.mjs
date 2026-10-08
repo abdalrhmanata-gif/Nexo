@@ -70,6 +70,7 @@ export default async function globalSetup() {
 
     process.env.ZAVQERA_E2E_RUNTIME_SUPABASE_URL = target.apiUrl;
     process.env.ZAVQERA_E2E_RUNTIME_PUBLISHABLE_KEY = target.publishableKey;
+    process.env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY = target.serviceRoleKey;
     process.env.ZAVQERA_E2E_RUNTIME_BASE_URL = plan.baseURL;
     process.env.ZAVQERA_E2E_RUN_ID = runId;
     process.env.ZAVQERA_E2E_LEDGER_PATH = ledgerPath;
