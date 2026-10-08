@@ -26,7 +26,7 @@ export default async function MissionDetailPage({
   const verification = mission.verifications.find((item) => item.status === "VERIFIED") ?? mission.verifications[0];
   const outcome = mission.outcomes[0];
   const readiness = verificationReadiness(mission);
-  const intelligence = missionIntelligenceFor(mission);
+  const intelligence = missionIntelligenceFor(mission);\n  const executions = repository.listAgentExecutions ? await repository.listAgentExecutions(mission.id) : [];
 
   return <div className="container">
     <p className="eyebrow"><Link href="/app">Workspace</Link> / Mission detail</p>
@@ -63,6 +63,18 @@ export default async function MissionDetailPage({
         </section>
 
         <MissionResearchPanel missionId={mission.id} />
+
+        <section className="card" aria-labelledby="execution-heading">
+          <p className="eyebrow">Agent execution</p>
+          <h2 id="execution-heading">Execution evidence</h2>
+          {executions.length ? <div className="timeline">{executions.slice(0,5).map((execution) => <div className="timeline-item" key={execution.id}>
+            <strong>{execution.status} · Agent {execution.agentId.slice(0,8)}</strong>
+            <span>{execution.actionId ? `Action ${execution.actionId.slice(0,8)}` : "Mission-level"} · {new Date(execution.createdAt).toLocaleString()} · {execution.approvalId ? "Approval attached" : "No approval required"}</span>
+          </div>)}</div> : <p className="detail-intent">No agent execution has been recorded for this mission yet.</p>}
+          <p className="action-hint">Every execution keeps its authority snapshot and evidence boundary. An AI result is not treated as verified until the verification step passes.</p>
+        </section>
+
+
 
         <section className="card" aria-labelledby="plan-health-heading">
           <p className="eyebrow">Plan health</p>
