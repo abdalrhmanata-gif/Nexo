@@ -216,6 +216,25 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
       missionId = pageA.url().split("/").pop();
 
       const owner = await ownerSession(userA);
+
+      await test.step("read-only research execution persists and remains unverified", async () => {
+        await pageA.getByRole("button", { name: "Run research", exact: true }).click();
+        await expect(pageA.getByText("Research result · Unverified", { exact: true })).toBeVisible();
+        await expect(pageA.getByRole("link", { name: "ZAVQERA test source", exact: true })).toBeVisible();
+        const saved = await owner.client
+          .from("mission_events")
+          .select("event_type,payload")
+          .eq("mission_id", missionId)
+          .eq("event_type", "RESEARCH_RUN_COMPLETED");
+        expect(saved.error).toBeNull();
+        expect(saved.data).toHaveLength(1);
+        expect(saved.data[0]?.payload?.execution).toBe("read_only_research");
+        expect(saved.data[0]?.payload?.verified).toBe(false);
+        await pageA.reload();
+        await expect(pageA.getByText("Research result · Unverified", { exact: true })).toBeVisible();
+        await expect(pageA.getByRole("link", { name: "ZAVQERA test source", exact: true })).toBeVisible();
+      });
+
       const session2 = await ownerSession(userA);
       const before = await readMission(owner.client, missionId);
       expect(before).toMatchObject({ status: "DRAFT", version: 1 });
