@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "./server";
-import { MissionMutationConflictError, MissionMutationRejectedError, MissionProvenanceDeleteError, type MissionRepository, type MissionResearchRun, type NewMission, type NewOutcome, type NewResearchRun, type NewVerification, type UpdateMission } from "../mission-repository";import type { ActionStatus, Mission, MissionAction, MissionActivity, MissionOutcome, MissionVerification, MissionLifecycleStatus } from "../view-models";
+import { MissionMutationConflictError, MissionMutationRejectedError, MissionProvenanceDeleteError, type MissionRepository, type MissionResearchRun, type NewMission, type NewOutcome, type NewResearchRun, type NewVerification, type UpdateMission, type WorkspaceAgent, type WorkspaceMember, type MissionApproval } from "../mission-repository";import type { ActionStatus, Mission, MissionAction, MissionActivity, MissionOutcome, MissionVerification, MissionLifecycleStatus } from "../view-models";
 import { formatDateTime, humaniseEventType, parseMissionObjective, summariseEventPayload } from "../mission-content.mjs";
 
 type MissionRow = {
@@ -373,6 +373,21 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
         },
       });
       if (result.error) throw result.error;
+    },
+    async listWorkspaceAgents() {
+      const result = await supabase.from("workspace_agents").select("id,name,description,status,authority").eq("workspace_id", workspaceId).order("created_at");
+      if (result.error) throw result.error;
+      return (result.data ?? []) as WorkspaceAgent[];
+    },
+    async listWorkspaceMembers() {
+      const result = await supabase.from("workspace_members").select("id,user_id,role,created_at").eq("workspace_id", workspaceId).order("created_at");
+      if (result.error) throw result.error;
+      return (result.data ?? []).map((row) => ({ id: row.id as string, userId: row.user_id as string, role: row.role as WorkspaceMember["role"], createdAt: row.created_at as string }));
+    },
+    async listPendingApprovals() {
+      const result = await supabase.from("mission_approvals").select("id,mission_id,action_id,status,requested_by,decided_by,requested_scope,decision_note,created_at,decided_at").eq("workspace_id", workspaceId).eq("status","PENDING").order("created_at",{ascending:false});
+      if (result.error) throw result.error;
+      return (result.data ?? []).map((row) => ({ id: row.id as string, missionId: row.mission_id as string, actionId: row.action_id as string | null, status: row.status as MissionApproval["status"], requestedBy: row.requested_by as string, decidedBy: row.decided_by as string | null, requestedScope: (row.requested_scope ?? {}) as Record<string, unknown>, decisionNote: row.decision_note as string | null, createdAt: row.created_at as string, decidedAt: row.decided_at as string | null }));
     },
     async listResearchRuns(id: string) {
       const result = await supabase
