@@ -60,48 +60,22 @@ async function rotatePasswordFor(user, currentPassword, nextPassword) {
   const client = createClient(runtime.supabaseUrl, runtime.publishableKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
-  const { data: signedIn, error: signInError } = await client.auth.signInWithPassword({
-    email: user.email,
-    password: currentPassword,
-  });
-  if (signInError || !signedIn.user) {
-    throw new Error(`Disposable password-rotation sign-in failed: ${signInError?.message ?? "missing user"}`);
-  }
+  const { error: signInError } = await client.auth.signInWithPassword({ email: user.email, password: currentPassword });
+  if (signInError) throw new Error(`Disposable password-rotation sign-in failed: ${signInError.message}`);
+  await client.auth.signOut();
 
-  const admin = createClient(runtime.supabaseUrl, process.env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY, {
+  const serviceRoleKey = process.env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY;
+  if (!serviceRoleKey) throw new Error("Disposable service-role key is unavailable.");
+  const admin = createClient(runtime.supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
-  const { error } = await admin.auth.admin.updateUserById(signedIn.user.id, { password: nextPassword });
-  if (error) throw new Error(`Disposable password rotation failed: ${error.message}`);
-  await client.auth.signOut();
-
-  const { error: verifyError } = await client.auth.signInWithPassword({
-    email: user.email,
-    password: nextPassword,
-  });
-  if (verifyError) throw new Error(`Disposable rotated password verification failed: ${verifyError.message}`);
-  await client.auth.signOut();
-}mport { randomBytes } from "node:crypto";
-import { createClient } from "@supabase/supabase-js";
-import { expect, test } from "@playwright/test";
-
-const runtime = {
-  supabaseUrl: process.env.ZAVQERA_E2E_RUNTIME_SUPABASE_URL,
-  publishableKey: process.env.ZAVQERA_E2E_RUNTIME_PUBLISHABLE_KEY,
-  baseURL: process.env.ZAVQERA_E2E_RUNTIME_BASE_URL,
-  runId: process.env.ZAVQERA_E2E_RUN_ID,
-};
-
-function assertRuntime() {
-  for (const [name, value] of Object.entries(runtime)) {
-    if (!value) throw new Error(`Missing disposable runtime value: ${name}`);
-  }
-  if (!runtime.supabaseUrl.startsWith("http://127.0.0.1:")
-      || !runtime.baseURL.startsWith("http://127.0.0.1:")) {
-    throw new Error("Launch-gate E2E requires loopback-only runtime URLs.");
-  }
+  const { data: users, error: listError } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  if (listError) throw new Error(`Disposable user lookup failed: ${listError.message}`);
+  const target = users.users.find((candidate) => candidate.email?.toLowerCase() === user.email.toLowerCase());
+  if (!target) throw new Error("Disposable password-rotation fixture user was not found.");
+  const { error: updateError } = await admin.auth.admin.updateUserById(target.id, { password: nextPassword });
+  if (updateError) throw new Error(`Disposable password rotation failed: ${updateError.message}`);
 }
-
 function freshUser(label) {
   return {
     email: `zavqera-gate-${runtime.runId}-${label}@example.test`,
