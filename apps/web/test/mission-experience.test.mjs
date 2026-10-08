@@ -165,5 +165,5 @@ test("mission detail exposes bounded, read-only research execution", () => {
   assert.ok(route.includes("reserveAiGeneration"));
   assert.ok(research.includes('type: "web_search"'));
   assert.ok(research.includes('tool_choice: "required"'));
-  assert.match(research, /Read-only research/);
+  assert.match(research, /read-only research/i);
 });
