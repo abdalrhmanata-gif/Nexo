@@ -162,6 +162,11 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
   const pageB = await contextB.newPage();
 
   try {
+    await test.step("create disposable users", async () => {
+      await signUp(pageA, userA);
+      await signUp(pageB, userB);
+    });
+
     await test.step("password rotation and reauthentication", async () => {
       await signOut(pageA);
       await signIn(pageA, userA);
