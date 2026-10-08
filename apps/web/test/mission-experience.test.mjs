@@ -247,3 +247,18 @@ test("mission detail exposes persisted agent execution evidence", () => {
   assert.ok(repository.includes("listAgentExecutions"));
   assert.ok(repository.includes("agent_executions"));
 });
+
+
+test("business collaboration exposes least-privilege invitations", () => {
+  const page = read("app/app/business/page.tsx");
+  const invite = read("app/app/business/invite/page.tsx");
+  const route = read("app/api/business/invitations/route.ts");
+  const migration = readFileSync(join(webRoot, "../../supabase/migrations/20261008160000_w44_workspace_invitations.sql"), "utf8");
+  assert.ok(page.includes("Invite a teammate"));
+  assert.ok(invite.includes("member") && invite.includes("viewer") && invite.includes("admin"));
+  assert.ok(route.includes("create_workspace_invitation"));
+  assert.ok(route.includes("7*86400000"));
+  assert.ok(migration.includes("WORKSPACE_ADMIN_REQUIRED"));
+  assert.ok(migration.includes("INVITATION_ALREADY_PENDING"));
+  assert.ok(migration.includes("token_hash"));
+});
