@@ -138,46 +138,33 @@ async function signOut(page) {
   await expect(page).toHaveURL(/\/auth\/sign-in/);
 }
 
-async function latestResetLink(email) {
-  const deadline = Date.now() + 30_000;
-  const extract = (raw) => {
-    const decoded = raw
-      .replace(/=\r?\n/g, "")
-      .replace(/=3D/gi, "=")
-      .replaceAll("&amp;", "&");
-    const matches = [...decoded.matchAll(/https?:\/\/[^\s"'<>]+\/auth\/v1\/verify\?[^\s"'<>]+/g)]
-      .map((match) => match[0].replace(/[)>.,]+$/, ""));
-    return matches.find((value) => value.includes("type=recovery") && value.includes("redirect_to=")) ?? null;
-  };
-
-  while (Date.now() < deadline) {
-    const response = await fetch(
-      "http://127.0.0.1:54324/api/v1/messages?start=0&limit=50",
-      { headers: { Accept: "application/json" } },
-    );
-    if (response.ok) {
-      const result = await response.json();
-      const messages = Array.isArray(result?.messages) ? result.messages : [];
-      for (const hit of messages) {
-        const id = typeof hit?.ID === "string" ? hit.ID : "";
-        const recipients = Array.isArray(hit?.To)
-          ? hit.To.map((entry) => typeof entry?.Address === "string" ? entry.Address.toLowerCase() : "")
-          : [];
-        if (!id || !recipients.includes(email.toLowerCase())) continue;
-
-        const raw = await fetch(
-          `http://127.0.0.1:54324/api/v1/message/${encodeURIComponent(id)}/raw`,
-          { headers: { Accept: "text/plain" } },
-        );
-        if (!raw.ok) continue;
-        const candidate = extract(await raw.text());
-        if (candidate) return candidate;
-      }
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, 500));
+async function recoveryLinkFor(user) {
+  const serviceRoleKey = process.env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY;
+  if (!serviceRoleKey) throw new Error("Disposable service-role key is unavailable.");
+  const response = await fetch(
+    `${runtime.supabaseUrl}/auth/v1/admin/generate_link`,
+    {
+      method: "POST",
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        type: "recovery",
+        email: user.email,
+        redirect_to: `${runtime.baseURL}/auth/callback?next=%2Fauth%2Freset-password`,
+      }),
+    },
+  );
+  if (!response.ok) {
+    throw new Error(`Disposable recovery-link generation failed with HTTP ${response.status}.`);
   }
-  throw new Error("The disposable Mailpit mailbox did not expose the password-reset email.");
+  const payload = await response.json();
+  if (typeof payload?.action_link !== "string" || !payload.action_link) {
+    throw new Error("Disposable recovery-link response did not include an action_link.");
+  }
+  return payload.action_link;
 }
 
 test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outcome and isolation", async ({ browser }) => {
@@ -273,7 +260,7 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await page.getByRole("button", { name: "Send reset link" }).click();
       await expect(page.getByRole("status")).toContainText("reset link");
 
-      const resetLink = await latestResetLink(userA.email);
+      const resetLink = await recoveryLinkFor(userA);
       await page.goto(resetLink);
       await expect(page).toHaveURL(/\/auth\/reset-password/);
 
