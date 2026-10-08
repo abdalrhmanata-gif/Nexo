@@ -60,17 +60,15 @@ async function latestResetLink(email) {
   const deadline = Date.now() + 30_000;
   const extract = (raw) => {
     const decoded = raw
-      .replace(/=\\r?\\n/g, "")
+      .replace(/=\r?\n/g, "")
       .replace(/=3D/gi, "=")
       .replaceAll("&amp;", "&");
-    const matches = [...decoded.matchAll(/https?:\\/\\/[^\\s"'<>]+\\/auth\\/v1\\/verify\\?[^\\s"'<>]+/g)]
+    const matches = [...decoded.matchAll(/https?:\/\/[^\s"'<>]+\/auth\/v1\/verify\?[^\s"'<>]+/g)]
       .map((match) => match[0].replace(/[)>.,]+$/, ""));
     return matches.find((value) => value.includes("type=recovery") && value.includes("redirect_to=")) ?? null;
   };
 
   while (Date.now() < deadline) {
-    // Mailpit's rendered latest-message endpoint applies the same search
-    // grammar as the UI and avoids coupling the test to API response shapes.
     const rendered = await fetch(
       `http://127.0.0.1:54324/view/latest.txt?query=${encodeURIComponent(`to:"${email}" subject:"Reset your ZAVQERA password"`)}`,
       { headers: { Accept: "text/plain" } },
@@ -80,8 +78,6 @@ async function latestResetLink(email) {
       if (candidate) return candidate;
     }
 
-    // Keep the API lookup as a fallback for compatibility with Mailpit
-    // versions that do not expose the rendered endpoint.
     const search = await fetch(
       `http://127.0.0.1:54324/api/v1/search?query=${encodeURIComponent(`to:"${email}" subject:"Reset your ZAVQERA password"`)}`,
       { headers: { Accept: "application/json" } },
@@ -95,7 +91,7 @@ async function latestResetLink(email) {
         const response = await fetch(`http://127.0.0.1:54324/api/v1/message/${encodeURIComponent(id)}`, { headers: { Accept: "application/json" } });
         if (!response.ok) continue;
         const message = await response.json();
-        const combined = `${message?.Text ?? ""}\\n${message?.HTML ?? ""}`;
+        const combined = `${message?.Text ?? ""}\n${message?.HTML ?? ""}`;
         const candidate = extract(combined);
         if (candidate) return candidate;
       }
