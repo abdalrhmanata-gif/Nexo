@@ -13,6 +13,8 @@ import {
   parseMissionObjective,
   routeToVerifying,
   verificationReadiness,
+  formatDateOnly,
+  formatDateTime,
 } from "../lib/mission-content.mjs";
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -328,4 +330,13 @@ test("workspace provides search navigation and searches across mission content",
   assert.match(page, /\.criteria/);
   assert.match(page, /\.actions\.map/);
   assert.match(page, /No matching missions/);
+});
+
+
+test("mission dates use day/month/year order", () => {
+  assert.equal(formatDateOnly("2026-10-08T09:48:55.000Z"), "8/10/2026");
+  assert.match(formatDateTime("2026-10-08T09:48:55.000Z"), /^8\/10\/2026, /);
+  const repository = read("lib/supabase/mission-repository.ts");
+  assert.match(repository, /formatDateTime\(row\.created_at\)/);
+  assert.match(repository, /updated: formatDateTime\(row\.updated_at\)/);
 });
