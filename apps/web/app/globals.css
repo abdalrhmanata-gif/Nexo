@@ -304,3 +304,10 @@ nav > a[aria-current="page"]:not(.button) {
 @media (max-width:700px) {
   .mission-search-shortcut { display:none; }
 }
+
+.mission-execution { border-color:#cfe2df; background:linear-gradient(180deg,#f6fbfa 0%,#ffffff 100%); }
+.mission-research-result { margin-top:18px; padding-top:18px; border-top:1px solid #dce7e6; }
+.research-body { white-space:pre-wrap; line-height:1.65; color:var(--ink); }
+.research-sources { margin-top:18px; }
+.research-sources .list { margin-bottom:0; }
+.research-sources a { overflow-wrap:anywhere; }
