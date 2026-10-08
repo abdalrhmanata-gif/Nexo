@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LocalizedText } from "../../../components/localized-text";
 import { MissionCard } from "../../../components/mission-card";
+import { ApprovalDecisionControls } from "../../../components/approval-decision-controls";
 import { localMockMissionRepository } from "../../../lib/local-mock-repository";
 import { isSupabaseConfigured } from "../../../lib/supabase/config";
 import { createSupabaseMissionRepository } from "../../../lib/supabase/mission-repository";
@@ -41,7 +42,7 @@ export default async function BusinessWorkspacePage() {
 
     <section className="grid">
       <section className="card"><p className="eyebrow">Approvals</p><h2>Human control queue</h2>
-        {approvals.length ? <ul className="list">{approvals.slice(0,5).map((approval) => <li key={approval.id}><strong>Approval required</strong><br />Mission {approval.missionId.slice(0,8)} · {approval.actionId ? `Action ${approval.actionId.slice(0,8)}` : "Mission-level"}<br /><span className="action-hint">Requested {new Date(approval.createdAt).toLocaleString()}</span><div className="approval-actions"><form action={`/api/missions/${approval.missionId}/approval/${approval.id}`} method="post"><button className="button button-small" type="submit">Review</button></form></div></li>)}</ul> : <p className="detail-intent">No approvals are waiting. Side effects stay blocked until an explicit approval exists.</p>}
+        {approvals.length ? <ul className="list">{approvals.slice(0,5).map((approval) => <li key={approval.id}><strong>Approval required</strong><br />Mission {approval.missionId.slice(0,8)} · {approval.actionId ? `Action ${approval.actionId.slice(0,8)}` : "Mission-level"}<br /><span className="action-hint">Requested {new Date(approval.createdAt).toLocaleString()}</span><ApprovalDecisionControls approvalId={approval.id} /></li>)}</ul> : <p className="detail-intent">No approvals are waiting. Side effects stay blocked until an explicit approval exists.</p>}
       </section>
       <section className="card"><p className="eyebrow">Agents</p><h2>Controlled AI workers</h2>
         {agents.length ? <ul className="list">{agents.map((agent) => <li key={agent.id}><strong>{agent.name}</strong><br />{agent.description || "Bounded workspace agent"}<br /><span className={`status status-${agent.status.toLowerCase()}`}>{agent.status}</span></li>)}</ul> : <p className="detail-intent">No agents are configured yet. The workspace is ready for bounded agents with explicit authority.</p>}
