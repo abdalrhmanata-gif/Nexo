@@ -422,6 +422,11 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       if (result.error) throw result.error;
       return (result.data ?? []) as WorkspaceAgent[];
     },
+    async listWorkspaceInvitations() {
+      const result = await supabase.from("workspace_invitations").select("id,email,role,status,expires_at,created_at").eq("workspace_id", workspaceId).order("created_at",{ascending:false}).limit(20);
+      if (result.error) throw result.error;
+      return (result.data ?? []).map((row) => ({ id: row.id as string, email: row.email as string, role: row.role as WorkspaceInvitation["role"], status: row.status as WorkspaceInvitation["status"], expiresAt: row.expires_at as string, createdAt: row.created_at as string }));
+    },
     async listWorkspaceMembers() {
       const result = await supabase.from("workspace_members").select("id,user_id,role,created_at").eq("workspace_id", workspaceId).order("created_at");
       if (result.error) throw result.error;
