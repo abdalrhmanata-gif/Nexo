@@ -484,7 +484,7 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
     async listWorkspaceMembers() {
       const result = await supabase.rpc("list_workspace_members", { p_workspace_id: workspaceId });
       if (result.error) throw result.error;
-      return (result.data ?? []).map((row) => ({ id: row.id as string, userId: row.user_id as string, email: (row.email as string | null) ?? null, role: row.role as WorkspaceMember["role"], createdAt: row.created_at as string }));
+      return (result.data as Array<{ id: string; user_id: string; email: string | null; role: WorkspaceMember["role"]; created_at: string }> | null ?? []).map((row) => ({ id: row.id, userId: row.user_id, email: row.email ?? null, role: row.role, createdAt: row.created_at }));
     },
     async updateWorkspaceMemberRole(memberId, role) {
       const result = await supabase.rpc("update_workspace_member_role", { p_member_id: memberId, p_role: role });
