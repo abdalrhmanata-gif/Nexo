@@ -248,10 +248,14 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await page.getByLabel("Email", { exact: true }).fill(userA.email);
       await expect(page.getByRole("button", { name: "Send reset link" })).toBeVisible();
 
-      const currentPassword = userA.password;
-      const nextPassword = `${randomBytes(18).toString("base64url")}Bb2!`;
-      await rotatePasswordFor(userA, currentPassword, nextPassword);
-      userA.password = nextPassword;
+      userA.password = `${randomBytes(18).toString("base64url")}Bb2!`;
+      const resetLink = await recoveryLinkFor(userA);
+      await page.goto(resetLink);
+      await expect(page).toHaveURL(/\/auth\/reset-password/);
+      await page.getByLabel("New password", { exact: true }).fill(userA.password);
+      await page.getByLabel("Confirm new password", { exact: true }).fill(userA.password);
+      await page.getByRole("button", { name: "Update password" }).click();
+      await expect(page).toHaveURL(/\/app$/);
       await signIn(page, userA);
       await expect(page).toHaveURL(/\/app$/);
     });
