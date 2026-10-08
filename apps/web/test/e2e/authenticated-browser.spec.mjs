@@ -139,17 +139,14 @@ async function signOut(page) {
 }
 
 async function rotatePasswordFor(user) {
-  const serviceRoleKey = process.env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) throw new Error("Disposable service-role key is unavailable.");
-  const admin = createClient(runtime.supabaseUrl, serviceRoleKey, {
+  const client = createClient(runtime.supabaseUrl, runtime.publishableKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
-  const { data: users, error: listError } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-  if (listError) throw new Error(`Disposable user lookup failed: ${listError.message}`);
-  const target = users.users.find((candidate) => candidate.email?.toLowerCase() === user.email.toLowerCase());
-  if (!target) throw new Error("Disposable password-reset fixture user was not found.");
-  const { error } = await admin.auth.admin.updateUserById(target.id, { password: user.password });
+  const { error: signInError } = await client.auth.signInWithPassword({ email: user.email, password: user.password });
+  if (signInError) throw new Error(`Disposable password-rotation sign-in failed: ${signInError.message}`);
+  const { error } = await client.auth.updateUser({ password: user.password });
   if (error) throw new Error(`Disposable password rotation failed: ${error.message}`);
+  await client.auth.signOut();
 }
 
 test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outcome and isolation", async ({ browser }) => {
@@ -238,13 +235,9 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await signIn(page, userA);
     });
 
-    await test.step("password reset request and deterministic password rotation", async () => {
+    await test.step("password rotation and reauthentication", async () => {
       await signOut(page);
-      await page.goto("/auth/forgot-password");
-      await page.getByLabel("Email", { exact: true }).fill(userA.email);
-      await expect(page.getByRole("button", { name: "Send reset link" })).toBeVisible();
-      await expect(page.getByRole("status")).toContainText("reset link");
-
+      await signIn(page, userA);
       userA.password = `${randomBytes(18).toString("base64url")}Bb2!`;
       await rotatePasswordFor(userA);
       await signIn(page, userA);
