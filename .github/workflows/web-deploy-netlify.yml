@@ -2,15 +2,23 @@ name: ZAVQERA Web Deploy (Netlify)
 
 # Deploys the ZAVQERA Web MVP (apps/web) to Netlify.
 #
-# This workflow is inert until the repository owner adds NETLIFY_AUTH_TOKEN.
-# It never prints secret values; NEXT_PUBLIC_* values are injected as masked
-# secrets so the Development backend is active in the deployed build.
+# Production deploys are restricted to the existing release branches.
+# PR #29 additionally gets an explicit non-production Deploy Preview so the
+# release candidate can be verified without promoting anything to production.
 
 on:
   workflow_dispatch:
   push:
     branches:
       - "zavqera/integrate-origin-main-clean"
+      - "zavqera/alternative-web-deployment"
+    paths:
+      - "apps/web/**"
+      - "netlify.toml"
+      - ".github/workflows/web-deploy-netlify.yml"
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
       - "zavqera/alternative-web-deployment"
     paths:
       - "apps/web/**"
@@ -26,6 +34,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -52,7 +61,7 @@ jobs:
           SUPABASE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
         run: |
           if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_KEY}" ]; then
-            echo "::error::NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY must be set, otherwise /app silently falls back to the local mock repository."
+            echo "::error::NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY must be set."
             exit 1
           fi
           case "${SUPABASE_URL}" in
@@ -101,18 +110,120 @@ jobs:
           set -euo pipefail
           url="$(npx --yes netlify-cli@latest api getSite --data "{\"site_id\":\"${NETLIFY_SITE_ID}\"}" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).ssl_url))')"
           echo "Public URL: ${url}"
-
           root="$(curl -sS -o /dev/null -w '%{http_code}' "${url}/")"
           signin="$(curl -sS -o /dev/null -w '%{http_code}' "${url}/auth/sign-in")"
           app="$(curl -sS -o /dev/null -w '%{http_code}' "${url}/app")"
           appdest="$(curl -sS -o /dev/null -w '%{redirect_url}' "${url}/app")"
           echo "/=${root} /auth/sign-in=${signin} /app=${app} -> ${appdest}"
-
           test "${root}" = "200"
           test "${signin}" = "200"
-
-          # With Supabase configured, middleware must bounce anonymous /app to sign-in.
           case "${appdest}" in
             *"/auth/sign-in"*) echo "Auth middleware verified." ;;
-            *) echo "::error::/app did not redirect anonymously to /auth/sign-in. The deployment is likely running the local mock fallback."; exit 1 ;;
+            *) echo "::error::/app did not redirect anonymously to /auth/sign-in."; exit 1 ;;
           esac
+
+  deploy-preview:
+    if: github.event_name == 'pull_request' && github.event.pull_request.number == 29
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check preview deploy credentials
+        id: creds
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          if [ -z "${NETLIFY_AUTH_TOKEN}" ] || [ -z "${NETLIFY_SITE_ID}" ]; then
+            echo "::error::NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID are required for the PR #29 Deploy Preview."
+            exit 1
+          fi
+
+      - name: Check Development Supabase configuration
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          set -euo pipefail
+          test -n "${SUPABASE_URL}"
+          test -n "${SUPABASE_KEY}"
+          case "${SUPABASE_URL}" in
+            https://mrwmmbytcymqgwvcoywd.supabase.co*) echo "Development Supabase verified." ;;
+            *) echo "::error::Preview must target ZAVQERA Development Supabase only."; exit 1 ;;
+          esac
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Unit tests
+        working-directory: apps/web
+        run: npm test
+
+      - name: Typecheck
+        working-directory: apps/web
+        run: npm run typecheck
+
+      - name: Deploy non-production Preview
+        id: preview
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          set -euo pipefail
+          npx --yes netlify-cli@latest deploy --build --context deploy-preview --alias=deploy-preview-29 --json | tee /tmp/netlify-preview.json
+          url="$(node -e 'const fs=require("fs"); const s=fs.readFileSync("/tmp/netlify-preview.json","utf8"); const m=s.match(/https:\\/\\/[^\\s"]+netlify\\.app/); if(!m) process.exit(1); console.log(m[0]);')"
+          echo "preview_url=${url}" >> "$GITHUB_OUTPUT"
+          echo "Deploy Preview: ${url}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify Preview routes
+        env:
+          PREVIEW_URL: ${{ steps.preview.outputs.preview_url }}
+        run: |
+          set -euo pipefail
+          root="$(curl -sS -o /dev/null -w '%{http_code}' "${PREVIEW_URL}/")"
+          signin="$(curl -sS -o /dev/null -w '%{http_code}' "${PREVIEW_URL}/auth/sign-in")"
+          app="$(curl -sS -o /dev/null -w '%{http_code}' "${PREVIEW_URL}/app")"
+          appdest="$(curl -sS -o /dev/null -w '%{redirect_url}' "${PREVIEW_URL}/app")"
+          echo "/=${root} /auth/sign-in=${signin} /app=${app} -> ${appdest}"
+          test "${root}" = "200"
+          test "${signin}" = "200"
+          case "${appdest}" in
+            *"/auth/sign-in"*) echo "Preview auth middleware verified." ;;
+            *) echo "::error::Preview /app did not redirect to /auth/sign-in."; exit 1 ;;
+          esac
+
+      - name: Verify real OpenAI mission planning
+        env:
+          PREVIEW_URL: ${{ steps.preview.outputs.preview_url }}
+        run: |
+          set -euo pipefail
+          jar="$(mktemp)"
+          response="$(curl -sS --max-time 35 -c "${jar}" -b "${jar}"             -H 'Content-Type: application/json'             -X POST "${PREVIEW_URL}/api/ai/plan/anonymous"             --data '{"goal":"Prepare a simple checklist for a visa application."}')"
+          echo "${response}" | node -e '
+            let s="";
+            process.stdin.on("data",d=>s+=d).on("end",()=>{
+              const p=JSON.parse(s);
+              if (!p.title || !Array.isArray(p.steps) || p.steps.length < 3 || p.provider_mode !== "openai") {
+                console.error("OpenAI Preview smoke test failed:", JSON.stringify(p));
+                process.exit(1);
+              }
+              console.log("OpenAI Preview smoke test PASS:", JSON.stringify({
+                title:p.title,
+                steps:p.steps.length,
+                provider_mode:p.provider_mode,
+              }));
+            });
+          '
+          rm -f "${jar}"
