@@ -255,6 +255,7 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await signOut(page);
       await signIn(page, userA);
       const nextPassword = `${randomBytes(18).toString("base64url")}Bb2!`;
+      await signOut(page);
       await rotatePasswordFor(userA, nextPassword);
       userA.password = nextPassword;
       await signIn(page, userA);
