@@ -140,7 +140,7 @@ async function signOut(page) {
 
 async function latestResetLink(email) {
   const deadline = Date.now() + 30_000;
-  const query = encodeURIComponent(`to:"${email}" subject:"Reset your ZAVQERA password"`);
+  const query = encodeURIComponent(`to:"${email}"`);
   const extract = (raw) => {
     const decoded = raw
       .replace(/=\r?\n/g, "")
