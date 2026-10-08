@@ -291,3 +291,16 @@ nav > a[aria-current="page"]:not(.button) {
   .mission-search-form input { grid-column:1 / -1; }
   .mission-search-form .button { width:100%; text-align:center; }
 }
+
+.mission-search { scroll-margin-top: 24px; box-shadow: 0 10px 28px rgba(22,50,79,.045); }
+.mission-search-form { position:relative; }
+.mission-search-shortcut { display:inline-flex; align-items:center; margin-inline:2px 0; }
+.shortcut-key { display:inline-flex; align-items:center; gap:2px; padding:4px 7px; border:1px solid #d4dee3; border-bottom-width:2px; border-radius:5px; background:#f7fafb; color:#63727a; font-family:inherit; font-size:11px; line-height:1; white-space:nowrap; }
+.shortcut-pc { display:inline; }
+.shortcut-mac { display:none; }
+@media (prefers-color-scheme:dark) {
+  .shortcut-key { background:#f7fafb; }
+}
+@media (max-width:700px) {
+  .mission-search-shortcut { display:none; }
+}
