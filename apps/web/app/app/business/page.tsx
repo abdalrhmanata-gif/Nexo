@@ -7,6 +7,7 @@ import { isSupabaseConfigured } from "../../../lib/supabase/config";
 import { createSupabaseMissionRepository } from "../../../lib/supabase/mission-repository";
 import { InvitationRevokeButton } from "../../../components/invitation-revoke-button";
 import { MemberManagementControls } from "../../../components/member-management-controls";
+import { humaniseEventType, summariseEventPayload } from "../../../lib/mission-content.mjs";
 
 export default async function BusinessWorkspacePage() {
   const repository = isSupabaseConfigured() ? await createSupabaseMissionRepository() : localMockMissionRepository;
@@ -20,6 +21,7 @@ export default async function BusinessWorkspacePage() {
   const members = repository.listWorkspaceMembers ? await repository.listWorkspaceMembers() : [];
   const approvals = repository.listPendingApprovals ? await repository.listPendingApprovals() : [];
   const invitations = repository.listWorkspaceInvitations ? await repository.listWorkspaceInvitations() : [];
+  const activity = repository.listWorkspaceActivity ? await repository.listWorkspaceActivity() : [];
 
   return <div className="container">
     <div className="section-heading"><div>
@@ -58,6 +60,11 @@ export default async function BusinessWorkspacePage() {
         {invitations.length ? <ul className="list">{invitations.slice(0,5).map((invitation) => <li key={invitation.id}><strong>{invitation.email}</strong><br /><span className="action-hint">{invitation.role} · {invitation.status} · expires {new Date(invitation.expiresAt).toLocaleDateString()}</span>{invitation.status === "PENDING" && <div><InvitationRevokeButton invitationId={invitation.id} /></div>}</li>)}</ul> : <p className="detail-intent">No invitations have been created yet.</p>}
         <Link className="button button-small" href="/app/business/invite">Invite a teammate</Link>
       </section>
+    </section>
+    <section className="card">
+      <p className="eyebrow">Audit</p><h2>Workspace activity</h2>
+      <p className="detail-intent">A readable history of collaboration, approvals, agent work, verification, and outcomes.</p>
+      {activity.length ? <ul className="list">{activity.slice(0,12).map((item) => <li key={item.id}><strong>{humaniseEventType(item.eventType)}</strong><br /><span className="action-hint">{summariseEventPayload(item.payload)} · {new Date(item.createdAt).toLocaleString()}</span></li>)}</ul> : <p className="detail-intent">No workspace activity yet.</p>}
     </section>
     <div className="section-heading"><div><h2>Recent missions</h2><p>Recent work stays connected to the same execution engine.</p></div><Link className="button button-quiet" href="/app">View all</Link></div>
     {recent.length ? <div className="grid">{recent.map((mission) => <MissionCard key={mission.id} mission={mission} />)}</div> : <div className="empty-state"><h2>No missions yet</h2><p>Create the first delegated mission to start the workspace.</p></div>}
