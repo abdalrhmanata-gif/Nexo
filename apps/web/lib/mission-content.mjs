@@ -340,8 +340,24 @@ export function formatDateTime(value) {
   return `${day}/${month}/${year}, ${time}`;
 }
 
+const EVENT_LABELS = {
+  APPROVAL_REQUESTED: "Approval requested",
+  APPROVAL_DECIDED: "Approval decision",
+  AGENT_EXECUTION_STARTED: "Agent execution started",
+  AGENT_EXECUTION_COMPLETED: "Agent execution completed",
+  VERIFICATION_RECORDED: "Verification recorded",
+  OUTCOME_COMMITTED: "Outcome committed",
+  WORKSPACE_INVITATION_CREATED: "Invitation created",
+  WORKSPACE_INVITATION_ACCEPTED: "Invitation accepted",
+  WORKSPACE_INVITATION_REVOKED: "Invitation revoked",
+  MEMBER_ROLE_CHANGED: "Member role changed",
+  MEMBER_REMOVED: "Member removed",
+};
+
 export function humaniseEventType(eventType) {
   if (typeof eventType !== "string" || !eventType.trim()) return "Mission event";
-  const words = eventType.replaceAll("_", " ").trim().toLowerCase();
-  return words.charAt(0).toUpperCase() + words.slice(1);
+  return EVENT_LABELS[eventType] ?? (() => {
+    const words = eventType.replaceAll("_", " ").trim().toLowerCase();
+    return words.charAt(0).toUpperCase() + words.slice(1);
+  })();
 }
