@@ -9,7 +9,7 @@ on:
 
 concurrency:
   group: zavqera-w21-local-${{ github.event.pull_request.number || github.sha }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: read
