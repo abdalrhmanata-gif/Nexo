@@ -10,6 +10,7 @@ import { MissionMutationControls } from "../../../../components/mission-mutation
 import { ActionMutationControls } from "../../../../components/action-mutation-controls";
 import { AddActionForm } from "../../../../components/add-action-form";
 import { missionIntelligenceFor } from "../../../../lib/mission-intelligence.mjs";
+import { MissionResearchPanel } from "../../../../components/mission-research-panel";
 
 export default async function MissionDetailPage({
   params,
@@ -59,6 +60,8 @@ export default async function MissionDetailPage({
           {intelligence.nextAction.blockingCondition && <p className="action-hint">Why: {intelligence.nextAction.blockingCondition}</p>}
           <p className="action-hint">Based on this mission’s saved state: {intelligence.nextAction.currentState}.</p>
         </section>
+
+        <MissionResearchPanel missionId={mission.id} />
 
         <section className="card" aria-labelledby="plan-health-heading">
           <p className="eyebrow">Plan health</p>
