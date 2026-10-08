@@ -23,6 +23,7 @@ export interface MissionRepository {
   revokeWorkspaceInvitation?(invitationId: string): Promise<WorkspaceInvitation>;
   updateWorkspaceMemberRole?(memberId: string, role: "owner" | "admin" | "member" | "viewer"): Promise<WorkspaceMember>;
   removeWorkspaceMember?(memberId: string): Promise<WorkspaceMember>;
+  listWorkspaceActivity?(): Promise<WorkspaceActivity[]>;
   startAgentExecution?(input: { missionId: string; actionId: string | null; agentId: string; idempotencyKey: string; request?: Record<string, unknown> }): Promise<Record<string, unknown>>;
   completeAgentExecution?(input: { executionId: string; status: "SUCCEEDED" | "FAILED" | "UNKNOWN" | "BLOCKED"; result?: Record<string, unknown>; evidence?: Record<string, unknown>; errorCode?: string; errorMessage?: string }): Promise<Record<string, unknown>>;
 }
@@ -110,6 +111,7 @@ export type NewOutcome = {
 
 export type WorkspaceAgent = { id: string; name: string; description: string; status: "ACTIVE" | "PAUSED"; authority: Record<string, unknown>; };
 export type WorkspaceMember = { id: string; userId: string; email: string | null; role: "owner" | "admin" | "member" | "viewer"; createdAt: string; };
+export type WorkspaceActivity = { id: string; eventType: string; entityType: string; entityId: string | null; payload: Record<string, unknown>; actorUserId: string | null; createdAt: string; };
 export type WorkspaceInvitation = { id: string; email: string; role: "admin" | "member" | "viewer"; status: "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED"; expiresAt: string; createdAt: string; };
 export type MissionApproval = { id: string; missionId: string; actionId: string | null; status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED"; requestedBy: string; decidedBy: string | null; requestedScope: Record<string, unknown>; decisionNote: string | null; createdAt: string; decidedAt: string | null; };
 export type AgentExecution = { id: string; missionId: string; actionId: string | null; agentId: string; approvalId: string | null; status: "RUNNING" | "SUCCEEDED" | "FAILED" | "UNKNOWN" | "BLOCKED"; authoritySnapshot: Record<string, unknown>; request: Record<string, unknown>; result: Record<string, unknown> | null; evidence: Record<string, unknown> | null; createdAt: string; completedAt: string | null; };
