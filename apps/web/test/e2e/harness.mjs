@@ -246,6 +246,8 @@ export function validateStackStatus(raw, env = {}) {
   const publishableKey = typeof status.PUBLISHABLE_KEY === "string" && status.PUBLISHABLE_KEY
     ? status.PUBLISHABLE_KEY
     : typeof status.ANON_KEY === "string" ? status.ANON_KEY : "";
+  const serviceRoleKey = typeof status.SERVICE_ROLE_KEY === "string" && status.SERVICE_ROLE_KEY
+    ? status.SERVICE_ROLE_KEY : "";
 
   if (!isLoopbackUrl(apiUrl) || referencesRemoteSupabase(apiUrl)) {
     reasons.push("The disposable stack API_URL is not a loopback http URL.");
@@ -267,7 +269,8 @@ export function validateStackStatus(raw, env = {}) {
     reasons.push("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY does not match the disposable stack. Unset it.");
   }
 
-  return { ok: reasons.length === 0, reasons, target: reasons.length === 0 ? { apiUrl, publishableKey } : null };
+  if (!serviceRoleKey) reasons.push("The disposable stack reported no service-role key.");
+  return { ok: reasons.length === 0, reasons, target: reasons.length === 0 ? { apiUrl, publishableKey, serviceRoleKey } : null };
 }
 
 /**
