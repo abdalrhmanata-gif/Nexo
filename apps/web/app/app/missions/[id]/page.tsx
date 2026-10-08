@@ -26,7 +26,8 @@ export default async function MissionDetailPage({
   const verification = mission.verifications.find((item) => item.status === "VERIFIED") ?? mission.verifications[0];
   const outcome = mission.outcomes[0];
   const readiness = verificationReadiness(mission);
-  const intelligence = missionIntelligenceFor(mission);\n  const executions = repository.listAgentExecutions ? await repository.listAgentExecutions(mission.id) : [];
+  const intelligence = missionIntelligenceFor(mission);
+  const executions = repository.listAgentExecutions ? await repository.listAgentExecutions(mission.id) : [];
 
   return <div className="container">
     <p className="eyebrow"><Link href="/app">Workspace</Link> / Mission detail</p>
@@ -108,7 +109,8 @@ export default async function MissionDetailPage({
                   </span>}
                   <small className="action-hint">{actionStatusHint(action.status)}</small>
                 </div>
-                <ActionMutationControls missionId={mission.id} action={action} />\n                {action.status !== "CANCELLED" && <ApprovalRequestControls missionId={mission.id} actionId={action.id} />}
+                <ActionMutationControls missionId={mission.id} action={action} />
+                {action.status !== "CANCELLED" && <ApprovalRequestControls missionId={mission.id} actionId={action.id} />}
               </div>
             </li>;
             })}</ul>
