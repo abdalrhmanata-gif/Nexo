@@ -151,7 +151,7 @@ test("mission detail exposes bounded, read-only research execution", () => {
   const route = read("app/api/missions/[id]/research/route.ts");
   const research = read("lib/ai-research.ts");
   assert.ok(detail.includes("MissionResearchPanel"));
-  assert.ok(panel.includes("Run a research pass"));
+  assert.ok(panel.includes("Run this mission safely"));
   assert.ok(panel.includes("will not buy, book, contact anyone"));
   assert.ok(route.includes("runAiGeneration"));
   assert.ok(route.includes("reserveAiGeneration"));
