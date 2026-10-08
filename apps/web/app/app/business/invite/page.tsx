@@ -2,19 +2,48 @@
 import { useState } from "react";
 
 export default function BusinessInvitePage() {
-  const [email,setEmail]=useState("");
-  const [role,setRole]=useState("member");
-  const [status,setStatus]=useState("");
-  const submit=async(e:React.FormEvent)=>{e.preventDefault();setStatus("Creating invitation…");
-    const token=crypto.randomUUID()+crypto.randomUUID();
-    const tokenHash=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(token));
-    const hash=Array.from(new Uint8Array(tokenHash)).map((b)=>b.toString(16).padStart(2,"0")).join("");
-    const response=await fetch("/api/business/invitations",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email,role,tokenHash,expiresInDays:7})});
-    const data=await response.json().catch(()=>({}));
-    if(!response.ok){setStatus(data.error||"Invitation could not be created.");return;}
-    setStatus("Invitation created. The secure invitation link is ready to share.");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("member");
+  const [status, setStatus] = useState("");
+  const [inviteLink, setInviteLink] = useState("");
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setStatus("Creating invitation…");
+    setInviteLink("");
+
+    const response = await fetch("/api/business/invitations", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email, role }),
+    });
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      setStatus(data.error || "Invitation could not be created.");
+      return;
+    }
+
+    const token = typeof data.inviteToken === "string" ? data.inviteToken : "";
+    setInviteLink(token ? `${window.location.origin}/invite/${token}` : "");
+    setStatus("Invitation created. Share the one-time invitation link with your teammate.");
     setEmail("");
   };
-  return <div className="container"><p className="eyebrow">Business workspace</p><h1>Invite a teammate</h1><p className="detail-intent">Choose the least privilege role they need. Invitations expire after 7 days.</p>
-    <form className="card" onSubmit={submit}><label>Email<input type="email" required value={email} onChange={e=>setEmail(e.target.value)} placeholder="name@company.com"/></label><label>Role<select value={role} onChange={e=>setRole(e.target.value)}><option value="member">Member</option><option value="viewer">Viewer</option><option value="admin">Admin</option></select></label><button className="button" type="submit">Create invitation</button>{status&&<p role="status">{status}</p>}</form></div>;
+
+  return <div className="container">
+    <p className="eyebrow">Business workspace</p>
+    <h1>Invite a teammate</h1>
+    <p className="detail-intent">Choose the least privilege role they need. Invitations expire after 7 days. The raw token is shown only once and is never stored in the database.</p>
+    <form className="card" onSubmit={submit}>
+      <label>Email<input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="name@company.com" autoComplete="email" /></label>
+      <label>Role<select value={role} onChange={(event) => setRole(event.target.value)}><option value="member">Member</option><option value="viewer">Viewer</option><option value="admin">Admin</option></select></label>
+      <button className="button" type="submit">Create invitation</button>
+      {status && <p role="status">{status}</p>}
+      {inviteLink && <div className="card">
+        <p className="eyebrow">Secure invitation link</p>
+        <input readOnly value={inviteLink} aria-label="Secure invitation link" onFocus={(event) => event.currentTarget.select()} />
+        <button className="button button-small" type="button" onClick={() => navigator.clipboard?.writeText(inviteLink)}>Copy link</button>
+      </div>}
+    </form>
+  </div>;
 }
