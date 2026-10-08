@@ -163,7 +163,7 @@ test("static preconditions refuse workdirs that are not explicitly disposable", 
 test("stack status validation keeps only loopback url and a non-privileged key", () => {
   const ok = validateStackStatus(`Some banner\n${goodStatus()}`);
   assert.deepEqual(ok.target, { apiUrl: "http://127.0.0.1:54321", publishableKey: "sb_publishable_local", serviceRoleKey: anonJwt("service_role") });
-  assert.equal(validateStackStatus(JSON.stringify({ API_URL: "http://127.0.0.1:54321", ANON_KEY: anonJwt() })).ok, true);
+  assert.equal(validateStackStatus(JSON.stringify({ API_URL: "http://127.0.0.1:54321", ANON_KEY: anonJwt(), SERVICE_ROLE_KEY: anonJwt("service_role") })).ok, true);
 
   const bad = {
     remote: { API_URL: "https://mrwmmbytcymqgwvcoywd.supabase.co", PUBLISHABLE_KEY: "sb_publishable_x" },
