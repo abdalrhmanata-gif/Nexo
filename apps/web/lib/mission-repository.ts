@@ -17,6 +17,7 @@ export interface MissionRepository {
   listPendingApprovals?(): Promise<MissionApproval[]>;
   listAgentExecutions?(missionId: string): Promise<AgentExecution[]>;
   listWorkspaceInvitations?(): Promise<WorkspaceInvitation[]>;
+  createWorkspaceInvitation?(input: { email: string; role: "admin" | "member" | "viewer"; tokenHash: string; expiresAt: string }): Promise<WorkspaceInvitation>;
   startAgentExecution?(input: { missionId: string; actionId: string | null; agentId: string; idempotencyKey: string; request?: Record<string, unknown> }): Promise<Record<string, unknown>>;
   completeAgentExecution?(input: { executionId: string; status: "SUCCEEDED" | "FAILED" | "UNKNOWN" | "BLOCKED"; result?: Record<string, unknown>; evidence?: Record<string, unknown>; errorCode?: string; errorMessage?: string }): Promise<Record<string, unknown>>;
 }
