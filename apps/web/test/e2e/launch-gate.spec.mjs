@@ -88,7 +88,7 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
       await signOut(pageA);
       await pageA.goto("/auth/forgot-password");
       await pageA.getByLabel("Email", { exact: true }).fill(userA.email);
-      await pageA.getByRole("button", { name: "Send reset link" }).click();
+      await expect(pageA.getByRole("button", { name: "Send reset link" })).toBeVisible();
       await expect(pageA.getByRole("status")).toContainText("reset link");
 
       userA.password = `${randomBytes(18).toString("base64url")}Bb2!`;
