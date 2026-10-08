@@ -71,7 +71,7 @@ async function recoveryLinkFor(user) {
       body: JSON.stringify({
         type: "recovery",
         email: user.email,
-        redirect_to: `${runtime.baseURL}/auth/callback?next=%2Fauth%2Freset-password`,
+        redirect_to: `${runtime.baseURL}/auth/reset-password`,
       }),
       signal: AbortSignal.timeout(10_000),
     },
