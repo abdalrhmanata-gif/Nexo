@@ -59,27 +59,21 @@ async function signOut(page) {
 async function recoveryLinkFor(user) {
   const serviceRoleKey = process.env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY;
   if (!serviceRoleKey) throw new Error("Disposable service-role key is unavailable.");
-  const response = await fetch(
-    `${runtime.supabaseUrl}/auth/v1/admin/generate_link`,
-    {
-      method: "POST",
-      headers: {
-        apikey: serviceRoleKey,
-        Authorization: `Bearer ${serviceRoleKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        type: "recovery",
-        email: user.email,
-        redirect_to: `${runtime.baseURL}/auth/reset-password`,
-      }),
-      signal: AbortSignal.timeout(10_000),
+  const admin = createClient(runtime.supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const { data, error } = await admin.auth.admin.generateLink({
+    type: "recovery",
+    email: user.email,
+    options: {
+      redirectTo: `${runtime.baseURL}/auth/callback?next=%2Fauth%2Freset-password`,
     },
-  );
-  if (!response.ok) throw new Error(`Disposable recovery-link generation failed with HTTP ${response.status}.`);
-  const payload = await response.json();
-  if (typeof payload?.action_link !== "string" || !payload.action_link) throw new Error("Disposable recovery-link response did not include an action_link.");
-  return payload.action_link;
+  });
+  if (error) throw new Error(`Disposable recovery-link generation failed: ${error.message}`);
+  if (typeof data?.properties?.action_link !== "string" || !data.properties.action_link) {
+    throw new Error("Disposable recovery-link response did not include an action_link.");
+  }
+  return data.properties.action_link;
 }
 
 test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission TOCTOU", async ({ browser }) => {
