@@ -209,7 +209,7 @@ test("approval decisions stay behind an authenticated server boundary", () => {
 });
 
 test("bounded research agent is explicitly read-only", () => {
-  const migration = read("../supabase/migrations/20261008150000_w41_seed_bounded_research_agent.sql");
+  const migration = readFileSync(join(webRoot, "../../supabase/migrations/20261008150000_w41_seed_bounded_research_agent.sql"), "utf8");
   assert.ok(migration.includes("ZAVQERA Research Agent"));
   assert.ok(migration.includes("'read_only'"));
   assert.ok(migration.includes("'external_side_effects',false"));
