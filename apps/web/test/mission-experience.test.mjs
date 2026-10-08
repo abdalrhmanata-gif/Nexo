@@ -258,7 +258,7 @@ test("business collaboration exposes least-privilege invitations", () => {
   assert.ok(invite.includes("member") && invite.includes("viewer") && invite.includes("admin"));
   assert.ok(route.includes("createSupabaseMissionRepository"));
   assert.ok(route.includes("createWorkspaceInvitation"));
-  assert.ok(route.includes("7*86400000"));
+  assert.ok(route.includes("7 * 86400000"));
   assert.ok(migration.includes("WORKSPACE_ADMIN_REQUIRED"));
   assert.ok(migration.includes("INVITATION_ALREADY_PENDING"));
   assert.ok(migration.includes("token_hash"));
