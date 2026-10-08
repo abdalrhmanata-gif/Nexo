@@ -56,11 +56,11 @@ async function signOut(page) {
   await expect(page).toHaveURL(/\/auth\/sign-in/);
 }
 
-async function rotatePasswordFor(user, nextPassword) {
+async function rotatePasswordFor(user, currentPassword, nextPassword) {
   const client = createClient(runtime.supabaseUrl, runtime.publishableKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
-  const { error: signInError } = await client.auth.signInWithPassword({ email: user.email, password: user.password });
+  const { error: signInError } = await client.auth.signInWithPassword({ email: user.email, password: currentPassword });
   if (signInError) throw new Error(`Disposable password-rotation sign-in failed: ${signInError.message}`);
   const { error } = await client.auth.updateUser({ password: nextPassword });
   if (error) throw new Error(`Disposable password rotation failed: ${error.message}`);
