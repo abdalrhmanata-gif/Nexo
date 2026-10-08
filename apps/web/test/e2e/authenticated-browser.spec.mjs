@@ -138,44 +138,19 @@ async function signOut(page) {
   await expect(page).toHaveURL(/\/auth\/sign-in/);
 }
 
-async function rotatePasswordFor(user, currentPassword, nextPassword) {
-  const client = createClient(runtime.supabaseUrl, runtime.publishableKey, {
-    auth: { autoRefreshToken: false, persistSession: false },
-  });
-  const { data: signedIn, error: signInError } = await client.auth.signInWithPassword({
-    email: user.email,
-    password: currentPassword,
-  });
-  if (signInError || !signedIn.user) throw new Error(`Disposable password-rotation sign-in failed: ${signInError?.message ?? "missing user"}`);
-  await client.auth.signOut();
+async function rotatePasswordFor(user, nextPassword) {
   const serviceRoleKey = process.env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY;
   if (!serviceRoleKey) throw new Error("Disposable service-role key is unavailable.");
   const admin = createClient(runtime.supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
-  const { error } = await admin.auth.admin.updateUserById(signedIn.user.id, { password: nextPassword });
+  const { data, error: listError } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  if (listError) throw new Error(`Disposable user lookup failed: ${listError.message}`);
+  const target = data.users.find((candidate) => candidate.email?.toLowerCase() === user.email.toLowerCase());
+  if (!target) throw new Error("Disposable password-rotation fixture user was not found.");
+  const { error } = await admin.auth.admin.updateUserById(target.id, { password: nextPassword });
   if (error) throw new Error(`Disposable password rotation failed: ${error.message}`);
 }
-
-async function recoveryLinkFor(user) {
-  const serviceRoleKey = process.env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) throw new Error("Disposable service-role key is unavailable.");
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 10_000);
-  try {
-    const response = await fetch(`${runtime.supabaseUrl}/auth/v1/admin/generate_link`, {
-      method: "POST",
-      headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "recovery", email: user.email, redirect_to: `${runtime.baseURL}/auth/callback?next=%2Fauth%2Freset-password` }),
-      signal: controller.signal,
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(`Disposable recovery-link generation failed with HTTP ${response.status}: ${payload?.msg ?? payload?.message ?? "unknown"}`);
-    if (typeof payload?.action_link !== "string" || !payload.action_link) throw new Error("Disposable recovery-link response did not include an action_link.");
-    return payload.action_link;
-  } finally { clearTimeout(timer); }
-}
-
 test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outcome and isolation", async ({ browser }) => {
   assertRuntime();
   const tag = `E2E ${runtime.runId}`;
