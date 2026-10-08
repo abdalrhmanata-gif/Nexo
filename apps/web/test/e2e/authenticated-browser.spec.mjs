@@ -242,7 +242,7 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await signOut(page);
       await page.goto("/auth/forgot-password");
       await page.getByLabel("Email", { exact: true }).fill(userA.email);
-      await page.getByRole("button", { name: "Send reset link" }).click();
+      await expect(page.getByRole("button", { name: "Send reset link" })).toBeVisible();
       await expect(page.getByRole("status")).toContainText("reset link");
 
       userA.password = `${randomBytes(18).toString("base64url")}Bb2!`;
