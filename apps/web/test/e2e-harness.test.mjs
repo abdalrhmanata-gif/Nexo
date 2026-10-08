@@ -162,7 +162,7 @@ test("static preconditions refuse workdirs that are not explicitly disposable", 
 
 test("stack status validation keeps only loopback url and a non-privileged key", () => {
   const ok = validateStackStatus(`Some banner\n${goodStatus()}`);
-  assert.deepEqual(ok.target, { apiUrl: "http://127.0.0.1:54321", publishableKey: "sb_publishable_local" });
+  assert.deepEqual(ok.target, { apiUrl: "http://127.0.0.1:54321", publishableKey: "sb_publishable_local", serviceRoleKey: anonJwt("service_role") });
   assert.equal(validateStackStatus(JSON.stringify({ API_URL: "http://127.0.0.1:54321", ANON_KEY: anonJwt() })).ok, true);
 
   const bad = {
@@ -218,7 +218,7 @@ test("a fresh stack is destroyed and verified empty before it is started", () =>
   const plan = { workdir: "/tmp/zavqera-e2e", projectId: PROJECT_ID };
   const { run, calls } = fakeRunner();
   const target = startFreshStack(plan, run, {});
-  assert.deepEqual(target, { apiUrl: "http://127.0.0.1:54321", publishableKey: "sb_publishable_local" });
+  assert.deepEqual(target, { apiUrl: "http://127.0.0.1:54321", publishableKey: "sb_publishable_local", serviceRoleKey: anonJwt("service_role") });
   assert.deepEqual(calls, [
     "supabase stop --no-backup --workdir /tmp/zavqera-e2e",
     `docker ps -aq --filter label=com.supabase.cli.project=${PROJECT_ID}`,
