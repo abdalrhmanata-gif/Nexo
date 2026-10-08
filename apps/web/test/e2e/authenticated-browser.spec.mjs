@@ -152,17 +152,15 @@ async function latestResetLink(email) {
   };
 
   while (Date.now() < deadline) {
-    // Mailpit resolves "latest" using the same query filter, so this is
-    // deterministic and avoids depending on search-result JSON ordering.
     const response = await fetch(
-      `http://127.0.0.1:54324/view/latest.txt?query=${query}`,
-      { headers: { Accept: "text/plain" } },
+      `http://127.0.0.1:54324/api/v1/message/latest?query=${query}`,
+      { headers: { Accept: "application/json" } },
     );
     if (response.ok) {
-      const candidate = extract(await response.text());
+      const message = await response.json();
+      const candidate = extract(`${message?.Text ?? ""}\n${message?.HTML ?? ""}`);
       if (candidate) return candidate;
     }
-
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
   throw new Error("The disposable Mailpit search did not expose the password-reset email.");
