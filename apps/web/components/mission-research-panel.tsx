@@ -40,7 +40,7 @@ export function MissionResearchPanel({ missionId }: { missionId: string }) {
         const saved = payload.runs.filter(isResearchRun);
         if (active) {
           setRuns(saved);
-          setResearch(saved[0] ?? null);
+          setResearch((current) => current ?? saved[0] ?? null);
         }
       })
       .catch(() => {
