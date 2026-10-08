@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "../../../../../lib/supabase/server";
 import { createSupabaseMissionRepository } from "../../../../../lib/supabase/mission-repository";
 import { requestMissionResearch } from "../../../../../lib/ai-research";
+import type { MissionPlan } from "../../../../../lib/ai-planner";
 import { runAiGeneration, AI_GENERATION_OUTCOMES } from "../../../../../lib/ai-generation-service";
 import { reserveAiGeneration, consumeAiGeneration, releaseAiGeneration } from "../../../../../lib/ai-usage";
 
@@ -27,7 +28,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       generate: () => requestMissionResearch(
         { name: mission.name, intent: mission.intent, criteria: mission.criteria },
         { apiKey, model: process.env.OPENAI_MODEL || "gpt-6-luna", requestId },
-      ),
+      ) as unknown as Promise<MissionPlan>,
       consume: consumeAiGeneration,
       release: releaseAiGeneration,
     });
