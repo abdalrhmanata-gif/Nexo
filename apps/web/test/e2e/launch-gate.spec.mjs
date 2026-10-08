@@ -375,7 +375,9 @@ async function rotatePasswordFor(user, currentPassword, nextPassword) {
   });
   if (verifyError) throw new Error(`Disposable rotated password verification failed: ${verifyError.message}`);
   await client.auth.signOut();
-}mport { randomBytes } from "node:crypto";
+}
+
+import { randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { expect, test } from "@playwright/test";
 
