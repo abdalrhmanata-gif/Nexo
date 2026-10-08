@@ -60,6 +60,89 @@ async function rotatePasswordFor(user, currentPassword, nextPassword) {
   const client = createClient(runtime.supabaseUrl, runtime.publishableKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
+  const { data: signedIn, error: signInError } = await client.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword,
+  });
+  if (signInError || !signedIn.user) {
+    throw new Error(`Disposable password-rotation sign-in failed: ${signInError?.message ?? "missing user"}`);
+  }
+
+  const admin = createClient(runtime.supabaseUrl, process.env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const { error } = await admin.auth.admin.updateUserById(signedIn.user.id, { password: nextPassword });
+  if (error) throw new Error(`Disposable password rotation failed: ${error.message}`);
+  await client.auth.signOut();
+
+  const { error: verifyError } = await client.auth.signInWithPassword({
+    email: user.email,
+    password: nextPassword,
+  });
+  if (verifyError) throw new Error(`Disposable rotated password verification failed: ${verifyError.message}`);
+  await client.auth.signOut();
+}mport { randomBytes } from "node:crypto";
+import { createClient } from "@supabase/supabase-js";
+import { expect, test } from "@playwright/test";
+
+const runtime = {
+  supabaseUrl: process.env.ZAVQERA_E2E_RUNTIME_SUPABASE_URL,
+  publishableKey: process.env.ZAVQERA_E2E_RUNTIME_PUBLISHABLE_KEY,
+  baseURL: process.env.ZAVQERA_E2E_RUNTIME_BASE_URL,
+  runId: process.env.ZAVQERA_E2E_RUN_ID,
+};
+
+function assertRuntime() {
+  for (const [name, value] of Object.entries(runtime)) {
+    if (!value) throw new Error(`Missing disposable runtime value: ${name}`);
+  }
+  if (!runtime.supabaseUrl.startsWith("http://127.0.0.1:")
+      || !runtime.baseURL.startsWith("http://127.0.0.1:")) {
+    throw new Error("Launch-gate E2E requires loopback-only runtime URLs.");
+  }
+}
+
+function freshUser(label) {
+  return {
+    email: `zavqera-gate-${runtime.runId}-${label}@example.test`,
+    password: `${randomBytes(18).toString("base64url")}Aa1!`,
+  };
+}
+
+async function ownerSession(user) {
+  const client = createClient(runtime.supabaseUrl, runtime.publishableKey, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+  const { data, error } = await client.auth.signInWithPassword(user);
+  if (error || !data.user) throw error ?? new Error("Disposable user sign-in failed.");
+  return { client, userId: data.user.id };
+}
+
+async function signUp(page, user) {
+  await page.goto("/auth/sign-up");
+  await page.getByLabel("Email", { exact: true }).fill(user.email);
+  await page.getByLabel("Password", { exact: true }).fill(user.password);
+  await page.getByRole("button", { name: "Create account" }).click();
+  await expect(page).toHaveURL(/\/app$/);
+}
+
+async function signIn(page, user) {
+  await page.goto("/auth/sign-in");
+  await page.getByLabel("Email", { exact: true }).fill(user.email);
+  await page.getByLabel("Password", { exact: true }).fill(user.password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/app$/);
+}
+
+async function signOut(page) {
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await expect(page).toHaveURL(/\/auth\/sign-in/);
+}
+
+async function rotatePasswordFor(user, currentPassword, nextPassword) {
+  const client = createClient(runtime.supabaseUrl, runtime.publishableKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
   const { error: signInError } = await client.auth.signInWithPassword({ email: user.email, password: currentPassword });
   if (signInError) throw new Error(`Disposable password-rotation sign-in failed: ${signInError.message}`);
   const { error } = await client.auth.updateUser({ password: nextPassword });
