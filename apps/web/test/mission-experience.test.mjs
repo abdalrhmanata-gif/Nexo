@@ -259,7 +259,8 @@ test("business collaboration exposes least-privilege invitations", () => {
   const page = read("app/app/business/page.tsx");
   const invite = read("app/app/business/invite/page.tsx");
   const route = read("app/api/business/invitations/route.ts");
-  const migration = readFileSync(join(webRoot, "../../supabase/migrations/20261008160000_w44_workspace_invitations.sql"), "utf8");
+  const migration = readFileSync(join(webRoot, "../../supabase/migrations/20261008150359_w44_workspace_invitations_and_activity.sql"), "utf8");
+c+= "";
   assert.ok(page.includes("Invite a teammate"));
   assert.ok(invite.includes("member") && invite.includes("viewer") && invite.includes("admin"));
   assert.ok(route.includes("createSupabaseMissionRepository"));
