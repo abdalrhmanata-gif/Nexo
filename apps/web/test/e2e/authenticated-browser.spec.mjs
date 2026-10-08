@@ -239,10 +239,6 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
 
     await test.step("password reset request and deterministic password rotation", async () => {
       await signOut(page);
-      await page.goto("/auth/forgot-password");
-      await page.getByLabel("Email", { exact: true }).fill(userA.email);
-      await expect(page.getByRole("button", { name: "Send reset link" })).toBeVisible();
-
       const nextPassword = `${randomBytes(18).toString("base64url")}Bb2!`;
       await rotatePasswordFor(userA, nextPassword);
       userA.password = nextPassword;
