@@ -143,3 +143,19 @@ test("a failed delete form submission redirects instead of returning raw JSON", 
   assert.ok(post.includes("mission-delete"));
   assert.ok(read("app/app/page.tsx").includes("mission-delete"), "the workspace must explain the failure");
 });
+
+
+test("mission detail exposes bounded, read-only research execution", () => {
+  const detail = read("app/app/missions/[id]/page.tsx");
+  const panel = read("components/mission-research-panel.tsx");
+  const route = read("app/api/missions/[id]/research/route.ts");
+  const research = read("lib/ai-research.ts");
+  assert.ok(detail.includes("MissionResearchPanel"));
+  assert.ok(panel.includes("Run a research pass"));
+  assert.ok(panel.includes("will not buy, book, contact anyone"));
+  assert.ok(route.includes("runAiGeneration"));
+  assert.ok(route.includes("reserveAiGeneration"));
+  assert.ok(research.includes('type: "web_search"'));
+  assert.ok(research.includes('tool_choice: "required"'));
+  assert.ok(research.includes("Read-only research"));
+});
