@@ -38,8 +38,8 @@ export function MissionResearchPanel({ missionId }: { missionId: string }) {
 
   return (
     <section className="card mission-execution" aria-labelledby="mission-execution-heading">
-      <p className="eyebrow">Execution</p>
-      <h2 id="mission-execution-heading">Run a research pass</h2>
+      <p className="eyebrow">Execution · Read-only</p>
+      <h2 id="mission-execution-heading">Run this mission safely</h2>
       <p className="detail-intent">
         ZAVQERA can safely research the public web against this mission&apos;s intent and success criteria. It will not buy, book, contact anyone, or change an account.
       </p>
@@ -66,7 +66,7 @@ export function MissionResearchPanel({ missionId }: { missionId: string }) {
             </div>
           )}
           <p className="action-hint">
-            This is read-only research. Review the findings before using them as mission evidence or making a consequential decision.
+            This run has no external side effects. Review the findings before treating them as evidence or making a consequential decision.
           </p>
         </div>
       )}
