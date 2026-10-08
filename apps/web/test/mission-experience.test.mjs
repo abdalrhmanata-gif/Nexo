@@ -237,3 +237,13 @@ test("agent execution completion is fail-closed and evidence-bearing", () => {
   assert.ok(migration.includes("completed_at"));
   assert.ok(migration.includes("unique(workspace_id,idempotency_key)"));
 });
+
+
+test("mission detail exposes persisted agent execution evidence", () => {
+  const page = read("app/app/missions/[id]/page.tsx");
+  const repository = read("lib/supabase/mission-repository.ts");
+  assert.ok(page.includes("Execution evidence"));
+  assert.ok(page.includes("authority snapshot"));
+  assert.ok(repository.includes("listAgentExecutions"));
+  assert.ok(repository.includes("agent_executions"));
+});
