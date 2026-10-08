@@ -167,3 +167,20 @@ test("mission detail exposes bounded, read-only research execution", () => {
   assert.ok(research.includes('tool_choice: "required"'));
   assert.match(research, /read-only research/i);
 });
+
+test("verification can attach saved execution evidence before outcome", () => {
+  const controls = read("components/verification-controls.tsx");
+  assert.ok(controls.includes("/api/missions/"));
+  assert.ok(controls.includes("/research"));
+  assert.ok(controls.includes("research_run_id"));
+  assert.ok(controls.includes("Latest execution available"));
+  assert.ok(controls.includes("still unverified"));
+});
+
+test("business workspace uses the same mission engine without inventing team data", () => {
+  const page = read("app/app/business/page.tsx");
+  assert.ok(page.includes("Business workspace"));
+  assert.ok(page.includes("same missions"));
+  assert.ok(page.includes("members, roles, shared missions"));
+  assert.ok(!page.includes("member_id"));
+});
