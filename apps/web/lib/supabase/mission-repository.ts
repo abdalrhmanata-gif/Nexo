@@ -397,6 +397,26 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       if (result.error) throw result.error;
       return result.data as Record<string, unknown>;
     },
+    async listAgentExecutions(missionId: string) {
+      const result = await supabase.from("agent_executions")
+        .select("id,mission_id,action_id,agent_id,approval_id,status,authority_snapshot,request,result,evidence,created_at,completed_at")
+        .eq("mission_id", missionId).order("created_at", { ascending: false }).limit(20);
+      if (result.error) throw result.error;
+      return (result.data ?? []).map((row) => ({
+        id: row.id as string,
+        missionId: row.mission_id as string,
+        actionId: row.action_id as string | null,
+        agentId: row.agent_id as string,
+        approvalId: row.approval_id as string | null,
+        status: row.status as "RUNNING" | "SUCCEEDED" | "FAILED" | "UNKNOWN" | "BLOCKED",
+        authoritySnapshot: (row.authority_snapshot ?? {}) as Record<string, unknown>,
+        request: (row.request ?? {}) as Record<string, unknown>,
+        result: (row.result ?? null) as Record<string, unknown> | null,
+        evidence: (row.evidence ?? null) as Record<string, unknown> | null,
+        createdAt: row.created_at as string,
+        completedAt: row.completed_at as string | null,
+      }));
+    },
     async listWorkspaceAgents() {
       const result = await supabase.from("workspace_agents").select("id,name,description,status,authority").eq("workspace_id", workspaceId).order("created_at");
       if (result.error) throw result.error;
