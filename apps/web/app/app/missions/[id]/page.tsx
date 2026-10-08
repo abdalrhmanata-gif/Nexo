@@ -11,6 +11,7 @@ import { ActionMutationControls } from "../../../../components/action-mutation-c
 import { AddActionForm } from "../../../../components/add-action-form";
 import { missionIntelligenceFor } from "../../../../lib/mission-intelligence.mjs";
 import { MissionResearchPanel } from "../../../../components/mission-research-panel";
+import { ApprovalRequestControls } from "../../../../components/approval-request-controls";
 
 export default async function MissionDetailPage({
   params,
@@ -95,7 +96,7 @@ export default async function MissionDetailPage({
                   </span>}
                   <small className="action-hint">{actionStatusHint(action.status)}</small>
                 </div>
-                <ActionMutationControls missionId={mission.id} action={action} />
+                <ActionMutationControls missionId={mission.id} action={action} />\n                {action.status !== "CANCELLED" && <ApprovalRequestControls missionId={mission.id} actionId={action.id} />}
               </div>
             </li>;
             })}</ul>
