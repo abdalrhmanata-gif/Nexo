@@ -10,10 +10,10 @@ export type AiReservation = {
   [key: string]: unknown;
 };
 
-export type AiGenerationOutcome =
+export type AiGenerationOutcome<T = MissionPlan> =
   | {
       kind: "success";
-      plan: MissionPlan;
+      plan: T;
     }
   | {
       kind: "quota";
@@ -45,10 +45,10 @@ export declare function classifyProviderFailure(error: unknown): {
   code: string;
 };
 
-export declare function runAiGeneration(args: {
+export declare function runAiGeneration<T = MissionPlan>(args: {
   requestId: string;
   reserve: (requestId: string) => Promise<AiReservation>;
-  generate: () => Promise<MissionPlan>;
+  generate: () => Promise<T>;
   consume: (reservationId: string) => Promise<void>;
   release: (reservationId: string) => Promise<void>;
-}): Promise<AiGenerationOutcome>;
+}): Promise<AiGenerationOutcome<T>>;
