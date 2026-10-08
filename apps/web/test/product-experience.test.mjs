@@ -313,3 +313,19 @@ test("AI mission entry removes the blank-page moment with starter goals", () => 
   assert.match(source, /Describe the result, not the project structure/);
 });
 
+
+
+test("workspace provides search navigation and searches across mission content", () => {
+  const shell = read("components/shell.tsx");
+  assert.match(shell, /href="\/app#mission-search"/);
+  assert.match(shell, /LocalizedText en="Search"/);
+
+  const page = read("app/app/page.tsx");
+  assert.match(page, /id="mission-search"/);
+  assert.match(page, /name="q"/);
+  assert.match(page, /mission\.name/);
+  assert.match(page, /mission\.intent/);
+  assert.match(page, /\.criteria/);
+  assert.match(page, /\.actions\.map/);
+  assert.match(page, /No matching missions/);
+});
