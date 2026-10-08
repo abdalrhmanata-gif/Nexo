@@ -8,7 +8,7 @@ on:
     types: [opened, synchronize, reopened]
 
 concurrency:
-  group: zavqera-w21-local-${{ github.event.pull_request.number || github.sha }}
+  group: zavqera-w21-local-${{ github.sha }}
   cancel-in-progress: false
 
 permissions:
