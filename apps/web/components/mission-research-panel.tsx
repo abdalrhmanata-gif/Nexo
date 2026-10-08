@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Source = { title: string; url: string };
 type Research = { summary: string; sources: Source[] };
@@ -25,6 +25,7 @@ function isResearchRun(value: unknown): value is ResearchRun {
 
 export function MissionResearchPanel({ missionId }: { missionId: string }) {
   const [research, setResearch] = useState<ResearchRun | null>(null);
+  const hasLocalRun = useRef(false);
   const [runs, setRuns] = useState<ResearchRun[]>([]);
   const [busy, setBusy] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(true);
@@ -40,7 +41,7 @@ export function MissionResearchPanel({ missionId }: { missionId: string }) {
         const saved = payload.runs.filter(isResearchRun);
         if (active) {
           setRuns(saved);
-          setResearch((current) => current ?? saved[0] ?? null);
+          if (!hasLocalRun.current) setResearch(saved[0] ?? null);
         }
       })
       .catch(() => {
@@ -76,6 +77,7 @@ export function MissionResearchPanel({ missionId }: { missionId: string }) {
         summary: payload.summary,
         sources: payload.sources,
       } as ResearchRun;
+      hasLocalRun.current = true;
       setResearch(savedRun);
       setRuns((current) => [savedRun, ...current.filter((run) => run.runId !== savedRun.runId)].slice(0, 5));
       setHistoryWarning(payload.history_persisted === false);
