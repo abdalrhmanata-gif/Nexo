@@ -245,7 +245,7 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
 
       userA.password = `${randomBytes(18).toString("base64url")}Bb2!`;
       const resetLink = await recoveryLinkFor(userA);
-      await page.goto(resetLink);
+      await page.goto(resetLink, { waitUntil: "domcontentloaded", timeout: 30_000 });
       await expect(page).toHaveURL(/\/auth\/reset-password/);
       await page.getByLabel("New password", { exact: true }).fill(userA.password);
       await page.getByLabel("Confirm new password", { exact: true }).fill(userA.password);
