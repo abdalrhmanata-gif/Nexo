@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "./server";
-import { MissionMutationConflictError, MissionMutationRejectedError, MissionProvenanceDeleteError, type MissionRepository, type NewMission, type NewOutcome, type NewVerification, type UpdateMission } from "../mission-repository";import type { ActionStatus, Mission, MissionAction, MissionActivity, MissionOutcome, MissionVerification, MissionLifecycleStatus } from "../view-models";
+import { MissionMutationConflictError, MissionMutationRejectedError, MissionProvenanceDeleteError, type MissionRepository, type MissionResearchRun, type NewMission, type NewOutcome, type NewResearchRun, type NewVerification, type UpdateMission } from "../mission-repository";import type { ActionStatus, Mission, MissionAction, MissionActivity, MissionOutcome, MissionVerification, MissionLifecycleStatus } from "../view-models";
 import { formatDateTime, humaniseEventType, parseMissionObjective, summariseEventPayload } from "../mission-content.mjs";
 
 type MissionRow = {
@@ -44,6 +44,42 @@ type EventRow = {
   payload: Record<string, unknown>;
   created_at: string;
 };
+
+type ResearchEventRow = {
+  payload: Record<string, unknown>;
+  created_at: string;
+};
+
+function toResearchRun(row: ResearchEventRow): MissionResearchRun | null {
+  const runId = typeof row.payload.run_id === "string" ? row.payload.run_id : "";
+  const requestId = typeof row.payload.request_id === "string" ? row.payload.request_id : "";
+  const summary = typeof row.payload.summary === "string" ? row.payload.summary : "";
+  const verified = row.payload.verified === false;
+  const sourceRows = Array.isArray(row.payload.sources) ? row.payload.sources : [];
+  const sources = sourceRows
+    .map((source) => {
+      if (!source || typeof source !== "object" || Array.isArray(source)) return null;
+      const item = source as Record<string, unknown>;
+      const url = typeof item.url === "string" ? item.url : "";
+      if (!url.startsWith("http")) return null;
+      const title = typeof item.title === "string" && item.title.trim()
+        ? item.title.trim().slice(0, 200)
+        : url.slice(0, 500);
+      return { title, url };
+    })
+    .filter((source): source is { title: string; url: string } => Boolean(source))
+    .slice(0, 12);
+  if (!runId || !requestId || !summary || !verified) return null;
+  return {
+    runId,
+    requestId,
+    status: "COMPLETED",
+    summary,
+    sources,
+    createdAt: row.created_at,
+    verified: false,
+  };
+}
 
 function toVerification(row: VerificationRow): MissionVerification {
   return { id: row.id, status: row.status, criteria: row.criteria, evidence: row.evidence, confidence: row.confidence, failureReason: row.failure_reason, createdAt: row.created_at };
@@ -318,6 +354,38 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       });
       if (result.error) throwMutationError(result.error);
       return toOutcome(result.data as OutcomeRow);
+    },
+    async recordResearchRun(input: NewResearchRun) {
+      const result = await supabase.rpc("record_mission_event", {
+        p_mission_id: input.missionId,
+        p_event_type: "RESEARCH_RUN_COMPLETED",
+        p_payload: {
+          schema_version: 1,
+          title: "Read-only research completed",
+          execution: "read_only_research",
+          status: "COMPLETED",
+          run_id: input.runId,
+          request_id: input.requestId,
+          summary: input.summary.slice(0, 12000),
+          sources: input.sources.slice(0, 12),
+          source_count: input.sources.length,
+          verified: false,
+        },
+      });
+      if (result.error) throw result.error;
+    },
+    async listResearchRuns(id: string) {
+      const result = await supabase
+        .from("mission_events")
+        .select("payload, created_at")
+        .eq("mission_id", id)
+        .eq("event_type", "RESEARCH_RUN_COMPLETED")
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (result.error) throw result.error;
+      return (result.data as ResearchEventRow[])
+        .map(toResearchRun)
+        .filter((run): run is MissionResearchRun => Boolean(run));
     },
   };
 }
