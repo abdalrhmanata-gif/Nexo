@@ -6,6 +6,7 @@ import { localMockMissionRepository } from "../../../lib/local-mock-repository";
 import { isSupabaseConfigured } from "../../../lib/supabase/config";
 import { createSupabaseMissionRepository } from "../../../lib/supabase/mission-repository";
 import { InvitationRevokeButton } from "../../../components/invitation-revoke-button";
+import { MemberManagementControls } from "../../../components/member-management-controls";
 
 export default async function BusinessWorkspacePage() {
   const repository = isSupabaseConfigured() ? await createSupabaseMissionRepository() : localMockMissionRepository;
@@ -51,7 +52,7 @@ export default async function BusinessWorkspacePage() {
         {agents.length ? <ul className="list">{agents.map((agent) => <li key={agent.id}><strong>{agent.name}</strong><br />{agent.description || "Bounded workspace agent"}<br /><span className={`status status-${agent.status.toLowerCase()}`}>{agent.status}</span></li>)}</ul> : <p className="detail-intent">No agents are configured yet. The workspace is ready for bounded agents with explicit authority.</p>}
       </section>
       <section className="card"><p className="eyebrow">People</p><h2>{members.length} workspace member{members.length === 1 ? "" : "s"}</h2>
-        <ul className="list">{members.slice(0,8).map((member) => <li key={member.id}><strong>{member.role}</strong><br /><span className="action-hint">Workspace member</span></li>)}</ul>
+        <ul className="list">{members.slice(0,8).map((member) => <li key={member.id}><strong>{member.email || "Workspace member"}</strong><br /><span className="action-hint">{member.role}</span><br /><MemberManagementControls memberId={member.id} currentRole={member.role} /></li>)}</ul>
         <p className="action-hint">Roles: owner, admin, member, viewer.</p>
         <h3>Invitations</h3>
         {invitations.length ? <ul className="list">{invitations.slice(0,5).map((invitation) => <li key={invitation.id}><strong>{invitation.email}</strong><br /><span className="action-hint">{invitation.role} · {invitation.status} · expires {new Date(invitation.expiresAt).toLocaleDateString()}</span>{invitation.status === "PENDING" && <div><InvitationRevokeButton invitationId={invitation.id} /></div>}</li>)}</ul> : <p className="detail-intent">No invitations have been created yet.</p>}
