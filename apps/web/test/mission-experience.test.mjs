@@ -89,7 +89,7 @@ test("mission research is clearly treated as unverified execution", () => {
   const panel = read("components/mission-research-panel.tsx");
   assert.match(panel, /Research result · Unverified/);
   assert.match(panel, /Saved research runs/);
-  assert.match(panel, /submitted forms/);
+  assert.match(panel, /submit forms/);
   assert.match(panel, /history_persisted/);
 });
 
@@ -165,5 +165,5 @@ test("mission detail exposes bounded, read-only research execution", () => {
   assert.ok(route.includes("reserveAiGeneration"));
   assert.ok(research.includes('type: "web_search"'));
   assert.ok(research.includes('tool_choice: "required"'));
-  assert.ok(research.includes("Read-only research"));
+  assert.match(research, /Read-only research/);
 });
