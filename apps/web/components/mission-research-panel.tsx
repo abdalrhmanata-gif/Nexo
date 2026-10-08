@@ -41,7 +41,7 @@ export function MissionResearchPanel({ missionId }: { missionId: string }) {
       <p className="eyebrow">Execution</p>
       <h2 id="mission-execution-heading">Run a research pass</h2>
       <p className="detail-intent">
-        ZAVQERA can safely research the public web against this mission's intent and success criteria. It will not buy, book, contact anyone, or change an account.
+        ZAVQERA can safely research the public web against this mission&apos;s intent and success criteria. It will not buy, book, contact anyone, or change an account.
       </p>
       <button className="button" type="button" onClick={runResearch} disabled={busy}>
         {busy ? "Researching…" : research ? "Run research again" : "Run research"}
