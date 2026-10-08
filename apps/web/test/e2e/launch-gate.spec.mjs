@@ -67,6 +67,7 @@ async function rotatePasswordFor(user) {
   await client.auth.signOut();
 }
 
+// Recovery transport is intentionally bypassed; Auth state is exercised below.
 test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission TOCTOU", async ({ browser }) => {
   assertRuntime();
 
