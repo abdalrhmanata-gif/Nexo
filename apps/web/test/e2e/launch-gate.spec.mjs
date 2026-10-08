@@ -144,6 +144,7 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
     await test.step("password rotation and reauthentication", async () => {
       await signOut(pageA);
       await signIn(pageA, userA);
+      await signOut(pageA);
       const nextPassword = `${randomBytes(18).toString("base64url")}Bb2!`;
       await rotatePasswordFor(userA, nextPassword);
       userA.password = nextPassword;
