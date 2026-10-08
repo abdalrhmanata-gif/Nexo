@@ -129,9 +129,9 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
         <div className="ai-plan-preview-header">
           <div>
             <p className="eyebrow"><LocalizedText en="AI draft" nb="KI-utkast" ar="مسودة الذكاء الاصطناعي" /></p>
-            <h3 id="ai-plan-preview-heading"><LocalizedText en="Here is the plan ZAVQERA prepared." nb="Her er planen ZAVQERA har laget." ar="هذه هي الخطة التي أعدتها ZAVQERA." /></h3>
+            <h3 id="ai-plan-preview-heading"><LocalizedText en="Your plan is ready." nb="Planen din er klar." ar="خطتك جاهزة." /></h3>
           </div>
-          <span className="ai-plan-review-badge"><LocalizedText en="Review before creating" nb="Se gjennom før du oppretter" ar="راجع قبل الإنشاء" /></span>
+          <span className="ai-plan-review-badge"><LocalizedText en="Review and edit before creating" nb="Se gjennom og rediger før du oppretter" ar="راجع وعدّل قبل الإنشاء" /></span>
         </div>
         <div className="ai-plan-summary">
           <span className="ai-plan-label"><LocalizedText en="Mission" nb="Oppdrag" ar="المهمة" /></span>
@@ -169,7 +169,7 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
     {(drafted || manualOpen) && <>
       <div className="review-heading">
         <p className="eyebrow"><LocalizedText en="Review and edit" /></p>
-        {drafted && <p className="review-note"><LocalizedText en="Your plan is ready. Review anything before creating the mission." nb="Planen din er klar. Gå gjennom den før du oppretter oppdraget." ar="خطتك جاهزة. راجعها قبل إنشاء المهمة." /></p>}
+        {drafted && <p className="review-note"><LocalizedText en="Review or edit anything before creating the mission." nb="Se gjennom eller rediger før du oppretter oppdraget." ar="راجع أو عدّل أي شيء قبل إنشاء المهمة." /></p>}
       </div>
       <div className="field"><label htmlFor="name"><LocalizedText en="Mission name" /></label><input id="name" name="name" value={name} onChange={(e) => setName(e.target.value)} placeholder={namePlaceholder} required /></div>
       <div className="field"><label htmlFor="intent"><LocalizedText en="Intent" /></label><textarea id="intent" name="intent" value={intent} onChange={(e) => setIntent(e.target.value)} placeholder={intentPlaceholder} required /><small><LocalizedText en="The outcome you want this mission to achieve." /></small></div>
