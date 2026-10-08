@@ -340,3 +340,16 @@ test("mission dates use day/month/year order", () => {
   assert.match(repository, /formatDateTime\(row\.created_at\)/);
   assert.match(repository, /updated: formatDateTime\(row\.updated_at\)/);
 });
+
+
+test("workspace search supports keyboard focus and escape clearing", () => {
+  const page = read("app/app/page.tsx");
+  const helper = read("components/mission-search-enhancements.tsx");
+  assert.match(page, /MissionSearchEnhancements/);
+  assert.match(helper, /metaKey \|\| event\.ctrlKey/);
+  assert.match(helper, /event\.key\.toLowerCase\(\) === "k"/);
+  assert.match(helper, /event\.key === "Escape"/);
+  assert.match(helper, /input\.form\?\.requestSubmit\(\)/);
+  const css = read("app/globals.css");
+  assert.match(css, /mission-search-shortcut/);
+});
