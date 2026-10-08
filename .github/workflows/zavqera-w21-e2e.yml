@@ -178,7 +178,14 @@ jobs:
           set -euo pipefail
           unset NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
           unset SUPABASE_SERVICE_ROLE_KEY SUPABASE_SECRET_KEY SERVICE_ROLE_KEY SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD
-          npm run test:e2e
+          mkdir -p "$RUNNER_TEMP/w21-playwright"
+          set +e
+          npm run test:e2e 2>&1 | tee "$RUNNER_TEMP/w21-playwright/test-e2e.log"
+          status="${PIPESTATUS[0]}"
+          set -e
+          if [ -d test-results ]; then cp -R test-results "$RUNNER_TEMP/w21-playwright/test-results"; fi
+          if [ -d playwright-report ]; then cp -R playwright-report "$RUNNER_TEMP/w21-playwright/playwright-report"; fi
+          exit "$status"
 
       - name: Cleanup disposable Supabase stack
         if: always()
