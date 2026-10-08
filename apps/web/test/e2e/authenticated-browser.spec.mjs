@@ -250,7 +250,8 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await page.getByLabel("New password", { exact: true }).fill(userA.password);
       await page.getByLabel("Confirm new password", { exact: true }).fill(userA.password);
       await page.getByRole("button", { name: "Update password" }).click();
-      await expect(page).toHaveURL(/\/app$/);
+      await expect(page.getByRole("status")).toContainText("Password updated");
+      await signOut(page);
       await signIn(page, userA);
       await expect(page).toHaveURL(/\/app$/);
     });
