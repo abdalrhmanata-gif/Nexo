@@ -353,3 +353,17 @@ test("workspace search supports keyboard focus and escape clearing", () => {
   const css = read("app/globals.css");
   assert.match(css, /mission-search-shortcut/);
 });
+
+
+test("mission templates create a low-friction sharing loop", () => {
+  const templates = read("lib/mission-templates.ts");
+  const gallery = read("app/templates/page.tsx");
+  const tryForm = read("components/anonymous-plan-form.tsx");
+  const home = read("app/page.tsx");
+  assert.match(templates, /family-travel-research/);
+  assert.match(templates, /competitor-research/);
+  assert.match(gallery, /Use this mission/);
+  assert.match(gallery, /\/try\?template=/);
+  assert.match(tryForm, /missionTemplateById/);
+  assert.match(home, /mission-template-callout/);
+});
