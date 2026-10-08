@@ -73,6 +73,7 @@ async function recoveryLinkFor(user) {
         email: user.email,
         redirect_to: `${runtime.baseURL}/auth/callback?next=%2Fauth%2Freset-password`,
       }),
+      signal: AbortSignal.timeout(10_000),
     },
   );
   if (!response.ok) throw new Error(`Disposable recovery-link generation failed with HTTP ${response.status}.`);
@@ -92,7 +93,7 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
   const pageB = await contextB.newPage();
 
   try {
-    await test.step("authenticated signup and password reset", async () => {
+    await test.step("authenticated signup and password recovery", async () => {
       await signUp(pageA, userA);
       await signUp(pageB, userB);
 
