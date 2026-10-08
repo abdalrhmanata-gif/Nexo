@@ -228,6 +228,8 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
         expect(response.ok(), `Research API failed (${response.status()}): ${JSON.stringify(payload)}`).toBe(true);
         expect(payload?.run?.status).toBe("COMPLETED");
         expect(payload?.run?.verified).toBe(false);
+        await expect(pageA.getByRole("button", { name: "Run research again", exact: true })).toBeVisible();
+        await pageA.reload();
         await expect(pageA.getByText("Research result · Unverified", { exact: true })).toBeVisible();
         await expect(pageA.getByRole("link", { name: "ZAVQERA test source", exact: true })).toBeVisible();
         const saved = await owner.client
