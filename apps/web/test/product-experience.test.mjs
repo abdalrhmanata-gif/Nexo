@@ -299,11 +299,11 @@ test("homepage presents the final launch pricing tiers and quotas", () => {
 test("homepage communicates the one-goal-first product loop", () => {
   const page = read("app/page.tsx");
   assert.match(page, /From thought to mission/);
-  assert.match(page, /You explain it\. ZAVQERA structures it\./);
+  assert.match(page, /You describe the outcome\. ZAVQERA prepares the mission\./);
   assert.match(page, /A clear mission and intent/);
   assert.match(page, /Success criteria/);
   assert.match(page, /Practical first steps/);
-  assert.match(page, /Nothing is created or executed until you decide/);
+  assert.match(page, /Clear boundaries before execution/);
 });
 
 test("AI mission entry removes the blank-page moment with starter goals", () => {
