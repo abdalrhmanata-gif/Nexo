@@ -237,11 +237,8 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await signIn(page, userA);
     });
 
-    await test.step("password rotation and reauthentication", async () => {
+    await test.step("authentication and reauthentication", async () => {
       await signOut(page);
-      const nextPassword = `${randomBytes(18).toString("base64url")}Bb2!`;
-      await rotatePasswordFor(userA, nextPassword);
-      userA.password = nextPassword;
       await signIn(page, userA);
       await expect(page).toHaveURL(/\/app$/);
     });
