@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAuthenticatedUser } from "../../../../../lib/supabase/server";
+import { getAuthenticatedUser, createSupabaseServerClient } from "../../../../../lib/supabase/server";
 import { createSupabaseMissionRepository } from "../../../../../lib/supabase/mission-repository";
 import { buildMockMissionResearch, requestMissionResearch, type MissionResearch } from "../../../../../lib/ai-research";
 import { runAiGeneration, AI_GENERATION_OUTCOMES } from "../../../../../lib/ai-generation-service";
@@ -21,9 +21,10 @@ async function authenticatedMission(missionId: string) {
   const user = await getAuthenticatedUser();
   if (!user) return { error: NextResponse.json({ error: "Authentication is required." }, { status: 401 }) } as const;
   const repository = await createSupabaseMissionRepository();
+  const supabase = await createSupabaseServerClient();
   const mission = await repository.getMission(missionId);
   if (!mission) return { error: NextResponse.json({ error: "Mission not found." }, { status: 404 }) } as const;
-  return { repository, mission } as const;
+  return { repository, supabase, mission } as const;
 }
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -41,7 +42,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   try {
     const auth = await authenticatedMission((await params).id);
     if ("error" in auth) return auth.error;
-    const { repository, mission } = auth;
+    const { repository, supabase, mission } = auth;
 
     if (isTerminalLifecycle(mission.lifecycleStatus)) {
       return NextResponse.json({ error: "This mission is closed. Create a new mission for additional research." }, { status: 422 });
