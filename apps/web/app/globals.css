@@ -240,3 +240,54 @@ nav > a[aria-current="page"]:not(.button) {
 .auth-divider { display:flex; align-items:center; gap:12px; color:var(--muted); font-size:12px; }
 .auth-divider::before,.auth-divider::after { content:""; height:1px; flex:1; background:var(--line); }
 .auth-divider span { white-space:nowrap; }
+
+/* Mission search: a first-class navigation path for large workspaces. */
+.nav-search { display:inline-flex; align-items:center; gap:7px; }
+.nav-search > span { font-size:18px; line-height:0; font-weight:400; }
+.mission-search {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(420px,1.35fr);
+  align-items:center;
+  gap:24px;
+  margin:0 0 34px;
+  padding:22px 24px;
+  border:1px solid #cfe2df;
+  border-radius:9px;
+  background:linear-gradient(180deg,#f3f9f8 0%,#fbfcfd 100%);
+}
+.mission-search-copy h2 { margin:0 0 4px; color:var(--navy); letter-spacing:-.03em; }
+.mission-search-copy p:not(.eyebrow) { margin:0; color:var(--muted); font-size:13px; }
+.mission-search-form { display:grid; grid-template-columns:minmax(0,1fr) auto auto; gap:8px; align-items:center; }
+.mission-search-form input {
+  width:100%;
+  min-width:0;
+  padding:12px 14px;
+  border:1px solid #b9cbd3;
+  border-radius:6px;
+  background:var(--white);
+  color:var(--ink);
+  font:inherit;
+}
+.mission-search-form input:focus-visible {
+  border-color:var(--teal);
+  box-shadow:0 0 0 3px rgba(8,127,120,.12);
+}
+.mission-search-result {
+  grid-column:1 / -1;
+  margin:0;
+  padding-top:2px;
+  color:var(--muted);
+  font-size:13px;
+}
+.mission-search-result strong { color:var(--navy); }
+@media (max-width:820px) {
+  .mission-search { grid-template-columns:1fr; }
+  .mission-search-form { grid-template-columns:minmax(0,1fr) auto auto; }
+}
+@media (max-width:700px) {
+  .nav-search { order:-1; }
+  .mission-search { padding:18px; gap:16px; margin-bottom:28px; }
+  .mission-search-form { grid-template-columns:1fr 1fr; }
+  .mission-search-form input { grid-column:1 / -1; }
+  .mission-search-form .button { width:100%; text-align:center; }
+}
