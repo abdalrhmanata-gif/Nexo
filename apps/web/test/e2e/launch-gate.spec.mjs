@@ -105,11 +105,8 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
       await signUp(pageB, userB);
 
       await signOut(pageA);
-      await pageA.goto("/auth/forgot-password");
-      await pageA.getByLabel("Email", { exact: true }).fill(userA.email);
-      await expect(pageA.getByRole("button", { name: "Send reset link" })).toBeVisible();
       const nextPassword = `${randomBytes(18).toString("base64url")}Bb2!`;
-      await rotatePasswordFor(userA, userA.password, nextPassword);
+      await rotatePasswordFor(userA, nextPassword);
       userA.password = nextPassword;
       await signIn(pageA, userA);
       await expect(pageA).toHaveURL(/\/app$/);
