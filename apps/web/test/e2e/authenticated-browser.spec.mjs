@@ -516,7 +516,9 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
   } finally {
     clearTimeout(timer);
   }
-}mport { randomBytes } from "node:crypto";
+}
+
+import { randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { expect, test } from "@playwright/test";
 import { createFixtureLedger, isLoopbackUrl, writeLedgerFile } from "./harness.mjs";
