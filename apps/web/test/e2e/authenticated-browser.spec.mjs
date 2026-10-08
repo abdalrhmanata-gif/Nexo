@@ -140,9 +140,34 @@ async function signOut(page) {
 
 async function latestResetLink(email) {
   const deadline = Date.now() + 30_000;
+  const extract = (raw) => {
+    const decoded = raw
+      .replace(/=\\r?\\n/g, "")
+      .replace(/=3D/gi, "=")
+      .replaceAll("&amp;", "&");
+    const matches = [...decoded.matchAll(/https?:\\/\\/[^\\s"'<>]+\\/auth\\/v1\\/verify\\?[^\\s"'<>]+/g)]
+      .map((match) => match[0].replace(/[)>.,]+$/, ""));
+    return matches.find((value) => value.includes("type=recovery") && value.includes("redirect_to=")) ?? null;
+  };
 
   while (Date.now() < deadline) {
-    const search = await fetch(`http://127.0.0.1:54324/api/v1/search?query=${encodeURIComponent(`to:${email}`)}`, { headers: { Accept: "application/json" } });
+    // Mailpit's rendered latest-message endpoint applies the same search
+    // grammar as the UI and avoids coupling the test to API response shapes.
+    const rendered = await fetch(
+      `http://127.0.0.1:54324/view/latest.txt?query=${encodeURIComponent(`to:"${email}" subject:"Reset your ZAVQERA password"`)}`,
+      { headers: { Accept: "text/plain" } },
+    );
+    if (rendered.ok) {
+      const candidate = extract(await rendered.text());
+      if (candidate) return candidate;
+    }
+
+    // Keep the API lookup as a fallback for compatibility with Mailpit
+    // versions that do not expose the rendered endpoint.
+    const search = await fetch(
+      `http://127.0.0.1:54324/api/v1/search?query=${encodeURIComponent(`to:"${email}" subject:"Reset your ZAVQERA password"`)}`,
+      { headers: { Accept: "application/json" } },
+    );
     if (search.ok) {
       const result = await search.json();
       const messages = Array.isArray(result?.messages) ? result.messages : [];
@@ -152,15 +177,12 @@ async function latestResetLink(email) {
         const response = await fetch(`http://127.0.0.1:54324/api/v1/message/${encodeURIComponent(id)}`, { headers: { Accept: "application/json" } });
         if (!response.ok) continue;
         const message = await response.json();
-        const recipients = Array.isArray(message?.To) ? message.To.map((entry) => typeof entry?.Address === "string" ? entry.Address.toLowerCase() : "") : [];
-        const subject = typeof message?.Subject === "string" ? message.Subject : "";
-        const combined = `${message?.Text ?? ""}\n${message?.HTML ?? ""}`.replaceAll("&amp;", "&").replaceAll("&lt;", "<").replaceAll("&gt;", ">").replaceAll("&quot;", '"');
-        if (/reset/i.test(subject) && recipients.includes(email.toLowerCase())) {
-          const match = combined.match(/https?:\/\/[^\s"'<>]+\/auth\/v1\/verify\?[^\s"'<>]+/);
-          if (match) return match[0].replace(/[)>.,]+$/, "");
-        }
+        const combined = `${message?.Text ?? ""}\\n${message?.HTML ?? ""}`;
+        const candidate = extract(combined);
+        if (candidate) return candidate;
       }
     }
+
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
   throw new Error("The disposable Mailpit search did not expose the password-reset email.");
