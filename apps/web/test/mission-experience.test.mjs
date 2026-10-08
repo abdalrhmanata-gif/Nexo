@@ -85,6 +85,14 @@ test("workspace guidance selects available work before a future follow-up", () =
   assert.equal(result.detail, "Now");
 });
 
+test("mission research is clearly treated as unverified execution", () => {
+  const panel = read("components/mission-research-panel.tsx");
+  assert.match(panel, /Research result · Unverified/);
+  assert.match(panel, /Saved research runs/);
+  assert.match(panel, /submitted forms/);
+  assert.match(panel, /history_persisted/);
+});
+
 test("activity summaries never leak a raw payload dump", () => {
   const summary = summariseEventPayload({ from_status: "PENDING", to_status: "RUNNING", secret_token: "abc123", owner_id: "u-1" });
   assert.ok(!summary.includes("abc123"));
