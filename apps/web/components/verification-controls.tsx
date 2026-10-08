@@ -75,7 +75,7 @@ export function VerificationControls({ missionId, verification }: { missionId: s
     {!researchLoading && !latestResearch && <p className="action-hint">No saved execution is available. Verification can still be recorded from other evidence you reviewed.</p>}
     <form onSubmit={verify}>
       <div className="field"><label htmlFor="criteria">Verification criteria</label><textarea id="criteria" name="criteria" required placeholder="What exactly did you check?" /></div>
-      <div className="field"><label htmlFor="evidence">Evidence summary</label><textarea id="evidence" name="evidence" required defaultValue={latestResearch?.summary ?? ""} /></div>
+      <div className="field"><label htmlFor="evidence">Evidence summary</label><textarea key={latestResearch?.runId ?? "manual"} id="evidence" name="evidence" required defaultValue={latestResearch?.summary ?? ""} /></div>
       <div className="field"><label htmlFor="confidence">Confidence</label><input id="confidence" name="confidence" type="number" min="0" max="1" step="0.01" defaultValue="0.9" /></div>
       <button className="button" type="submit" disabled={busy}>{busy ? "Recording…" : "Record verification"}</button>
     </form>
