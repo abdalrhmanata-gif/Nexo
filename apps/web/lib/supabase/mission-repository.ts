@@ -123,6 +123,8 @@ function toMission(row: MissionRow, actions: ActionRow[] = [], verifications: Mi
 }
 
 async function ownedWorkspace(supabase: SupabaseClient, userId: string) {
+  const membership = await supabase.from("workspace_members").select("workspace_id").eq("user_id", userId).order("created_at").limit(1).maybeSingle();
+  if (!membership.error && membership.data) return membership.data.workspace_id as string;
   const existing = await supabase.from("workspaces").select("id").eq("owner_id", userId).order("created_at").limit(1).maybeSingle();
   if (existing.error) throw existing.error;
   if (existing.data) return existing.data.id as string;
@@ -480,9 +482,21 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       return (result.data ?? []).map((row) => ({ id: row.id as string, email: row.email as string, role: row.role as WorkspaceInvitation["role"], status: row.status as WorkspaceInvitation["status"], expiresAt: row.expires_at as string, createdAt: row.created_at as string }));
     },
     async listWorkspaceMembers() {
-      const result = await supabase.from("workspace_members").select("id,user_id,role,created_at").eq("workspace_id", workspaceId).order("created_at");
+      const result = await supabase.rpc("list_workspace_members", { p_workspace_id: workspaceId });
       if (result.error) throw result.error;
-      return (result.data ?? []).map((row) => ({ id: row.id as string, userId: row.user_id as string, role: row.role as WorkspaceMember["role"], createdAt: row.created_at as string }));
+      return (result.data ?? []).map((row) => ({ id: row.id as string, userId: row.user_id as string, email: (row.email as string | null) ?? null, role: row.role as WorkspaceMember["role"], createdAt: row.created_at as string }));
+    },
+    async updateWorkspaceMemberRole(memberId, role) {
+      const result = await supabase.rpc("update_workspace_member_role", { p_member_id: memberId, p_role: role });
+      if (result.error || !result.data) throw result.error ?? new Error("Member role could not be changed.");
+      const row = result.data as { id: string; user_id: string; role: WorkspaceMember["role"]; created_at: string };
+      return { id: row.id, userId: row.user_id, email: null, role: row.role, createdAt: row.created_at };
+    },
+    async removeWorkspaceMember(memberId) {
+      const result = await supabase.rpc("remove_workspace_member", { p_member_id: memberId });
+      if (result.error || !result.data) throw result.error ?? new Error("Member could not be removed.");
+      const row = result.data as { id: string; user_id: string; role: WorkspaceMember["role"]; created_at: string };
+      return { id: row.id, userId: row.user_id, email: null, role: row.role, createdAt: row.created_at };
     },
     async listPendingApprovals() {
       const result = await supabase.from("mission_approvals").select("id,mission_id,action_id,status,requested_by,decided_by,requested_scope,decision_note,created_at,decided_at").eq("workspace_id", workspaceId).eq("status","PENDING").order("created_at",{ascending:false});
