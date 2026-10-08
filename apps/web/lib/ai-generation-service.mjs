@@ -38,6 +38,17 @@ export function classifyProviderFailure(error) {
   };
 }
 
+/**
+ * @template T
+ * @param {{
+ *   requestId: string,
+ *   reserve: (requestId: string) => Promise<any>,
+ *   generate: () => Promise<T>,
+ *   consume: (reservationId: string) => Promise<any>,
+ *   release: (reservationId: string) => Promise<any>,
+ * }} input
+ * @returns {Promise<{kind: string, plan?: T, reservation?: any, reservationId?: string, disposition?: string, status?: number, code?: string}>}
+ */
 export async function runAiGeneration({
   requestId,
   reserve,
