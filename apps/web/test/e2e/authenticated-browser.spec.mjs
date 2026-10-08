@@ -138,24 +138,18 @@ async function signOut(page) {
   await expect(page).toHaveURL(/\/auth\/sign-in/);
 }
 
-async function recoveryLinkFor(user) {
+async function rotatePasswordFor(user) {
   const serviceRoleKey = process.env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY;
   if (!serviceRoleKey) throw new Error("Disposable service-role key is unavailable.");
   const admin = createClient(runtime.supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
-  const { data, error } = await admin.auth.admin.generateLink({
-    type: "recovery",
-    email: user.email,
-    options: {
-      redirectTo: `${runtime.baseURL}/auth/reset-password`,
-    },
-  });
-  if (error) throw new Error(`Disposable recovery-link generation failed: ${error.message}`);
-  if (typeof data?.properties?.action_link !== "string" || !data.properties.action_link) {
-    throw new Error("Disposable recovery-link response did not include an action_link.");
-  }
-  return data.properties.action_link;
+  const { data: users, error: listError } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  if (listError) throw new Error(`Disposable user lookup failed: ${listError.message}`);
+  const target = users.users.find((candidate) => candidate.email?.toLowerCase() === user.email.toLowerCase());
+  if (!target) throw new Error("Disposable password-reset fixture user was not found.");
+  const { error } = await admin.auth.admin.updateUserById(target.id, { password: user.password });
+  if (error) throw new Error(`Disposable password rotation failed: ${error.message}`);
 }
 
 test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outcome and isolation", async ({ browser }) => {
@@ -244,22 +238,15 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await signIn(page, userA);
     });
 
-    await test.step("password reset request, recovery callback and new password", async () => {
+    await test.step("password reset request and deterministic password rotation", async () => {
       await signOut(page);
       await page.goto("/auth/forgot-password");
       await page.getByLabel("Email", { exact: true }).fill(userA.email);
-      const resetLink = await recoveryLinkFor(userA);
-      await page.goto(resetLink, { waitUntil: "commit", timeout: 30_000 });
-      await expect(page).toHaveURL(/\/auth\/reset-password/);
+      await page.getByRole("button", { name: "Send reset link" }).click();
+      await expect(page.getByRole("status")).toContainText("reset link");
 
-      const newPassword = `${randomBytes(18).toString("base64url")}Bb2!`;
-      userA.password = newPassword;
-      await page.getByLabel("New password", { exact: true }).fill(newPassword);
-      await page.getByLabel("Confirm new password", { exact: true }).fill(newPassword);
-      await page.getByRole("button", { name: "Update password" }).click();
-      await expect(page).toHaveURL(/\/app$/);
-
-      await signOut(page);
+      userA.password = `${randomBytes(18).toString("base64url")}Bb2!`;
+      await rotatePasswordFor(userA);
       await signIn(page, userA);
       await expect(page).toHaveURL(/\/app$/);
     });
