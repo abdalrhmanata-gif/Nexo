@@ -142,10 +142,26 @@ async function rotatePasswordFor(user, currentPassword, nextPassword) {
   const client = createClient(runtime.supabaseUrl, runtime.publishableKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
-  const { error: signInError } = await client.auth.signInWithPassword({ email: user.email, password: currentPassword });
-  if (signInError) throw new Error(`Disposable password-rotation sign-in failed: ${signInError.message}`);
-  const { error } = await client.auth.updateUser({ password: nextPassword });
+  const { data: signedIn, error: signInError } = await client.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword,
+  });
+  if (signInError || !signedIn.user) {
+    throw new Error(`Disposable password-rotation sign-in failed: ${signInError?.message ?? "missing user"}`);
+  }
+
+  const admin = createClient(runtime.supabaseUrl, process.env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const { error } = await admin.auth.admin.updateUserById(signedIn.user.id, { password: nextPassword });
   if (error) throw new Error(`Disposable password rotation failed: ${error.message}`);
+  await client.auth.signOut();
+
+  const { error: verifyError } = await client.auth.signInWithPassword({
+    email: user.email,
+    password: nextPassword,
+  });
+  if (verifyError) throw new Error(`Disposable rotated password verification failed: ${verifyError.message}`);
   await client.auth.signOut();
 }
 
