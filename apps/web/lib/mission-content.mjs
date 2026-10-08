@@ -317,6 +317,22 @@ export function summariseEventPayload(payload) {
   return parts.join(" · ").slice(0, 160);
 }
 
+export function formatDateTime(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  const day = date.getDate();
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
+  const time = date.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+  return `${day}/${month}/${year}, ${time}`;
+}
+
 export function humaniseEventType(eventType) {
   if (typeof eventType !== "string" || !eventType.trim()) return "Mission event";
   const words = eventType.replaceAll("_", " ").trim().toLowerCase();
