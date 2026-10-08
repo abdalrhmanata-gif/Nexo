@@ -12,6 +12,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
           ZAVQERA <span><LocalizedText en="MISSION CONTROL" /></span>
         </Link>
         <nav aria-label="Primary navigation">
+          <Link className="button button-small button-quiet nav-search" href="/app#mission-search">
+            <span aria-hidden="true">⌕</span><LocalizedText en="Search" nb="Søk" ar="بحث" />
+          </Link>
           <Link className="button button-small" href="/app/missions/new"><LocalizedText en="New mission" /></Link>
           <NavLink href="/pricing"><LocalizedText en="Pricing" /></NavLink>
           <WorkspaceNavLink />
