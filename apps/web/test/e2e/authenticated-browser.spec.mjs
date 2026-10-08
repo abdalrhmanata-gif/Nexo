@@ -140,6 +140,7 @@ async function signOut(page) {
 
 async function latestResetLink(email) {
   const deadline = Date.now() + 30_000;
+  const query = encodeURIComponent(`to:"${email}" subject:"Reset your ZAVQERA password"`);
   const extract = (raw) => {
     const decoded = raw
       .replace(/=\r?\n/g, "")
@@ -151,32 +152,15 @@ async function latestResetLink(email) {
   };
 
   while (Date.now() < deadline) {
-    const rendered = await fetch(
-      `http://127.0.0.1:54324/view/latest.txt?query=${encodeURIComponent(`to:"${email}" subject:"Reset your ZAVQERA password"`)}`,
+    // Mailpit resolves "latest" using the same query filter, so this is
+    // deterministic and avoids depending on search-result JSON ordering.
+    const response = await fetch(
+      `http://127.0.0.1:54324/api/v1/message/latest/raw?query=${query}`,
       { headers: { Accept: "text/plain" } },
     );
-    if (rendered.ok) {
-      const candidate = extract(await rendered.text());
+    if (response.ok) {
+      const candidate = extract(await response.text());
       if (candidate) return candidate;
-    }
-
-    const search = await fetch(
-      `http://127.0.0.1:54324/api/v1/search?query=${encodeURIComponent(`to:"${email}" subject:"Reset your ZAVQERA password"`)}`,
-      { headers: { Accept: "application/json" } },
-    );
-    if (search.ok) {
-      const result = await search.json();
-      const messages = Array.isArray(result?.messages) ? result.messages : [];
-      for (const hit of messages) {
-        const id = typeof hit?.ID === "string" ? hit.ID : typeof hit?.Id === "string" ? hit.Id : "";
-        if (!id) continue;
-        const response = await fetch(`http://127.0.0.1:54324/api/v1/message/${encodeURIComponent(id)}`, { headers: { Accept: "application/json" } });
-        if (!response.ok) continue;
-        const message = await response.json();
-        const combined = `${message?.Text ?? ""}\n${message?.HTML ?? ""}`;
-        const candidate = extract(combined);
-        if (candidate) return candidate;
-      }
     }
 
     await new Promise((resolve) => setTimeout(resolve, 500));
