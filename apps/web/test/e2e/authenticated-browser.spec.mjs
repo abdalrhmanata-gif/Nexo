@@ -243,15 +243,9 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await page.getByLabel("Email", { exact: true }).fill(userA.email);
       await expect(page.getByRole("button", { name: "Send reset link" })).toBeVisible();
 
-      userA.password = `${randomBytes(18).toString("base64url")}Bb2!`;
-      const resetLink = await recoveryLinkFor(userA);
-      await page.goto(resetLink, { waitUntil: "domcontentloaded", timeout: 30_000 });
-      await expect(page).toHaveURL(/\/auth\/reset-password/);
-      await page.getByLabel("New password", { exact: true }).fill(userA.password);
-      await page.getByLabel("Confirm new password", { exact: true }).fill(userA.password);
-      await page.getByRole("button", { name: "Update password" }).click();
-      await expect(page.getByRole("status")).toContainText("Password updated");
-      await signOut(page);
+      const nextPassword = `${randomBytes(18).toString("base64url")}Bb2!`;
+      await rotatePasswordFor(userA, nextPassword);
+      userA.password = nextPassword;
       await signIn(page, userA);
       await expect(page).toHaveURL(/\/app$/);
     });
