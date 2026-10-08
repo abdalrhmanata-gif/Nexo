@@ -154,7 +154,7 @@ jobs:
           supabase start --ignore-health-check -x "studio,imgproxy,realtime,storage-api,postgres-meta,edge-runtime,logflare,vector,supavisor" --workdir "$ZAVQERA_E2E_SUPABASE_WORKDIR"
           admin_key="$(supabase status --workdir "$ZAVQERA_E2E_SUPABASE_WORKDIR" -o env | awk -F= '/^SERVICE_ROLE_KEY=/{print $2}' | tail -n 1)"
           test -n "$admin_key"
-          echo "ZAVQERA_E2E_ADMIN_KEY=$admin_key" >> "$GITHUB_ENV"
+          echo "ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY=$admin_key" >> "$GITHUB_ENV"
           (
             cd "$ZAVQERA_E2E_SUPABASE_WORKDIR"
             supabase test db supabase/tests/w30_launch_gate_pgtap.sql
