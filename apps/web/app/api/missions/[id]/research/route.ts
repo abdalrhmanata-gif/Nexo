@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAuthenticatedUser, createSupabaseServerClient } from "../../../../../lib/supabase/server";
+import { getAuthenticatedUser } from "../../../../../lib/supabase/server";
 import { createSupabaseMissionRepository } from "../../../../../lib/supabase/mission-repository";
 import { buildMockMissionResearch, requestMissionResearch, type MissionResearch } from "../../../../../lib/ai-research";
 import { runAiGeneration, AI_GENERATION_OUTCOMES } from "../../../../../lib/ai-generation-service";
@@ -48,26 +48,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
 
     const requestId = normaliseRequestId(request);
-    const supabase = await createSupabaseServerClient();
-    const missionRow = await supabase.from("missions").select("id, workspace_id, agent_id").eq("id", mission.id).maybeSingle();
-    if (missionRow.error || !missionRow.data) {
-      return NextResponse.json({ error: "Mission execution context is unavailable." }, { status: 503 });
+    const agents = await repository.listWorkspaceAgents?.() ?? [];
+    const researchAgent = agents.find((agent) => agent.status === "ACTIVE" && agent.name === "ZAVQERA Research Agent");
+    if (!researchAgent) {
+      return NextResponse.json({ error: "No active research agent is available for this workspace." }, { status: 503 });
     }
-    let agentId = missionRow.data.agent_id as string | null;
-    if (!agentId) {
-      const fallbackAgent = await supabase
-        .from("workspace_agents")
-        .select("id")
-        .eq("workspace_id", missionRow.data.workspace_id)
-        .eq("status", "ACTIVE")
-        .eq("name", "ZAVQERA Research Agent")
-        .limit(1)
-        .maybeSingle();
-      if (fallbackAgent.error || !fallbackAgent.data) {
-        return NextResponse.json({ error: "No active research agent is available for this workspace." }, { status: 503 });
-      }
-      agentId = fallbackAgent.data.id as string;
-    }
+    const agentId = researchAgent.id;
     const configuredProviderMode = process.env.ZAVQERA_AI_PROVIDER_MODE || "openai";
     const isProductionRuntime = process.env.NODE_ENV === "production";
     const providerMode = configuredProviderMode === "mock" && !isProductionRuntime ? "mock" : "openai";
