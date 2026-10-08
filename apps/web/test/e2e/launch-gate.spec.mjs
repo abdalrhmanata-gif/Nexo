@@ -67,6 +67,26 @@ async function rotatePasswordFor(user, currentPassword, nextPassword) {
   const { error } = await admin.auth.admin.updateUserById(signedIn.user.id, { password: nextPassword });
   if (error) throw new Error(`Disposable password rotation failed: ${error.message}`);
 }
+
+async function recoveryLinkFor(user) {
+  const serviceRoleKey = process.env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY;
+  if (!serviceRoleKey) throw new Error("Disposable service-role key is unavailable.");
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 10_000);
+  try {
+    const response = await fetch(`${runtime.supabaseUrl}/auth/v1/admin/generate_link`, {
+      method: "POST",
+      headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "recovery", email: user.email, redirect_to: `${runtime.baseURL}/auth/callback?next=%2Fauth%2Freset-password` }),
+      signal: controller.signal,
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(`Disposable recovery-link generation failed with HTTP ${response.status}: ${payload?.msg ?? payload?.message ?? "unknown"}`);
+    if (typeof payload?.action_link !== "string" || !payload.action_link) throw new Error("Disposable recovery-link response did not include an action_link.");
+    return payload.action_link;
+  } finally { clearTimeout(timer); }
+}
+
 test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission TOCTOU", async ({ browser }) => {
   assertRuntime();
 
