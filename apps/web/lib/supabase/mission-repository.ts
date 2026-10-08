@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "./server";
-import { MissionMutationConflictError, MissionMutationRejectedError, MissionProvenanceDeleteError, type MissionRepository, type MissionResearchRun, type NewMission, type NewOutcome, type NewResearchRun, type NewVerification, type UpdateMission, type WorkspaceAgent, type WorkspaceMember, type MissionApproval } from "../mission-repository";import type { ActionStatus, Mission, MissionAction, MissionActivity, MissionOutcome, MissionVerification, MissionLifecycleStatus } from "../view-models";
+import { MissionMutationConflictError, MissionMutationRejectedError, MissionProvenanceDeleteError, type MissionRepository, type MissionResearchRun, type NewMission, type NewOutcome, type NewResearchRun, type NewVerification, type UpdateMission, type WorkspaceAgent, type WorkspaceMember, type WorkspaceInvitation, type MissionApproval } from "../mission-repository";import type { ActionStatus, Mission, MissionAction, MissionActivity, MissionOutcome, MissionVerification, MissionLifecycleStatus } from "../view-models";
 import { formatDateTime, humaniseEventType, parseMissionObjective, summariseEventPayload } from "../mission-content.mjs";
 
 type MissionRow = {
