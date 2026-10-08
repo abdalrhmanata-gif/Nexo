@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LocalizedText } from "./localized-text";
+import { missionTemplateById } from "../lib/mission-templates";
 
 type Plan = { title: string; summary: string; successCriteria: string[]; steps: { title: string; reason: string }[]; clarifyingQuestions: string[] };
 
@@ -15,6 +16,13 @@ export function AnonymousPlanForm() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    try {
+      const templateId = new URLSearchParams(window.location.search).get("template");
+      const template = missionTemplateById(templateId);
+      if (template) setGoal(template.goal);
+    } catch {
+      // Ignore malformed template parameters.
+    }
     try {
       const saved = sessionStorage.getItem(DRAFT_KEY);
       if (!saved) return;
