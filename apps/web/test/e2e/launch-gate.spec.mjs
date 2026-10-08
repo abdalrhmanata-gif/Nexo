@@ -56,13 +56,13 @@ async function signOut(page) {
   await expect(page).toHaveURL(/\/auth\/sign-in/);
 }
 
-async function rotatePasswordFor(user) {
+async function rotatePasswordFor(user, nextPassword) {
   const client = createClient(runtime.supabaseUrl, runtime.publishableKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
   const { error: signInError } = await client.auth.signInWithPassword({ email: user.email, password: user.password });
   if (signInError) throw new Error(`Disposable password-rotation sign-in failed: ${signInError.message}`);
-  const { error } = await client.auth.updateUser({ password: user.password });
+  const { error } = await client.auth.updateUser({ password: nextPassword });
   if (error) throw new Error(`Disposable password rotation failed: ${error.message}`);
   await client.auth.signOut();
 }
@@ -82,8 +82,9 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
     await test.step("password rotation and reauthentication", async () => {
       await signOut(pageA);
       await signIn(pageA, userA);
-      userA.password = `${randomBytes(18).toString("base64url")}Bb2!`;
-      await rotatePasswordFor(userA);
+      const nextPassword = `${randomBytes(18).toString("base64url")}Bb2!`;
+      await rotatePasswordFor(userA, nextPassword);
+      userA.password = nextPassword;
       await signIn(pageA, userA);
       await expect(pageA).toHaveURL(/\/app$/);
     });
