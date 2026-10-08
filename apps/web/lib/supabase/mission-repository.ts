@@ -448,6 +448,32 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
         createdAt: row.created_at,
       };
     },
+    async getWorkspaceInvitation(tokenHash) {
+      const result = await supabase.rpc("get_workspace_invitation", { p_token_hash: tokenHash });
+      if (result.error) throw result.error;
+      const row = Array.isArray(result.data) ? result.data[0] : result.data;
+      if (!row) return null;
+      return {
+        id: row.id as string,
+        email: row.email as string,
+        role: row.role as WorkspaceInvitation["role"],
+        status: row.status as WorkspaceInvitation["status"],
+        expiresAt: row.expires_at as string,
+        createdAt: row.created_at as string,
+      };
+    },
+    async acceptWorkspaceInvitation(tokenHash) {
+      const result = await supabase.rpc("accept_workspace_invitation", { p_token_hash: tokenHash });
+      if (result.error || !result.data) throw result.error ?? new Error("Invitation could not be accepted.");
+      const row = result.data as { id: string; email: string; role: WorkspaceInvitation["role"]; status: WorkspaceInvitation["status"]; expires_at: string; created_at: string };
+      return { id: row.id, email: row.email, role: row.role, status: row.status, expiresAt: row.expires_at, createdAt: row.created_at };
+    },
+    async revokeWorkspaceInvitation(invitationId) {
+      const result = await supabase.rpc("revoke_workspace_invitation", { p_invitation_id: invitationId });
+      if (result.error || !result.data) throw result.error ?? new Error("Invitation could not be revoked.");
+      const row = result.data as { id: string; email: string; role: WorkspaceInvitation["role"]; status: WorkspaceInvitation["status"]; expires_at: string; created_at: string };
+      return { id: row.id, email: row.email, role: row.role, status: row.status, expiresAt: row.expires_at, createdAt: row.created_at };
+    },
     async listWorkspaceInvitations() {
       const result = await supabase.from("workspace_invitations").select("id,email,role,status,expires_at,created_at").eq("workspace_id", workspaceId).order("created_at",{ascending:false}).limit(20);
       if (result.error) throw result.error;
