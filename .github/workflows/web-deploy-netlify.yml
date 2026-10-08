@@ -3,8 +3,8 @@ name: ZAVQERA Web Deploy (Netlify)
 # Deploys the ZAVQERA Web MVP (apps/web) to Netlify.
 #
 # Production deploys are restricted to the existing release branches.
-# PR #29 additionally gets an explicit non-production Deploy Preview so the
-# release candidate can be verified without promoting anything to production.
+# Pull-request Deploy Previews are handled by the connected Netlify project,
+# while this workflow remains limited to the existing non-PR deploy paths.
 
 on:
   workflow_dispatch:
