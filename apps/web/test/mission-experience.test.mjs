@@ -214,3 +214,26 @@ test("bounded research agent is explicitly read-only", () => {
   assert.ok(migration.includes("'read_only'"));
   assert.ok(migration.includes("'external_side_effects',false"));
 });
+
+
+test("bounded research runs through the agent execution runtime", () => {
+  const route = read("app/api/missions/[id]/research/route.ts");
+  const migration = readFileSync(join(webRoot, "../../supabase/migrations/20261008152500_w43_bounded_agent_execution_runtime.sql"), "utf8");
+  assert.ok(route.includes("start_agent_execution"));
+  assert.ok(route.includes("complete_agent_execution"));
+  assert.ok(route.includes("ZAVQERA Research Agent"));
+  assert.ok(migration.includes("agent_executions"));
+  assert.ok(migration.includes("authority_snapshot"));
+  assert.ok(migration.includes("APPROVAL_REQUIRED"));
+  assert.ok(migration.includes("EXECUTION_IDEMPOTENCY_BINDING_MISMATCH"));
+  assert.ok(migration.includes("AGENT_EXECUTION_STARTED"));
+  assert.ok(migration.includes("AGENT_EXECUTION_COMPLETED"));
+});
+
+test("agent execution completion is fail-closed and evidence-bearing", () => {
+  const migration = readFileSync(join(webRoot, "../../supabase/migrations/20261008152500_w43_bounded_agent_execution_runtime.sql"), "utf8");
+  assert.ok(migration.includes("p_status not in ('SUCCEEDED','FAILED','UNKNOWN','BLOCKED')"));
+  assert.ok(migration.includes("p_evidence"));
+  assert.ok(migration.includes("completed_at"));
+  assert.ok(migration.includes("unique(workspace_id,idempotency_key)"));
+});
