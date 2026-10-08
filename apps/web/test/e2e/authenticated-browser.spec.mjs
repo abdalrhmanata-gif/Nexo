@@ -148,7 +148,7 @@ async function recoveryLinkFor(user) {
     type: "recovery",
     email: user.email,
     options: {
-      redirectTo: `${runtime.baseURL}/auth/callback?next=%2Fauth%2Freset-password`,
+      redirectTo: `${runtime.baseURL}/auth/reset-password`,
     },
   });
   if (error) throw new Error(`Disposable recovery-link generation failed: ${error.message}`);
