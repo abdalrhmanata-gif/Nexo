@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { getAuthenticatedUser } from "../../../../../../lib/supabase/server";
-import { createSupabaseMissionRepository } from "../../../../../../lib/supabase/mission-repository";
-import { requestMissionResearch } from "../../../../../../lib/ai-research";
-import { runAiGeneration, AI_GENERATION_OUTCOMES } from "../../../../../../lib/ai-generation-service";
-import { reserveAiGeneration, consumeAiGeneration, releaseAiGeneration } from "../../../../../../lib/ai-usage";
+import { getAuthenticatedUser } from "../../../../../lib/supabase/server";
+import { createSupabaseMissionRepository } from "../../../../../lib/supabase/mission-repository";
+import { requestMissionResearch } from "../../../../../lib/ai-research";
+import { runAiGeneration, AI_GENERATION_OUTCOMES } from "../../../../../lib/ai-generation-service";
+import { reserveAiGeneration, consumeAiGeneration, releaseAiGeneration } from "../../../../../lib/ai-usage";
 
 export const runtime = "nodejs";
 export const maxDuration = 35;
