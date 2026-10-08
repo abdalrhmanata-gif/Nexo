@@ -17,6 +17,7 @@ export default async function BusinessWorkspacePage() {
   const agents = repository.listWorkspaceAgents ? await repository.listWorkspaceAgents() : [];
   const members = repository.listWorkspaceMembers ? await repository.listWorkspaceMembers() : [];
   const approvals = repository.listPendingApprovals ? await repository.listPendingApprovals() : [];
+  const invitations = repository.listWorkspaceInvitations ? await repository.listWorkspaceInvitations() : [];
 
   return <div className="container">
     <div className="section-heading"><div>
@@ -49,7 +50,10 @@ export default async function BusinessWorkspacePage() {
       </section>
       <section className="card"><p className="eyebrow">People</p><h2>{members.length} workspace member{members.length === 1 ? "" : "s"}</h2>
         <ul className="list">{members.slice(0,8).map((member) => <li key={member.id}><strong>{member.role}</strong><br /><span className="action-hint">{member.userId}</span></li>)}</ul>
-        <p className="action-hint">Roles: owner, admin, member, viewer. Invitations can be added next without changing the mission engine.</p>
+        <p className="action-hint">Roles: owner, admin, member, viewer.</p>
+        <h3>Invitations</h3>
+        {invitations.length ? <ul className="list">{invitations.slice(0,5).map((invitation) => <li key={invitation.id}><strong>{invitation.email}</strong><br /><span className="action-hint">{invitation.role} · {invitation.status} · expires {new Date(invitation.expiresAt).toLocaleDateString()}</span></li>)}</ul> : <p className="detail-intent">No invitations have been created yet.</p>}
+        <Link className="button button-small" href="/app/business/invite">Invite a teammate</Link>
       </section>
     </section>
     <div className="section-heading"><div><h2>Recent missions</h2><p>Recent work stays connected to the same execution engine.</p></div><Link className="button button-quiet" href="/app">View all</Link></div>
