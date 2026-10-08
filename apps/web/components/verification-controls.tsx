@@ -1,7 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import type { MissionResearchRun, MissionVerification } from "../lib/mission-repository";
+import type { MissionResearchRun } from "../lib/mission-repository";
+import type { MissionVerification } from "../lib/view-models";
 
 export function VerificationControls({ missionId, verification }: { missionId: string; verification?: MissionVerification }) {
   const [message, setMessage] = useState("");
