@@ -58,7 +58,7 @@ async function signOut(page) {
 
 async function latestResetLink(email) {
   const deadline = Date.now() + 30_000;
-  const query = encodeURIComponent(`to:"${email}"`);
+  const target = email.toLowerCase();
   const extract = (raw) => {
     const decoded = raw
       .replace(/=\r?\n/g, "")
@@ -70,18 +70,33 @@ async function latestResetLink(email) {
   };
 
   while (Date.now() < deadline) {
-    const response = await fetch(
-      `http://127.0.0.1:54324/api/v1/message/latest?query=${query}`,
+    const listResponse = await fetch(
+      "http://127.0.0.1:54324/api/v1/messages?limit=50",
       { headers: { Accept: "application/json" } },
     );
-    if (response.ok) {
-      const message = await response.json();
-      const candidate = extract(`${message?.Text ?? ""}\n${message?.HTML ?? ""}`);
-      if (candidate) return candidate;
+    if (listResponse.ok) {
+      const result = await listResponse.json();
+      const messages = Array.isArray(result?.messages) ? result.messages : [];
+      for (const hit of messages) {
+        const id = typeof hit?.ID === "string" ? hit.ID : typeof hit?.Id === "string" ? hit.Id : "";
+        if (!id) continue;
+        const response = await fetch(
+          `http://127.0.0.1:54324/api/v1/message/${encodeURIComponent(id)}`,
+          { headers: { Accept: "application/json" } },
+        );
+        if (!response.ok) continue;
+        const message = await response.json();
+        const recipients = Array.isArray(message?.To)
+          ? message.To.map((entry) => typeof entry?.Address === "string" ? entry.Address.toLowerCase() : "")
+          : [];
+        if (!recipients.includes(target)) continue;
+        const candidate = extract(`${message?.Text ?? ""}\n${message?.HTML ?? ""}`);
+        if (candidate) return candidate;
+      }
     }
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
-  throw new Error("The disposable Mailpit search did not expose the password-reset email.");
+  throw new Error("The disposable Mailpit mailbox did not expose a recovery link for the test user.");
 }
 
 test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission TOCTOU", async ({ browser }) => {
