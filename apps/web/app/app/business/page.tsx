@@ -13,6 +13,9 @@ export default async function BusinessWorkspacePage() {
   const completed = missions.filter((mission) => mission.status === "COMPLETED");
   const verified = missions.filter((mission) => mission.verifications.some((item) => item.status === "VERIFIED"));
   const recent = [...missions].sort((a, b) => b.updated.localeCompare(a.updated)).slice(0, 3);
+  const agents = repository.listWorkspaceAgents ? await repository.listWorkspaceAgents() : [];
+  const members = repository.listWorkspaceMembers ? await repository.listWorkspaceMembers() : [];
+  const approvals = repository.listPendingApprovals ? await repository.listPendingApprovals() : [];
 
   return <div className="container">
     <div className="section-heading"><div>
@@ -25,7 +28,7 @@ export default async function BusinessWorkspacePage() {
       <div className="stat"><strong>1</strong><span>Workspace owner</span></div>
       <div className="stat"><strong>{active.length}</strong><span>Active missions</span></div>
       <div className="stat"><strong>{waiting.length}</strong><span>Needs approval/input</span></div>
-      <div className="stat"><strong>{verified.length}</strong><span>Verified</span></div>
+      <div className="stat"><strong>{verified.length}</strong><span>Verified</span></div>\n      <div className="stat"><strong>{approvals.length}</strong><span>Pending approvals</span></div>
     </div>
 
     <section className="grid">
@@ -35,6 +38,19 @@ export default async function BusinessWorkspacePage() {
       <section className="card"><p className="eyebrow">People</p><h2>Team access</h2><p>The current workspace is owner-scoped. The collaboration boundary is intentionally prepared without inventing members or permissions that are not yet persisted.</p><span className="action-hint">Next expansion: members, roles, shared missions.</span></section>
     </section>
 
+
+    <section className="grid">
+      <section className="card"><p className="eyebrow">Approvals</p><h2>Human control queue</h2>
+        {approvals.length ? <ul className="list">{approvals.slice(0,5).map((approval) => <li key={approval.id}><strong>Approval required</strong><br />Mission {approval.missionId.slice(0,8)} · {approval.actionId ? `Action ${approval.actionId.slice(0,8)}` : "Mission-level"}<br /><span className="action-hint">Requested {new Date(approval.createdAt).toLocaleString()}</span><div className="approval-actions"><form action={`/api/missions/${approval.missionId}/approval/${approval.id}`} method="post"><button className="button button-small" type="submit">Review</button></form></div></li>)}</ul> : <p className="detail-intent">No approvals are waiting. Side effects stay blocked until an explicit approval exists.</p>}
+      </section>
+      <section className="card"><p className="eyebrow">Agents</p><h2>Controlled AI workers</h2>
+        {agents.length ? <ul className="list">{agents.map((agent) => <li key={agent.id}><strong>{agent.name}</strong><br />{agent.description || "Bounded workspace agent"}<br /><span className={`status status-${agent.status.toLowerCase()}`}>{agent.status}</span></li>)}</ul> : <p className="detail-intent">No agents are configured yet. The workspace is ready for bounded agents with explicit authority.</p>}
+      </section>
+      <section className="card"><p className="eyebrow">People</p><h2>{members.length} workspace member{members.length === 1 ? "" : "s"}</h2>
+        <ul className="list">{members.slice(0,8).map((member) => <li key={member.id}><strong>{member.role}</strong><br /><span className="action-hint">{member.userId}</span></li>)}</ul>
+        <p className="action-hint">Roles: owner, admin, member, viewer. Invitations can be added next without changing the mission engine.</p>
+      </section>
+    </section>
     <div className="section-heading"><div><h2>Recent missions</h2><p>Recent work stays connected to the same execution engine.</p></div><Link className="button button-quiet" href="/app">View all</Link></div>
     {recent.length ? <div className="grid">{recent.map((mission) => <MissionCard key={mission.id} mission={mission} />)}</div> : <div className="empty-state"><h2>No missions yet</h2><p>Create the first delegated mission to start the workspace.</p></div>}
     {completed.length > 0 && <p className="action-hint">Completed missions remain available as historical work and can be used as the basis for reusable mission templates later.</p>}
