@@ -155,6 +155,7 @@ async function recoveryLinkFor(user) {
         email: user.email,
         redirect_to: `${runtime.baseURL}/auth/callback?next=%2Fauth%2Freset-password`,
       }),
+      signal: AbortSignal.timeout(10_000),
     },
   );
   if (!response.ok) {
@@ -253,7 +254,7 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await signIn(page, userA);
     });
 
-    await test.step("password reset uses the newest local email, callback and new password", async () => {
+    await test.step("password reset request, recovery callback and new password", async () => {
       await signOut(page);
       await page.goto("/auth/forgot-password");
       await page.getByLabel("Email", { exact: true }).fill(userA.email);
