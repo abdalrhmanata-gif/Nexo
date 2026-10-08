@@ -374,6 +374,29 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       });
       if (result.error) throw result.error;
     },
+    async startAgentExecution(input: { missionId: string; actionId: string | null; agentId: string; idempotencyKey: string; request?: Record<string, unknown> }) {
+      const result = await supabase.rpc("start_agent_execution", {
+        p_mission_id: input.missionId,
+        p_action_id: input.actionId,
+        p_agent_id: input.agentId,
+        p_idempotency_key: input.idempotencyKey,
+        p_request: input.request ?? {},
+      });
+      if (result.error) throw result.error;
+      return result.data as Record<string, unknown>;
+    },
+    async completeAgentExecution(input: { executionId: string; status: "SUCCEEDED" | "FAILED" | "UNKNOWN" | "BLOCKED"; result?: Record<string, unknown>; evidence?: Record<string, unknown>; errorCode?: string; errorMessage?: string }) {
+      const result = await supabase.rpc("complete_agent_execution", {
+        p_execution_id: input.executionId,
+        p_status: input.status,
+        p_result: input.result ?? null,
+        p_evidence: input.evidence ?? null,
+        p_error_code: input.errorCode ?? null,
+        p_error_message: input.errorMessage ?? null,
+      });
+      if (result.error) throw result.error;
+      return result.data as Record<string, unknown>;
+    },
     async listWorkspaceAgents() {
       const result = await supabase.from("workspace_agents").select("id,name,description,status,authority").eq("workspace_id", workspaceId).order("created_at");
       if (result.error) throw result.error;
