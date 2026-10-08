@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LocalizedText } from "../../components/localized-text";
+import { MissionSearchEnhancements } from "../../components/mission-search-enhancements";
 import { MissionCard } from "../../components/mission-card";
 import { localMockMissionRepository } from "../../lib/local-mock-repository";
 import { isSupabaseConfigured } from "../../lib/supabase/config";
@@ -87,6 +88,7 @@ export default async function WorkspacePage({
           spellCheck={false}
         />
         <button className="button" type="submit"><LocalizedText en="Search" nb="Søk" ar="بحث" /></button>
+        <MissionSearchEnhancements />
         {query && <Link className="button button-quiet" href={selectedStatus ? `/app?status=${selectedStatus}#mission-search` : "/app#mission-search"}><LocalizedText en="Clear" nb="Tøm" ar="مسح" /></Link>}
       </form>
       {query && <p className="mission-search-result" aria-live="polite">
