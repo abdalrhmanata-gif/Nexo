@@ -10,6 +10,8 @@ export interface MissionRepository {
   updateAction?(input: UpdateAction): Promise<MissionAction>;
   recordVerification?(input: NewVerification): Promise<MissionVerification>;
   commitOutcome?(input: NewOutcome): Promise<MissionOutcome>;
+  recordResearchRun?(input: NewResearchRun): Promise<void>;
+  listResearchRuns?(missionId: string): Promise<MissionResearchRun[]>;
 }
 
 export type NewMission = { objective: string; actions?: string[] };
@@ -59,6 +61,24 @@ export class MissionProvenanceDeleteError extends Error {
     this.name = "MissionProvenanceDeleteError";
   }
 }
+export type MissionResearchSource = { title: string; url: string };
+export type MissionResearchRun = {
+  runId: string;
+  requestId: string;
+  status: "COMPLETED";
+  summary: string;
+  sources: MissionResearchSource[];
+  createdAt: string;
+  verified: false;
+};
+export type NewResearchRun = {
+  missionId: string;
+  runId: string;
+  requestId: string;
+  summary: string;
+  sources: MissionResearchSource[];
+};
+
 export type NewVerification = {
   missionId: string;
   status: "VERIFIED" | "FAILED";
