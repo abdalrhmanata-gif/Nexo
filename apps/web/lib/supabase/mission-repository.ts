@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "./server";
 import { MissionMutationConflictError, MissionMutationRejectedError, MissionProvenanceDeleteError, type MissionRepository, type NewMission, type NewOutcome, type NewVerification, type UpdateMission } from "../mission-repository";import type { ActionStatus, Mission, MissionAction, MissionActivity, MissionOutcome, MissionVerification, MissionLifecycleStatus } from "../view-models";
-import { humaniseEventType, parseMissionObjective, summariseEventPayload } from "../mission-content.mjs";
+import { formatDateTime, humaniseEventType, parseMissionObjective, summariseEventPayload } from "../mission-content.mjs";
 
 type MissionRow = {
   id: string;
@@ -54,7 +54,7 @@ function toOutcome(row: OutcomeRow): MissionOutcome {
 }
 
 function toActivity(row: EventRow): MissionActivity {
-  return { label: humaniseEventType(row.event_type), detail: summariseEventPayload(row.payload), time: new Date(row.created_at).toLocaleString() };
+  return { label: humaniseEventType(row.event_type), detail: summariseEventPayload(row.payload), time: formatDateTime(row.created_at) };
 }
 
 function toAction(row: ActionRow): MissionAction {
@@ -76,7 +76,7 @@ function toMission(row: MissionRow, actions: ActionRow[] = [], verifications: Mi
     progress: actions.length ? Math.round((resolved / actions.length) * 100) : status === "COMPLETED" ? 100 : 0,
     actionsTotal: actions.length,
     actionsCompleted: completed,
-    updated: new Date(row.updated_at).toLocaleString(),
+    updated: formatDateTime(row.updated_at),
     owner: "You",
     criteria,
     actions: actions.map(toAction),
