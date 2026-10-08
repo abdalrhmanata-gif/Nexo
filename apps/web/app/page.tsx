@@ -5,9 +5,9 @@ import { LocalizedText } from "../components/localized-text";
 export default function HomePage() {
   return <div className="container">
     <section className="hero">
-      <p className="eyebrow"><LocalizedText en="Mission control for autonomous AI" /></p>
-      <h1><LocalizedText en="Clear goals. Practical plans. You’re in control." /></h1>
-      <p><LocalizedText en="ZAVQERA turns a rough goal into a structured mission you can review before anything moves." nb="ZAVQERA gjør et enkelt mål om til et strukturert oppdrag du kan gjennomgå før noe settes i gang." ar="يحوّل ZAVQERA هدفك البسيط إلى مهمة منظمة يمكنك مراجعتها قبل أن يبدأ أي شيء." /></p>
+      <p className="eyebrow"><LocalizedText en="Bounded AI work for people and teams" nb="Avgrenset KI-arbeid for personer og team" ar="عمل بالذكاء الاصطناعي بحدود واضحة للأفراد والفرق" /></p>
+      <h1><LocalizedText en="Give AI work to do, not just questions to answer." nb="Gi KI arbeid å gjøre, ikke bare spørsmål å svare på." ar="أعطِ الذكاء الاصطناعي عملاً لينجزه، وليس أسئلة فقط ليجيب عنها." /></h1>
+      <p><LocalizedText en="ZAVQERA turns plain-language goals into bounded missions you can review, run, and verify." nb="ZAVQERA gjør mål skrevet med vanlig språk om til avgrensede oppdrag du kan gjennomgå, kjøre og verifisere." ar="يحوّل ZAVQERA أهدافك بلغة طبيعية إلى مهام بحدود واضحة يمكنك مراجعتها وتنفيذها والتحقق منها." /></p>
       <div className="hero-actions">
         <Link className="button" href="/try"><LocalizedText en="Try ZAVQERA free" /></Link>
         <Link className="button button-quiet" href="/pricing"><LocalizedText en="View pricing" /></Link>
@@ -20,7 +20,7 @@ export default function HomePage() {
       <div className="section-heading">
         <div>
           <p className="eyebrow"><LocalizedText en="From thought to mission" nb="Fra tanke til oppdrag" ar="من الفكرة إلى المهمة" /></p>
-          <h2 id="ai-value-heading"><LocalizedText en="You explain it. ZAVQERA structures it." nb="Du forklarer. ZAVQERA strukturerer." ar="أنت تشرح. وZAVQERA تنظم." /></h2>
+          <h2 id="ai-value-heading"><LocalizedText en="You describe the outcome. ZAVQERA prepares the mission." nb="Du beskriver resultatet. ZAVQERA gjør oppdraget klart." ar="تصف النتيجة. وZAVQERA تجهز المهمة." /></h2>
         </div>
         <p><LocalizedText en="No project-management setup required." nb="Ingen prosjektstyring nødvendig." ar="لا حاجة لإعدادات معقدة لإدارة المشاريع." /></p>
       </div>
@@ -36,6 +36,7 @@ export default function HomePage() {
             <li><LocalizedText en="A clear mission and intent" nb="Et tydelig oppdrag og mål" ar="مهمة وهدف واضحان" /></li>
             <li><LocalizedText en="Success criteria" nb="Suksesskriterier" ar="معايير النجاح" /></li>
             <li><LocalizedText en="Practical first steps" nb="Praktiske første steg" ar="خطوات عملية أولى" /></li>
+            <li><LocalizedText en="Clear boundaries before execution" nb="Tydelige grenser før kjøring" ar="حدود واضحة قبل التنفيذ" /></li>
           </ul>
         </div>
       </div>
