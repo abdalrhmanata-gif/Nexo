@@ -237,7 +237,7 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await signIn(page, userA);
     });
 
-    await test.step("password reset request and deterministic password rotation", async () => {
+    await test.step("password rotation and reauthentication", async () => {
       await signOut(page);
       const nextPassword = `${randomBytes(18).toString("base64url")}Bb2!`;
       await rotatePasswordFor(userA, nextPassword);
