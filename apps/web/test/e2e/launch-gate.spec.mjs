@@ -56,6 +56,26 @@ async function signOut(page) {
   await expect(page).toHaveURL(/\/auth\/sign-in/);
 }
 
+async function recoveryLinkFor(user) {
+  const serviceRoleKey = process.env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY;
+  if (!serviceRoleKey) throw new Error("Disposable service-role key is unavailable.");
+  const response = await fetch(`${runtime.supabaseUrl}/auth/v1/admin/generate_link`, {
+    method: "POST",
+    headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}`, "Content-Type": "application/json" },
+    signal: AbortSignal.timeout(20_000),
+    body: JSON.stringify({ type: "recovery", email: user.email, redirect_to: `${runtime.baseURL}/auth/callback?next=%2Fauth%2Freset-password` }),
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(`Disposable recovery-link generation failed with HTTP ${response.status}: ${JSON.stringify(payload)}`);
+  const actionLink = typeof payload?.action_link === "string" ? payload.action_link : "";
+  if (!actionLink) throw new Error("Disposable recovery-link response did not include an action_link.");
+  const action = new URL(actionLink);
+  const tokenHash = action.searchParams.get("token") ?? action.searchParams.get("token_hash");
+  const type = action.searchParams.get("type") ?? "recovery";
+  if (!tokenHash) throw new Error("Disposable recovery-link response did not include a token hash.");
+  return `${runtime.baseURL}/auth/callback?token_hash=${encodeURIComponent(tokenHash)}&type=${encodeURIComponent(type)}&next=%2Fauth%2Freset-password`;
+}
+
 async function rotatePasswordFor(user, currentPassword, nextPassword) {
   const client = createClient(runtime.supabaseUrl, runtime.publishableKey, { auth: { autoRefreshToken: false, persistSession: false } });
   const { data: signedIn, error: signInError } = await client.auth.signInWithPassword({ email: user.email, password: currentPassword });
