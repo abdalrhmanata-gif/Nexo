@@ -31,7 +31,8 @@ export default async function BusinessWorkspacePage() {
       <div className="stat"><strong>1</strong><span>Workspace owner</span></div>
       <div className="stat"><strong>{active.length}</strong><span>Active missions</span></div>
       <div className="stat"><strong>{waiting.length}</strong><span>Needs approval/input</span></div>
-      <div className="stat"><strong>{verified.length}</strong><span>Verified</span></div>\n      <div className="stat"><strong>{approvals.length}</strong><span>Pending approvals</span></div>
+      <div className="stat"><strong>{verified.length}</strong><span>Verified</span></div>
+      <div className="stat"><strong>{approvals.length}</strong><span>Pending approvals</span></div>
     </div>
 
     <section className="grid">
