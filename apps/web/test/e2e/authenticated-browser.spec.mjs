@@ -140,7 +140,6 @@ async function signOut(page) {
 
 async function latestResetLink(email) {
   const deadline = Date.now() + 30_000;
-  const target = email.toLowerCase();
   const extract = (raw) => {
     const decoded = raw
       .replace(/=\r?\n/g, "")
@@ -152,33 +151,33 @@ async function latestResetLink(email) {
   };
 
   while (Date.now() < deadline) {
-    const listResponse = await fetch(
-      "http://127.0.0.1:54324/api/v1/messages?limit=50",
+    const response = await fetch(
+      "http://127.0.0.1:54324/api/v1/messages?start=0&limit=50",
       { headers: { Accept: "application/json" } },
     );
-    if (listResponse.ok) {
-      const result = await listResponse.json();
+    if (response.ok) {
+      const result = await response.json();
       const messages = Array.isArray(result?.messages) ? result.messages : [];
       for (const hit of messages) {
-        const id = typeof hit?.ID === "string" ? hit.ID : typeof hit?.Id === "string" ? hit.Id : "";
-        if (!id) continue;
-        const response = await fetch(
-          `http://127.0.0.1:54324/api/v1/message/${encodeURIComponent(id)}`,
-          { headers: { Accept: "application/json" } },
-        );
-        if (!response.ok) continue;
-        const message = await response.json();
-        const recipients = Array.isArray(message?.To)
-          ? message.To.map((entry) => typeof entry?.Address === "string" ? entry.Address.toLowerCase() : "")
+        const id = typeof hit?.ID === "string" ? hit.ID : "";
+        const recipients = Array.isArray(hit?.To)
+          ? hit.To.map((entry) => typeof entry?.Address === "string" ? entry.Address.toLowerCase() : "")
           : [];
-        if (!recipients.includes(target)) continue;
-        const candidate = extract(`${message?.Text ?? ""}\n${message?.HTML ?? ""}`);
+        if (!id || !recipients.includes(email.toLowerCase())) continue;
+
+        const raw = await fetch(
+          `http://127.0.0.1:54324/api/v1/message/${encodeURIComponent(id)}/raw`,
+          { headers: { Accept: "text/plain" } },
+        );
+        if (!raw.ok) continue;
+        const candidate = extract(await raw.text());
         if (candidate) return candidate;
       }
     }
+
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
-  throw new Error("The disposable Mailpit mailbox did not expose a recovery link for the test user.");
+  throw new Error("The disposable Mailpit mailbox did not expose the password-reset email.");
 }
 
 test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outcome and isolation", async ({ browser }) => {
