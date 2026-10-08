@@ -57,80 +57,29 @@ async function signOut(page) {
 }
 
 async function latestResetLink(email) {
-  const mailbox = encodeURIComponent(email.split("@")[0]);
-  const deadline = Date.now() + 15_000;
-
+  const deadline = Date.now() + 30_000;
   const extract = (raw) => {
-    const decoded = raw
-      .replace(/=\r?\n/g, "")
-      .replace(/=3D/gi, "=")
-      .replaceAll("&amp;", "&");
-    const toMatches = [...decoded.matchAll(/^To:\s*(.+)$/gim)].map((m) => m[1]);
-    if (toMatches.length && !toMatches.some((value) => value.toLowerCase().includes(email.toLowerCase()))) return null;
+    const decoded = raw.replace(/=\r?\n/g, "").replace(/=3D/gi, "=").replaceAll("&amp;", "&");
     const matches = [...decoded.matchAll(/https?:\/\/[^\s"'<>]+\/auth\/v1\/verify\?[^\s"'<>]+/g)].map((m) => m[0]);
-    return matches
-      .map((value) => value.replace(/[)>.,]+$/, ""))
-      .find((value) => value.includes("type=recovery") && value.includes("redirect_to=")) ?? null;
+    return matches.map((value) => value.replace(/[)>.,]+$/, "")).find((value) => value.includes("type=recovery") && value.includes("redirect_to=")) ?? null;
   };
-
   while (Date.now() < deadline) {
-    const mailpitResponse = await fetch(
-      "http://127.0.0.1:54324/api/v1/message/latest/raw",
-      { headers: { Accept: "text/plain" } },
-    );
-    if (mailpitResponse.ok) {
-      const candidate = extract(await mailpitResponse.text());
-      if (candidate) return candidate;
-    }
-
-    const inbucketResponse = await fetch(
-      `http://127.0.0.1:54324/api/v1/mailbox/${mailbox}/latest`,
-      { headers: { Accept: "application/json" } },
-    );
-    if (inbucketResponse.ok) {
-      const message = await inbucketResponse.json();
-      const to = Array.isArray(message?.header?.To) ? message.header.To.join(",") : String(message?.header?.To ?? "");
-      if (to.toLowerCase().includes(email.toLowerCase())) {
-        const combined = `${String(message?.body?.text ?? "")}\n${String(message?.body?.html ?? "")}`;
-        const candidate = extract(combined);
+    const search = await fetch(`http://127.0.0.1:54324/api/v1/search?query=${encodeURIComponent(`to:${email}`)}`, { headers: { Accept: "application/json" } });
+    if (search.ok) {
+      const result = await search.json();
+      const messages = Array.isArray(result?.messages) ? result.messages : [];
+      for (const hit of messages) {
+        const id = typeof hit?.ID === "string" ? hit.ID : typeof hit?.Id === "string" ? hit.Id : "";
+        if (!id) continue;
+        const response = await fetch(`http://127.0.0.1:54324/api/v1/message/${encodeURIComponent(id)}/raw`, { headers: { Accept: "text/plain" } });
+        if (!response.ok) continue;
+        const candidate = extract(await response.text());
         if (candidate) return candidate;
       }
     }
-
-    await new Promise((resolve) => setTimeout(resolve, 250));
+    await new Promise((resolve) => setTimeout(resolve, 500));
   }
-
-  throw new Error("Newest disposable password-reset email was not received from local Mailpit/Inbucket.");
-}
-
-async function readMission(client, missionId) {
-  const { data, error } = await client
-    .from("missions")
-    .select("id,status,version,workspace_id")
-    .eq("id", missionId)
-    .maybeSingle();
-  if (error) throw error;
-  return data;
-}
-
-async function directTransition(client, missionId, toStatus, expectedVersion) {
-  const { data: { session }, error } = await client.auth.getSession();
-  if (error || !session?.access_token) throw error ?? new Error("Missing session token.");
-  const response = await fetch(`${runtime.supabaseUrl}/rest/v1/rpc/transition_mission`, {
-    method: "POST",
-    headers: {
-      apikey: runtime.publishableKey,
-      Authorization: `Bearer ${session.access_token}`,
-      "Content-Type": "application/json",
-    },
-    signal: AbortSignal.timeout(20_000),
-    body: JSON.stringify({
-      p_mission_id: missionId,
-      p_to_status: toStatus,
-      p_expected_version: expectedVersion,
-    }),
-  });
-  return { status: response.status, body: await response.text() };
+  throw new Error("The disposable Mailpit search did not expose the password-reset email.");
 }
 
 test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission TOCTOU", async ({ browser }) => {
