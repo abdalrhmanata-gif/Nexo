@@ -43,6 +43,16 @@ export default function HomePage() {
       <p className="ai-value-trust"><LocalizedText en="You review and edit the draft. Nothing is created or executed until you decide." nb="Du gjennomgår og redigerer utkastet. Ingenting opprettes eller utføres før du bestemmer deg." ar="أنت تراجع المسودة وتعدلها. لا يتم إنشاء أي شيء أو تنفيذه قبل قرارك." /></p>
     </section>
 
+
+    <section className="card mission-template-callout" aria-labelledby="templates-heading">
+      <div>
+        <p className="eyebrow"><LocalizedText en="Start faster" nb="Kom raskere i gang" ar="ابدأ بسرعة" /></p>
+        <h2 id="templates-heading"><LocalizedText en="Use a mission template." nb="Bruk en oppdragsmal." ar="استخدم قالب مهمة." /></h2>
+        <p><LocalizedText en="Start from a useful real-world example, then make it yours." nb="Start med et nyttig eksempel fra virkeligheten og gjør det til ditt." ar="ابدأ من مثال عملي مفيد ثم اجعله مناسبًا لك." /></p>
+      </div>
+      <Link className="button button-quiet" href="/templates"><LocalizedText en="Browse mission templates" nb="Se oppdragsmaler" ar="تصفح قوالب المهام" /></Link>
+    </section>
+
     <section className="value-grid" aria-label="Product principles">
       <article className="card value-card">
         <p className="eyebrow"><LocalizedText en="01 · Intent" /></p>
