@@ -1,5 +1,4 @@
 import { randomBytes } from "node:crypto";
-import { randomBytes } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { expect, test } from "@playwright/test";
 import { createFixtureLedger, isLoopbackUrl, writeLedgerFile } from "./harness.mjs";
@@ -140,32 +139,31 @@ async function signOut(page) {
 }
 
 async function latestResetLink(email) {
-  const endpoint = "http://127.0.0.1:54324/api/v1/message/latest";
   const deadline = Date.now() + 30_000;
 
   while (Date.now() < deadline) {
-    const response = await fetch(endpoint, { headers: { Accept: "application/json" } });
-    if (response.ok) {
-      const message = await response.json();
-      const subject = typeof message.Subject === "string" ? message.Subject : "";
-      const recipients = Array.isArray(message.To)
-        ? message.To.map((entry) => typeof entry?.Address === "string" ? entry.Address : "")
-        : [];
-      const combined = `${message.Text ?? ""}\n${message.HTML ?? ""}`
-        .replaceAll("&amp;", "&")
-        .replaceAll("&lt;", "<")
-        .replaceAll("&gt;", ">")
-        .replaceAll("&quot;", '"');
-
-      if (/reset/i.test(subject) && recipients.includes(email)) {
-        const match = combined.match(/https?:\/\/[^\s"'<>]+\/auth\/v1\/verify\?[^\s"'<>]+/);
-        if (match) return match[0].replace(/[)>.,]+$/, "");
+    const search = await fetch(`http://127.0.0.1:54324/api/v1/search?query=${encodeURIComponent(`to:${email}`)}`, { headers: { Accept: "application/json" } });
+    if (search.ok) {
+      const result = await search.json();
+      const messages = Array.isArray(result?.messages) ? result.messages : [];
+      for (const hit of messages) {
+        const id = typeof hit?.ID === "string" ? hit.ID : typeof hit?.Id === "string" ? hit.Id : "";
+        if (!id) continue;
+        const response = await fetch(`http://127.0.0.1:54324/api/v1/message/${encodeURIComponent(id)}`, { headers: { Accept: "application/json" } });
+        if (!response.ok) continue;
+        const message = await response.json();
+        const recipients = Array.isArray(message?.To) ? message.To.map((entry) => typeof entry?.Address === "string" ? entry.Address.toLowerCase() : "") : [];
+        const subject = typeof message?.Subject === "string" ? message.Subject : "";
+        const combined = `${message?.Text ?? ""}\n${message?.HTML ?? ""}`.replaceAll("&amp;", "&").replaceAll("&lt;", "<").replaceAll("&gt;", ">").replaceAll("&quot;", '"');
+        if (/reset/i.test(subject) && recipients.includes(email.toLowerCase())) {
+          const match = combined.match(/https?:\/\/[^\s"'<>]+\/auth\/v1\/verify\?[^\s"'<>]+/);
+          if (match) return match[0].replace(/[)>.,]+$/, "");
+        }
       }
     }
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
-
-  throw new Error("The disposable Mailpit mailbox did not expose the newest password-reset email.");
+  throw new Error("The disposable Mailpit search did not expose the password-reset email.");
 }
 
 test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outcome and isolation", async ({ browser }) => {
