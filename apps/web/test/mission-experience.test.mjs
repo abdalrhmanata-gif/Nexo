@@ -184,3 +184,33 @@ test("business workspace uses the same mission engine without inventing team dat
   assert.ok(page.includes("members, roles, shared missions"));
   assert.ok(!page.includes("member_id"));
 });
+
+test("business control center exposes approvals, agents, and roles", () => {
+  const page = read("app/app/business/page.tsx");
+  assert.ok(page.includes("Human control queue"));
+  assert.ok(page.includes("Controlled AI workers"));
+  assert.ok(page.includes("workspace member"));
+  assert.ok(page.includes("ApprovalDecisionControls"));
+});
+
+test("approval request is explicit and bounded", () => {
+  const control = read("components/approval-request-controls.tsx");
+  assert.ok(control.includes("Request approval"));
+  assert.ok(control.includes("requires_approval"));
+  assert.ok(control.includes("bounded_action"));
+  const route = read("app/api/missions/[id]/approval/route.ts");
+  assert.ok(route.includes("request_mission_approval"));
+});
+
+test("approval decisions stay behind an authenticated server boundary", () => {
+  const route = read("app/api/missions/approval/[approvalId]/decision/route.ts");
+  assert.ok(route.includes("decide_mission_approval"));
+  assert.ok(route.includes("Authentication required"));
+});
+
+test("bounded research agent is explicitly read-only", () => {
+  const migration = read("../supabase/migrations/20261008150000_w41_seed_bounded_research_agent.sql");
+  assert.ok(migration.includes("ZAVQERA Research Agent"));
+  assert.ok(migration.includes("'read_only'"));
+  assert.ok(migration.includes("'external_side_effects',false"));
+});
