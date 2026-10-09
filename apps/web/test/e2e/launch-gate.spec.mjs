@@ -226,7 +226,7 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
       });
       expect(newCredential.error, "the password entered through the recovery form must work").toBeNull();
       expect(newCredential.data.user?.id).toBeTruthy();
-      await newCredentialClient.auth.signOut();
+      await newCredentialClient.auth.signOut({ scope: "local" });
 
       // Later launch-gate checks intentionally sign in again using userA.
       userA.password = nextPassword;
