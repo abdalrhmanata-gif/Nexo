@@ -132,6 +132,7 @@ test("repo-migrations mode accepts exactly the repository migration set and rese
   const { run, calls } = fakeRunner();
   const target = startFreshStack(verdict.plan, run, {});
   assert.deepEqual(target, { apiUrl: "http://127.0.0.1:54321", publishableKey: "sb_publishable_local" });
+  assert.equal(target.serviceRoleKey, anonJwt("service_role"));
   assert.ok(calls.includes("supabase db reset --yes --workdir "+workdir));
 
   const wrong = makeWorkdir({ migrations: REPO_MIGRATIONS.slice(0, -1) });
@@ -163,6 +164,8 @@ test("static preconditions refuse workdirs that are not explicitly disposable", 
 test("stack status validation keeps only loopback url and a non-privileged key", () => {
   const ok = validateStackStatus(`Some banner\n${goodStatus()}`);
   assert.deepEqual(ok.target, { apiUrl: "http://127.0.0.1:54321", publishableKey: "sb_publishable_local" });
+  assert.equal(ok.target.serviceRoleKey, anonJwt("service_role"));
+  assert.deepEqual(Object.keys(ok.target), ["apiUrl", "publishableKey"], "the local admin JWT must not be enumerable or logged with the target");
   assert.equal(validateStackStatus(JSON.stringify({ API_URL: "http://127.0.0.1:54321", ANON_KEY: anonJwt(), SERVICE_ROLE_KEY: anonJwt("service_role") })).ok, true);
 
   const bad = {
@@ -260,7 +263,7 @@ test("command runner only runs supabase/docker without a shell and strips privil
 });
 
 test("app env points only at the disposable stack", () => {
-  const env = buildAppEnv({ PATH: "p", SUPABASE_SECRET_KEY: "s", ZAVQERA_E2E_USER_A_EMAIL: "a", NEXT_PUBLIC_SUPABASE_URL: "https://x.supabase.co" }, { apiUrl: "http://127.0.0.1:54321", publishableKey: "pk" });
+  const env = buildAppEnv({ PATH: "p", SUPABASE_SECRET_KEY: "s", ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY: "test-only-admin-jwt", ZAVQERA_E2E_USER_A_EMAIL: "a", NEXT_PUBLIC_SUPABASE_URL: "https://x.supabase.co" }, { apiUrl: "http://127.0.0.1:54321", publishableKey: "pk" });
   assert.deepEqual(env, { PATH: "p", NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "pk", NEXT_TELEMETRY_DISABLED: "1" });
 });
 
