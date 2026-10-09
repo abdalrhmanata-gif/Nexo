@@ -176,30 +176,33 @@ jobs:
           NODE
 
       - name: Check out source for authenticated live mission research
-        if: contains(github.event.pull_request.body, '[live-openai-research]')
+        if: github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.body, '[live-openai-research]')
         uses: actions/checkout@v4
 
       # This additional live integration is enabled only for the explicitly marked PR run.
       # It creates its own dedicated Development test account/workspace/mission and never uses Production.
       - name: Set up Node for authenticated live mission research
-        if: contains(github.event.pull_request.body, '[live-openai-research]')
+        if: github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.body, '[live-openai-research]')
         uses: actions/setup-node@v4
         with:
           node-version: "22"
 
       - name: Install authenticated live research test dependencies
-        if: contains(github.event.pull_request.body, '[live-openai-research]')
+        if: github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.body, '[live-openai-research]')
         working-directory: apps/web
         run: npm ci
 
       - name: Install Chromium for authenticated live research test
-        if: contains(github.event.pull_request.body, '[live-openai-research]')
+        if: github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.body, '[live-openai-research]')
         working-directory: apps/web
         run: npx playwright install --with-deps chromium
 
       - name: Verify authenticated live OpenAI mission research
-        if: contains(github.event.pull_request.body, '[live-openai-research]')
+        if: github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.body, '[live-openai-research]')
         working-directory: apps/web
         env:
           PREVIEW_URL: https://deploy-preview-29--unique-kringle-3ce321.netlify.app
+          SUPABASE_URL: https://mrwmmbytcymqgwvcoywd.supabase.co
+          SUPABASE_DEV_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node test/e2e/live-preview-research.mjs
