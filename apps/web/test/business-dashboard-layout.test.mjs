@@ -15,10 +15,13 @@ test("Business workspace opts into its dedicated responsive dashboard layout", (
 });
 
 test("Business metrics have desktop, tablet, and mobile layouts", () => {
-  assert.match(css, /\.business-dashboard \.stats\s*\{[^}]*repeat\(5,\s*minmax\(0,\s*1fr\)\)/s);
-  assert.match(css, /@media\s*\(max-width:\s*1100px\)\s*\{[^}]*\.business-dashboard \.stats\s*\{[^}]*repeat\(3,\s*minmax\(0,\s*1fr\)\)/s);
-  assert.match(css, /@media\s*\(max-width:\s*760px\)\s*\{[^}]*\.business-dashboard \.stats\s*\{[^}]*repeat\(2,\s*minmax\(0,\s*1fr\)\)/s);
-  assert.match(css, /@media\s*\(max-width:\s*380px\)\s*\{[^}]*\.business-dashboard \.stats\s*\{[^}]*minmax\(0,\s*1fr\)/s);
+  assert.match(css, /\.business-dashboard \.stats\s*\{\s*grid-template-columns:\s*repeat\(5,\s*minmax\(0,\s*1fr\)\)/);
+  assert.match(css, /@media\s*\(max-width:\s*1100px\)/);
+  assert.match(css, /@media\s*\(max-width:\s*760px\)/);
+  assert.match(css, /@media\s*\(max-width:\s*380px\)/);
+  assert.match(css, /\.business-dashboard \.stats\s*\{\s*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\)/);
+  assert.match(css, /\.business-dashboard \.stats\s*\{\s*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
+  assert.match(css, /\.business-dashboard \.stats\s*\{\s*grid-template-columns:\s*minmax\(0,\s*1fr\)\s*;/);
 });
 
 test("Business cards collapse to one readable column on mobile", () => {
