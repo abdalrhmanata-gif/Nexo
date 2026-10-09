@@ -32,9 +32,13 @@ export function ApprovalCenter({
             <dd>{approval.agentAuthority
               ? summariseApprovalScope(approval.agentAuthority)
               : "No agent authority snapshot is attached to this request."}</dd>
+            <dt>Why approval is required</dt>
+            <dd>{approval.actionId
+              ? "This action is gated by workspace policy and must be explicitly approved before execution."
+              : "This request needs a recorded human decision before any approval-gated action can proceed."}</dd>
           </dl>
           <p className="action-hint">
-            Approving records permission for the bounded scope above. It does not execute the action by itself; the execution runtime must still enforce the approved scope and authority.
+            Approving records permission for the bounded scope above. It does not execute the action by itself; the execution runtime must still enforce the approved scope and authority. Review the mission evidence before deciding. Rejected requests require a reason and remain non-executable.
           </p>
           <div className="approval-actions">
             <Link className="button button-small button-quiet" href={`/app/missions/${approval.missionId}`}>Open mission and evidence</Link>
