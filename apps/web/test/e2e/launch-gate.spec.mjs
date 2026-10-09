@@ -41,6 +41,7 @@ async function signUp(page, user) {
   await page.getByLabel("Password", { exact: true }).fill(user.password);
   await page.getByTestId("sign-up-submit").click({ timeout: 10_000 });
   await expect(page).toHaveURL(/\/app$/);
+  await expect(page.getByTestId("sign-out")).toBeVisible({ timeout: 15_000 });
 }
 
 async function signIn(page, user) {
@@ -60,6 +61,7 @@ async function signIn(page, user) {
   const response = await tokenRequest;
   if (!response.ok()) throw new Error(`Sign-in endpoint returned HTTP ${response.status()}.`);
   await expect(page).toHaveURL(/\/app$/, { timeout: 15_000 });
+  await expect(page.getByTestId("sign-out")).toBeVisible({ timeout: 15_000 });
 }
 
 async function signOut(page) {
