@@ -50,16 +50,9 @@ async function signIn(page, user) {
   await emailInput.fill(user.email, { timeout: 10_000 });
   await passwordInput.fill(user.password, { timeout: 10_000 });
 
-  const tokenRequest = page.waitForResponse((response) => {
-    const url = new URL(response.url());
-    return response.request().method() === "POST"
-      && url.pathname.endsWith("/auth/v1/token")
-      && url.searchParams.get("grant_type") === "password";
-  }, { timeout: 15_000 });
   await page.getByTestId("sign-in-submit").click({ timeout: 10_000 });
-  const response = await tokenRequest;
-  if (!response.ok()) throw new Error(`Sign-in endpoint returned HTTP ${response.status()}.`);
   await expect(page).toHaveURL(/\/app$/, { timeout: 15_000 });
+  await expect(page.getByTestId("sign-out")).toBeVisible({ timeout: 10_000 });
 }
 
 async function signOut(page) {
