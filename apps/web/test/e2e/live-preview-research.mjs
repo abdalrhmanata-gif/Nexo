@@ -97,6 +97,7 @@ async function main() {
       await page.getByTestId("sign-up-submit").click({ timeout: 10_000 });
       const signupResponse = await signupResponsePromise;
       if (!signupResponse.ok()) {
+        // Report only Auth's known-safe error code/message fields; never dump request bodies or credentials.
         const authError = await signupResponse.clone().json().catch(() => ({}));
         const code = typeof authError?.error_code === "string"
           ? authError.error_code
