@@ -111,6 +111,7 @@ jobs:
           cp "$GITHUB_WORKSPACE/supabase/tests/w48_workspace_research_agent_bootstrap.sql" "$workdir/supabase/tests/w48_workspace_research_agent_bootstrap.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w49_agent_execution_recovery.sql" "$workdir/supabase/tests/w49_agent_execution_recovery.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w50_expired_execution_lease_fence.sql" "$workdir/supabase/tests/w50_expired_execution_lease_fence.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w51_member_rpc_wrapper_permissions.sql" "$workdir/supabase/tests/w51_member_rpc_wrapper_permissions.sql"
           cat > "$workdir/supabase/migrations/20260921180005_e2e_historical_auth_compat.sql" <<'SQL'
           create schema if not exists private;
           create or replace function private.handle_new_user_profile()
@@ -178,6 +179,7 @@ jobs:
             supabase test db supabase/tests/w48_workspace_research_agent_bootstrap.sql
             supabase test db supabase/tests/w49_agent_execution_recovery.sql
             supabase test db supabase/tests/w50_expired_execution_lease_fence.sql
+            supabase test db supabase/tests/w51_member_rpc_wrapper_permissions.sql
           )
 
       - name: Run full launch-gate browser E2E
