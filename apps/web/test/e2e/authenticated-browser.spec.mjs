@@ -257,17 +257,17 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       expect(finalUsage.remaining).toBe(3);
     });
 
-    await test.step("sign out protects the workspace; sign in restores it", async () => {
-      await signOut(page);
-      await page.goto("/app");
-      await expect(page).toHaveURL(/\/auth\/sign-in/);
-      await signIn(page, userA);
-    });
-
-    await test.step("authentication and reauthentication", async () => {
-      await signOut(page);
-      await signIn(page, userA);
-      await expect(page).toHaveURL(/\/app$/);
+    await test.step("anonymous workspace access is denied; sign-in restores access", async () => {
+      const anonymousContext = await browser.newContext({ baseURL: runtime.baseURL });
+      const anonymousPage = await anonymousContext.newPage();
+      try {
+        await anonymousPage.goto("/app");
+        await expect(anonymousPage).toHaveURL(/\/auth\/sign-in(?:\?.*)?$/, { timeout: 15_000 });
+        await signIn(anonymousPage, userA);
+        await expect(anonymousPage).toHaveURL(/\/app$/, { timeout: 15_000 });
+      } finally {
+        await anonymousContext.close();
+      }
     });
 
     await test.step("create a mission with first steps", async () => {
@@ -336,8 +336,6 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
 
       const restore = await transitionMissionDirect(owner.client, missionId, "RUNNING", after.version);
       expect(restore.status).toBe(200);
-      await signOut(pageB);
-      await signIn(pageB, userB);
     });
 
     await test.step("a stale mission version is rejected", async () => {

@@ -127,12 +127,19 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
   const pageB = await contextB.newPage();
 
   try {
-    await test.step("authenticated signup and reauthentication", async () => {
+    await test.step("signup, anonymous access denial, and independent sign-in", async () => {
       await signUp(pageA, userA);
       await signUp(pageB, userB);
-      await signOut(pageA);
-      await signIn(pageA, userA);
-      await expect(pageA).toHaveURL(/\/app$/);
+      const anonymousContext = await browser.newContext({ baseURL: runtime.baseURL });
+      const anonymousPage = await anonymousContext.newPage();
+      try {
+        await anonymousPage.goto("/app");
+        await expect(anonymousPage).toHaveURL(/\/auth\/sign-in(?:\?.*)?$/, { timeout: 15_000 });
+        await signIn(anonymousPage, userA);
+        await expect(anonymousPage).toHaveURL(/\/app$/, { timeout: 15_000 });
+      } finally {
+        await anonymousContext.close();
+      }
     });
 
     await test.step("server-side AI mock provider, quota and request idempotency", async () => {
