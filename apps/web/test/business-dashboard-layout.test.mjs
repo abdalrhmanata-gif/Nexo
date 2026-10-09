@@ -28,3 +28,9 @@ test("Business cards collapse to one readable column on mobile", () => {
   assert.match(css, /@media\s*\(max-width:\s*760px\)\s*\{[\s\S]*?\.business-dashboard \.grid\s*\{\s*grid-template-columns:\s*minmax\(0,\s*1fr\)/);
   assert.match(css, /\.business-dashboard \.card p,\s*\.business-dashboard \.card li\s*\{\s*overflow-wrap:\s*anywhere\s*;/);
 });
+
+test("mobile navigation keeps the brand first and uses a predictable two-column grid", () => {
+  assert.match(css, /@media\s*\(max-width:\s*700px\)\s*\{[\s\S]*?\.topbar\s*\{[\s\S]*?flex-direction:\s*column/);
+  assert.match(css, /\.topbar\s*>\s*nav\s*\{[\s\S]*?display:\s*grid[\s\S]*?grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/);
+  assert.match(css, /\.topbar\s*>\s*nav\s*>\s*\.language-switcher\s*select\s*\{[\s\S]*?width:\s*100%/);
+});
