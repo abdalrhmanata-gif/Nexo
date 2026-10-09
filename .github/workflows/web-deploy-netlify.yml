@@ -126,7 +126,7 @@ jobs:
   verify-preview:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 25
     steps:
       - name: Wait for Netlify Deploy Preview
         run: |
@@ -174,3 +174,28 @@ jobs:
             anonymous: data.anonymous
           }));
           NODE
+
+      # This additional live integration is enabled only for the explicitly marked PR run.
+      # It creates its own dedicated Development test account/workspace/mission and never uses Production.
+      - name: Set up Node for authenticated live mission research
+        if: contains(github.event.pull_request.body, '[live-openai-research]')
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install authenticated live research test dependencies
+        if: contains(github.event.pull_request.body, '[live-openai-research]')
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Install Chromium for authenticated live research test
+        if: contains(github.event.pull_request.body, '[live-openai-research]')
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify authenticated live OpenAI mission research
+        if: contains(github.event.pull_request.body, '[live-openai-research]')
+        working-directory: apps/web
+        env:
+          PREVIEW_URL: https://deploy-preview-29--unique-kringle-3ce321.netlify.app
+        run: node test/e2e/live-preview-research.mjs
