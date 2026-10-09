@@ -83,6 +83,38 @@ async function signOut(page) {
   await expect(page).toHaveURL(/\/auth\/sign-in(?:\?.*)?$/, { timeout: 15_000 });
 }
 
+async function readMission(client, missionId) {
+  const { data, error } = await client
+    .from("missions")
+    .select("id, status, version")
+    .eq("id", missionId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+async function directTransition(client, missionId, toStatus, expectedVersion) {
+  const { data: { session }, error } = await client.auth.getSession();
+  if (error || !session?.access_token) {
+    throw error ?? new Error("Missing authenticated session.");
+  }
+  const response = await fetch(`${runtime.supabaseUrl}/rest/v1/rpc/transition_mission`, {
+    method: "POST",
+    headers: {
+      apikey: runtime.publishableKey,
+      Authorization: `Bearer ${session.access_token}`,
+      "Content-Type": "application/json",
+    },
+    signal: AbortSignal.timeout(20_000),
+    body: JSON.stringify({
+      p_mission_id: missionId,
+      p_to_status: toStatus,
+      p_expected_version: expectedVersion,
+    }),
+  });
+  return { status: response.status, body: await response.text() };
+}
+
 async function recoveryLinkFor(user) {
   const serviceRoleKey = process.env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY;
   if (!serviceRoleKey) throw new Error("Disposable service-role key is unavailable.");
