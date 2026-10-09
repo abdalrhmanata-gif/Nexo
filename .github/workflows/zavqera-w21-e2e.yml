@@ -170,6 +170,7 @@ jobs:
             supabase test db supabase/tests/w44_workspace_invitations.sql
             supabase test db supabase/tests/w45_workspace_member_management.sql
             supabase test db supabase/tests/w46_workspace_activity.sql
+            supabase test db supabase/tests/w47_workspace_bootstrap.sql
           )
 
       - name: Run full launch-gate browser E2E

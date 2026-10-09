@@ -123,14 +123,24 @@ function toMission(row: MissionRow, actions: ActionRow[] = [], verifications: Mi
 }
 
 async function ownedWorkspace(supabase: SupabaseClient, userId: string) {
-  const membership = await supabase.from("workspace_members").select("workspace_id").eq("user_id", userId).order("created_at").limit(1).maybeSingle();
+  // Prefer the workspace the authenticated user already belongs to. The
+  // workspace-membership RLS policy intentionally hides unjoined workspaces,
+  // so bootstrap must create/repair the owner membership atomically in SQL.
+  const membership = await supabase
+    .from("workspace_members")
+    .select("workspace_id")
+    .eq("user_id", userId)
+    .order("created_at")
+    .limit(1)
+    .maybeSingle();
   if (!membership.error && membership.data) return membership.data.workspace_id as string;
-  const existing = await supabase.from("workspaces").select("id").eq("owner_id", userId).order("created_at").limit(1).maybeSingle();
-  if (existing.error) throw existing.error;
-  if (existing.data) return existing.data.id as string;
-  const created = await supabase.from("workspaces").insert({ owner_id: userId, name: "My workspace" }).select("id").single();
-  if (created.error) throw created.error;
-  return created.data.id as string;
+
+  const result = await supabase.rpc("ensure_owned_workspace");
+  if (result.error) throw result.error;
+  if (typeof result.data !== "string" || !result.data) {
+    throw new Error("Workspace bootstrap returned no workspace ID.");
+  }
+  return result.data;
 }
 
 async function actionsFor(supabase: SupabaseClient, missionId: string) {
