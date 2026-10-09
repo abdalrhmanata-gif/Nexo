@@ -35,26 +35,74 @@ async function ownerSession(user) {
   return { client, userId: data.user.id };
 }
 
-async function signUp(page, user) {
-  await page.goto("/auth/sign-up");
-  await page.getByLabel("Email", { exact: true }).fill(user.email);
-  await page.getByLabel("Password", { exact: true }).fill(user.password);
-  await page.getByTestId("sign-up-submit").click({ timeout: 10_000 });
-  await expect(page).toHaveURL(/\/app$/);
+async function waitForReactHandler(page, selector, handlerName) {
+  await page.waitForFunction(
+    ({ selector: target, handler }) => {
+      const element = document.querySelector(target);
+      if (!element) return false;
+      return Object.keys(element).some((key) =>
+        key.startsWith("__reactProps$") && typeof element[key]?.[handler] === "function"
+      );
+    },
+    { selector, handler: handlerName },
+    { timeout: 15_000 },
+  );
 }
 
+async function guardSensitiveAuthQuery(page) {
+  const handler = async (route) => {
+    const url = new URL(route.request().url());
+    const authForms = new Set(["/auth/sign-in", "/auth/sign-up", "/auth/reset-password"]);
+    const carriesPassword = url.searchParams.has("password") || url.searchParams.has("confirmPassword");
+    if (authForms.has(url.pathname) && carriesPassword) {
+      // Never let a non-hydrated form turn secrets into a GET query string.
+      await route.abort("blockedbyclient");
+      return;
+    }
+    await route.continue();
+  };
+  await page.route("**/*", handler);
+  return async () => {
+    await page.unroute("**/*", handler).catch(() => {});
+  };
+}
 
+async function signUp(page, user) {
+  const removeGuard = await guardSensitiveAuthQuery(page);
+  try {
+    await page.goto("/auth/sign-up", { waitUntil: "domcontentloaded", timeout: 15_000 });
+    await waitForReactHandler(page, "form.form-grid", "onSubmit");
+    await page.getByLabel("Email", { exact: true }).fill(user.email);
+    await page.getByLabel("Password", { exact: true }).fill(user.password);
+    await page.getByTestId("sign-up-submit").click({ timeout: 10_000 });
+    await expect(page).toHaveURL(/\\/app$/, { timeout: 15_000 });
+  } finally {
+    await removeGuard();
+  }
+}
 
 async function signIn(page, user) {
-  await page.goto("/auth/sign-in", { waitUntil: "domcontentloaded", timeout: 15_000 });
-  const emailInput = page.getByLabel("Email", { exact: true });
-  const passwordInput = page.getByLabel("Password", { exact: true });
-  await emailInput.fill(user.email, { timeout: 10_000 });
-  await passwordInput.fill(user.password, { timeout: 10_000 });
-
-  await page.getByTestId("sign-in-submit").click({ timeout: 10_000 });
-  await expect(page).toHaveURL(/\/app$/, { timeout: 15_000 });
-  await expect(page.getByTestId("sign-out")).toBeVisible({ timeout: 10_000 });
+  const removeGuard = await guardSensitiveAuthQuery(page);
+  try {
+    await page.goto("/auth/sign-in", { waitUntil: "domcontentloaded", timeout: 15_000 });
+    await waitForReactHandler(page, "form.form-grid", "onSubmit");
+    const emailInput = page.getByLabel("Email", { exact: true });
+    const passwordInput = page.getByLabel("Password", { exact: true });
+    await emailInput.fill(user.email, { timeout: 10_000 });
+    await passwordInput.fill(user.password, { timeout: 10_000 });
+    const authResponsePromise = page.waitForResponse(
+      (response) => response.request().method() === "POST"
+        && new URL(response.url()).pathname.endsWith("/auth/v1/token"),
+      { timeout: 15_000 },
+    );
+    await page.getByTestId("sign-in-submit").click({ timeout: 10_000 });
+    const authResponse = await authResponsePromise;
+    if (!authResponse.ok()) throw new Error("Disposable UI sign-in was rejected by local Auth.");
+    await expect(page).toHaveURL(/\\/app$/, { timeout: 15_000 });
+    await expect(page.getByTestId("sign-out")).toBeVisible({ timeout: 10_000 });
+  } finally {
+    await removeGuard();
+  }
 }
 
 async function signOut(page) {
@@ -110,26 +158,6 @@ async function directTransition(client, missionId, toStatus, expectedVersion) {
   return { status: response.status, body: await response.text() };
 }
 
-async function rotatePasswordFor(user, nextPassword) {
-  const serviceRoleKey = process.env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) throw new Error("Disposable service-role key is unavailable.");
-  const response = await fetch(`${runtime.supabaseUrl}/auth/v1/admin/users?page=1&per_page=1000`, {
-    headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` },
-    signal: AbortSignal.timeout(20_000),
-  });
-  if (!response.ok) throw new Error(`Unable to access disposable Auth Admin API (HTTP ${response.status}).`);
-  const payload = await response.json().catch(() => ({}));
-  const users = Array.isArray(payload?.users) ? payload.users : [];
-  const found = users.find((candidate) => candidate.email === user.email);
-  if (!found?.id) throw new Error("Disposable test account was not found by exact email.");
-  const update = await fetch(`${runtime.supabaseUrl}/auth/v1/admin/users/${encodeURIComponent(found.id)}`, {
-    method: "PUT",
-    headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}`, "Content-Type": "application/json" },
-    signal: AbortSignal.timeout(20_000),
-    body: JSON.stringify({ password: nextPassword }),
-  });
-  if (!update.ok) throw new Error(`Disposable password rotation failed with HTTP ${update.status}.`);
-}
 
 async function recoveryLinkFor(user) {
   const serviceRoleKey = process.env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY;
@@ -184,40 +212,74 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
       }
     });
 
-    await test.step("password recovery link rotates password and rejects the old credential", async () => {
-      // The full-loop browser suite below proves the real recovery callback and
-      // cookie-backed session. This launch-gate section focuses on the resulting
-      // password rotation and credential rejection without duplicating callback
-      // transport behavior in a second browser context.
-      // Password rotation revokes the browser's current auth session. Sign out
-      // first, rotate only this disposable account, then establish a fresh session.
-      await signOut(pageA);
-      const nextPassword = `${randomBytes(24).toString("base64url")}Bb7!`;
-      await rotatePasswordFor(userA, nextPassword);
+    await test.step("browser password-recovery callback rotates password and rejects the old credential", async () => {
+      // Keep password recovery in a separate disposable user/context so it cannot
+      // revoke pageA's independent session needed by the remaining launch-gate checks.
+      const recoveryUser = freshUser("recovery");
+      const recoveryContext = await browser.newContext({ baseURL: runtime.baseURL });
+      const recoveryPage = await recoveryContext.newPage();
 
-      const oldCredentialClient = createClient(runtime.supabaseUrl, runtime.publishableKey, {
-        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-      });
-      const oldCredential = await oldCredentialClient.auth.signInWithPassword({
-        email: userA.email,
-        password: userA.password,
-      });
-      expect(oldCredential.error, "the pre-rotation password must be rejected").toBeTruthy();
-      expect(oldCredential.data.user).toBeNull();
+      try {
+        await signUp(recoveryPage, recoveryUser);
+        await signOut(recoveryPage);
+        const recoveryLink = await recoveryLinkFor(recoveryUser);
+        await recoveryPage.goto(recoveryLink, { waitUntil: "domcontentloaded", timeout: 15_000 });
+        await recoveryPage.waitForFunction(
+          () => window.location.pathname === "/auth/reset-password",
+          null,
+          { timeout: 15_000 },
+        );
+        await waitForReactHandler(recoveryPage, "form.form-grid", "onSubmit");
 
-      const newCredentialClient = createClient(runtime.supabaseUrl, runtime.publishableKey, {
-        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
-      });
-      const newCredential = await newCredentialClient.auth.signInWithPassword({
-        email: userA.email,
-        password: nextPassword,
-      });
-      expect(newCredential.error, "the rotated password must work").toBeNull();
-      expect(newCredential.data.user?.id).toBeTruthy();
-      await newCredentialClient.auth.signOut({ scope: "local" });
+        const nextPassword = `${randomBytes(24).toString("base64url")}Bb7!`;
+        const removeGuard = await guardSensitiveAuthQuery(recoveryPage);
+        try {
+          const policyResponsePromise = recoveryPage.waitForResponse(
+            (response) => response.request().method() === "POST"
+              && new URL(response.url()).pathname === "/api/auth/password-policy",
+            { timeout: 20_000 },
+          );
+          const authUpdateResponsePromise = recoveryPage.waitForResponse(
+            (response) => response.request().method() === "PUT"
+              && new URL(response.url()).pathname.endsWith("/auth/v1/user"),
+            { timeout: 20_000 },
+          );
+          await recoveryPage.getByLabel("New password", { exact: true }).fill(nextPassword);
+          await recoveryPage.getByLabel("Confirm new password", { exact: true }).fill(nextPassword);
+          await recoveryPage.getByRole("button", { name: "Update password", exact: true }).click({ timeout: 10_000 });
 
-      userA.password = nextPassword;
-      await signIn(pageA, userA);
+          const policyResponse = await policyResponsePromise;
+          expect(policyResponse.ok(), "the password-policy check must succeed").toBe(true);
+          const authUpdateResponse = await authUpdateResponsePromise;
+          expect(authUpdateResponse.ok(), "Supabase Auth must accept the recovery password update").toBe(true);
+          await expect(recoveryPage).toHaveURL(/\\/app$/, { timeout: 15_000 });
+        } finally {
+          await removeGuard();
+        }
+
+        const oldCredentialClient = createClient(runtime.supabaseUrl, runtime.publishableKey, {
+          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+        });
+        const oldCredential = await oldCredentialClient.auth.signInWithPassword({
+          email: recoveryUser.email,
+          password: recoveryUser.password,
+        });
+        expect(oldCredential.error, "the pre-recovery password must be rejected").toBeTruthy();
+        expect(oldCredential.data.user).toBeNull();
+
+        const newCredentialClient = createClient(runtime.supabaseUrl, runtime.publishableKey, {
+          auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+        });
+        const newCredential = await newCredentialClient.auth.signInWithPassword({
+          email: recoveryUser.email,
+          password: nextPassword,
+        });
+        expect(newCredential.error, "the recovered password must work").toBeNull();
+        expect(newCredential.data.user?.id).toBeTruthy();
+        await newCredentialClient.auth.signOut({ scope: "local" });
+      } finally {
+        await recoveryContext.close();
+      }
     });
     await test.step("server-side AI mock provider, quota and request idempotency", async () => {
       const initial = await pageA.request.get("/api/ai/usage");
