@@ -497,6 +497,7 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       // assertion so long-running E2E work cannot turn this test into an
       // authentication-expiry check.
       await signOut(page);
+      await signOut(page);
       await signIn(page, userA);
       await page.goto(missionUrl);
       await page.getByRole("button", { name: /^Delete Mission/ }).click();
