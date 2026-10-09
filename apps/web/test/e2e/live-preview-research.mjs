@@ -81,6 +81,7 @@ async function main() {
   const password = `${randomBytes(28).toString("base64url")}Zz9!`;
   const browser = await chromium.launch({ headless: true });
   let context;
+  let adminClient;
   let authUserId = null;
   let missionCreated = false;
   try {
@@ -93,7 +94,7 @@ async function main() {
 
     // Create a dedicated confirmed account through the Development-only Auth Admin API.
     // This avoids email-provider rate limits and keeps the service-role key server-side in CI.
-    const adminClient = createClient(configuredSupabase.origin, adminApiKey, {
+    adminClient = createClient(configuredSupabase.origin, adminApiKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
