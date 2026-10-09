@@ -76,7 +76,7 @@ export default async function MissionDetailPage({
             {execution.completedAt && <span>Finalised {new Date(execution.completedAt).toLocaleString()}{execution.reconciledAt ? " · Reconciled" : ""}</span>}
             <AgentExecutionControls execution={execution} />
           </div>)}</div> : <p className="detail-intent">No agent execution has been recorded for this mission yet.</p>}
-          <p className="action-hint">Execution state is server-authoritative. Expired leases become UNKNOWN, not failed. UNKNOWN must be reconciled with external evidence and is never automatically retried. A cancellation request does not prove an external side effect stopped.</p>
+          <p className="action-hint">Every execution keeps an authority snapshot and an evidence boundary. Execution state is server-authoritative. Expired leases become UNKNOWN, not failed. UNKNOWN must be reconciled with external evidence and is never automatically retried. A cancellation request does not prove an external side effect stopped.</p>
         </section>
 
 

@@ -109,6 +109,7 @@ jobs:
           cp "$GITHUB_WORKSPACE/supabase/tests/w46_workspace_activity.sql" "$workdir/supabase/tests/w46_workspace_activity.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w47_workspace_bootstrap.sql" "$workdir/supabase/tests/w47_workspace_bootstrap.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w48_workspace_research_agent_bootstrap.sql" "$workdir/supabase/tests/w48_workspace_research_agent_bootstrap.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w49_agent_execution_recovery.sql" "$workdir/supabase/tests/w49_agent_execution_recovery.sql"
           cat > "$workdir/supabase/migrations/20260921180005_e2e_historical_auth_compat.sql" <<'SQL'
           create schema if not exists private;
           create or replace function private.handle_new_user_profile()
@@ -174,6 +175,7 @@ jobs:
             supabase test db supabase/tests/w46_workspace_activity.sql
             supabase test db supabase/tests/w47_workspace_bootstrap.sql
             supabase test db supabase/tests/w48_workspace_research_agent_bootstrap.sql
+            supabase test db supabase/tests/w49_agent_execution_recovery.sql
           )
 
       - name: Run full launch-gate browser E2E
