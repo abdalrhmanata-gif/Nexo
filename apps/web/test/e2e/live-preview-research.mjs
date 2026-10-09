@@ -180,12 +180,20 @@ async function main() {
     const sources = Array.isArray(result.sources)
       ? result.sources.filter((item) => item && typeof item.url === "string" && /^https?:\/\//i.test(item.url))
       : [];
+    const previewHost = new URL(base).hostname.toLowerCase();
+    const unsafeSources = sources.some((item) => {
+      const sourceUrl = new URL(item.url);
+      const host = sourceUrl.hostname.toLowerCase();
+      return host === previewHost
+        || ["localhost", "127.0.0.1", "[::1]"].includes(host)
+        || /(^|\.)example\.(com|org|net)$/i.test(host);
+    });
     if (result.run?.status !== "COMPLETED"
         || result.run?.verified !== false
         || result.history_persisted !== true
         || summary.length < 80
         || sources.length < 1
-        || sources.some((item) => /example\.com/i.test(item.url))) {
+        || unsafeSources) {
       throw new Error("Mission research response failed the live-provider, citation, or persistence assertions.");
     }
     await page.getByText("Research result · Unverified", { exact: true }).waitFor({ state: "visible", timeout: 20_000 });
