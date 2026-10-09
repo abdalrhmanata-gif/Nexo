@@ -44,7 +44,7 @@ async function signUp(page, user) {
 }
 
 async function signIn(page, user) {
-  await page.goto("/auth/sign-in", { waitUntil: "networkidle", timeout: 15_000 });
+  await page.goto("/auth/sign-in", { waitUntil: "domcontentloaded", timeout: 15_000 });
   const emailInput = page.getByLabel("Email", { exact: true });
   const passwordInput = page.getByLabel("Password", { exact: true });
   await emailInput.fill(user.email, { timeout: 10_000 });
@@ -118,27 +118,23 @@ async function recoveryLinkFor(user) {
     body: JSON.stringify({ type: "recovery", email: user.email, redirect_to: `${runtime.baseURL}/auth/callback?next=%2Fauth%2Freset-password` }),
   });
   const payload = await response.json().catch(() => null);
-  if (!response.ok) throw new Error(`Disposable recovery-link generation failed with HTTP ${response.status}: ${JSON.stringify(payload)}`);
+  if (!response.ok) throw new Error(`Disposable recovery-link generation failed with HTTP ${response.status}.`);
   const actionLink = typeof payload?.action_link === "string" ? payload.action_link : "";
-  if (!actionLink) throw new Error("Disposable recovery-link response did not include an action_link.");
-  const action = new URL(actionLink);
-  const tokenHash = action.searchParams.get("token") ?? action.searchParams.get("token_hash");
-  const type = action.searchParams.get("type") ?? "recovery";
-  if (!tokenHash) throw new Error("Disposable recovery-link response did not include a token hash.");
-  return `${runtime.baseURL}/auth/callback?token_hash=${encodeURIComponent(tokenHash)}&type=${encodeURIComponent(type)}&next=%2Fauth%2Freset-password`;
+  const action = actionLink ? new URL(actionLink) : null;
+  const tokenHash = typeof payload?.hashed_token === "string" && payload.hashed_token
+    ? payload.hashed_token
+    : typeof payload?.properties?.hashed_token === "string" && payload.properties.hashed_token
+      ? payload.properties.hashed_token
+      : action?.searchParams.get("token_hash") ?? action?.searchParams.get("token");
+  const type = typeof payload?.verification_type === "string"
+    ? payload.verification_type
+    : action?.searchParams.get("type") ?? "recovery";
+  if (!tokenHash || type !== "recovery") {
+    throw new Error("Disposable recovery-link response did not include a valid recovery token.");
+  }
+  return `${runtime.baseURL}/auth/callback?token_hash=${encodeURIComponent(tokenHash)}&type=recovery&next=%2Fauth%2Freset-password`;
 }
 
-async function rotatePasswordFor(user, currentPassword, nextPassword) {
-  const client = createClient(runtime.supabaseUrl, runtime.publishableKey, { auth: { autoRefreshToken: false, persistSession: false } });
-  const { data: signedIn, error: signInError } = await client.auth.signInWithPassword({ email: user.email, password: currentPassword });
-  if (signInError || !signedIn.user) throw new Error(`Disposable password-rotation sign-in failed: ${signInError?.message ?? "missing user"}`);
-  await client.auth.signOut();
-  const serviceRoleKey = process.env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) throw new Error("Disposable service-role key is unavailable.");
-  const admin = createClient(runtime.supabaseUrl, serviceRoleKey, { auth: { autoRefreshToken: false, persistSession: false } });
-  const { error } = await admin.auth.admin.updateUserById(signedIn.user.id, { password: nextPassword });
-  if (error) throw new Error(`Disposable password rotation failed: ${error.message}`);
-}
 
 
 test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission TOCTOU", async ({ browser }) => {
@@ -165,6 +161,49 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
       } finally {
         await anonymousContext.close();
       }
+    });
+
+    await test.step("password recovery link rotates password and rejects the old credential", async () => {
+      const nextPassword = `${randomBytes(24).toString("base64url")}Bb7!`;
+      const recoveryUrl = await recoveryLinkFor(userA);
+
+      // Do not wait for networkidle: Auth callback navigation may keep network
+      // activity open. Navigation is bounded, then assertions wait for the UI.
+      await pageA.goto(recoveryUrl, { waitUntil: "domcontentloaded", timeout: 15_000 });
+      await expect(pageA).toHaveURL(/\\/auth\\/reset-password(?:\\?.*)?$/, { timeout: 10_000 });
+
+      const newPassword = pageA.getByLabel("New password", { exact: true });
+      const confirmPassword = pageA.getByLabel("Confirm new password", { exact: true });
+      await expect(newPassword).toBeVisible({ timeout: 10_000 });
+      await newPassword.fill(nextPassword);
+      await confirmPassword.fill(nextPassword);
+      await pageA.getByRole("button", { name: "Update password", exact: true }).click({ timeout: 10_000 });
+      await expect(pageA).toHaveURL(/\\/app$/, { timeout: 15_000 });
+      await expect(pageA.getByTestId("sign-out")).toBeVisible({ timeout: 10_000 });
+
+      const oldCredentialClient = createClient(runtime.supabaseUrl, runtime.publishableKey, {
+        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      });
+      const oldCredential = await oldCredentialClient.auth.signInWithPassword({
+        email: userA.email,
+        password: userA.password,
+      });
+      expect(oldCredential.error, "the pre-recovery password must be rejected").toBeTruthy();
+      expect(oldCredential.data.user).toBeNull();
+
+      const newCredentialClient = createClient(runtime.supabaseUrl, runtime.publishableKey, {
+        auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+      });
+      const newCredential = await newCredentialClient.auth.signInWithPassword({
+        email: userA.email,
+        password: nextPassword,
+      });
+      expect(newCredential.error, "the password entered through the recovery form must work").toBeNull();
+      expect(newCredential.data.user?.id).toBeTruthy();
+      await newCredentialClient.auth.signOut();
+
+      // Later launch-gate checks intentionally sign in again using userA.
+      userA.password = nextPassword;
     });
 
     await test.step("server-side AI mock provider, quota and request idempotency", async () => {
