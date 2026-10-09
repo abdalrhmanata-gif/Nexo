@@ -164,6 +164,9 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
     });
 
     await test.step("password recovery link rotates password and rejects the old credential", async () => {
+      // Remove the signup session first so this step proves the recovery callback
+      // creates a fresh session instead of accidentally reusing an existing one.
+      await signOut(pageA);
       const nextPassword = `${randomBytes(24).toString("base64url")}Bb7!`;
       const recoveryUrl = await recoveryLinkFor(userA);
 
