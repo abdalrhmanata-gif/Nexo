@@ -175,6 +175,17 @@ jobs:
           }));
           NODE
 
+      - name: Check Development-only live research secret
+        if: github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.body, '[live-openai-research]')
+        env:
+          SUPABASE_DEV_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}
+        run: |
+          if [ -z "${SUPABASE_DEV_SERVICE_ROLE_KEY}" ]; then
+            echo "::error::Add the ZAVQERA Development service-role key to repository Actions Secrets as SUPABASE_DEV_SERVICE_ROLE_KEY. Never use the Production key."
+            exit 1
+          fi
+          echo "Development-only Auth Admin secret is configured (value not printed)."
+
       - name: Check out source for authenticated live mission research
         if: github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.body, '[live-openai-research]')
         uses: actions/checkout@v4
