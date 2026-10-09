@@ -530,8 +530,8 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       }>;
       if (!rows.length) return [];
 
-      const missionIds = [...new Set(rows.map((row) => row.mission_id))];
-      const actionIds = [...new Set(rows.map((row) => row.action_id).filter((id): id is string => Boolean(id)))];
+      const missionIds = Array.from(new Set(rows.map((row) => row.mission_id)));
+      const actionIds = Array.from(new Set(rows.map((row) => row.action_id).filter((id): id is string => Boolean(id))));
       const [missionsResult, actionsResult, membersResult] = await Promise.all([
         supabase.from("missions").select("id,objective,agent_id").eq("workspace_id", workspaceId).in("id", missionIds),
         actionIds.length
@@ -549,7 +549,7 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       const missionById = new Map(missionRows.map((row) => [row.id, row]));
       const actionById = new Map(actionRows.map((row) => [row.id, row]));
       const memberByUserId = new Map(memberRows.map((row) => [row.user_id, row.email || "Workspace member"]));
-      const agentIds = [...new Set(missionRows.map((row) => row.agent_id).filter((id): id is string => Boolean(id)))];
+      const agentIds = Array.from(new Set(missionRows.map((row) => row.agent_id).filter((id): id is string => Boolean(id))));
       const agentsResult = agentIds.length
         ? await supabase.from("workspace_agents").select("id,name,authority").eq("workspace_id", workspaceId).in("id", agentIds)
         : { data: [], error: null };

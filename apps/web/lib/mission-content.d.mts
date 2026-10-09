@@ -62,3 +62,5 @@ export type VerificationReadiness = {
 export declare function verificationReadiness(
   mission: Pick<Mission, "lifecycleStatus" | "actions">,
 ): VerificationReadiness;
+
+export declare function summariseApprovalScope(scope: unknown): string;
