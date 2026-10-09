@@ -20,10 +20,18 @@ function assertRuntime() {
 }
 
 function freshUser(label) {
+  // Generated per run and never logged. They exist only in the disposable stack.
   return {
-    email: `zavqera-gate-${runtime.runId}-${label}@example.test`,
+    email: `zavqera-e2e-${runtime.runId}-${label}@example.test`,
     password: `${randomBytes(18).toString("base64url")}Aa1!`,
   };
+}
+
+function dateInputValue(daysAhead) {
+  const date = new Date();
+  date.setDate(date.getDate() + daysAhead);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
 async function ownerSession(user) {
@@ -31,70 +39,8 @@ async function ownerSession(user) {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
   const { data, error } = await client.auth.signInWithPassword(user);
-  if (error || !data.user) throw error ?? new Error("Disposable user sign-in failed.");
+  if (error || !data.user) throw new Error("The account created through the app does not exist on the disposable stack.");
   return { client, userId: data.user.id };
-}
-
-async function rotatePasswordFor(user, nextPassword) {
-  const serviceRoleKey = process.env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY;
-  if (!serviceRoleKey) throw new Error("Disposable service-role key is unavailable.");
-  const response = await fetch(
-    `${runtime.supabaseUrl}/auth/v1/admin/users`,
-    { method: "GET", headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` }, signal: AbortSignal.timeout(20_000) },
-  );
-  // Do not enumerate users: use the local Admin API's recovery test utility endpoint
-  // only via a known disposable email and find the corresponding user in this local stack.
-  if (!response.ok) throw new Error(`Unable to access disposable Auth Admin API (HTTP ${response.status}).`);
-  const payload = await response.json().catch(() => ({}));
-  const users = Array.isArray(payload?.users) ? payload.users : [];
-  const found = users.find((candidate) => candidate.email === user.email);
-  if (!found?.id) throw new Error("Disposable test account was not found by exact email.");
-  const update = await fetch(
-    `${runtime.supabaseUrl}/auth/v1/admin/users/${encodeURIComponent(found.id)}`,
-    {
-      method: "PUT",
-      headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}`, "Content-Type": "application/json" },
-      signal: AbortSignal.timeout(20_000),
-      body: JSON.stringify({ password: nextPassword }),
-    },
-  );
-  if (!update.ok) throw new Error(`Disposable password rotation failed with HTTP ${update.status}.`);
-}
-
-async function signUp(page, user) {
-  await page.goto("/auth/sign-up");
-  await page.getByLabel("Email", { exact: true }).fill(user.email);
-  await page.getByLabel("Password", { exact: true }).fill(user.password);
-  await page.getByTestId("sign-up-submit").click({ timeout: 10_000 });
-  await expect(page).toHaveURL(/\\/app$/);
-}
-
-async function signIn(page, user) {
-  await page.goto("/auth/sign-in", { waitUntil: "domcontentloaded", timeout: 15_000 });
-  const emailInput = page.getByLabel("Email", { exact: true });
-  const passwordInput = page.getByLabel("Password", { exact: true });
-  await emailInput.fill(user.email, { timeout: 10_000 });
-  await passwordInput.fill(user.password, { timeout: 10_000 });
-  await page.getByTestId("sign-in-submit").click({ timeout: 10_000 });
-  await expect(page).toHaveURL(/\\/app$/, { timeout: 15_000 });
-  await expect(page.getByTestId("sign-out")).toBeVisible({ timeout: 10_000 });
-}
-
-async function signOut(page) {
-  const button = page.getByTestId("sign-out");
-  const visible = await button.isVisible().catch(() => false);
-  if (visible) {
-    await button.click({ timeout: 10_000 });
-    await expect(page).toHaveURL(/\\/auth\\/sign-in(?:\\?.*)?$/, { timeout: 15_000 });
-    return;
-  }
-  await page.context().clearCookies();
-  await page.evaluate(() => {
-    window.localStorage.clear();
-    window.sessionStorage.clear();
-  });
-  await page.goto("/app");
-  await expect(page).toHaveURL(/\\/auth\\/sign-in(?:\\?.*)?$/, { timeout: 15_000 });
 }
 
 async function readMission(client, missionId) {
