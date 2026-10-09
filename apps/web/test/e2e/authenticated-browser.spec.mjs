@@ -490,11 +490,18 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       // Keep this assertion on that same session rather than rotating auth state.
       await page.goto(missionUrl);
       await page.getByRole("button", { name: /^Delete Mission/ }).click();
+      const deleteResponsePromise = page.waitForResponse((response) =>
+        response.request().method() === "POST"
+        && new URL(response.url()).pathname === `/api/missions/${missionId}`,
+      { timeout: 15_000 });
       await page.locator(`form[action="/api/missions/${missionId}"] button[type="submit"]`).first().click();
-      // The database enforces provenance with the mission_events RESTRICT FK.
-      // The UI intentionally masks the internal constraint and may return the
-      // generic mission-delete error instead of exposing database details.
-      await expect(page).toHaveURL(/\/app\?error=(mission-provenance|mission-delete)$/);
+      const deleteResponse = await deleteResponsePromise;
+      expect(deleteResponse.status()).toBe(303);
+      const redirect = new URL(deleteResponse.headers().location, runtime.baseURL);
+      expect(redirect.pathname).toBe("/app");
+      expect(["mission-provenance", "mission-delete"]).toContain(redirect.searchParams.get("error"));
+      // The provenance boundary blocks deletion even if middleware subsequently
+      // rechecks a refreshed/expired session while following the redirect.
       expect(await readMission(owner.client, missionId)).not.toBeNull();
     });
 
