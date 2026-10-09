@@ -114,7 +114,7 @@ async function main() {
         .replace(/eyJ[A-Za-z0-9_-]{20,}/g, "[redacted-token]")
         .replace(/Bearer\s+[^\s]+/gi, "Bearer [redacted]")
         .slice(0, 160).trim();
-      throw new Error(`Development Auth Admin could not create the dedicated test user (HTTP ${createUserResponse.status()})${safeDetail ? `: ${safeDetail}` : ""}.`);
+      throw new Error(`Development Auth Admin could not create the dedicated test user (HTTP ${createUserResponse.status})${safeDetail ? `: ${safeDetail}` : ""}.`);
     }
     const createdUser = await createUserResponse.json().catch(() => ({}));
     if (typeof createdUser.id !== "string" || !createdUser.id) {
