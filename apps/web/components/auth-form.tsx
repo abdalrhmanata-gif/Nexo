@@ -179,16 +179,29 @@ export function ResetPasswordForm() {
 export function SignOutButton() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   async function signOut() {
     setLoading(true);
-    const { error } = await createSupabaseBrowserClient().auth.signOut();
-    if (error) {
+    setError("");
+    try {
+      // Ordinary logout ends only this browser session; it must not revoke
+      // refresh tokens held by the user's other devices or concurrent sessions.
+      const result = await createSupabaseBrowserClient().auth.signOut({ scope: "local" });
+      if (result.error) {
+        setError("Could not sign out. Please try again.");
+        return;
+      }
+      router.push("/auth/sign-in");
+      router.refresh();
+    } catch {
+      setError("Could not sign out. Please try again.");
+    } finally {
+      // Shell survives route changes, so the persistent control must reset.
       setLoading(false);
-      return;
     }
-    setLoading(false);
-    router.push("/auth/sign-in");
-    router.refresh();
   }
-  return <button className="button button-small" onClick={signOut} disabled={loading}>{loading ? <LocalizedText en="Signing out…" /> : <LocalizedText en="Sign out" />}</button>;
+  return <>
+    <button className="button button-small" onClick={signOut} disabled={loading}>{loading ? <LocalizedText en="Signing out…" /> : <LocalizedText en="Sign out" />}</button>
+    {error && <span role="alert" className="field-error">{error}</span>}
+  </>;
 }

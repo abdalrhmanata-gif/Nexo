@@ -126,16 +126,27 @@ async function signUp(page, user) {
 }
 
 async function signIn(page, user) {
-  await page.goto("/auth/sign-in");
-  await page.getByLabel("Email", { exact: true }).fill(user.email);
-  await page.getByLabel("Password", { exact: true }).fill(user.password);
-  await formWith(page, page.getByLabel("Email", { exact: true })).locator('button[type="submit"]').click();
-  await expect(page).toHaveURL(/\/app$/);
+  await page.goto("/auth/sign-in", { waitUntil: "domcontentloaded", timeout: 15_000 });
+  const emailInput = page.getByLabel("Email", { exact: true });
+  const passwordInput = page.getByLabel("Password", { exact: true });
+  await emailInput.fill(user.email, { timeout: 10_000 });
+  await passwordInput.fill(user.password, { timeout: 10_000 });
+
+  const tokenRequest = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return response.request().method() === "POST"
+      && url.pathname.endsWith("/auth/v1/token")
+      && url.searchParams.get("grant_type") === "password";
+  }, { timeout: 15_000 });
+  await page.getByRole("button", { name: "Sign in" }).click({ timeout: 10_000 });
+  const response = await tokenRequest;
+  if (!response.ok()) throw new Error(`Sign-in endpoint returned HTTP ${response.status()}.`);
+  await expect(page).toHaveURL(/\\/app$/, { timeout: 15_000 });
 }
 
 async function signOut(page) {
-  await page.getByRole("button", { name: "Sign out" }).click();
-  await expect(page).toHaveURL(/\/auth\/sign-in/);
+  await page.getByRole("button", { name: "Sign out" }).click({ timeout: 10_000 });
+  await expect(page).toHaveURL(/\\/auth\\/sign-in/, { timeout: 15_000 });
 }
 
 async function rotatePasswordFor(user, nextPassword) {
