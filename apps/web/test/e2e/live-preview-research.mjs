@@ -4,7 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 
 const previewUrl = process.env.PREVIEW_URL;
 const supabaseUrl = process.env.SUPABASE_URL;
-const adminApiKey = process.env.SUPABASE_DEV_SERVICE_ROLE_KEY;
+const adminApiKey = (process.env.SUPABASE_DEV_SERVICE_ROLE_KEY || "").trim();
 const expectedDevelopmentHost = "mrwmmbytcymqgwvcoywd.supabase.co";
 const runId = `${process.env.GITHUB_RUN_ID || Date.now().toString(36)}-${process.env.GITHUB_RUN_ATTEMPT || "1"}`;
 
