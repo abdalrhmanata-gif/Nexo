@@ -486,11 +486,8 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
     });
 
     await test.step("history-bearing missions cannot be deleted, so the stack teardown is the cleanup", async () => {
-      // Re-bind the browser session immediately before the final provenance
-      // assertion so long-running E2E work cannot turn this test into an
-      // authentication-expiry check.
-      await signOut(page);
-      await signIn(page, userA);
+      // The browser is already authenticated from the preceding mission flow.
+      // Keep this assertion on that same session rather than rotating auth state.
       await page.goto(missionUrl);
       await page.getByRole("button", { name: /^Delete Mission/ }).click();
       await page.locator(`form[action="/api/missions/${missionId}"] button[type="submit"]`).first().click();
