@@ -277,8 +277,23 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await page.getByLabel("Intent", { exact: true }).fill("Prove the authenticated full mission loop end to end.");
       await page.getByLabel("Success criteria", { exact: true }).fill("Every state change is server-authoritative.");
       await page.getByLabel(/^First steps/).fill(`${titles.first}\n${titles.second}`);
+      const createResponsePromise = page.waitForResponse(
+        (response) => response.request().method() === "POST"
+          && new URL(response.url()).pathname === "/app/missions/new",
+        { timeout: 20_000 },
+      );
       await formWith(page, page.getByLabel("Mission name", { exact: true })).locator('button[type="submit"]').click();
-      await expect(page).toHaveURL(/\/app\/missions\/[0-9a-f-]{36}$/i);
+      const createResponse = await createResponsePromise;
+      const createBody = await createResponse.text().catch(() => "");
+      const safeCreateBody = createBody
+        .replace(/eyJ[A-Za-z0-9_-]{20,}/g, "[redacted]")
+        .replace(/Bearer\\s+[^\\s"'<>]+/gi, "Bearer [redacted]")
+        .slice(0, 400);
+      expect(
+        createResponse.status(),
+        `Mission creation server action failed: HTTP ${createResponse.status()} ${safeCreateBody}`,
+      ).toBeLessThan(400);
+      await expect(page).toHaveURL(/\/app\/missions\/[0-9a-f-]{36}$/i, { timeout: 20_000 });
       missionUrl = page.url();
       missionId = missionUrl.split("/").pop();
       ledger.record("mission", missionId);

@@ -188,8 +188,23 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
       await pageA.getByLabel("Intent", { exact: true }).fill("Prove server-authoritative Mission lifecycle and concurrency.");
       await pageA.getByLabel("Success criteria", { exact: true }).fill("Only one concurrent version-fenced transition succeeds.");
       await pageA.getByLabel(/^First steps/).fill("Validate ownership\nValidate concurrency");
+      const createResponsePromise = pageA.waitForResponse(
+        (response) => response.request().method() === "POST"
+          && new URL(response.url()).pathname === "/app/missions/new",
+        { timeout: 20_000 },
+      );
       await pageA.getByRole("button", { name: "Create mission" }).click();
-      await expect(pageA).toHaveURL(/\/app\/missions\/[0-9a-f-]{36}$/i);
+      const createResponse = await createResponsePromise;
+      const createBody = await createResponse.text().catch(() => "");
+      const safeCreateBody = createBody
+        .replace(/eyJ[A-Za-z0-9_-]{20,}/g, "[redacted]")
+        .replace(/Bearer\\s+[^\\s"'<>]+/gi, "Bearer [redacted]")
+        .slice(0, 400);
+      expect(
+        createResponse.status(),
+        `Mission creation server action failed: HTTP ${createResponse.status()} ${safeCreateBody}`,
+      ).toBeLessThan(400);
+      await expect(pageA).toHaveURL(/\/app\/missions\/[0-9a-f-]{36}$/i, { timeout: 20_000 });
       missionId = pageA.url().split("/").pop();
 
       const owner = await ownerSession(userA);
