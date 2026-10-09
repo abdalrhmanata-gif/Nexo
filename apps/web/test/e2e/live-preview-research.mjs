@@ -97,7 +97,24 @@ async function main() {
       await page.getByTestId("sign-up-submit").click({ timeout: 10_000 });
       const signupResponse = await signupResponsePromise;
       if (!signupResponse.ok()) {
-        throw new Error(`Dedicated test account signup returned HTTP ${signupResponse.status()}.`);
+        const authError = await signupResponse.clone().json().catch(() => ({}));
+        const code = typeof authError?.error_code === "string"
+          ? authError.error_code
+          : typeof authError?.code === "string"
+            ? authError.code
+            : typeof authError?.error === "string" ? authError.error : "";
+        const message = typeof authError?.msg === "string"
+          ? authError.msg
+          : typeof authError?.message === "string"
+            ? authError.message
+            : typeof authError?.error_description === "string" ? authError.error_description : "";
+        const safeDetail = `${code} ${message}`
+          .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/gi, "[redacted-email]")
+          .replace(/eyJ[A-Za-z0-9_-]{20,}/g, "[redacted-token]")
+          .replace(/Bearer\\s+[^\\s]+/gi, "Bearer [redacted]")
+          .slice(0, 180)
+          .trim();
+        throw new Error(`Dedicated test account signup returned HTTP ${signupResponse.status()}${safeDetail ? `: ${safeDetail}` : ""}.`);
       }
       const accountState = await waitForAppOrEmailConfirmation(page);
       if (accountState !== "authenticated") {
