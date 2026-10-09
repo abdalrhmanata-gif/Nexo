@@ -9,7 +9,7 @@ set search_path = pg_catalog, public
 as $function$
 declare
   v_execution public.agent_executions;
-  v_now timestamptz := now();
+  v_now timestamptz;
 begin
   if auth.uid() is null then
     raise exception 'AUTHENTICATION_REQUIRED' using errcode = '42501';
@@ -26,6 +26,11 @@ begin
   if v_execution.status <> 'RUNNING' then
     raise exception 'EXECUTION_NOT_RUNNING' using errcode = '22023';
   end if;
+
+  -- Sample wall-clock time only after acquiring the row lock. now() would
+  -- remain fixed at transaction start and could revive a lease that expired
+  -- while this statement waited for another worker/reconciler.
+  v_now := clock_timestamp();
   if v_execution.lease_expires_at <= v_now then
     raise exception 'EXECUTION_LEASE_EXPIRED' using errcode = '22023';
   end if;
