@@ -3,7 +3,7 @@ import { chromium } from "@playwright/test";
 
 const previewUrl = process.env.PREVIEW_URL;
 const supabaseUrl = process.env.SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_DEV_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+const serviceRoleKey = process.env.SUPABASE_DEV_SERVICE_ROLE_KEY;
 const expectedDevelopmentHost = "mrwmmbytcymqgwvcoywd.supabase.co";
 const runId = `${process.env.GITHUB_RUN_ID || Date.now().toString(36)}-${process.env.GITHUB_RUN_ATTEMPT || "1"}`;
 
@@ -73,10 +73,10 @@ async function main() {
       || configuredSupabase.hostname !== expectedDevelopmentHost) {
     throw new Error("Refusing live mission-research test: both preview and test setup must target ZAVQERA Development.");
   }
-  requireValue("SUPABASE_DEV_SERVICE_ROLE_KEY (or SUPABASE_SERVICE_ROLE_KEY)", serviceRoleKey);
+  requireValue("SUPABASE_DEV_SERVICE_ROLE_KEY", serviceRoleKey);
   console.log(JSON.stringify({ event: "preflight", preview: base, supabaseDevelopment: true, authSetup: "admin-api-no-email" }));
 
-  const email = `zavqera-live-research-${runId}-${randomBytes(5).toString("hex")}@example.test`;
+  const email = `zavqera-live-research-${runId}-${randomBytes(5).toString("hex")}@example.com`;
   const password = `${randomBytes(28).toString("base64url")}Zz9!`;
   const browser = await chromium.launch({ headless: true });
   let context;
