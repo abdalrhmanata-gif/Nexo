@@ -99,6 +99,7 @@ async function main() {
       if (!signupResponse.ok()) {
         // Report only Auth's known-safe error code/message fields; never dump request bodies or credentials.
         const authError = await signupResponse.json().catch(() => ({}));
+        // Playwright Response exposes json() directly; fetch-style clone() is not available here.
         const code = typeof authError?.error_code === "string"
           ? authError.error_code
           : typeof authError?.code === "string"
