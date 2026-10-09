@@ -199,6 +199,7 @@ jobs:
 
       - name: Verify authenticated live OpenAI mission research
         if: github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.body, '[live-openai-research]')
+        timeout-minutes: 8
         working-directory: apps/web
         env:
           PREVIEW_URL: https://deploy-preview-29--unique-kringle-3ce321.netlify.app
