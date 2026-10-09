@@ -508,10 +508,79 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       const row = result.data as { id: string; user_id: string; role: WorkspaceMember["role"]; created_at: string };
       return { id: row.id, userId: row.user_id, email: null, role: row.role, createdAt: row.created_at };
     },
-    async listPendingApprovals() {
-      const result = await supabase.from("mission_approvals").select("id,mission_id,action_id,status,requested_by,decided_by,requested_scope,decision_note,created_at,decided_at").eq("workspace_id", workspaceId).eq("status","PENDING").order("created_at",{ascending:false});
+    async canDecideApprovals() {
+      const result = await supabase.rpc("list_workspace_members", { p_workspace_id: workspaceId });
       if (result.error) throw result.error;
-      return (result.data ?? []).map((row) => ({ id: row.id as string, missionId: row.mission_id as string, actionId: row.action_id as string | null, status: row.status as MissionApproval["status"], requestedBy: row.requested_by as string, decidedBy: row.decided_by as string | null, requestedScope: (row.requested_scope ?? {}) as Record<string, unknown>, decisionNote: row.decision_note as string | null, createdAt: row.created_at as string, decidedAt: row.decided_at as string | null }));
+      const rows = (result.data ?? []) as Array<{ user_id: string; role: WorkspaceMember["role"] }>;
+      const role = rows.find((row) => row.user_id === user.id)?.role;
+      return role === "owner" || role === "admin";
+    },
+    async listPendingApprovals() {
+      const result = await supabase
+        .from("mission_approvals")
+        .select("id,mission_id,action_id,status,requested_by,decided_by,requested_scope,decision_note,created_at,decided_at")
+        .eq("workspace_id", workspaceId)
+        .eq("status", "PENDING")
+        .order("created_at", { ascending: false });
+      if (result.error) throw result.error;
+      const rows = (result.data ?? []) as Array<{
+        id: string; mission_id: string; action_id: string | null; status: MissionApproval["status"];
+        requested_by: string; decided_by: string | null; requested_scope: Record<string, unknown> | null;
+        decision_note: string | null; created_at: string; decided_at: string | null;
+      }>;
+      if (!rows.length) return [];
+
+      const missionIds = [...new Set(rows.map((row) => row.mission_id))];
+      const actionIds = [...new Set(rows.map((row) => row.action_id).filter((id): id is string => Boolean(id)))];
+      const [missionsResult, actionsResult, membersResult] = await Promise.all([
+        supabase.from("missions").select("id,objective,agent_id").eq("workspace_id", workspaceId).in("id", missionIds),
+        actionIds.length
+          ? supabase.from("mission_actions").select("id,title").in("id", actionIds)
+          : Promise.resolve({ data: [], error: null }),
+        supabase.rpc("list_workspace_members", { p_workspace_id: workspaceId }),
+      ]);
+      if (missionsResult.error) throw missionsResult.error;
+      if (actionsResult.error) throw actionsResult.error;
+      if (membersResult.error) throw membersResult.error;
+
+      const missionRows = (missionsResult.data ?? []) as Array<{ id: string; objective: string; agent_id: string | null }>;
+      const actionRows = (actionsResult.data ?? []) as Array<{ id: string; title: string }>;
+      const memberRows = (membersResult.data ?? []) as Array<{ user_id: string; email: string | null }>;
+      const missionById = new Map(missionRows.map((row) => [row.id, row]));
+      const actionById = new Map(actionRows.map((row) => [row.id, row]));
+      const memberByUserId = new Map(memberRows.map((row) => [row.user_id, row.email || "Workspace member"]));
+      const agentIds = [...new Set(missionRows.map((row) => row.agent_id).filter((id): id is string => Boolean(id)))];
+      const agentsResult = agentIds.length
+        ? await supabase.from("workspace_agents").select("id,name,authority").eq("workspace_id", workspaceId).in("id", agentIds)
+        : { data: [], error: null };
+      if (agentsResult.error) throw agentsResult.error;
+      const agentRows = (agentsResult.data ?? []) as Array<{ id: string; name: string; authority: Record<string, unknown> }>;
+      const agentById = new Map(agentRows.map((row) => [row.id, row]));
+
+      return rows.map((row) => {
+        const mission = missionById.get(row.mission_id);
+        const parsed = parseMissionObjective(mission?.objective ?? "");
+        const action = row.action_id ? actionById.get(row.action_id) : null;
+        const agent = mission?.agent_id ? agentById.get(mission.agent_id) : null;
+        return {
+          id: row.id,
+          missionId: row.mission_id,
+          actionId: row.action_id,
+          status: row.status,
+          requestedBy: row.requested_by,
+          decidedBy: row.decided_by,
+          requestedScope: (row.requested_scope ?? {}) as Record<string, unknown>,
+          decisionNote: row.decision_note,
+          createdAt: row.created_at,
+          decidedAt: row.decided_at,
+          missionName: parsed.name,
+          missionIntent: parsed.intent,
+          actionTitle: action?.title ?? null,
+          agentName: agent?.name ?? null,
+          agentAuthority: agent?.authority ?? null,
+          requesterLabel: memberByUserId.get(row.requested_by) ?? "Former workspace member",
+        };
+      });
     },
     async listResearchRuns(id: string) {
       const result = await supabase

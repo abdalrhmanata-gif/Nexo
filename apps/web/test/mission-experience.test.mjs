@@ -12,6 +12,7 @@ import {
   nextStepFor,
   parseMissionObjective,
   summariseEventPayload,
+  summariseApprovalScope,
 } from "../lib/mission-content.mjs";
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -262,4 +263,38 @@ test("business collaboration exposes least-privilege invitations", () => {
   assert.ok(migration.includes("WORKSPACE_ADMIN_REQUIRED"));
   assert.ok(migration.includes("INVITATION_ALREADY_PENDING"));
   assert.ok(migration.includes("token_hash"));
+});
+
+test("approval scope summary is bounded, readable, and never dumps identifiers", () => {
+  const summary = summariseApprovalScope({
+    type: "bounded_action",
+    requires_approval: true,
+    external_side_effects: false,
+    allowed_actions: ["read"],
+    action_id: "sensitive-internal-id",
+    secret_token: "never-render",
+    nested: { payload: true },
+  });
+  assert.match(summary, /bounded_action/);
+  assert.match(summary, /Requires approval: Yes/);
+  assert.match(summary, /External side effects: No/);
+  assert.ok(!summary.includes("sensitive-internal-id"));
+  assert.ok(!summary.includes("never-render"));
+  assert.ok(!summary.includes("{"));
+  assert.ok(summary.length <= 360);
+});
+
+test("Approval Center presents context and keeps decisions restricted to owners and admins", () => {
+  const page = read("app/app/business/approvals/page.tsx");
+  const center = read("components/approval-center.tsx");
+  const route = read("app/api/missions/approval/[approvalId]/decision/route.ts");
+  const repository = read("lib/supabase/mission-repository.ts");
+  assert.ok(page.includes("Approval Center"));
+  assert.ok(center.includes("Requested scope"));
+  assert.ok(center.includes("Agent authority"));
+  assert.ok(center.includes("Only workspace owners and admins"));
+  assert.ok(repository.includes("async canDecideApprovals"));
+  assert.ok(repository.includes('role === "owner" || role === "admin"'));
+  assert.ok(route.includes("decide_mission_approval"));
+  assert.ok(route.includes("A reason is required when rejecting"));
 });

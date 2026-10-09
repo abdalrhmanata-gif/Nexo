@@ -361,3 +361,64 @@ export function humaniseEventType(eventType) {
     return words.charAt(0).toUpperCase() + words.slice(1);
   })();
 }
+
+
+/**
+ * Presents only allowlisted approval-scope fields. Never stringify the raw
+ * scope because it can contain internal identifiers or future sensitive data.
+ */
+const APPROVAL_SCOPE_FIELDS = [
+  ["type", "Request type", "text"],
+  ["bounded_action", "Bounded action", "boolean"],
+  ["reason", "Reason", "text"],
+  ["purpose", "Purpose", "text"],
+  ["requested_action", "Requested action", "text"],
+  ["action", "Requested action", "text"],
+  ["effect", "Potential effect", "text"],
+  ["resource", "Resource", "text"],
+  ["data_scope", "Data scope", "text"],
+  ["allowed_actions", "Allowed actions", "list"],
+  ["not_allowed_actions", "Not allowed", "list"],
+  ["forbidden_actions", "Forbidden actions", "list"],
+  ["read_only", "Read-only", "boolean"],
+  ["external_side_effects", "External side effects", "boolean"],
+  ["requires_approval", "Requires approval", "boolean"],
+  ["budget", "Budget", "scalar"],
+  ["max_items", "Maximum items", "scalar"],
+  ["expires_at", "Expiry", "scalar"],
+  ["description", "Description", "text"],
+];
+
+function approvalScopeValue(value, kind) {
+  if (kind === "boolean" && typeof value === "boolean") return value ? "Yes" : "No";
+  if ((kind === "text" || kind === "scalar") && (typeof value === "string" || typeof value === "number")) {
+    const text = String(value).trim();
+    return text ? text.slice(0, 100) : "";
+  }
+  if (kind === "list" && Array.isArray(value)) {
+    return value
+      .filter((item) => typeof item === "string" || typeof item === "number")
+      .map((item) => String(item).trim())
+      .filter(Boolean)
+      .slice(0, 3)
+      .join(", ")
+      .slice(0, 100);
+  }
+  return "";
+}
+
+export function summariseApprovalScope(scope) {
+  if (!scope || typeof scope !== "object" || Array.isArray(scope)) {
+    return "No readable scope details were provided; inspect the mission before deciding.";
+  }
+  const parts = [];
+  for (const [field, label, kind] of APPROVAL_SCOPE_FIELDS) {
+    if (!Object.prototype.hasOwnProperty.call(scope, field)) continue;
+    const value = approvalScopeValue(scope[field], kind);
+    if (value) parts.push(`${label}: ${value}`);
+    if (parts.length >= 5) break;
+  }
+  return parts.length
+    ? parts.join(" · ").slice(0, 360)
+    : "No readable scope details were provided; inspect the mission before deciding.";
+}

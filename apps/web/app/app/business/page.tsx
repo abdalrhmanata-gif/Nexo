@@ -7,7 +7,7 @@ import { isSupabaseConfigured } from "../../../lib/supabase/config";
 import { createSupabaseMissionRepository } from "../../../lib/supabase/mission-repository";
 import { InvitationRevokeButton } from "../../../components/invitation-revoke-button";
 import { MemberManagementControls } from "../../../components/member-management-controls";
-import { humaniseEventType, summariseEventPayload } from "../../../lib/mission-content.mjs";
+import { humaniseEventType, summariseApprovalScope, summariseEventPayload } from "../../../lib/mission-content.mjs";
 
 export default async function BusinessWorkspacePage() {
   const repository = isSupabaseConfigured() ? await createSupabaseMissionRepository() : localMockMissionRepository;
@@ -20,6 +20,7 @@ export default async function BusinessWorkspacePage() {
   const agents = repository.listWorkspaceAgents ? await repository.listWorkspaceAgents() : [];
   const members = repository.listWorkspaceMembers ? await repository.listWorkspaceMembers() : [];
   const approvals = repository.listPendingApprovals ? await repository.listPendingApprovals() : [];
+  const canDecideApprovals = repository.canDecideApprovals ? await repository.canDecideApprovals() : false;
   const invitations = repository.listWorkspaceInvitations ? await repository.listWorkspaceInvitations() : [];
   const activity = repository.listWorkspaceActivity ? await repository.listWorkspaceActivity() : [];
 
@@ -48,7 +49,15 @@ export default async function BusinessWorkspacePage() {
 
     <section className="grid">
       <section className="card"><p className="eyebrow">Approvals</p><h2>Human control queue</h2>
-        {approvals.length ? <ul className="list">{approvals.slice(0,5).map((approval) => <li key={approval.id}><strong>Approval required</strong><br />Mission {approval.missionId.slice(0,8)} · {approval.actionId ? `Action ${approval.actionId.slice(0,8)}` : "Mission-level"}<br /><span className="action-hint">Requested {new Date(approval.createdAt).toLocaleString()}</span><ApprovalDecisionControls approvalId={approval.id} /></li>)}</ul> : <p className="detail-intent">No approvals are waiting. Side effects stay blocked until an explicit approval exists.</p>}
+        <p>{approvals.length ? `${approvals.length} request(s) are waiting for a recorded human decision.` : "No approvals are waiting. Actions that require approval stay blocked."}</p>
+        {approvals.length ? <ul className="list">{approvals.slice(0,3).map((approval) => <li key={approval.id}>
+          <strong>{approval.missionName || `Mission ${approval.missionId.slice(0,8)}`}</strong><br />
+          <span>{approval.actionTitle || (approval.actionId ? "Action details unavailable" : "Mission-level approval")}</span><br />
+          <span className="action-hint">Agent: {approval.agentName || "Not linked"} · Requested by: {approval.requesterLabel || "Workspace member"} · {new Date(approval.createdAt).toLocaleString()}</span><br />
+          <span className="action-hint">{summariseApprovalScope(approval.requestedScope)}</span>
+          {canDecideApprovals ? <ApprovalDecisionControls approvalId={approval.id} /> : <p className="action-hint">Decision access is limited to owners and admins.</p>}
+        </li>)}</ul> : <p className="detail-intent">Approval-required side effects remain blocked until an explicit decision is recorded.</p>}
+        <Link className="button button-small button-quiet" href="/app/business/approvals">Open Human Control Center</Link>
       </section>
       <section className="card"><p className="eyebrow">Agents</p><h2>Controlled AI workers</h2>
         {agents.length ? <ul className="list">{agents.map((agent) => <li key={agent.id}><strong>{agent.name}</strong><br />{agent.description || "Bounded workspace agent"}<br /><span className={`status status-${agent.status.toLowerCase()}`}>{agent.status}</span></li>)}</ul> : <p className="detail-intent">No agents are configured yet. The workspace is ready for bounded agents with explicit authority.</p>}

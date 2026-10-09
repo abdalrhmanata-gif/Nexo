@@ -15,6 +15,7 @@ export interface MissionRepository {
   listWorkspaceAgents?(): Promise<WorkspaceAgent[]>;
   listWorkspaceMembers?(): Promise<WorkspaceMember[]>;
   listPendingApprovals?(): Promise<MissionApproval[]>;
+  canDecideApprovals?(): Promise<boolean>;
   listAgentExecutions?(missionId: string): Promise<AgentExecution[]>;
   listWorkspaceInvitations?(): Promise<WorkspaceInvitation[]>;
   createWorkspaceInvitation?(input: { email: string; role: "admin" | "member" | "viewer"; tokenHash: string; expiresAt: string }): Promise<WorkspaceInvitation>;
@@ -113,5 +114,5 @@ export type WorkspaceAgent = { id: string; name: string; description: string; st
 export type WorkspaceMember = { id: string; userId: string; email: string | null; role: "owner" | "admin" | "member" | "viewer"; createdAt: string; };
 export type WorkspaceActivity = { id: string; eventType: string; entityType: string; entityId: string | null; payload: Record<string, unknown>; actorUserId: string | null; createdAt: string; };
 export type WorkspaceInvitation = { id: string; email: string; role: "admin" | "member" | "viewer"; status: "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED"; expiresAt: string; createdAt: string; };
-export type MissionApproval = { id: string; missionId: string; actionId: string | null; status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED"; requestedBy: string; decidedBy: string | null; requestedScope: Record<string, unknown>; decisionNote: string | null; createdAt: string; decidedAt: string | null; };
+export type MissionApproval = { id: string; missionId: string; actionId: string | null; status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED"; requestedBy: string; decidedBy: string | null; requestedScope: Record<string, unknown>; decisionNote: string | null; createdAt: string; decidedAt: string | null; missionName?: string; missionIntent?: string; actionTitle?: string | null; agentName?: string | null; agentAuthority?: Record<string, unknown> | null; requesterLabel?: string; };
 export type AgentExecution = { id: string; missionId: string; actionId: string | null; agentId: string; approvalId: string | null; status: "RUNNING" | "SUCCEEDED" | "FAILED" | "UNKNOWN" | "BLOCKED"; authoritySnapshot: Record<string, unknown>; request: Record<string, unknown>; result: Record<string, unknown> | null; evidence: Record<string, unknown> | null; createdAt: string; completedAt: string | null; };
