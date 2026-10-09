@@ -175,6 +175,13 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
       await pageA.goto(recoveryUrl, { waitUntil: "domcontentloaded", timeout: 15_000 });
       await expect.poll(() => new URL(pageA.url()).pathname, { timeout: 10_000 }).toBe("/auth/reset-password");
 
+      // A successful URL redirect is not enough: password update needs the
+      // recovery session cookie established by the callback exchange.
+      await expect.poll(
+        async () => (await contextA.cookies()).filter((cookie) => cookie.name.includes("-auth-token")).length,
+        { timeout: 10_000 },
+      ).toBeGreaterThan(0);
+
       const newPassword = pageA.getByLabel("New password", { exact: true });
       const confirmPassword = pageA.getByLabel("Confirm new password", { exact: true });
       await expect(newPassword).toBeVisible({ timeout: 10_000 });
@@ -182,6 +189,19 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
       // Keep this end-to-end check focused on the recovery and password update
       // flow. The password breach range check is covered by its unit tests and
       // is an external dependency that can fail independently of Auth.
+      const policyResponses = [];
+      const authUpdateRequests = [];
+      pageA.on("response", (response) => {
+        if (new URL(response.url()).pathname === "/api/auth/password-policy") {
+          policyResponses.push(response.status());
+        }
+      });
+      pageA.on("request", (request) => {
+        const url = new URL(request.url());
+        if (url.pathname.endsWith("/auth/v1/user") && request.method() !== "GET") {
+          authUpdateRequests.push(request.method());
+        }
+      });
       await pageA.route("**/api/auth/password-policy", (route) => route.fulfill({ status: 204 }));
 
       await newPassword.fill(nextPassword);
@@ -192,7 +212,22 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
         { timeout: 15_000 },
       );
       await pageA.getByRole("button", { name: "Update password", exact: true }).click({ timeout: 10_000 });
-      const authUpdateResponse = await authUpdate;
+      let authUpdateResponse;
+      try {
+        authUpdateResponse = await authUpdate;
+      } catch {
+        const [alerts, statuses] = await Promise.all([
+          pageA.getByRole("alert").allTextContents().catch(() => []),
+          pageA.getByRole("status").allTextContents().catch(() => []),
+        ]);
+        throw new Error(
+          "Password update did not reach Supabase Auth; path=" + new URL(pageA.url()).pathname
+          + "; policyResponses=" + JSON.stringify(policyResponses)
+          + "; authUpdateMethods=" + JSON.stringify(authUpdateRequests)
+          + "; alert=" + (alerts.join(" | ") || "none")
+          + "; status=" + (statuses.join(" | ") || "none") + ".",
+        );
+      }
       expect(
         authUpdateResponse.status(),
         "Supabase Auth must accept the password update through the recovery session.",
