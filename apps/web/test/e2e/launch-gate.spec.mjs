@@ -110,6 +110,27 @@ async function directTransition(client, missionId, toStatus, expectedVersion) {
   return { status: response.status, body: await response.text() };
 }
 
+async function rotatePasswordFor(user, nextPassword) {
+  const serviceRoleKey = process.env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY;
+  if (!serviceRoleKey) throw new Error("Disposable service-role key is unavailable.");
+  const response = await fetch(`${runtime.supabaseUrl}/auth/v1/admin/users?page=1&per_page=1000`, {
+    headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` },
+    signal: AbortSignal.timeout(20_000),
+  });
+  if (!response.ok) throw new Error(`Unable to access disposable Auth Admin API (HTTP ${response.status}).`);
+  const payload = await response.json().catch(() => ({}));
+  const users = Array.isArray(payload?.users) ? payload.users : [];
+  const found = users.find((candidate) => candidate.email === user.email);
+  if (!found?.id) throw new Error("Disposable test account was not found by exact email.");
+  const update = await fetch(`${runtime.supabaseUrl}/auth/v1/admin/users/${encodeURIComponent(found.id)}`, {
+    method: "PUT",
+    headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}`, "Content-Type": "application/json" },
+    signal: AbortSignal.timeout(20_000),
+    body: JSON.stringify({ password: nextPassword }),
+  });
+  if (!update.ok) throw new Error(`Disposable password rotation failed with HTTP ${update.status}.`);
+}
+
 async function recoveryLinkFor(user) {
   const serviceRoleKey = process.env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY;
   if (!serviceRoleKey) throw new Error("Disposable service-role key is unavailable.");
