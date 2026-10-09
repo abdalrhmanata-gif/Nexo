@@ -59,7 +59,9 @@ test("server repository derives identity and scopes every authoritative read", a
   assert.match(repository, /supabase\.auth\.getUser\(\)/);
   assert.match(repository, /if \(error \|\| !user\) throw new Error\("Authentication required\."\)/);
   assert.match(repository, /ownedWorkspace\(supabase, user\.id\)/);
-  assert.match(repository, /\.eq\("owner_id", userId\)/);
+  assert.match(repository, /\.eq\("user_id", userId\)/);
+  assert.match(repository, /supabase\.rpc\("ensure_owned_workspace"\)/);
+  assert.doesNotMatch(repository, /\.from\("workspaces"\)\.insert/);
   assert.match(repository, /\.eq\("workspace_id", workspaceId\)/);
   assert.match(repository, /\.eq\("mission_id", missionId\)/);
   assert.match(server, /createServerClient\(supabaseUrl, supabasePublishableKey/);
