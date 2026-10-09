@@ -64,3 +64,5 @@ export declare function verificationReadiness(
 ): VerificationReadiness;
 
 export declare function summariseApprovalScope(scope: unknown): string;
+
+export declare function summariseApprovalScope(scope: unknown): string;

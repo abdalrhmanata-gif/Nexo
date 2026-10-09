@@ -298,3 +298,34 @@ test("Approval Center presents context and keeps decisions restricted to owners 
   assert.ok(route.includes("decide_mission_approval"));
   assert.ok(route.includes("A reason is required when rejecting"));
 });
+
+
+test("execution recovery is explicit, evidence-aware, and prohibits retrying unknown outcomes", () => {
+  const controls = read("components/agent-execution-controls.tsx");
+  const route = read("app/api/agent-executions/[executionId]/route.ts");
+  const migration = readFileSync(join(webRoot, "../../supabase/migrations/20261009150000_w49_agent_execution_recovery.sql"), "utf8");
+  assert.ok(controls.includes("Request cancellation"));
+  assert.ok(controls.includes("Outcome unknown"));
+  assert.ok(controls.includes("Do not retry"));
+  assert.ok(controls.includes("Retry attempt"));
+  assert.ok(route.includes("request_agent_execution_cancellation"));
+  assert.ok(route.includes("reconcile_stale_agent_execution"));
+  assert.ok(route.includes("retry_agent_execution"));
+  assert.ok(migration.includes("EXECUTION_OUTCOME_UNKNOWN_NOT_RETRYABLE"));
+  assert.ok(migration.includes("EXECUTION_LEASE_EXPIRED"));
+  assert.ok(migration.includes("safe_to_retry', false"));
+  assert.ok(migration.includes("revoke insert, update on public.agent_executions from anon, authenticated"));
+});
+
+test("execution history exposes reconciliation and attempt lineage without dumping raw errors", () => {
+  const page = read("app/app/missions/[id]/page.tsx");
+  const repository = read("lib/supabase/mission-repository.ts");
+  const controls = read("components/agent-execution-controls.tsx");
+  assert.ok(page.includes("Attempt {execution.attemptNumber}"));
+  assert.ok(page.includes("Lease expires"));
+  assert.ok(page.includes("reconciled"));
+  assert.ok(repository.includes("retry_of_execution_id"));
+  assert.ok(repository.includes("lease_expires_at"));
+  assert.ok(controls.includes("function failureLabel"));
+  assert.ok(!controls.includes("execution.errorMessage"));
+});

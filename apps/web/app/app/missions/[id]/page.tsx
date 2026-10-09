@@ -12,6 +12,7 @@ import { AddActionForm } from "../../../../components/add-action-form";
 import { missionIntelligenceFor } from "../../../../lib/mission-intelligence.mjs";
 import { MissionResearchPanel } from "../../../../components/mission-research-panel";
 import { ApprovalRequestControls } from "../../../../components/approval-request-controls";
+import { AgentExecutionControls } from "../../../../components/agent-execution-controls";
 
 export default async function MissionDetailPage({
   params,
@@ -68,11 +69,14 @@ export default async function MissionDetailPage({
         <section className="card" aria-labelledby="execution-heading">
           <p className="eyebrow">Agent execution</p>
           <h2 id="execution-heading">Execution evidence</h2>
-          {executions.length ? <div className="timeline">{executions.slice(0,5).map((execution) => <div className="timeline-item" key={execution.id}>
-            <strong>{execution.status} · Agent {execution.agentId.slice(0,8)}</strong>
+          {executions.length ? <div className="timeline">{executions.slice(0,10).map((execution) => <div className="timeline-item" key={execution.id}>
+            <strong>{execution.status} · Agent {execution.agentId.slice(0,8)} · Attempt {execution.attemptNumber}</strong>
             <span>{execution.actionId ? `Action ${execution.actionId.slice(0,8)}` : "Mission-level"} · {new Date(execution.createdAt).toLocaleString()} · {execution.approvalId ? "Approval attached" : "No approval required"}</span>
+            {execution.status === "RUNNING" && <span>Lease expires {new Date(execution.leaseExpiresAt).toLocaleString()}{execution.cancelRequestedAt ? " · Cancellation requested" : ""}</span>}
+            {execution.completedAt && <span>Finalised {new Date(execution.completedAt).toLocaleString()}{execution.reconciledAt ? " · Reconciled" : ""}</span>}
+            <AgentExecutionControls execution={execution} />
           </div>)}</div> : <p className="detail-intent">No agent execution has been recorded for this mission yet.</p>}
-          <p className="action-hint">Every execution keeps its authority snapshot and evidence boundary. An AI result is not treated as verified until the verification step passes.</p>
+          <p className="action-hint">Execution state is server-authoritative. Expired leases become UNKNOWN, not failed. UNKNOWN must be reconciled with external evidence and is never automatically retried. A cancellation request does not prove an external side effect stopped.</p>
         </section>
 
 

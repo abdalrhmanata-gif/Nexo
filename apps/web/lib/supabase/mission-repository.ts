@@ -411,7 +411,7 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
     },
     async listAgentExecutions(missionId: string) {
       const result = await supabase.from("agent_executions")
-        .select("id,mission_id,action_id,agent_id,approval_id,status,authority_snapshot,request,result,evidence,created_at,completed_at")
+        .select("id,mission_id,action_id,agent_id,approval_id,status,authority_snapshot,request,result,evidence,error_code,error_message,created_at,completed_at,heartbeat_at,lease_expires_at,cancel_requested_at,retry_of_execution_id,attempt_number,reconciled_at")
         .eq("mission_id", missionId).order("created_at", { ascending: false }).limit(20);
       if (result.error) throw result.error;
       return (result.data ?? []).map((row) => ({
@@ -425,8 +425,16 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
         request: (row.request ?? {}) as Record<string, unknown>,
         result: (row.result ?? null) as Record<string, unknown> | null,
         evidence: (row.evidence ?? null) as Record<string, unknown> | null,
+        errorCode: row.error_code as string | null,
+        errorMessage: row.error_message as string | null,
         createdAt: row.created_at as string,
         completedAt: row.completed_at as string | null,
+        heartbeatAt: row.heartbeat_at as string,
+        leaseExpiresAt: row.lease_expires_at as string,
+        cancelRequestedAt: row.cancel_requested_at as string | null,
+        retryOfExecutionId: row.retry_of_execution_id as string | null,
+        attemptNumber: row.attempt_number as number,
+        reconciledAt: row.reconciled_at as string | null,
       }));
     },
     async listWorkspaceAgents() {
