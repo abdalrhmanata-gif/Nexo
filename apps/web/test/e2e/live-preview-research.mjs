@@ -80,6 +80,9 @@ async function main() {
     : adminApiKey.startsWith("eyJ")
       ? "legacy_jwt_key"
       : "unknown_format";
+  if (adminKeyFormat === "unknown_format") {
+    throw new Error("SUPABASE_DEV_SERVICE_ROLE_KEY must be a Supabase secret key or legacy service_role JWT; the value is not printed.");
+  }
   console.log(JSON.stringify({
     event: "preflight",
     preview: base,
