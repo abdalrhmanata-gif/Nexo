@@ -5,17 +5,17 @@ select plan(17);
 
 select ok(to_regclass('public.agent_executions') is not null,
   'agent execution table exists');
-select ok(has_column('public', 'agent_executions', 'heartbeat_at'),
+select ok(exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'agent_executions' and column_name = 'heartbeat_at'),
   'execution heartbeat timestamp exists');
-select ok(has_column('public', 'agent_executions', 'lease_expires_at'),
+select ok(exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'agent_executions' and column_name = 'lease_expires_at'),
   'execution lease expiry exists');
-select ok(has_column('public', 'agent_executions', 'cancel_requested_at'),
+select ok(exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'agent_executions' and column_name = 'cancel_requested_at'),
   'cancellation request timestamp exists');
-select ok(has_column('public', 'agent_executions', 'retry_of_execution_id'),
+select ok(exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'agent_executions' and column_name = 'retry_of_execution_id'),
   'retry lineage is stored');
-select ok(has_column('public', 'agent_executions', 'attempt_number'),
+select ok(exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'agent_executions' and column_name = 'attempt_number'),
   'attempt number is stored');
-select ok(has_column('public', 'agent_executions', 'reconciled_at'),
+select ok(exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'agent_executions' and column_name = 'reconciled_at'),
   'reconciliation timestamp exists');
 select ok(to_regclass('public.agent_executions_workspace_status_lease_idx') is not null,
   'stale execution scan has a supporting index');

@@ -163,7 +163,7 @@ jobs:
             timeout 30m supabase test db supabase/tests/w30_launch_gate_pgtap.sql
           )
 
-      - name: Run AI quota and plan smoke tests
+      - name: Run AI quota, plan and workspace security tests
         run: |
           set -euo pipefail
           (
