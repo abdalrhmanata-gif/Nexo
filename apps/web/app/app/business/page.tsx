@@ -24,7 +24,7 @@ export default async function BusinessWorkspacePage() {
   const invitations = repository.listWorkspaceInvitations ? await repository.listWorkspaceInvitations() : [];
   const activity = repository.listWorkspaceActivity ? await repository.listWorkspaceActivity() : [];
 
-  return <div className="container">
+  return <div className="container business-dashboard">
     <div className="section-heading"><div>
       <p className="eyebrow"><LocalizedText en="Business workspace" nb="Arbeidsområde" ar="مساحة العمل" /></p>
       <h1>Run AI work as a team</h1>
