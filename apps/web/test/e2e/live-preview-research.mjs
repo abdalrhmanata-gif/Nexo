@@ -2,7 +2,10 @@ import { randomBytes } from "node:crypto";
 import { chromium } from "@playwright/test";
 
 const previewUrl = process.env.PREVIEW_URL;
-const runId = process.env.GITHUB_RUN_ID || Date.now().toString(36);
+const supabaseUrl = process.env.SUPABASE_URL;
+const serviceRoleKey = process.env.SUPABASE_DEV_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+const expectedDevelopmentHost = "mrwmmbytcymqgwvcoywd.supabase.co";
+const runId = `${process.env.GITHUB_RUN_ID || Date.now().toString(36)}-${process.env.GITHUB_RUN_ATTEMPT || "1"}`;
 
 function requireValue(name, value) {
   if (!value) throw new Error(`Missing required live-preview test setting: ${name}`);
@@ -63,17 +66,22 @@ async function main() {
   const health = await fetch(`${base}/api/status`, { cache: "no-store", signal: AbortSignal.timeout(15_000) });
   if (!health.ok) throw new Error(`Preview status endpoint returned HTTP ${health.status}.`);
   const healthBody = await health.json();
+  const configuredSupabase = new URL(requireValue("SUPABASE_URL", supabaseUrl));
   if (healthBody?.supabase?.urlConfigured !== true
       || healthBody?.supabase?.publishableKeyConfigured !== true
-      || healthBody?.supabase?.targetsDevelopmentProject !== true) {
-    throw new Error("Refusing live mission-research test: the preview does not prove it targets ZAVQERA Development.");
+      || healthBody?.supabase?.targetsDevelopmentProject !== true
+      || configuredSupabase.hostname !== expectedDevelopmentHost) {
+    throw new Error("Refusing live mission-research test: both preview and test setup must target ZAVQERA Development.");
   }
-  console.log(JSON.stringify({ event: "preflight", preview: base, supabaseDevelopment: true }));
+  requireValue("SUPABASE_DEV_SERVICE_ROLE_KEY (or SUPABASE_SERVICE_ROLE_KEY)", serviceRoleKey);
+  console.log(JSON.stringify({ event: "preflight", preview: base, supabaseDevelopment: true, authSetup: "admin-api-no-email" }));
 
   const email = `zavqera-live-research-${runId}-${randomBytes(5).toString("hex")}@example.test`;
   const password = `${randomBytes(28).toString("base64url")}Zz9!`;
   const browser = await chromium.launch({ headless: true });
   let context;
+  let authUserId = null;
+  let missionCreated = false;
   try {
     context = await browser.newContext({ baseURL: base });
     const page = await context.newPage();
@@ -82,52 +90,53 @@ async function main() {
       console.error("Browser reported a page-level JavaScript error during the live-preview test.");
     });
 
-    const removeGuard = await installSensitiveAuthNavigationGuard(page);
-    try {
-      await page.goto("/auth/sign-up", { waitUntil: "domcontentloaded", timeout: 20_000 });
-      await waitForReactHandler(page, "form.form-grid", "onSubmit");
-      await page.getByLabel("Email", { exact: true }).fill(email);
-      await page.getByLabel("Password", { exact: true }).fill(password);
-
-      const signupResponsePromise = page.waitForResponse(
-        (response) => response.request().method() === "POST"
-          && new URL(response.url()).pathname.endsWith("/auth/v1/signup"),
-        { timeout: 20_000 },
-      );
-      await page.getByTestId("sign-up-submit").click({ timeout: 10_000 });
-      const signupResponse = await signupResponsePromise;
-      if (!signupResponse.ok()) {
-        // Report only Auth's known-safe error code/message fields; never dump request bodies or credentials.
-        const authError = await signupResponse.json().catch(() => ({}));
-        // Playwright Response exposes json() directly; fetch-style clone() is not available here.
-        const code = typeof authError?.error_code === "string"
-          ? authError.error_code
-          : typeof authError?.code === "string"
-            ? authError.code
-            : typeof authError?.error === "string" ? authError.error : "";
-        const message = typeof authError?.msg === "string"
-          ? authError.msg
-          : typeof authError?.message === "string"
-            ? authError.message
-            : typeof authError?.error_description === "string" ? authError.error_description : "";
-        const safeDetail = `${code} ${message}`
-          .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/gi, "[redacted-email]")
-          .replace(/eyJ[A-Za-z0-9_-]{20,}/g, "[redacted-token]")
-          .replace(/Bearer\\s+[^\\s]+/gi, "Bearer [redacted]")
-          .slice(0, 180)
-          .trim();
-        throw new Error(`Dedicated test account signup returned HTTP ${signupResponse.status()}${safeDetail ? `: ${safeDetail}` : ""}.`);
-      }
-      const accountState = await waitForAppOrEmailConfirmation(page);
-      if (accountState !== "authenticated") {
-        // Deliberately stop before mission creation if email confirmation prevents a session.
-        throw new Error("Signup requires email confirmation; authenticated live research was not attempted.");
-      }
-      await page.getByTestId("sign-out").waitFor({ state: "visible", timeout: 10_000 });
-      console.log(JSON.stringify({ event: "test-account-ready", authenticated: true, account: "dedicated-development-test-account" }));
-    } finally {
-      await removeGuard();
+    // Create a dedicated confirmed account through the Development-only Auth Admin API.
+    // This avoids email-provider rate limits and keeps the service-role key server-side in CI.
+    const createUserResponse = await fetch(`${configuredSupabase.origin}/auth/v1/admin/users`, {
+      method: "POST",
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password, email_confirm: true }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(20_000),
+    });
+    if (!createUserResponse.ok) {
+      const authError = await createUserResponse.json().catch(() => ({}));
+      const code = typeof authError?.error_code === "string" ? authError.error_code
+        : typeof authError?.code === "string" ? authError.code : "";
+      const message = typeof authError?.msg === "string" ? authError.msg
+        : typeof authError?.message === "string" ? authError.message : "";
+      const safeDetail = `${code} ${message}`
+        .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[redacted-email]")
+        .replace(/eyJ[A-Za-z0-9_-]{20,}/g, "[redacted-token]")
+        .replace(/Bearer\s+[^\s]+/gi, "Bearer [redacted]")
+        .slice(0, 160).trim();
+      throw new Error(`Development Auth Admin could not create the dedicated test user (HTTP ${createUserResponse.status()})${safeDetail ? `: ${safeDetail}` : ""}.`);
     }
+    const createdUser = await createUserResponse.json().catch(() => ({}));
+    if (typeof createdUser.id !== "string" || !createdUser.id) {
+      throw new Error("Development Auth Admin returned no test-user ID.");
+    }
+    authUserId = createdUser.id;
+
+    await page.goto("/auth/sign-in", { waitUntil: "domcontentloaded", timeout: 20_000 });
+    await waitForReactHandler(page, "form.form-grid", "onSubmit");
+    await page.getByLabel("Email", { exact: true }).fill(email);
+    await page.getByLabel("Password", { exact: true }).fill(password);
+    const signInResponsePromise = page.waitForResponse(
+      (response) => response.request().method() === "POST"
+        && new URL(response.url()).pathname.endsWith("/auth/v1/token"),
+      { timeout: 20_000 },
+    );
+    await page.getByTestId("sign-in-submit").click({ timeout: 10_000 });
+    const signInResponse = await signInResponsePromise;
+    if (!signInResponse.ok()) throw new Error("The dedicated Development test account could not sign in through the app.");
+    await page.waitForURL((url) => url.pathname === "/app", { timeout: 20_000 });
+    await page.getByTestId("sign-out").waitFor({ state: "visible", timeout: 10_000 });
+    console.log(JSON.stringify({ event: "test-account-ready", authenticated: true, account: "dedicated-development-test-account" }));
 
     await page.goto("/app/missions/new", { waitUntil: "domcontentloaded", timeout: 20_000 });
     await page.getByRole("button", { name: "Want more control? Add details", exact: true }).click({ timeout: 10_000 });
@@ -152,6 +161,7 @@ async function main() {
     );
     const missionId = new URL(page.url()).pathname.split("/").pop();
     if (!missionId) throw new Error("Created mission URL did not contain a mission identifier.");
+    missionCreated = true;
 
     const researchResponsePromise = page.waitForResponse(
       (response) => response.request().method() === "POST"
@@ -205,6 +215,18 @@ async function main() {
   } finally {
     if (context) await context.close().catch(() => {});
     await browser.close().catch(() => {});
+    // If no mission was saved, remove the otherwise orphaned test identity.
+    // Once a mission exists, retain its immutable research/audit provenance for diagnosis.
+    if (authUserId && !missionCreated && serviceRoleKey && supabaseUrl) {
+      await fetch(`${new URL(supabaseUrl).origin}/auth/v1/admin/users/${encodeURIComponent(authUserId)}`, {
+        method: "DELETE",
+        headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` },
+        cache: "no-store",
+        signal: AbortSignal.timeout(15_000),
+      }).then((response) => {
+        if (!response.ok) console.error("Development test-user cleanup was not confirmed.");
+      }).catch(() => console.error("Development test-user cleanup could not be confirmed."));
+    }
   }
 }
 
