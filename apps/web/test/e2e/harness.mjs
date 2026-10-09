@@ -247,6 +247,21 @@ export function validateStackStatus(raw, env = {}) {
     ? status.PUBLISHABLE_KEY
     : typeof status.ANON_KEY === "string" ? status.ANON_KEY : "";
 
+  // The recovery E2E needs a local admin JWT to mint a recovery token without SMTP.
+  // Keep it non-enumerable on the internal target and never copy it into the app server env.
+  const serviceRoleKey = typeof status.SERVICE_ROLE_KEY === "string" ? status.SERVICE_ROLE_KEY : "";
+  if (!serviceRoleKey) {
+    reasons.push("The disposable stack reported no service-role JWT for the recovery E2E.");
+  } else {
+    if (serviceRoleKey.startsWith("sb_secret_")) reasons.push("The disposable admin credential is not a local service-role JWT.");
+    if (serviceRoleKey === publishableKey || serviceRoleKey === status.SECRET_KEY) {
+      reasons.push("The reported service-role JWT equals another key.");
+    }
+    if (decodeJwtRole(serviceRoleKey) !== "service_role") {
+      reasons.push("The disposable admin credential does not carry the service_role claim.");
+    }
+  }
+
   if (!isLoopbackUrl(apiUrl) || referencesRemoteSupabase(apiUrl)) {
     reasons.push("The disposable stack API_URL is not a loopback http URL.");
   }
@@ -267,7 +282,17 @@ export function validateStackStatus(raw, env = {}) {
     reasons.push("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY does not match the disposable stack. Unset it.");
   }
 
-  return { ok: reasons.length === 0, reasons, target: reasons.length === 0 ? { apiUrl, publishableKey } : null };
+  let target = null;
+  if (reasons.length === 0) {
+    target = { apiUrl, publishableKey };
+    Object.defineProperty(target, "serviceRoleKey", {
+      value: serviceRoleKey,
+      enumerable: false,
+      configurable: false,
+      writable: false,
+    });
+  }
+  return { ok: reasons.length === 0, reasons, target };
 }
 
 /**
@@ -456,6 +481,8 @@ export function isPortFree(port, host = "127.0.0.1") {
 export function buildAppEnv(baseEnv, target) {
   const env = { ...baseEnv };
   for (const name of [...FORBIDDEN_ENV, ...LEGACY_ENV]) delete env[name];
+  // A CI-provided test-only admin credential must never reach the Next.js process.
+  delete env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY;
   env.NEXT_PUBLIC_SUPABASE_URL = target.apiUrl;
   env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = target.publishableKey;
   env.NEXT_TELEMETRY_DISABLED = "1";
