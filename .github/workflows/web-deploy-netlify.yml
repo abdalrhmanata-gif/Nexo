@@ -204,5 +204,4 @@ jobs:
           PREVIEW_URL: https://deploy-preview-29--unique-kringle-3ce321.netlify.app
           SUPABASE_URL: https://mrwmmbytcymqgwvcoywd.supabase.co
           SUPABASE_DEV_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: node test/e2e/live-preview-research.mjs
