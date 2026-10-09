@@ -75,7 +75,18 @@ async function main() {
     throw new Error("Refusing live mission-research test: both preview and test setup must target ZAVQERA Development.");
   }
   requireValue("SUPABASE_DEV_SERVICE_ROLE_KEY", adminApiKey);
-  console.log(JSON.stringify({ event: "preflight", preview: base, supabaseDevelopment: true, authSetup: "supabase-js-admin-no-email" }));
+  const adminKeyFormat = adminApiKey.startsWith("sb_secret_")
+    ? "modern_secret_key"
+    : adminApiKey.startsWith("eyJ")
+      ? "legacy_jwt_key"
+      : "unknown_format";
+  console.log(JSON.stringify({
+    event: "preflight",
+    preview: base,
+    supabaseDevelopment: true,
+    authSetup: "supabase-js-admin-no-email",
+    adminKeyFormat,
+  }));
 
   const email = `zavqera-live-research-${runId}-${randomBytes(5).toString("hex")}@example.com`;
   const password = `${randomBytes(28).toString("base64url")}Zz9!`;
