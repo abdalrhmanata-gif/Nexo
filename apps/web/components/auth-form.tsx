@@ -105,7 +105,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     <div className="field"><label htmlFor="password"><LocalizedText en="Password" /></label><input id="password" name="password" type="password" autoComplete={mode === "sign-in" ? "current-password" : "new-password"} required /><small><LocalizedText en="Use at least 8 characters." /></small></div>
     {(error || confirmationError) && <div className="field-error" role="alert"><LocalizedText en={error || confirmationError} /></div>}
     {message && <div className="success-state" role="status"><LocalizedText en={message} /></div>}
-    <button className="button" type="submit" disabled={loading}>{loading ? <LocalizedText en="Working…" /> : mode === "sign-in" ? <LocalizedText en="Sign in" /> : <LocalizedText en="Create account" />}</button>
+    <button data-testid={mode === "sign-in" ? "sign-in-submit" : "sign-up-submit"} className="button" type="submit" disabled={loading}>{loading ? <LocalizedText en="Working…" /> : mode === "sign-in" ? <LocalizedText en="Sign in" /> : <LocalizedText en="Create account" />}</button>
   </form>;
 }
 
@@ -201,7 +201,7 @@ export function SignOutButton() {
     }
   }
   return <>
-    <button className="button button-small" onClick={signOut} disabled={loading}>{loading ? <LocalizedText en="Signing out…" /> : <LocalizedText en="Sign out" />}</button>
+    <button data-testid="sign-out" className="button button-small" onClick={signOut} disabled={loading}>{loading ? <LocalizedText en="Signing out…" /> : <LocalizedText en="Sign out" />}</button>
     {error && <span role="alert" className="field-error">{error}</span>}
   </>;
 }

@@ -138,14 +138,14 @@ async function signIn(page, user) {
       && url.pathname.endsWith("/auth/v1/token")
       && url.searchParams.get("grant_type") === "password";
   }, { timeout: 15_000 });
-  await page.getByRole("button", { name: "Sign in" }).click({ timeout: 10_000 });
+  await page.getByTestId("sign-in-submit").click({ timeout: 10_000 });
   const response = await tokenRequest;
   if (!response.ok()) throw new Error(`Sign-in endpoint returned HTTP ${response.status()}.`);
   await expect(page).toHaveURL(/\/app$/, { timeout: 15_000 });
 }
 
 async function signOut(page) {
-  await page.getByRole("button", { name: "Sign out" }).click({ timeout: 10_000 });
+  await page.getByTestId("sign-out").click({ timeout: 10_000 });
   await expect(page).toHaveURL(/\/auth\/sign-in/, { timeout: 15_000 });
 }
 
