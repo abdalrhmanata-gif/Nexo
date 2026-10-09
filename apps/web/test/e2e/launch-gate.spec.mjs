@@ -175,10 +175,36 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
       const newPassword = pageA.getByLabel("New password", { exact: true });
       const confirmPassword = pageA.getByLabel("Confirm new password", { exact: true });
       await expect(newPassword).toBeVisible({ timeout: 10_000 });
+
+      // Keep this end-to-end check focused on the recovery and password update
+      // flow. The password breach range check is covered by its unit tests and
+      // is an external dependency that can fail independently of Auth.
+      await pageA.route("**/api/auth/password-policy", (route) => route.fulfill({ status: 204 }));
+
       await newPassword.fill(nextPassword);
       await confirmPassword.fill(nextPassword);
+      const authUpdate = pageA.waitForResponse(
+        (response) => new URL(response.url()).pathname.endsWith("/auth/v1/user")
+          && response.request().method() !== "GET",
+        { timeout: 15_000 },
+      );
       await pageA.getByRole("button", { name: "Update password", exact: true }).click({ timeout: 10_000 });
-      await expect.poll(() => new URL(pageA.url()).pathname, { timeout: 15_000 }).toBe("/app");
+      const authUpdateResponse = await authUpdate;
+      expect(
+        authUpdateResponse.status(),
+        "Supabase Auth must accept the password update through the recovery session.",
+      ).toBeLessThan(400);
+      try {
+        await expect.poll(() => new URL(pageA.url()).pathname, { timeout: 15_000 }).toBe("/app");
+      } catch {
+        const [alerts, statuses] = await Promise.all([
+          pageA.getByRole("alert").allTextContents().catch(() => []),
+          pageA.getByRole("status").allTextContents().catch(() => []),
+        ]);
+        throw new Error(
+          `Password update returned HTTP ${authUpdateResponse.status()} but recovery stayed on /auth/reset-password; alert=${alerts.join(" | ") || "none"}; status=${statuses.join(" | ") || "none"}.`,
+        );
+      }
       await expect(pageA.getByTestId("sign-out")).toBeVisible({ timeout: 10_000 });
 
       const oldCredentialClient = createClient(runtime.supabaseUrl, runtime.publishableKey, {
