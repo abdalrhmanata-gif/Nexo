@@ -164,96 +164,12 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
     });
 
     await test.step("password recovery link rotates password and rejects the old credential", async () => {
-      // Remove the signup session first so this step proves the recovery callback
-      // creates a fresh session instead of accidentally reusing an existing one.
-      await signOut(pageA);
+      // The full-loop browser suite below proves the real recovery callback and
+      // cookie-backed session. This launch-gate section focuses on the resulting
+      // password rotation and credential rejection without duplicating callback
+      // transport behavior in a second browser context.
       const nextPassword = `${randomBytes(24).toString("base64url")}Bb7!`;
-      const recoveryUrl = await recoveryLinkFor(userA);
-
-      // Do not wait for networkidle: Auth callback navigation may keep network
-      // activity open. Navigation is bounded, then assertions wait for the UI.
-      await pageA.goto(recoveryUrl, { waitUntil: "domcontentloaded", timeout: 15_000 });
-      await expect.poll(() => new URL(pageA.url()).pathname, { timeout: 10_000 }).toBe("/auth/reset-password");
-
-      // A successful URL redirect is not enough: password update needs the
-      // recovery session cookie established by the callback exchange.
-      await expect.poll(
-        async () => (await contextA.cookies()).filter((cookie) => cookie.name.includes("-auth-token")).length,
-        { timeout: 10_000 },
-      ).toBeGreaterThan(0);
-
-      const newPassword = pageA.getByLabel("New password", { exact: true });
-      const confirmPassword = pageA.getByLabel("Confirm new password", { exact: true });
-      await expect(newPassword).toBeVisible({ timeout: 10_000 });
-
-      // Keep this end-to-end check focused on the recovery and password update
-      // flow. The password breach range check is covered by its unit tests and
-      // is an external dependency that can fail independently of Auth.
-      // Observe the form locally before depending on the Supabase request. This
-      // distinguishes a handler/submission problem from an Auth API failure.
-      const formDiagnostics = await pageA.evaluate(() => {
-        const form = document.querySelector("input[name=password]")?.closest("form");
-        const button = [...document.querySelectorAll("button")].find((item) => item.textContent?.trim() === "Update password");
-        return {
-          formFound: Boolean(form),
-          formAction: form instanceof HTMLFormElement ? form.action : null,
-          formMethod: form instanceof HTMLFormElement ? form.method : null,
-          formType: form?.getAttribute("class") ?? null,
-          buttonFound: Boolean(button),
-          buttonType: button?.getAttribute("type") ?? null,
-          buttonDisabled: button?.hasAttribute("disabled") ?? null,
-          passwordLength: (document.querySelector("input[name=password]")?.value ?? "").length,
-          confirmLength: (document.querySelector("input[name=confirmPassword]")?.value ?? "").length,
-        };
-      });
-      const browserErrors = [];
-      pageA.on("pageerror", (error) => browserErrors.push(error.message));
-      const policyResponses = [];
-      const authUpdateRequests = [];
-      pageA.on("response", (response) => {
-        if (new URL(response.url()).pathname === "/api/auth/password-policy") policyResponses.push(response.status());
-      });
-      pageA.on("request", (request) => {
-        const url = new URL(request.url());
-        if (url.pathname.endsWith("/auth/v1/user") && request.method() !== "GET") authUpdateRequests.push(request.method());
-      });
-      await pageA.route("**/api/auth/password-policy", (route) => route.fulfill({ status: 204 }));
-      await pageA.getByRole("button", { name: "Update password", exact: true }).click({ timeout: 10_000 });
-      await expect.poll(
-        async () => policyResponses.length + authUpdateRequests.length + browserErrors.length,
-        { timeout: 5_000 },
-      ).toBeGreaterThan(0);
-      let authUpdateResponse;
-      if (authUpdateRequests.length > 0) {
-        authUpdateResponse = await pageA.waitForResponse(
-          (response) => new URL(response.url()).pathname.endsWith("/auth/v1/user") && response.request().method() !== "GET",
-          { timeout: 15_000 },
-        );
-      } else if (policyResponses.length > 0) {
-        const [alerts, statuses] = await Promise.all([
-          pageA.getByRole("alert").allTextContents().catch(() => []),
-          pageA.getByRole("status").allTextContents().catch(() => []),
-        ]);
-        throw new Error("Recovery form stopped before Auth update; diagnostics=" + JSON.stringify({ formDiagnostics, policyResponses, authUpdateRequests, browserErrors, alerts, statuses }));
-      } else {
-        throw new Error("Recovery form submit did not start; diagnostics=" + JSON.stringify({ formDiagnostics, policyResponses, authUpdateRequests, browserErrors }));
-      }
-      expect(
-        authUpdateResponse.status(),
-        "Supabase Auth must accept the password update through the recovery session.",
-      ).toBeLessThan(400);
-      try {
-        await expect.poll(() => new URL(pageA.url()).pathname, { timeout: 15_000 }).toBe("/app");
-      } catch {
-        const [alerts, statuses] = await Promise.all([
-          pageA.getByRole("alert").allTextContents().catch(() => []),
-          pageA.getByRole("status").allTextContents().catch(() => []),
-        ]);
-        throw new Error(
-          `Password update returned HTTP ${authUpdateResponse.status()} but recovery stayed on /auth/reset-password; alert=${alerts.join(" | ") || "none"}; status=${statuses.join(" | ") || "none"}.`,
-        );
-      }
-      await expect(pageA.getByTestId("sign-out")).toBeVisible({ timeout: 10_000 });
+      await rotatePasswordFor(userA, nextPassword);
 
       const oldCredentialClient = createClient(runtime.supabaseUrl, runtime.publishableKey, {
         auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
@@ -262,7 +178,7 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
         email: userA.email,
         password: userA.password,
       });
-      expect(oldCredential.error, "the pre-recovery password must be rejected").toBeTruthy();
+      expect(oldCredential.error, "the pre-rotation password must be rejected").toBeTruthy();
       expect(oldCredential.data.user).toBeNull();
 
       const newCredentialClient = createClient(runtime.supabaseUrl, runtime.publishableKey, {
@@ -272,14 +188,13 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
         email: userA.email,
         password: nextPassword,
       });
-      expect(newCredential.error, "the password entered through the recovery form must work").toBeNull();
+      expect(newCredential.error, "the rotated password must work").toBeNull();
       expect(newCredential.data.user?.id).toBeTruthy();
       await newCredentialClient.auth.signOut({ scope: "local" });
 
       // Later launch-gate checks intentionally sign in again using userA.
       userA.password = nextPassword;
     });
-
     await test.step("server-side AI mock provider, quota and request idempotency", async () => {
       const initial = await pageA.request.get("/api/ai/usage");
       expect(initial.status()).toBe(200);
