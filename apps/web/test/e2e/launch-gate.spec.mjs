@@ -170,7 +170,7 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
       // Do not wait for networkidle: Auth callback navigation may keep network
       // activity open. Navigation is bounded, then assertions wait for the UI.
       await pageA.goto(recoveryUrl, { waitUntil: "domcontentloaded", timeout: 15_000 });
-      await expect(pageA).toHaveURL(/\\/auth\\/reset-password(?:\\?.*)?$/, { timeout: 10_000 });
+      await expect.poll(() => new URL(pageA.url()).pathname, { timeout: 10_000 }).toBe("/auth/reset-password");
 
       const newPassword = pageA.getByLabel("New password", { exact: true });
       const confirmPassword = pageA.getByLabel("Confirm new password", { exact: true });
@@ -178,7 +178,7 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
       await newPassword.fill(nextPassword);
       await confirmPassword.fill(nextPassword);
       await pageA.getByRole("button", { name: "Update password", exact: true }).click({ timeout: 10_000 });
-      await expect(pageA).toHaveURL(/\\/app$/, { timeout: 15_000 });
+      await expect.poll(() => new URL(pageA.url()).pathname, { timeout: 15_000 }).toBe("/app");
       await expect(pageA.getByTestId("sign-out")).toBeVisible({ timeout: 10_000 });
 
       const oldCredentialClient = createClient(runtime.supabaseUrl, runtime.publishableKey, {
