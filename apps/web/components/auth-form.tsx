@@ -186,6 +186,7 @@ export function SignOutButton() {
       setLoading(false);
       return;
     }
+    setLoading(false);
     router.push("/auth/sign-in");
     router.refresh();
   }
