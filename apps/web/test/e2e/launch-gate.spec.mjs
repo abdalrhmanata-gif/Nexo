@@ -75,7 +75,7 @@ async function signUp(page, user) {
     await page.getByLabel("Email", { exact: true }).fill(user.email);
     await page.getByLabel("Password", { exact: true }).fill(user.password);
     await page.getByTestId("sign-up-submit").click({ timeout: 10_000 });
-    await expect(page).toHaveURL(/\\/app$/, { timeout: 15_000 });
+    await expect(page).toHaveURL((url) => url.pathname === "/app", { timeout: 15_000 });
   } finally {
     await removeGuard();
   }
@@ -98,7 +98,7 @@ async function signIn(page, user) {
     await page.getByTestId("sign-in-submit").click({ timeout: 10_000 });
     const authResponse = await authResponsePromise;
     if (!authResponse.ok()) throw new Error("Disposable UI sign-in was rejected by local Auth.");
-    await expect(page).toHaveURL(/\\/app$/, { timeout: 15_000 });
+    await expect(page).toHaveURL((url) => url.pathname === "/app", { timeout: 15_000 });
     await expect(page.getByTestId("sign-out")).toBeVisible({ timeout: 10_000 });
   } finally {
     await removeGuard();
@@ -252,7 +252,7 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
           expect(policyResponse.ok(), "the password-policy check must succeed").toBe(true);
           const authUpdateResponse = await authUpdateResponsePromise;
           expect(authUpdateResponse.ok(), "Supabase Auth must accept the recovery password update").toBe(true);
-          await expect(recoveryPage).toHaveURL(/\\/app$/, { timeout: 15_000 });
+          await expect(recoveryPage).toHaveURL((url) => url.pathname === "/app", { timeout: 15_000 });
         } finally {
           await removeGuard();
         }
