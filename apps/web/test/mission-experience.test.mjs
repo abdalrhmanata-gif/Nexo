@@ -292,6 +292,8 @@ test("Approval Center presents context and keeps decisions restricted to owners 
   assert.ok(page.includes("Approval Center"));
   assert.ok(center.includes("Requested scope"));
   assert.ok(center.includes("Agent authority"));
+  assert.ok(center.includes("Why approval is required"));
+  assert.ok(center.includes("does not execute the action by itself"));
   assert.ok(center.includes("Only workspace owners and admins"));
   assert.ok(repository.includes("async canDecideApprovals"));
   assert.ok(repository.includes('role === "owner" || role === "admin"'));
