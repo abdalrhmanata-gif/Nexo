@@ -1,9 +1,10 @@
 import { randomBytes } from "node:crypto";
 import { chromium } from "@playwright/test";
+import { createClient } from "@supabase/supabase-js";
 
 const previewUrl = process.env.PREVIEW_URL;
 const supabaseUrl = process.env.SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_DEV_SERVICE_ROLE_KEY;
+const adminApiKey = process.env.SUPABASE_DEV_SERVICE_ROLE_KEY;
 const expectedDevelopmentHost = "mrwmmbytcymqgwvcoywd.supabase.co";
 const runId = `${process.env.GITHUB_RUN_ID || Date.now().toString(36)}-${process.env.GITHUB_RUN_ATTEMPT || "1"}`;
 
@@ -73,8 +74,8 @@ async function main() {
       || configuredSupabase.hostname !== expectedDevelopmentHost) {
     throw new Error("Refusing live mission-research test: both preview and test setup must target ZAVQERA Development.");
   }
-  requireValue("SUPABASE_DEV_SERVICE_ROLE_KEY", serviceRoleKey);
-  console.log(JSON.stringify({ event: "preflight", preview: base, supabaseDevelopment: true, authSetup: "admin-api-no-email" }));
+  requireValue("SUPABASE_DEV_SERVICE_ROLE_KEY", adminApiKey);
+  console.log(JSON.stringify({ event: "preflight", preview: base, supabaseDevelopment: true, authSetup: "supabase-js-admin-no-email" }));
 
   const email = `zavqera-live-research-${runId}-${randomBytes(5).toString("hex")}@example.com`;
   const password = `${randomBytes(28).toString("base64url")}Zz9!`;
@@ -92,32 +93,32 @@ async function main() {
 
     // Create a dedicated confirmed account through the Development-only Auth Admin API.
     // This avoids email-provider rate limits and keeps the service-role key server-side in CI.
-    const createUserResponse = await fetch(`${configuredSupabase.origin}/auth/v1/admin/users`, {
-      method: "POST",
-      headers: {
-        apikey: serviceRoleKey,
-        Authorization: `Bearer ${serviceRoleKey}`,
-        "Content-Type": "application/json",
+    const adminClient = createClient(configuredSupabase.origin, adminApiKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false,
       },
-      body: JSON.stringify({ email, password, email_confirm: true }),
-      cache: "no-store",
-      signal: AbortSignal.timeout(20_000),
     });
-    if (!createUserResponse.ok) {
-      const authError = await createUserResponse.json().catch(() => ({}));
-      const code = typeof authError?.error_code === "string" ? authError.error_code
-        : typeof authError?.code === "string" ? authError.code : "";
-      const message = typeof authError?.msg === "string" ? authError.msg
-        : typeof authError?.message === "string" ? authError.message : "";
+    const { data: createUserData, error: createUserError } = await adminClient.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
+    if (createUserError) {
+      const code = typeof createUserError.code === "string" ? createUserError.code : "";
+      const message = typeof createUserError.message === "string" ? createUserError.message : "";
+      const status = typeof createUserError.status === "number" ? `HTTP ${createUserError.status}` : "HTTP status unavailable";
       const safeDetail = `${code} ${message}`
-        .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[redacted-email]")
+        .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/gi, "[redacted-email]")
+        .replace(/sb_secret_[A-Za-z0-9_-]+/g, "[redacted-key]")
         .replace(/eyJ[A-Za-z0-9_-]{20,}/g, "[redacted-token]")
-        .replace(/Bearer\s+[^\s]+/gi, "Bearer [redacted]")
+        .replace(/Bearer\\s+[^\\s]+/gi, "Bearer [redacted]")
         .slice(0, 160).trim();
-      throw new Error(`Development Auth Admin could not create the dedicated test user (HTTP ${createUserResponse.status})${safeDetail ? `: ${safeDetail}` : ""}.`);
+      throw new Error(`Development Auth Admin could not create the dedicated test user (${status})${safeDetail ? `: ${safeDetail}` : ""}.`);
     }
-    const createdUser = await createUserResponse.json().catch(() => ({}));
-    if (typeof createdUser.id !== "string" || !createdUser.id) {
+    const createdUser = createUserData.user;
+    if (typeof createdUser?.id !== "string" || !createdUser.id) {
       throw new Error("Development Auth Admin returned no test-user ID.");
     }
     authUserId = createdUser.id;
@@ -225,15 +226,9 @@ async function main() {
     await browser.close().catch(() => {});
     // If no mission was saved, remove the otherwise orphaned test identity.
     // Once a mission exists, retain its immutable research/audit provenance for diagnosis.
-    if (authUserId && !missionCreated && serviceRoleKey && supabaseUrl) {
-      await fetch(`${new URL(supabaseUrl).origin}/auth/v1/admin/users/${encodeURIComponent(authUserId)}`, {
-        method: "DELETE",
-        headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` },
-        cache: "no-store",
-        signal: AbortSignal.timeout(15_000),
-      }).then((response) => {
-        if (!response.ok) console.error("Development test-user cleanup was not confirmed.");
-      }).catch(() => console.error("Development test-user cleanup could not be confirmed."));
+    if (authUserId && !missionCreated) {
+      const { error: cleanupError } = await adminClient.auth.admin.deleteUser(authUserId);
+      if (cleanupError) console.error("Development test-user cleanup was not confirmed.");
     }
   }
 }
