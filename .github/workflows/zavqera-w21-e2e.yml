@@ -107,6 +107,7 @@ jobs:
           cp "$GITHUB_WORKSPACE/supabase/tests/w44_workspace_invitations.sql" "$workdir/supabase/tests/w44_workspace_invitations.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w45_workspace_member_management.sql" "$workdir/supabase/tests/w45_workspace_member_management.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w46_workspace_activity.sql" "$workdir/supabase/tests/w46_workspace_activity.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w47_workspace_bootstrap.sql" "$workdir/supabase/tests/w47_workspace_bootstrap.sql"
           cat > "$workdir/supabase/migrations/20260921180005_e2e_historical_auth_compat.sql" <<'SQL'
           create schema if not exists private;
           create or replace function private.handle_new_user_profile()
