@@ -149,7 +149,7 @@ async function signOut(page) {
   const visible = await button.isVisible().catch(() => false);
   if (visible) {
     await button.click({ timeout: 10_000 });
-    await expect(page).toHaveURL(/\/auth\/sign-in$/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/\/auth\/sign-in(?:\?.*)?$/, { timeout: 15_000 });
     return;
   }
 
@@ -162,7 +162,7 @@ async function signOut(page) {
     window.sessionStorage.clear();
   });
   await page.goto("/app");
-  await expect(page).toHaveURL(/\/auth\/sign-in$/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/\/auth\/sign-in(?:\?.*)?$/, { timeout: 15_000 });
 }
 
 async function rotatePasswordFor(user, nextPassword) {
