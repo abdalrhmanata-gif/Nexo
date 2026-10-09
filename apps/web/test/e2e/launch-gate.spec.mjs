@@ -189,44 +189,54 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
       // Keep this end-to-end check focused on the recovery and password update
       // flow. The password breach range check is covered by its unit tests and
       // is an external dependency that can fail independently of Auth.
+      // Observe the form locally before depending on the Supabase request. This
+      // distinguishes a handler/submission problem from an Auth API failure.
+      const formDiagnostics = await pageA.evaluate(() => {
+        const form = document.querySelector("input[name=password]")?.closest("form");
+        const button = [...document.querySelectorAll("button")].find((item) => item.textContent?.trim() === "Update password");
+        return {
+          formFound: Boolean(form),
+          formAction: form instanceof HTMLFormElement ? form.action : null,
+          formMethod: form instanceof HTMLFormElement ? form.method : null,
+          formType: form?.getAttribute("class") ?? null,
+          buttonFound: Boolean(button),
+          buttonType: button?.getAttribute("type") ?? null,
+          buttonDisabled: button?.hasAttribute("disabled") ?? null,
+          passwordLength: (document.querySelector("input[name=password]")?.value ?? "").length,
+          confirmLength: (document.querySelector("input[name=confirmPassword]")?.value ?? "").length,
+        };
+      });
+      const browserErrors = [];
+      pageA.on("pageerror", (error) => browserErrors.push(error.message));
       const policyResponses = [];
       const authUpdateRequests = [];
       pageA.on("response", (response) => {
-        if (new URL(response.url()).pathname === "/api/auth/password-policy") {
-          policyResponses.push(response.status());
-        }
+        if (new URL(response.url()).pathname === "/api/auth/password-policy") policyResponses.push(response.status());
       });
       pageA.on("request", (request) => {
         const url = new URL(request.url());
-        if (url.pathname.endsWith("/auth/v1/user") && request.method() !== "GET") {
-          authUpdateRequests.push(request.method());
-        }
+        if (url.pathname.endsWith("/auth/v1/user") && request.method() !== "GET") authUpdateRequests.push(request.method());
       });
       await pageA.route("**/api/auth/password-policy", (route) => route.fulfill({ status: 204 }));
-
-      await newPassword.fill(nextPassword);
-      await confirmPassword.fill(nextPassword);
-      const authUpdate = pageA.waitForResponse(
-        (response) => new URL(response.url()).pathname.endsWith("/auth/v1/user")
-          && response.request().method() !== "GET",
-        { timeout: 15_000 },
-      );
       await pageA.getByRole("button", { name: "Update password", exact: true }).click({ timeout: 10_000 });
+      await expect.poll(
+        async () => policyResponses.length + authUpdateRequests.length + browserErrors.length,
+        { timeout: 5_000 },
+      ).toBeGreaterThan(0);
       let authUpdateResponse;
-      try {
-        authUpdateResponse = await authUpdate;
-      } catch {
+      if (authUpdateRequests.length > 0) {
+        authUpdateResponse = await pageA.waitForResponse(
+          (response) => new URL(response.url()).pathname.endsWith("/auth/v1/user") && response.request().method() !== "GET",
+          { timeout: 15_000 },
+        );
+      } else if (policyResponses.length > 0) {
         const [alerts, statuses] = await Promise.all([
           pageA.getByRole("alert").allTextContents().catch(() => []),
           pageA.getByRole("status").allTextContents().catch(() => []),
         ]);
-        throw new Error(
-          "Password update did not reach Supabase Auth; path=" + new URL(pageA.url()).pathname
-          + "; policyResponses=" + JSON.stringify(policyResponses)
-          + "; authUpdateMethods=" + JSON.stringify(authUpdateRequests)
-          + "; alert=" + (alerts.join(" | ") || "none")
-          + "; status=" + (statuses.join(" | ") || "none") + ".",
-        );
+        throw new Error("Recovery form stopped before Auth update; diagnostics=" + JSON.stringify({ formDiagnostics, policyResponses, authUpdateRequests, browserErrors, alerts, statuses }));
+      } else {
+        throw new Error("Recovery form submit did not start; diagnostics=" + JSON.stringify({ formDiagnostics, policyResponses, authUpdateRequests, browserErrors }));
       }
       expect(
         authUpdateResponse.status(),
