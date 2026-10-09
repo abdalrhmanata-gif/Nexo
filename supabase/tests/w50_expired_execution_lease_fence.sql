@@ -1,7 +1,7 @@
 -- W50: behavioral proof that an expired lease cannot be revived.
 begin;
 create extension if not exists pgtap;
-select plan(5);
+select plan(6);
 
 select ok(to_regprocedure('private.heartbeat_agent_execution(uuid)') is not null,
   'private heartbeat implementation exists');
@@ -12,6 +12,11 @@ select ok((select prosecdef from pg_proc where oid = 'private.heartbeat_agent_ex
   and coalesce(array_to_string((select proconfig from pg_proc where oid = 'private.heartbeat_agent_execution(uuid)'::regprocedure), '|'), '')
     like '%search_path=pg_catalog, public%',
   'private heartbeat implementation is SECURITY DEFINER with pinned search_path');
+select ok(
+  position('for update' in lower(pg_get_functiondef('private.heartbeat_agent_execution(uuid)'::regprocedure))) > 0
+  and position('for update' in lower(pg_get_functiondef('private.heartbeat_agent_execution(uuid)'::regprocedure)))
+      < position('v_now := clock_timestamp()' in lower(pg_get_functiondef('private.heartbeat_agent_execution(uuid)'::regprocedure))),
+  'lease time is sampled after the row lock to avoid transaction-start clock races');
 select ok(has_function_privilege('authenticated', 'public.heartbeat_agent_execution(uuid)', 'EXECUTE')
   and not has_function_privilege('anon', 'public.heartbeat_agent_execution(uuid)', 'EXECUTE'),
   'only authenticated callers receive the public heartbeat RPC');
