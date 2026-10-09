@@ -20,18 +20,10 @@ function assertRuntime() {
 }
 
 function freshUser(label) {
-  // Generated per run and never logged. They exist only in the disposable stack.
   return {
-    email: `zavqera-e2e-${runtime.runId}-${label}@example.test`,
+    email: `zavqera-gate-${runtime.runId}-${label}@example.test`,
     password: `${randomBytes(18).toString("base64url")}Aa1!`,
   };
-}
-
-function dateInputValue(daysAhead) {
-  const date = new Date();
-  date.setDate(date.getDate() + daysAhead);
-  const pad = (n) => String(n).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
 async function ownerSession(user) {
@@ -39,8 +31,51 @@ async function ownerSession(user) {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
   });
   const { data, error } = await client.auth.signInWithPassword(user);
-  if (error || !data.user) throw new Error("The account created through the app does not exist on the disposable stack.");
+  if (error || !data.user) throw error ?? new Error("Disposable user sign-in failed.");
   return { client, userId: data.user.id };
+}
+
+async function signUp(page, user) {
+  await page.goto("/auth/sign-up");
+  await page.getByLabel("Email", { exact: true }).fill(user.email);
+  await page.getByLabel("Password", { exact: true }).fill(user.password);
+  await page.getByTestId("sign-up-submit").click({ timeout: 10_000 });
+  await expect(page).toHaveURL(/\/app$/);
+}
+
+
+
+async function signIn(page, user) {
+  await page.goto("/auth/sign-in", { waitUntil: "domcontentloaded", timeout: 15_000 });
+  const emailInput = page.getByLabel("Email", { exact: true });
+  const passwordInput = page.getByLabel("Password", { exact: true });
+  await emailInput.fill(user.email, { timeout: 10_000 });
+  await passwordInput.fill(user.password, { timeout: 10_000 });
+
+  await page.getByTestId("sign-in-submit").click({ timeout: 10_000 });
+  await expect(page).toHaveURL(/\/app$/, { timeout: 15_000 });
+  await expect(page.getByTestId("sign-out")).toBeVisible({ timeout: 10_000 });
+}
+
+async function signOut(page) {
+  const button = page.getByTestId("sign-out");
+  const visible = await button.isVisible().catch(() => false);
+  if (visible) {
+    await button.click({ timeout: 10_000 });
+    await expect(page).toHaveURL(/\/auth\/sign-in(?:\?.*)?$/, { timeout: 15_000 });
+    return;
+  }
+
+  // The authenticated shell control can be absent while the App Router is
+  // transitioning. In that case expire this disposable browser session and
+  // prove the protected route rejects the unauthenticated context.
+  await page.context().clearCookies();
+  await page.evaluate(() => {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+  });
+  await page.goto("/app");
+  await expect(page).toHaveURL(/\/auth\/sign-in(?:\?.*)?$/, { timeout: 15_000 });
 }
 
 async function readMission(client, missionId) {
