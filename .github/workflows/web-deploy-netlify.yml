@@ -175,6 +175,10 @@ jobs:
           }));
           NODE
 
+      - name: Check out source for authenticated live mission research
+        if: contains(github.event.pull_request.body, '[live-openai-research]')
+        uses: actions/checkout@v4
+
       # This additional live integration is enabled only for the explicitly marked PR run.
       # It creates its own dedicated Development test account/workspace/mission and never uses Production.
       - name: Set up Node for authenticated live mission research
