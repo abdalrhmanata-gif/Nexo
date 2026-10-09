@@ -126,7 +126,7 @@ async function signUp(page, user) {
 }
 
 async function signIn(page, user) {
-  await page.goto("/auth/sign-in", { waitUntil: "domcontentloaded", timeout: 15_000 });
+  await page.goto("/auth/sign-in", { waitUntil: "networkidle", timeout: 15_000 });
   const emailInput = page.getByLabel("Email", { exact: true });
   const passwordInput = page.getByLabel("Password", { exact: true });
   await emailInput.fill(user.email, { timeout: 10_000 });
