@@ -189,6 +189,9 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
       // cookie-backed session. This launch-gate section focuses on the resulting
       // password rotation and credential rejection without duplicating callback
       // transport behavior in a second browser context.
+      // Password rotation revokes the browser's current auth session. Sign out
+      // first, rotate only this disposable account, then establish a fresh session.
+      await signOut(pageA);
       const nextPassword = `${randomBytes(24).toString("base64url")}Bb7!`;
       await rotatePasswordFor(userA, nextPassword);
 
@@ -213,8 +216,8 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
       expect(newCredential.data.user?.id).toBeTruthy();
       await newCredentialClient.auth.signOut({ scope: "local" });
 
-      // Later launch-gate checks intentionally sign in again using userA.
       userA.password = nextPassword;
+      await signIn(pageA, userA);
     });
     await test.step("server-side AI mock provider, quota and request idempotency", async () => {
       const initial = await pageA.request.get("/api/ai/usage");
