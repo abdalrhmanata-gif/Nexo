@@ -35,12 +35,38 @@ async function ownerSession(user) {
   return { client, userId: data.user.id };
 }
 
+async function rotatePasswordFor(user, nextPassword) {
+  const serviceRoleKey = process.env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY;
+  if (!serviceRoleKey) throw new Error("Disposable service-role key is unavailable.");
+  const response = await fetch(
+    `${runtime.supabaseUrl}/auth/v1/admin/users`,
+    { method: "GET", headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}` }, signal: AbortSignal.timeout(20_000) },
+  );
+  // Do not enumerate users: use the local Admin API's recovery test utility endpoint
+  // only via a known disposable email and find the corresponding user in this local stack.
+  if (!response.ok) throw new Error(`Unable to access disposable Auth Admin API (HTTP ${response.status}).`);
+  const payload = await response.json().catch(() => ({}));
+  const users = Array.isArray(payload?.users) ? payload.users : [];
+  const found = users.find((candidate) => candidate.email === user.email);
+  if (!found?.id) throw new Error("Disposable test account was not found by exact email.");
+  const update = await fetch(
+    `${runtime.supabaseUrl}/auth/v1/admin/users/${encodeURIComponent(found.id)}`,
+    {
+      method: "PUT",
+      headers: { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}`, "Content-Type": "application/json" },
+      signal: AbortSignal.timeout(20_000),
+      body: JSON.stringify({ password: nextPassword }),
+    },
+  );
+  if (!update.ok) throw new Error(`Disposable password rotation failed with HTTP ${update.status}.`);
+}
+
 async function signUp(page, user) {
   await page.goto("/auth/sign-up");
   await page.getByLabel("Email", { exact: true }).fill(user.email);
   await page.getByLabel("Password", { exact: true }).fill(user.password);
   await page.getByTestId("sign-up-submit").click({ timeout: 10_000 });
-  await expect(page).toHaveURL(/\/app$/);
+  await expect(page).toHaveURL(/\\/app$/);
 }
 
 async function signIn(page, user) {
@@ -49,9 +75,8 @@ async function signIn(page, user) {
   const passwordInput = page.getByLabel("Password", { exact: true });
   await emailInput.fill(user.email, { timeout: 10_000 });
   await passwordInput.fill(user.password, { timeout: 10_000 });
-
   await page.getByTestId("sign-in-submit").click({ timeout: 10_000 });
-  await expect(page).toHaveURL(/\/app$/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/\\/app$/, { timeout: 15_000 });
   await expect(page.getByTestId("sign-out")).toBeVisible({ timeout: 10_000 });
 }
 
@@ -60,20 +85,16 @@ async function signOut(page) {
   const visible = await button.isVisible().catch(() => false);
   if (visible) {
     await button.click({ timeout: 10_000 });
-    await expect(page).toHaveURL(/\/auth\/sign-in(?:\?.*)?$/, { timeout: 15_000 });
+    await expect(page).toHaveURL(/\\/auth\\/sign-in(?:\\?.*)?$/, { timeout: 15_000 });
     return;
   }
-
-  // The authenticated shell control can be absent while the App Router is
-  // transitioning. In that case expire this disposable browser session and
-  // prove the protected route rejects the unauthenticated context.
   await page.context().clearCookies();
   await page.evaluate(() => {
     window.localStorage.clear();
     window.sessionStorage.clear();
   });
   await page.goto("/app");
-  await expect(page).toHaveURL(/\/auth\/sign-in(?:\?.*)?$/, { timeout: 15_000 });
+  await expect(page).toHaveURL(/\\/auth\\/sign-in(?:\\?.*)?$/, { timeout: 15_000 });
 }
 
 async function readMission(client, missionId) {
@@ -134,8 +155,6 @@ async function recoveryLinkFor(user) {
   }
   return `${runtime.baseURL}/auth/callback?token_hash=${encodeURIComponent(tokenHash)}&type=recovery&next=%2Fauth%2Freset-password`;
 }
-
-
 
 test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission TOCTOU", async ({ browser }) => {
   assertRuntime();
