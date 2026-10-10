@@ -5,6 +5,8 @@ import { createClient } from "@supabase/supabase-js";
 const previewUrl = process.env.PREVIEW_URL;
 const supabaseUrl = process.env.SUPABASE_URL;
 const adminApiKey = (process.env.SUPABASE_DEV_SERVICE_ROLE_KEY || "").trim();
+const testAccountEmail = (process.env.SUPABASE_DEV_TEST_EMAIL || "").trim().toLowerCase();
+const testAccountPassword = process.env.SUPABASE_DEV_TEST_PASSWORD || "";
 const expectedDevelopmentHost = "mrwmmbytcymqgwvcoywd.supabase.co";
 const runId = `${process.env.GITHUB_RUN_ID || Date.now().toString(36)}-${process.env.GITHUB_RUN_ATTEMPT || "1"}`;
 
@@ -74,25 +76,37 @@ async function main() {
       || configuredSupabase.hostname !== expectedDevelopmentHost) {
     throw new Error("Refusing live mission-research test: both preview and test setup must target ZAVQERA Development.");
   }
-  requireValue("SUPABASE_DEV_SERVICE_ROLE_KEY", adminApiKey);
+  const hasTestAccountEmail = Boolean(testAccountEmail);
+  const hasTestAccountPassword = Boolean(testAccountPassword);
+  if (hasTestAccountEmail !== hasTestAccountPassword) {
+    throw new Error("Configure both SUPABASE_DEV_TEST_EMAIL and SUPABASE_DEV_TEST_PASSWORD, or use the Auth Admin setup path.");
+  }
+  const usePreProvisionedAccount = hasTestAccountEmail && hasTestAccountPassword;
   const adminKeyFormat = adminApiKey.startsWith("sb_secret_")
     ? "modern_secret_key"
     : adminApiKey.startsWith("eyJ")
       ? "legacy_jwt_key"
-      : "unknown_format";
-  if (adminKeyFormat === "unknown_format") {
-    throw new Error("SUPABASE_DEV_SERVICE_ROLE_KEY must be a Supabase secret key or legacy service_role JWT; the value is not printed.");
+      : adminApiKey ? "unknown_format" : "not_configured";
+  if (!usePreProvisionedAccount && !adminApiKey) {
+    throw new Error("Configure a dedicated confirmed Development test account using SUPABASE_DEV_TEST_EMAIL and SUPABASE_DEV_TEST_PASSWORD, or configure SUPABASE_DEV_SERVICE_ROLE_KEY.");
+  }
+  if (!usePreProvisionedAccount && adminKeyFormat === "unknown_format") {
+    throw new Error("SUPABASE_DEV_SERVICE_ROLE_KEY is not in a supported raw API-key format; no secret value is printed.");
+  }
+  if (usePreProvisionedAccount && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(testAccountEmail)) {
+    throw new Error("SUPABASE_DEV_TEST_EMAIL must be a valid email address.");
   }
   console.log(JSON.stringify({
     event: "preflight",
     preview: base,
     supabaseDevelopment: true,
-    authSetup: "supabase-js-admin-no-email",
-    adminKeyFormat,
+    authSetup: usePreProvisionedAccount ? "pre-provisioned-development-test-account" : "supabase-js-admin-no-email",
+    ...(usePreProvisionedAccount ? {} : { adminKeyFormat }),
   }));
 
-  const email = `zavqera-live-research-${runId}-${randomBytes(5).toString("hex")}@example.com`;
-  const password = `${randomBytes(28).toString("base64url")}Zz9!`;
+  const usePreProvisionedAccount = Boolean(testAccountEmail && testAccountPassword);
+  const email = usePreProvisionedAccount ? testAccountEmail : `zavqera-live-research-${runId}-${randomBytes(5).toString("hex")}@example.com`;
+  const password = usePreProvisionedAccount ? testAccountPassword : `${randomBytes(28).toString("base64url")}Zz9!`;
   const browser = await chromium.launch({ headless: true });
   let context;
   let adminClient;
@@ -106,37 +120,40 @@ async function main() {
       console.error("Browser reported a page-level JavaScript error during the live-preview test.");
     });
 
-    // Create a dedicated confirmed account through the Development-only Auth Admin API.
-    // This avoids email-provider rate limits and keeps the service-role key server-side in CI.
-    adminClient = createClient(configuredSupabase.origin, adminApiKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-        detectSessionInUrl: false,
-      },
-    });
-    const { data: createUserData, error: createUserError } = await adminClient.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-    });
-    if (createUserError) {
-      const code = typeof createUserError.code === "string" ? createUserError.code : "";
-      const message = typeof createUserError.message === "string" ? createUserError.message : "";
-      const status = typeof createUserError.status === "number" ? `HTTP ${createUserError.status}` : "HTTP status unavailable";
-      const safeDetail = `${code} ${message}`
-        .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/gi, "[redacted-email]")
-        .replace(/sb_secret_[A-Za-z0-9_-]+/g, "[redacted-key]")
-        .replace(/eyJ[A-Za-z0-9_-]{20,}/g, "[redacted-token]")
-        .replace(/Bearer\\s+[^\\s]+/gi, "Bearer [redacted]")
-        .slice(0, 160).trim();
-      throw new Error(`Development Auth Admin could not create the dedicated test user (${status})${safeDetail ? `: ${safeDetail}` : ""}.`);
+    if (!usePreProvisionedAccount) {
+      // Fallback: create a disposable confirmed user with the Development-only
+      // Auth Admin API. Prefer the pre-provisioned least-privilege account path
+      // when configured, because modern secret keys are not JWTs for GoTrue Admin.
+      adminClient = createClient(configuredSupabase.origin, adminApiKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false,
+          detectSessionInUrl: false,
+        },
+      });
+      const { data: createUserData, error: createUserError } = await adminClient.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+      });
+      if (createUserError) {
+        const code = typeof createUserError.code === "string" ? createUserError.code : "";
+        const message = typeof createUserError.message === "string" ? createUserError.message : "";
+        const status = typeof createUserError.status === "number" ? `HTTP ${createUserError.status}` : "HTTP status unavailable";
+        const safeDetail = `${code} ${message}`
+          .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/gi, "[redacted-email]")
+          .replace(/sb_secret_[A-Za-z0-9_-]+/g, "[redacted-key]")
+          .replace(/eyJ[A-Za-z0-9_-]{20,}/g, "[redacted-token]")
+          .replace(/Bearer\\s+[^\\s]+/gi, "Bearer [redacted]")
+          .slice(0, 160).trim();
+        throw new Error(`Development Auth Admin could not create the dedicated test user (${status})${safeDetail ? `: ${safeDetail}` : ""}.`);
+      }
+      const createdUser = createUserData.user;
+      if (typeof createdUser?.id !== "string" || !createdUser.id) {
+        throw new Error("Development Auth Admin returned no test-user ID.");
+      }
+      authUserId = createdUser.id;
     }
-    const createdUser = createUserData.user;
-    if (typeof createdUser?.id !== "string" || !createdUser.id) {
-      throw new Error("Development Auth Admin returned no test-user ID.");
-    }
-    authUserId = createdUser.id;
 
     await page.goto("/auth/sign-in", { waitUntil: "domcontentloaded", timeout: 20_000 });
     await waitForReactHandler(page, "form.form-grid", "onSubmit");
