@@ -566,3 +566,25 @@ nav > a[aria-current="page"]:not(.button) {
   .templates-page .template-hero-panel { padding: 24px; }
 }
 
+.template-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+.template-actions .button { text-align: center; }
+.template-share-control {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+@media (max-width: 700px) {
+  .template-actions { align-items: stretch; flex-direction: column; }
+  .template-actions > .button,
+  .template-share-control,
+  .template-share-control > .button { width: 100%; }
+  .template-share-control > .button { text-align: center; }
+}
+
