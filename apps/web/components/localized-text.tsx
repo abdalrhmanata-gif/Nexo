@@ -29,6 +29,7 @@ const DE: Record<string, string> = Object.fromEntries(Object.entries({"Mission c
 
 const WORKSPACE_TRANSLATIONS: Record<string, Partial<Record<AppLanguage, string>>> = {
   "Business workspace": { es: "Espacio de trabajo empresarial", fr: "Espace de travail professionnel", de: "Business-Arbeitsbereich" },
+  "The invitation could not be loaded. Please try again later.": { es: "No se pudo cargar la invitación. Inténtalo de nuevo más tarde.", fr: "L’invitation n’a pas pu être chargée. Réessayez plus tard.", de: "Die Einladung konnte nicht geladen werden. Bitte versuchen Sie es später erneut." },
   "Yes": { es: "Sí", fr: "Oui", de: "Ja" },
   "No": { es: "No", fr: "Non", de: "Nein" },
   "Invitations are unavailable.": { es: "Las invitaciones no están disponibles.", fr: "Les invitations ne sont pas disponibles.", de: "Einladungen sind nicht verfügbar." },
@@ -397,6 +398,7 @@ for (const [key, translations] of Object.entries(WORKSPACE_TRANSLATIONS)) {
 
 const WORKSPACE_NB_AR: Record<string, { nb: string; ar: string }> = {
   "Business workspace": { nb: "Arbeidsområde", ar: "مساحة عمل الشركات" },
+  "The invitation could not be loaded. Please try again later.": { nb: "Invitasjonen kunne ikke lastes inn. Prøv igjen senere.", ar: "تعذّر تحميل الدعوة. حاول مرة أخرى لاحقًا." },
   "Yes": { nb: "Ja", ar: "نعم" },
   "No": { nb: "Nei", ar: "لا" },
   "Invitations are unavailable.": { nb: "Invitasjoner er ikke tilgjengelige.", ar: "الدعوات غير متاحة." },

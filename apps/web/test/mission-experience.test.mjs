@@ -477,6 +477,9 @@ test("business approval, invitation, and notification copy is localized in all s
     { path: "app/app/business/invite/page.tsx", keys: [
       "Send a secure invitation directly to their inbox. Choose the least-privilege role they need. Invitations expire after 7 days.",
     ] },
+    { path: "app/invite/[token]/page.tsx", keys: [
+      "The invitation could not be loaded. Please try again later.",
+    ] },
     { path: "app/app/business/approvals/page.tsx", keys: [
       "Yes", "No",
       "Human control", "Approval Center",
