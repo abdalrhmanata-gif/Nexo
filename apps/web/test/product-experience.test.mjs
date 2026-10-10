@@ -276,7 +276,7 @@ test("one-goal-first mission creation keeps review fields after the AI draft", (
   const source = read("components/mission-create-form.tsx");
   assert.match(source, /name="criteria"/);
   assert.match(source, /name="actions"/);
-  assert.match(source, /Build my plan/);
+  assert.match(source, /Draft my mission/);
   assert.match(source, /Want more control\? Add details/);
   assert.match(source, /setDrafted\(true\)/);
   assert.match(source, /setCriteria\(plan\.successCriteria\.join/);
@@ -312,7 +312,7 @@ test("AI mission entry removes the blank-page moment with starter goals", () => 
   assert.match(source, /Launch a small online shop in six weeks/);
   assert.match(source, /Get my visa application ready/);
   assert.match(source, /Organize a side project alongside my job/);
-  assert.match(source, /Describe the result, not the project structure/);
+  assert.match(source, /Mention deadlines, budget limits, allowed research, and actions that must not happen/);
 });
 
 
@@ -362,7 +362,7 @@ test("mission templates create a low-friction sharing loop", () => {
   const home = read("app/page.tsx");
   assert.match(templates, /family-travel-research/);
   assert.match(templates, /competitor-research/);
-  assert.match(gallery, /Use this mission/);
+  assert.match(gallery, /Try this mission/);
   assert.match(gallery, /\/try\?template=/);
   assert.match(tryForm, /missionTemplateById/);
   assert.match(home, /mission-template-callout/);

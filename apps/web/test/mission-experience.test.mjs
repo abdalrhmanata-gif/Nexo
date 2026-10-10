@@ -182,7 +182,7 @@ test("business workspace uses the same mission engine without inventing team dat
   const page = read("app/app/business/page.tsx");
   assert.ok(page.includes("Business workspace"));
   assert.ok(page.includes("same missions"));
-  assert.ok(page.includes("members, roles, shared missions"));
+  assert.ok(page.includes("Invite teammates by email and assign only the access they need."));
   assert.ok(!page.includes("member_id"));
 });
 

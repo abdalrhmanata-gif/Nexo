@@ -64,8 +64,8 @@ test("AI usage is enforced server-side and uncertain provider/settlement paths f
 
 test("AI planning is integrated into authenticated mission creation, not duplicated on the workspace", () => {
   assert.ok(newMission.includes("MissionCreateForm"));
-  assert.ok(integratedForm.includes("Build my plan"));
-  assert.ok(integratedForm.includes("Tell ZAVQERA what you want."));
+  assert.ok(integratedForm.includes("Draft my mission"));
+  assert.ok(integratedForm.includes("Describe the outcome you want."));
   assert.ok(integratedForm.includes("Want more control? Add details"));
   assert.ok(integratedForm.includes("setCriteria(plan.successCriteria.join"));
   assert.ok(integratedForm.includes("setActions(plan.steps.map"));
