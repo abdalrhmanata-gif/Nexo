@@ -32,7 +32,7 @@ export default async function BusinessWorkspacePage() {
     </div><Link className="button" href="/app/missions/new"><LocalizedText en="New mission" nb="Nytt oppdrag" ar="مهمة جديدة" /></Link></div>
 
     <div className="stats" aria-label="Business workspace metrics">
-      <div className="stat"><strong>{members.filter((member) => member.role === "owner").length || 1}</strong><span><LocalizedText en="Workspace owner" nb="Eier av arbeidsområdet" ar="مالك مساحة العمل" /></span></div>
+      <div className="stat"><strong>{members.filter((member) => member.role === "owner").length}</strong><span><LocalizedText en="Workspace owner" nb="Eier av arbeidsområdet" ar="مالك مساحة العمل" /></span></div>
       <div className="stat"><strong>{active.length}</strong><span><LocalizedText en="Active missions" nb="Aktive oppdrag" ar="المهام النشطة" /></span></div>
       <div className="stat"><strong>{waiting.length}</strong><span><LocalizedText en="Needs approval/input" nb="Trenger avklaring" ar="تحتاج إلى موافقة أو توضيح" /></span></div>
       <div className="stat"><strong>{verified.length}</strong><span><LocalizedText en="Verified" nb="Verifisert" ar="تم التحقق" /></span></div>
