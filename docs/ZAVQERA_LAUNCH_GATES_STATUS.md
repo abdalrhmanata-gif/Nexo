@@ -71,3 +71,40 @@ Current automated checks cover authorization boundaries, approval gates, quota r
 Do not merge PR #29, mark it Ready, or promote to Production until the remaining release gates are verified or explicitly accepted by the owner. PR #29 must remain **OPEN / Draft / Unmerged**.
 
 Supabase Main/Production was not modified. No Production deployment, DNS change, billing change, or paid-plan upgrade was made. All W56 application and catalog verification described above was performed against ZAVQERA Development only.
+
+
+---
+
+## Superseding verification update — 2026-10-10 13:32 UTC
+
+This section supersedes the older HEAD/run references above for the latest code-bearing state. The previous sections are retained as historical evidence.
+
+- **Latest code-bearing HEAD:** `ccf2cea7c5ef3901908a798a99c4591b7ad6fd0a`.
+- A subsequent documentation-only commit updated the web mutation/side-effect inventory; it did not change runtime code or database schema.
+- PR #29 remains **OPEN / Draft / UNMERGED**.
+
+### Latest CI evidence for code-bearing HEAD
+
+- [Web Unit](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38054622596) — **PASS**.
+- [Web CI / TypeScript / production build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38054622593) — **PASS**.
+- [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38054622643) — **PASS**.
+- [W25 isolated PostgreSQL atomic fence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38054622654) — **PASS**.
+- [W21 Local Launch Gate](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38054622588) — **PASS**. This run includes the W56 runtime duplicate-key behavior test in the PostgreSQL 17 pgTAP suite, the quota/plan/workspace security tests, full Chromium E2E, disposable-stack cleanup and evidence uploads.
+- [Netlify Deploy Preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38054622624) — **PASS** for preview route checks and real OpenAI mission planning. Authenticated live Mission Research remains **SKIPPED**.
+
+### Current scope correction
+
+The feature branch contains one confirmed real external provider path: authenticated Mission Research calls OpenAI after quota reservation and the `start_agent_execution` gate. This is a **partial route-specific gate**, not a universal provider-neutral Mission Authority boundary. See the follow-up in [the web mutation and side-effect inventory](./ZAVQERA_WEB_MUTATION_AND_SIDE_EFFECT_INVENTORY_2026-10-01.md).
+
+W56 is applied and catalog-verified in Development only, with migration version `20261010125620`. The runtime test confirms a duplicate idempotency key raises `EXECUTION_ALREADY_EXISTS` and does not create a second execution row. It does not certify cross-worker reconciliation for every external UNKNOWN outcome.
+
+### Gates still open
+
+- Authenticated hosted live Mission Research, citations and persisted history: **NOT VERIFIED**; requires the dedicated confirmed Development account and private GitHub Actions secrets, and writes persistent records.
+- Real invitation email delivery through Resend: **NOT VERIFIED**; requires Netlify Deploy Preview configuration and one delivery/bounce-checked invitation.
+- Password-reset email/callback end-to-end: **NOT VERIFIED**.
+- Manual desktop/mobile visual QA: **NOT VERIFIED**.
+- `auth_leaked_password_protection`: **WARN / Disabled**, intentionally deferred pending the owner's future plan decision.
+- Universal JIT authority enforcement, complete attempt journaling and UNKNOWN reconciliation, and full Issues #23–#25 acceptance matrix: **NOT CERTIFIED**.
+
+**Release decision unchanged:** no merge, no Ready conversion, no Production promotion, and no Supabase Main/Production changes.
