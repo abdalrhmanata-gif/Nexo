@@ -48,12 +48,18 @@ select ok(
   'existing-execution branch fails closed instead of returning the old row as dispatch permission');
 
 select ok(
-  lower(pg_get_functiondef('private.start_agent_execution(uuid,uuid,uuid,text,jsonb)'::regprocedure))
-    like '%idempotency_key = p_idempotency_key%'
-  and lower(pg_get_functiondef('private.start_agent_execution(uuid,uuid,uuid,text,jsonb)'::regprocedure))
-    like '%for update%'
-  and lower(pg_get_functiondef('private.start_agent_execution(uuid,uuid,uuid,text,jsonb)'::regprocedure))
-    like '%insert into public.agent_executions%',
+  regexp_replace(
+    lower(pg_get_functiondef('private.start_agent_execution(uuid,uuid,uuid,text,jsonb)'::regprocedure)),
+    '[[:space:]]+', '', 'g'
+  ) like '%idempotency_key=p_idempotency_key%'
+  and regexp_replace(
+    lower(pg_get_functiondef('private.start_agent_execution(uuid,uuid,uuid,text,jsonb)'::regprocedure)),
+    '[[:space:]]+', '', 'g'
+  ) like '%forupdate%'
+  and regexp_replace(
+    lower(pg_get_functiondef('private.start_agent_execution(uuid,uuid,uuid,text,jsonb)'::regprocedure)),
+    '[[:space:]]+', '', 'g'
+  ) like '%insertintopublic.agent_executions%',
   'start path checks existing key under a lock before inserting a new attempt');
 
 select ok(exists (
