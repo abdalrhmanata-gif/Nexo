@@ -41,6 +41,13 @@ test("workflow gate is explicitly marked, same-repository only, and passes test 
   assert.match(readme, /Do not run this marked workflow repeatedly/);
 });
 
+test("Mission research refuses agents whose authoritative settings are not explicitly read-only", () => {
+  assert.match(researchRoute, /agent\.authority\?\.mode === "read_only"/);
+  assert.match(researchRoute, /agent\.authority\?\.external_side_effects === false/);
+  assert.match(researchRoute, /agent\.status === "ACTIVE"/);
+  assert.match(researchRoute, /agent\.name === "ZAVQERA Research Agent"/);
+});
+
 test("Mission research opens the server-side agent/approval gate before calling the external AI provider", () => {
   const prepare = researchRoute.indexOf("prepare: async () =>");
   const startExecution = researchRoute.indexOf('supabase.rpc("start_agent_execution"');
