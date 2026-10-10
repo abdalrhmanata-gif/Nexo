@@ -459,8 +459,8 @@ test("business invitation form and endpoint errors are localized in all supporte
     assert.ok(route.includes(key), "invitation endpoint must use the localized error key: " + key);
   }
   for (const key of [...formKeys, ...endpointErrorKeys]) {
-    const esFrDeEntry = esFrDe.split("\\n").find((entry) => entry.trimStart().startsWith('"' + key + '":'));
-    const nbArEntry = nbAr.split("\\n").find((entry) => entry.trimStart().startsWith('"' + key + '":'));
+    const esFrDeEntry = esFrDe.split("\n").find((entry) => entry.trimStart().startsWith('"' + key + '":'));
+    const nbArEntry = nbAr.split("\n").find((entry) => entry.trimStart().startsWith('"' + key + '":'));
     assert.ok(esFrDeEntry, "missing Spanish/French/German mapping for: " + key);
     assert.ok(nbArEntry, "missing Norwegian/Arabic mapping for: " + key);
     for (const locale of ["es", "fr", "de"]) {
