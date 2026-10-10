@@ -529,7 +529,7 @@ test("business approval, invitation, and notification copy is localized in all s
       "This submits a review request only; nothing is executed. The approval will match this exact request, agent authority, mission/action versions, destination, audience and expiry.",
       "Agent", "Action scope", "Mission-level", "Request summary", "Destination", "Audience",
       "Exact payload (JSON object)",
-      "Enter the exact object that the future execution request will contain. Approvers can review the summary, destination and audience, but not raw payload values; the approval record stores a hash only. Make the summary describe the intended effect and omit secrets.",
+      "Enter the exact JSON object the future execution will use. Reviewers see a safe preview of field names and data types, not payload values. Secret-like field names are redacted and the approval stores a hash only. Describe the intended effect accurately; do not enter secrets or personal data.",
       "Check the summary and destination fields, and make sure the payload is a JSON object within the size limit.",
       "The approval request could not be created. An approval may already be pending or the agent policy may have changed. Refresh and review the workspace.",
       "Submit exact-scope request", "Exact-scope approval requested. Nothing was executed.",
@@ -603,7 +603,7 @@ test("approval payload preview shows safe field names and types but never payloa
   };
   const summary = summariseApprovalPayloadPreview(preview);
   assert.match(summary, /quantity \(number\)/);
-  assert.match(summary, /\[sensitive field\] \(string\)/);
+  assert.match(summary, /sensitive field \(string\)/);
   assert.match(summary, /details \(object: note \(string\)\)/);
   assert.match(summary, /values hidden/i);
   assert.ok(!summary.includes("approved value"));
