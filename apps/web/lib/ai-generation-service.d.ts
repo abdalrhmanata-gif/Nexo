@@ -48,6 +48,8 @@ export declare function classifyProviderFailure(error: unknown): {
 export declare function runAiGeneration<T = MissionPlan>(args: {
   requestId: string;
   reserve: (requestId: string) => Promise<AiReservation>;
+  /** Runs after quota reservation but before provider generation. */
+  prepare?: () => Promise<void> | void;
   generate: () => Promise<T>;
   consume: (reservationId: string) => Promise<void>;
   release: (reservationId: string) => Promise<void>;
