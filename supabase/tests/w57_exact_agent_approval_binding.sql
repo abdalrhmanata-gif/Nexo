@@ -59,14 +59,17 @@ begin
   values (v_workspace, v_owner, 'owner');
   insert into public.missions(id, workspace_id, owner_id, objective, status)
   values (v_mission, v_workspace, v_owner, 'Prove exact approval binding', 'READY');
+
+  -- The action-guard trigger deliberately requires an authenticated workspace
+  -- editor, so establish the disposable test identity before inserting it.
+  perform set_config('request.jwt.claim.sub', v_owner::text, true);
+  perform set_config('request.jwt.claims',
+    jsonb_build_object('sub', v_owner, 'role', 'authenticated')::text, true);
+
   insert into public.mission_actions(id, mission_id, title, position, status)
   values (v_action, v_mission, 'W57 controlled action', 0, 'PENDING');
   insert into public.workspace_agents(id, workspace_id, name, description, status, authority, created_by)
   values (v_agent, v_workspace, 'W57 test agent', 'Disposable approval binding agent', 'ACTIVE', v_authority, v_owner);
-
-  perform set_config('request.jwt.claim.sub', v_owner::text, true);
-  perform set_config('request.jwt.claims',
-    jsonb_build_object('sub', v_owner, 'role', 'authenticated')::text, true);
 
   v_request := jsonb_build_object(
     'destination', 'https://example.invalid/action',
