@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LocalizedText } from "../../components/localized-text";
 import { MISSION_TEMPLATES } from "../../lib/mission-templates";
+import { ShareTemplateButton } from "../../components/share-template-button";
 
 export default function TemplatesPage() {
   return <div className="container templates-page">
@@ -16,9 +17,9 @@ export default function TemplatesPage() {
         <h2><LocalizedText en={template.title} /></h2>
         <p><LocalizedText en={template.description} /></p>
         <p className="template-goal">“<LocalizedText en={template.goal} />”</p>
-        <Link className="button" href={"/try?template=" + encodeURIComponent(template.id)}>
-          <LocalizedText en="Use this mission" nb="Bruk dette oppdraget" ar="استخدم هذه المهمة" />
-        </Link>
+        <div className="template-actions"><Link className="button" href={"/try?template=" + encodeURIComponent(template.id)}>
+          <LocalizedText en="Try this mission" nb="Prøv dette oppdraget" ar="جرّب هذه المهمة" />
+        </Link><ShareTemplateButton templateId={template.id} title={template.title} /></div>
       </article>)}
     </section>
 
