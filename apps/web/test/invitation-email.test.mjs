@@ -45,3 +45,27 @@ test("ambiguous email-provider outcomes do not invalidate a possibly delivered i
   assert.match(route, /Keep the pending invitation/);
   assert.match(route, /Check provider logs before retrying/);
 });
+
+test("invitation metadata can be loaded before sign-in, while acceptance requires auth", () => {
+  const tokenRoute = read("app/api/business/invitations/[token]/route.ts");
+  const getHandler = tokenRoute.slice(tokenRoute.indexOf("export async function GET("), tokenRoute.indexOf("export async function POST("));
+  const postHandler = tokenRoute.slice(tokenRoute.indexOf("export async function POST("));
+  const invitePage = read("app/invite/[token]/page.tsx");
+  assert.match(getHandler, /createSupabaseServerClient/);
+  assert.match(getHandler, /rpc\("get_workspace_invitation"/);
+  assert.doesNotMatch(getHandler, /createSupabaseMissionRepository/);
+  assert.match(postHandler, /supabase\.auth\.getUser\(\)/);
+  assert.match(postHandler, /status: 401/);
+  assert.match(invitePage, /\/auth\/sign-in\?next=/);
+  assert.match(invitePage, /email-mismatch/);
+  assert.match(invitePage, /accepted/);
+});
+
+test("invitation return links stay on the invitation after sign-in", () => {
+  const invitePage = read("app/invite/[token]/page.tsx");
+  const authForm = read("components/auth-form.tsx");
+  assert.match(invitePage, /encodeURIComponent\(\`\/invite\/\${token}\`\)/);
+  assert.match(authForm, /safeNextPath\(searchParams\.get\("next"\)\)/);
+  assert.match(authForm, /router\.push\(nextPath\)/);
+});
+
