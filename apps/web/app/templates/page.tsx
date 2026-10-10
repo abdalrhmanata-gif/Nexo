@@ -12,10 +12,10 @@ export default function TemplatesPage() {
 
     <section className="value-grid" aria-label="Mission templates">
       {MISSION_TEMPLATES.map((template) => <article className="card value-card" key={template.id}>
-        <p className="eyebrow">{template.category} · Mission</p>
-        <h2>{template.title}</h2>
-        <p>{template.description}</p>
-        <p className="template-goal">“{template.goal}”</p>
+        <p className="eyebrow"><LocalizedText en={template.category} /> · <LocalizedText en="Mission" /></p>
+        <h2><LocalizedText en={template.title} /></h2>
+        <p><LocalizedText en={template.description} /></p>
+        <p className="template-goal">“<LocalizedText en={template.goal} />”</p>
         <Link className="button" href={"/try?template=" + encodeURIComponent(template.id)}>
           <LocalizedText en="Use this mission" nb="Bruk dette oppdraget" ar="استخدم هذه المهمة" />
         </Link>
