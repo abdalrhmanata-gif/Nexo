@@ -31,6 +31,23 @@ export function resolveRequestOrigin(headers, fallbackUrl) {
 }
 
 /**
+ * Use Netlify's preview permalink for auth callbacks in Deploy Previews.
+ * A configured public site URL may point to production and must not pull a
+ * preview password-reset flow onto another origin.
+ */
+export function getAuthCallbackConfiguredSiteUrl({
+  context,
+  pullRequest,
+  deployPrimeUrl,
+  publicSiteUrl,
+} = {}) {
+  const isDeployPreview = String(context ?? "").trim().toLowerCase() === "deploy-preview"
+    || String(pullRequest ?? "").trim().toLowerCase() === "true";
+  const preferred = isDeployPreview ? deployPrimeUrl : publicSiteUrl;
+  return typeof preferred === "string" ? preferred.trim() : "";
+}
+
+/**
  * Prefer an explicitly configured public origin for email callbacks. This
  * prevents an untrusted Host / forwarded-host header from choosing the
  * destination after an authentication token has been exchanged.
