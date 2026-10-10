@@ -296,7 +296,7 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
       await expect(pageA.locator("form")).toHaveCount(1);
       await expect(pageA.locator("#ai-goal")).toHaveJSProperty("required", false);
       await pageA.getByLabel("Your goal", { exact: true }).fill("Prepare a safe launch plan for a small online shop.");
-      await pageA.getByRole("button", { name: "Build my plan" }).click();
+      await pageA.getByRole("button", { name: "Draft my mission" }).click();
       await expect(pageA.getByLabel("Mission name", { exact: true })).not.toHaveValue("");
       await expect(pageA.getByLabel("Success criteria", { exact: true })).not.toHaveValue("");
       await expect(pageA.getByLabel(/^First steps/)).not.toHaveValue("");

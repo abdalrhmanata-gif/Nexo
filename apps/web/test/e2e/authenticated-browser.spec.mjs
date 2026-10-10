@@ -223,7 +223,7 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
 
       await page.goto("/app/missions/new");
       await page.getByLabel("Your goal", { exact: true }).fill("Prepare a safe first plan for launching a small online shop.");
-      await page.getByRole("button", { name: "Build my plan" }).click();
+      await page.getByRole("button", { name: "Draft my mission" }).click();
       await expect(page.getByLabel("Mission name", { exact: true })).not.toHaveValue("");
       await expect(page.getByLabel("Success criteria", { exact: true })).not.toHaveValue("");
       await expect(page.getByLabel(/^First steps/)).not.toHaveValue("");
