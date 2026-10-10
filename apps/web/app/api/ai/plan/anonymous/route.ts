@@ -1,6 +1,7 @@
 import { createHash, createHmac } from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { getRequestClientIp } from "../../../../../lib/request-client-ip.mjs";
 import { DEFAULT_AI_MODEL, requestMissionPlan } from "../../../../../lib/ai-planner";
 import { buildMockMissionPlan } from "../../../../../lib/ai-mock-provider";
 import {
@@ -14,13 +15,6 @@ export const maxDuration = 25;
 
 const VISITOR_COOKIE = "zavqera-anon-ai";
 const MAX_GOAL_LENGTH = 900;
-
-function getClientIp(request: Request) {
-  const forwarded = request.headers.get("x-forwarded-for");
-  return forwarded?.split(",")[0]?.trim()
-    || request.headers.get("x-real-ip")?.trim()
-    || "unknown";
-}
 
 function hashVisitor(value: string) {
   return createHash("sha256").update(value).digest("hex");
@@ -89,7 +83,7 @@ export async function POST(request: Request) {
   }
 
   const visitorHash = hashVisitor(visitorToken);
-  const ipHash = hashWithSalt(getClientIp(request), salt);
+  const ipHash = hashWithSalt(getRequestClientIp(request), salt);
   const requestId = crypto.randomUUID();
 
   let reservation: Awaited<ReturnType<typeof reserveAnonymousAiGeneration>>;
