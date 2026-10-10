@@ -1,76 +1,73 @@
 # ZAVQERA launch gates — verified engineering status
 
-Updated: 2026-10-05  
+Updated: 2026-10-10 13:10 UTC  
 Branch: `zavqera/ai-planner-integration`  
-PR: [#29](https://github.com/abdalrhmanata-gif/Nexo/pull/29) — Draft / Open / Unmerged  
-Verified application candidate: `2ed30a3fbc9f78f177fd3c90323f1355cdb5fdc0`
+PR: [#29](https://github.com/abdalrhmanata-gif/Nexo/pull/29) — **OPEN / Draft / Unmerged**  
+Current verified HEAD before this documentation-only update: `6ff11869e5ab8cfa384df8b9d7b25acdd8f5be7c`
 
-## CI and isolated launch gate — PASS
+## Automated CI — PASS on the verified HEAD
 
-All four checks passed on the application candidate above:
+- [Web Unit](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38054150228) — PASS.
+- [Web CI, authorization tests, TypeScript and production build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38054150218) — PASS.
+- [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38054150282) — PASS.
+- [W25 isolated PostgreSQL atomic fence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38054150226) — PASS.
+- [W21 Local Launch Gate](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38054150195) — PASS. PostgreSQL 17 disposable migration replay, pgTAP launch gate, AI quota/plan/workspace security suite, full Chromium browser E2E, disposable-stack cleanup and evidence uploads all succeeded.
+- [Netlify Deploy Preview checks](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38054150199) — PASS for preview routes and real OpenAI mission planning. The authenticated live Mission Research steps were **SKIPPED**, not passed.
 
-- [Web Unit](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37248938275) — PASS
-- [Web CI / production build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37248938285) — PASS
-- [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37248938319) — PASS
-- [W21 Local Launch Gate](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37248938336) — PASS
-- [W21 evidence artifact](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/37248938336/artifacts/11320131586) — retained until 2027-01-03
+W21 artifacts:
+- [Evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38054150195/artifacts/11670209183)
+- [Browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38054150195/artifacts/11670873002)
 
-W21 evidence:
-- Disposable PostgreSQL 17 migration replay: PASS.
-- pgTAP launch assertions: **31/31 PASS**, including Free=5/Plus=300 database constraints and no direct AI entitlement/usage table grants.
-- Browser E2E: **2/2 PASS** in 2.5 minutes.
-- Authenticated signup/sign-in/password reset, AI mock quota/idempotency, mission creation, ownership isolation and independent-session mission version-fence checks passed.
-- Added browser regression coverage for a single combined AI-draft/mission-create form, Arabic heading/placeholder switching, and manual mission creation without using AI.
-- Disposable fixtures and containers: cleanup verified.
-- This proves the checked-in migrations and isolated test environment; it is not a replacement for a complete production schema snapshot or live-provider test.
+Automated browser E2E is not the same as a manual visual review of the live UI on desktop and mobile. Manual visual QA remains **NOT VERIFIED** in this release pass.
 
-## Product/UI changes verified
+## Supabase Development — verified, Development only
 
-- AI drafting and mission creation now use one form and one review/save flow.
-- Arabic and Norwegian homepage value proposition is translated.
-- Language changes propagate immediately to AI goal placeholders; Arabic placeholder is translated.
-- AI drafting remains optional; users can create a mission manually without entering a goal in the AI-only field.
-- Netlify Deploy Preview for the same application candidate is READY: [open preview](https://deploy-preview-29--unique-kringle-3ce321.netlify.app/app/missions/new). Deploy ID: `6ac2f3df10baaa0008e29b39`.
+Project: `mrwmmbytcymqgwvcoywd`, region `eu-west-1`, PostgreSQL 17.
 
-## Development database — verified
+The hosted migration ledger was checked after applying W56. Latest applied repository migration is:
+- `20261010125620_w56_agent_execution_duplicate_dispatch_guard`
 
-Project: `mrwmmbytcymqgwvcoywd` (ZAVQERA Development), PostgreSQL 17.  
-Latest applied repository migration: W34 `20261004191431_w34_plan_quota_constraints`.
+W56 was applied to **ZAVQERA Development only**. Read-only verification confirmed the function `private.start_agent_execution(uuid,uuid,uuid,text,jsonb)` contains the duplicate-execution guard; `anon` cannot execute it and `authenticated` can. A previously existing idempotency key now raises `EXECUTION_ALREADY_EXISTS` rather than returning an execution record as permission to dispatch an external provider request again.
 
-Verified:
-- Mission ownership isolation, lifecycle transitions, stale-version/TOCTOU checks, outcome verification guards, cancellation provenance and history-preserving delete protection.
-- W29 quota reservation, duplicate-request and concurrency behavior.
-- W32 moves privileged implementations into `private`; public API wrappers are `SECURITY INVOKER`.
-- Private SECURITY DEFINER functions have pinned `search_path=pg_catalog, public`; no execution grant to `anon`.
-- RLS enabled on profiles, workspaces, missions, mission_actions, ai_entitlements and ai_usage_monthly.
-- No direct table grants to `anon` or `authenticated` on AI entitlement/usage tables.
-- W33/W34 enforce Free=5 and Plus=300 generations per UTC month server-side and with plan-specific constraints.
+This closes the duplicate-dispatch guard migration in Development; it does **not** prove full cross-worker reconciliation for unknown external outcomes, nor does it replace the remaining Mission Authority acceptance matrix.
 
-## Security Advisor — current result
+W52/W53/W54/W55 remain ledger-aligned in Development. W52's foreign-key indexes and W53's RLS initplan optimization were verified; W53 removed the corresponding `auth_rls_initplan` advisor findings. The latest known Performance Advisor result has 17 `unused_index` INFO findings. Do not drop these indexes blindly; measure representative workload first. The Security Advisor still reports `auth_leaked_password_protection` — **WARN / Disabled**.
 
-The live Development Security Advisor currently returns one finding:
-- `auth_leaked_password_protection` — WARN / Disabled.
+## Live provider and email gates — not yet verified
 
-No SECURITY DEFINER warning is currently returned. Enabling leaked-password protection requires a supported paid Supabase plan. No plan upgrade or billing change was made.
+### Authenticated live Mission Research
+- **NOT VERIFIED / gated.** The current Netlify workflow passed the real OpenAI mission-planning smoke test, but the authenticated live research check was skipped.
+- The workflow requires a dedicated, pre-provisioned, email-confirmed Development test account through GitHub Actions secrets `SUPABASE_DEV_TEST_EMAIL` and `SUPABASE_DEV_TEST_PASSWORD` (or its explicitly supported Development-only fallback).
+- Only run the intentionally marked live-research test once the required credentials are privately configured and verified. It creates persistent Mission/research/audit records in Development. Never paste credentials into chat or PR comments; never use Production credentials.
+- A successful planning smoke test does not prove research citations, persisted research history, or the authenticated hosted route.
+
+### Workspace invitation email
+- Invitation email code is implemented, but actual delivery is **NOT VERIFIED**.
+- The endpoint requires `RESEND_API_KEY` and `RESEND_FROM_EMAIL`. Configure them in Netlify **Deploy Previews only**, with a verified sender domain, then send one invitation from an authenticated workspace owner/admin and inspect delivery/bounce status in Resend.
+- Team-level environment-variable inspection did not show these keys. Site-specific settings were not verified through the available read tools; do not infer that site-level values are absent.
+- Provider acceptance must not be represented as guaranteed inbox delivery.
+
+### Password-reset email
+- Hosted preview password-reset email/callback flow has not been verified end-to-end. Local E2E is not a substitute.
 
 ## Mission Authority — partial, not production-certified
 
-PASS evidence exists for current database-backed ownership checks, mission/action lifecycle, stale-version fence, concurrency handling, idempotency and verified-outcome rules. The isolated controlled adapter has 11 tests and is included in CI.
-
-Still BLOCKED / NOT PROVEN:
-- A complete provider-neutral JIT decision gateway immediately before real external side effects.
-- Persistent attempt journal/reconciliation semantics for UNKNOWN external outcomes across independent workers.
+Current automated checks cover authorization boundaries, approval gates, quota reservations, idempotency, lifecycle and isolated PostgreSQL/browser scenarios. Remaining blockers:
+- A complete provider-neutral just-in-time authority decision immediately before every real external side effect.
+- Durable attempt journal and reconciliation for UNKNOWN external outcomes across independent workers.
 - The complete acceptance matrix in [Issue #23](https://github.com/abdalrhmanata-gif/Nexo/issues/23), [Issue #24](https://github.com/abdalrhmanata-gif/Nexo/issues/24), and [Issue #25](https://github.com/abdalrhmanata-gif/Nexo/issues/25).
-- Do not treat in-memory adapter tests as proof of PostgreSQL persistence or production external-action enforcement. No new Mission Authority schema/RPC has been applied.
+- Do not treat isolated adapter tests or local browser E2E as proof of production external-action enforcement.
 
-## Real AI provider and hosted auth
+## Deferred security and visual checks
 
-- Real OpenAI provider verification is DEFERRED until the owner configures a non-production `OPENAI_API_KEY` in Netlify. Current preview uses mock mode.
-- Real-provider success, quota before/after, and provider failure-accounting checks: NOT RUN.
-- Hosted preview password-reset email/callback flow: NOT RUN; local browser E2E is not a substitute.
+- `auth_leaked_password_protection`: WARN / Disabled. The owner has chosen to defer the Supabase Pro upgrade. No plan/billing change was made.
+- Manual visual QA on current live Preview, including mobile widths: **NOT VERIFIED**.
+- Dynamic backend-generated scope/event text may still fall back to English in some contexts; localization regression tests pass for the covered UI and API strings.
 
-## Release decision
+## Release decision and safety boundaries
 
-**Verified release candidate, not production-certified.**
+**Automated gates are green; full launch is not approved.**
 
-Do not merge PR #29 or trigger a production deploy until the owner explicitly approves and the remaining applicable gates are resolved. Supabase Main, Git main, production deployment, DNS, billing and paid infrastructure remain unchanged.
+Do not merge PR #29, mark it Ready, or promote to Production until the remaining release gates are verified or explicitly accepted by the owner. PR #29 must remain **OPEN / Draft / Unmerged**.
+
+Supabase Main/Production was not modified. No Production deployment, DNS change, billing change, or paid-plan upgrade was made. All W56 application and catalog verification described above was performed against ZAVQERA Development only.
