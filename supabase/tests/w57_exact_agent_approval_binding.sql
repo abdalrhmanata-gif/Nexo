@@ -1,7 +1,7 @@
 -- W57: exact, expiring approval binding for agent executions and retries.
 begin;
 create extension if not exists pgtap;
-select plan(29);
+select plan(34);
 
 select ok(exists (
   select 1 from information_schema.columns
@@ -17,9 +17,30 @@ select ok(exists (
 ), 'approval consumption has a durable tombstone timestamp');
 select ok(to_regprocedure('private.agent_execution_approval_scope(uuid,uuid,bigint,uuid,bigint,uuid,jsonb,jsonb)') is not null,
   'canonical versioned approval-scope builder exists');
+select ok(to_regprocedure('private.agent_execution_payload_shape(jsonb,integer)') is not null,
+  'safe payload-shape helper exists');
+select ok(not has_function_privilege('authenticated',
+  'private.agent_execution_payload_shape(jsonb,integer)', 'EXECUTE'),
+  'authenticated callers cannot invoke the internal payload-shape helper');
+select ok(lower(pg_get_functiondef('private.agent_execution_approval_scope(uuid,uuid,bigint,uuid,bigint,uuid,jsonb,jsonb)'::regprocedure)) like '%payload_preview%',
+  'canonical approval scope includes the safe payload preview');
 select ok(not has_function_privilege('authenticated',
   'private.agent_execution_approval_scope(uuid,uuid,bigint,uuid,bigint,uuid,jsonb,jsonb)', 'EXECUTE'),
   'authenticated users cannot call the internal scope builder directly');
+select ok(
+  private.agent_execution_payload_shape(
+    '{"quantity":1,"api_token":"UNIQUE_PAYLOAD_SECRET_SENTINEL_31917","details":{"note":true}}'::jsonb, 0
+  )::text like '%quantity%'
+  and private.agent_execution_payload_shape(
+    '{"quantity":1,"api_token":"UNIQUE_PAYLOAD_SECRET_SENTINEL_31917","details":{"note":true}}'::jsonb, 0
+  )::text like '%[sensitive field]%'
+  and private.agent_execution_payload_shape(
+    '{"quantity":1,"api_token":"UNIQUE_PAYLOAD_SECRET_SENTINEL_31917","details":{"note":true}}'::jsonb, 0
+  )::text not like '%UNIQUE_PAYLOAD_SECRET_SENTINEL_31917%'
+  and private.agent_execution_payload_shape(
+    '{"quantity":1,"api_token":"UNIQUE_PAYLOAD_SECRET_SENTINEL_31917","details":{"note":true}}'::jsonb, 0
+  )::text not like '%api_token%',
+  'payload shape includes types but redacts sensitive field names and all values');
 select ok(lower(pg_get_functiondef('private.request_mission_approval(uuid,uuid,jsonb)'::regprocedure)) like '%agent_execution_binding_v1%',
   'approval requests store only the canonical execution-binding contract');
 select ok(
@@ -113,6 +134,11 @@ begin
   select * into v_approval from public.decide_mission_approval(v_approval.id, 'APPROVED', null);
   if (v_approval.requested_scope ->> 'expires_at')::timestamptz is distinct from v_approval.expires_at then
     raise exception 'TEST_FAILED: the canonical approval scope did not bind the stored expiry';
+  end if;
+  if v_approval.requested_scope -> 'payload_preview' is null
+     or (v_approval.requested_scope -> 'payload_preview' -> 'fields')::text not like '%quantity%'
+     or v_approval.requested_scope::text like '%approved value%' then
+    raise exception 'TEST_FAILED: approval scope omitted safe payload shape or persisted a raw payload value';
   end if;
 
   v_caught := false;
@@ -347,6 +373,8 @@ select pass('an approval cannot be reused for another agent');
 select pass('an approval cannot be reused for another action');
 select pass('a mission-version change invalidates an older approval');
 select pass('an action-version change invalidates an older approval');
+
+select pass('approval queue receives a bounded payload shape without storing raw payload values');
 
 select * from finish();
 rollback;
