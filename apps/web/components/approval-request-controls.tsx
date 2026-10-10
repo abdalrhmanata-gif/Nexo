@@ -5,7 +5,7 @@ import { LocalizedText } from "./localized-text";
 
 type RequestMessage = "" | "requested" | "failed";
 
-export function ApprovalRequestControls({ missionId, actionId }: { missionId: string; actionId?: string }) {
+export function ApprovalRequestControls({ missionId, actionId, executionBinding }: { missionId: string; actionId?: string; executionBinding?: { agentId: string; request: Record<string, unknown> } }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<RequestMessage>("");
 
@@ -20,7 +20,9 @@ export function ApprovalRequestControls({ missionId, actionId }: { missionId: st
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           actionId: actionId ?? null,
-          scope: { type: "bounded_action", requires_approval: true, action_id: actionId ?? null },
+          scope: executionBinding
+            ? { schema_version: 1, type: "agent_execution_binding_v1", agent_id: executionBinding.agentId, request: executionBinding.request }
+            : { type: "bounded_action", requires_approval: true, action_id: actionId ?? null },
         }),
       });
 

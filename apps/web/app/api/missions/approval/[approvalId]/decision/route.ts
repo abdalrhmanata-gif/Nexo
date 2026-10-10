@@ -37,6 +37,9 @@ export async function POST(
       p_note: note || null,
     });
     if (result.error) {
+      if (result.error.message?.includes("APPROVAL_EXPIRED")) {
+        return NextResponse.json({ error: "This approval request expired. Return to the mission and request a new scoped approval." }, { status: 409 });
+      }
       if (result.error.message?.includes("APPROVAL_ALREADY_DECIDED")) {
         return NextResponse.json({ error: "This request has already been decided. Refresh the queue." }, { status: 409 });
       }

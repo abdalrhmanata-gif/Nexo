@@ -117,6 +117,7 @@ jobs:
           cp "$GITHUB_WORKSPACE/supabase/tests/w54_workspace_policy_consolidation.sql" "$workdir/supabase/tests/w54_workspace_policy_consolidation.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w55_product_growth_signals.sql" "$workdir/supabase/tests/w55_product_growth_signals.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w56_agent_execution_duplicate_dispatch_guard.sql" "$workdir/supabase/tests/w56_agent_execution_duplicate_dispatch_guard.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w57_exact_agent_approval_binding.sql" "$workdir/supabase/tests/w57_exact_agent_approval_binding.sql"
           cat > "$workdir/supabase/migrations/20260921180005_e2e_historical_auth_compat.sql" <<'SQL'
           create schema if not exists private;
           create or replace function private.handle_new_user_profile()
@@ -190,6 +191,7 @@ jobs:
             supabase test db supabase/tests/w54_workspace_policy_consolidation.sql
             supabase test db supabase/tests/w55_product_growth_signals.sql
             supabase test db supabase/tests/w56_agent_execution_duplicate_dispatch_guard.sql
+            supabase test db supabase/tests/w57_exact_agent_approval_binding.sql
           )
 
       - name: Run full launch-gate browser E2E

@@ -526,7 +526,7 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
     async listPendingApprovals() {
       const result = await supabase
         .from("mission_approvals")
-        .select("id,mission_id,action_id,status,requested_by,decided_by,requested_scope,decision_note,created_at,decided_at")
+        .select("id,mission_id,action_id,status,requested_by,decided_by,requested_scope,decision_note,created_at,decided_at,expires_at")
         .eq("workspace_id", workspaceId)
         .eq("status", "PENDING")
         .order("created_at", { ascending: false });
@@ -534,7 +534,7 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       const rows = (result.data ?? []) as Array<{
         id: string; mission_id: string; action_id: string | null; status: MissionApproval["status"];
         requested_by: string; decided_by: string | null; requested_scope: Record<string, unknown> | null;
-        decision_note: string | null; created_at: string; decided_at: string | null;
+        decision_note: string | null; created_at: string; decided_at: string | null; expires_at: string | null;
       }>;
       if (!rows.length) return [];
 
@@ -581,6 +581,7 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
           decisionNote: row.decision_note,
           createdAt: row.created_at,
           decidedAt: row.decided_at,
+          expiresAt: row.expires_at,
           missionName: parsed.name,
           missionIntent: parsed.intent,
           actionTitle: action?.title ?? null,

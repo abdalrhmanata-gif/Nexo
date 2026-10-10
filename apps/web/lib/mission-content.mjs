@@ -372,6 +372,8 @@ export function humaniseEventType(eventType) {
  */
 const APPROVAL_SCOPE_FIELDS = [
   ["type", "Request type", "text"],
+  ["destination", "Destination", "text"],
+  ["audience", "Audience", "text"],
   ["bounded_action", "Bounded action", "boolean"],
   ["reason", "Reason", "text"],
   ["purpose", "Purpose", "text"],
