@@ -82,6 +82,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           if (execution.error.message === "APPROVAL_REQUIRED") {
             throw new Error("AGENT_APPROVAL_REQUIRED");
           }
+          if (execution.error.message === "EXECUTION_ALREADY_EXISTS") {
+            throw new Error("AGENT_EXECUTION_ALREADY_EXISTS");
+          }
           throw new Error("AGENT_EXECUTION_START_FAILED");
         }
         executionId = (execution.data as { id: string }).id;
@@ -131,6 +134,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       }
       if (result.code === "AGENT_APPROVAL_REQUIRED") {
         return NextResponse.json({ error: "This agent requires human approval before execution." }, { status: 409 });
+      }
+      if (result.code === "AGENT_EXECUTION_ALREADY_EXISTS") {
+        return NextResponse.json({ error: "An attempt with this request ID already exists. Inspect execution history before starting another attempt." }, { status: 409 });
       }
       if (result.code === "AGENT_EXECUTION_START_FAILED") {
         return NextResponse.json({ error: "The agent execution boundary could not be opened." }, { status: 503 });
