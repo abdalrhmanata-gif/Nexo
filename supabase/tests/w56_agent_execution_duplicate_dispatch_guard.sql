@@ -119,6 +119,7 @@ begin
     'agent_id', v_agent_a,
     'destination', 'test://w56',
     'audience', 'w56-test',
+    'request_summary', 'W56 disposable bounded execution fixture',
     'expires_at', (clock_timestamp() + interval '20 minutes')::text,
     'request', v_request
   );
@@ -272,6 +273,7 @@ begin
     'mission_version', v_mission_row.version,
     'action_id', null, 'action_version', null, 'agent_id', v_agent_a,
     'destination', 'test://w56', 'audience', 'w56-test',
+    'request_summary', 'W56 disposable bounded execution fixture',
     'expires_at', (clock_timestamp() + interval '20 minutes')::text,
     'request', v_request
   );
