@@ -47,6 +47,7 @@ declare
   v_request_hash text;
   v_destination text;
   v_audience text;
+  v_request_summary text;
   v_stored_scope jsonb;
 begin
   if auth.uid() is null then
@@ -100,7 +101,9 @@ begin
 
     v_destination := nullif(btrim(p_scope ->> 'destination'), '');
     v_audience := nullif(btrim(p_scope ->> 'audience'), '');
+    v_request_summary := nullif(btrim(p_scope ->> 'request_summary'), '');
     if v_destination is null or v_audience is null
+       or v_request_summary is null or char_length(v_request_summary) > 500
        or v_request ->> 'destination' is distinct from v_destination
        or v_request ->> 'audience' is distinct from v_audience then
       raise exception 'INVALID_EXECUTION_APPROVAL_DESTINATION' using errcode = '22023';
@@ -154,6 +157,7 @@ begin
       'request_hash', v_request_hash,
       'destination', v_destination,
       'audience', v_audience,
+      'request_summary', v_request_summary,
       'expires_at', v_expires_at
     );
   else
