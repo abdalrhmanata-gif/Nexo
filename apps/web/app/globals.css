@@ -615,3 +615,15 @@ nav > a[aria-current="page"]:not(.button) {
   .invitation-card .button { width: 100%; text-align: center; }
 }
 
+
+
+/* Clear navigation hierarchy: make the two discovery paths easy to spot. */
+.topbar > nav > .nav-featured { display:inline-flex; align-items:center; justify-content:center; min-height:40px; padding:9px 13px; border:1px solid #b9cbcf; border-radius:6px; color:var(--navy); background:#fff; font-weight:700; white-space:nowrap; transition:background .15s ease,border-color .15s ease,color .15s ease; }
+.topbar > nav > .nav-business { border-bottom:3px solid var(--navy); }
+.topbar > nav > .nav-templates { border-color:#b9ddd8; background:#edf7f5; }
+.topbar > nav > .nav-featured:hover,.topbar > nav > .nav-featured[aria-current="page"] { border-color:var(--teal); color:var(--navy); background:#e3f3f0; text-decoration:none; }
+.topbar > nav > .nav-templates[aria-current="page"] { box-shadow:inset 0 0 0 1px var(--teal); }
+.hero-actions { display:flex; flex-wrap:wrap; align-items:center; gap:12px; margin-top:24px; }
+.hero-actions .button { min-height:46px; }
+.hero-free { margin-top:18px; font-size:14px !important; }
+@media (max-width:700px) { .topbar > nav > .nav-featured { width:100%; min-height:44px; }.hero-actions { align-items:stretch; flex-direction:column; }.hero-actions .button { width:100%; text-align:center; } }
