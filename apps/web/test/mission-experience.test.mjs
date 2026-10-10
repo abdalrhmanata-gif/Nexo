@@ -490,6 +490,8 @@ test("business approval, invitation, and notification copy is localized in all s
       "Approval request · Pending", "Requested action", "Mission-level approval", "Assigned agent",
       "No agent linked to this mission", "Requested by", "Submitted", "Requested scope",
       "Agent authority", "No agent authority snapshot is attached to this request.",
+      "Approval expiry",
+      "No fixed expiry; this approval still does not authorize a future execution unless its scope matches exactly.",
       "Why approval is required",
       "This action is gated by workspace policy and must be explicitly approved before execution.",
       "This request needs a recorded human decision before any approval-gated action can proceed.",
