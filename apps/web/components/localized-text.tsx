@@ -221,6 +221,14 @@ const WORKSPACE_TRANSLATIONS: Record<string, Partial<Record<AppLanguage, string>
   "Sign in with invited email": { es: "Iniciar sesión con el correo invitado", fr: "Se connecter avec l’e-mail invité", de: "Mit der eingeladenen E-Mail anmelden" },
   "Open Business workspace": { es: "Abrir espacio de trabajo empresarial", fr: "Ouvrir l’espace professionnel", de: "Business-Workspace öffnen" },
 
+  "Follow-up": { nb: "Oppfølging", ar: "المتابعة", es: "Seguimiento", fr: "Suivi", de: "Nachverfolgung" },
+  "Due and overdue tasks": { nb: "Oppgaver som forfaller", ar: "المهام المستحقة والمتأخرة", es: "Tareas pendientes y vencidas", fr: "Tâches à venir et en retard", de: "Fällige und überfällige Aufgaben" },
+  "Overdue": { nb: "Forfalt", ar: "متأخرة", es: "Vencida", fr: "En retard", de: "Überfällig" },
+  "Due within 7 days": { nb: "Innen 7 dager", ar: "خلال 7 أيام", es: "Vence en 7 días", fr: "À échéance sous 7 jours", de: "Innerhalb von 7 Tagen fällig" },
+  "Open task": { nb: "Åpne oppgaven", ar: "افتح المهمة", es: "Abrir tarea", fr: "Ouvrir la tâche", de: "Aufgabe öffnen" },
+  "No follow-up tasks are overdue or due within the next 7 days.": { nb: "Ingen oppfølgingsoppgaver er forfalt eller forfaller i løpet av de neste 7 dagene.", ar: "لا توجد مهام متابعة متأخرة أو مستحقة خلال الأيام السبعة القادمة.", es: "No hay tareas de seguimiento vencidas ni que venzan en los próximos 7 días.", fr: "Aucune tâche de suivi n’est en retard ou à échéance dans les 7 prochains jours.", de: "Keine Nachverfolgungsaufgaben sind überfällig oder innerhalb der nächsten 7 Tage fällig." },
+  "Mission approval": { nb: "Oppdragsgodkjenning", ar: "موافقة على المهمة", es: "Aprobación de misión", fr: "Approbation de mission", de: "Missionsfreigabe" },
+
 };
 for (const [key, translations] of Object.entries(WORKSPACE_TRANSLATIONS)) {
   if (translations.nb) NB[key] = translations.nb;
