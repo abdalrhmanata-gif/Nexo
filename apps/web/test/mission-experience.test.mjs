@@ -530,3 +530,28 @@ test("business approval, invitation, and notification copy is localized in all s
     }
   }
 });
+
+test("collaboration, approval, research recovery, and execution API errors are localized", () => {
+  const groups = [{"path":"app/api/business/invitations/revoke/route.ts","keys":["Invitations are unavailable.","Invitation id is required.","The invitation could not be revoked."]},{"path":"app/api/business/members/role/route.ts","keys":["Member management is unavailable.","Member and role are required.","The member role could not be changed."]},{"path":"app/api/business/members/remove/route.ts","keys":["Member management is unavailable.","Member is required.","The member could not be removed."]},{"path":"app/api/missions/approval/[approvalId]/decision/route.ts","keys":["A valid decision request is required.","Invalid approval decision.","Decision notes must be 4,000 characters or fewer.","A reason is required when rejecting an approval request.","Authentication required.","This request has already been decided. Refresh the queue.","The decision could not be recorded. Check your workspace role and refresh the queue.","The approval service could not complete this request."]},{"path":"app/api/missions/[id]/research/route.ts","keys":["Research may have completed, but execution recovery evidence could not be recorded.","The research attempt could not be safely reconciled. Inspect execution history before retrying.","An attempt with this request ID already exists. Inspect execution history before starting another attempt.","The research execution boundary was not recorded."]},{"path":"app/api/agent-executions/[executionId]/route.ts","keys":["You do not have permission to change this execution.","This execution lease has not expired. Refresh its status and try again later.","The outcome is unknown. Verify the external result before attempting new work.","A retry already exists for this attempt. Refresh the execution history.","Only a confirmed FAILED or BLOCKED attempt can be retried.","Agent authority changed. Review the current authority before retrying.","Current approval is missing or no longer valid.","This execution is no longer running.","The retry key is already bound to another execution.","The retry request key is invalid.","This mission is closed and cannot be retried.","The execution action could not be recorded. Refresh and inspect the execution history.","A valid execution action is required.","Invalid execution action.","A valid retry request key is required.","The execution service could not complete this action."]}];
+  const dictionary = read("components/localized-text.tsx");
+  const esFrDe = dictionary.slice(
+    dictionary.indexOf("const WORKSPACE_TRANSLATIONS:"),
+    dictionary.indexOf("const WORKSPACE_NB_AR:"),
+  );
+  const nbAr = dictionary.slice(
+    dictionary.indexOf("const WORKSPACE_NB_AR:"),
+    dictionary.indexOf("for (const [key, translations] of Object.entries(WORKSPACE_NB_AR))"),
+  );
+  for (const group of groups) {
+    const source = read(group.path);
+    for (const key of group.keys) {
+      assert.ok(source.includes(JSON.stringify(key)), group.path + " must contain its error key: " + key);
+      const esFrDeEntry = esFrDe.split(String.fromCharCode(10)).find((entry) => entry.trimStart().startsWith(JSON.stringify(key) + ":"));
+      const nbArEntry = nbAr.split(String.fromCharCode(10)).find((entry) => entry.trimStart().startsWith(JSON.stringify(key) + ":"));
+      assert.ok(esFrDeEntry, "missing Spanish/French/German mapping for API error: " + key);
+      assert.ok(nbArEntry, "missing Norwegian/Arabic mapping for API error: " + key);
+      for (const locale of ["es", "fr", "de"]) assert.ok(esFrDeEntry.includes(locale + ":"), "missing " + locale + " translation for: " + key);
+      for (const locale of ["nb", "ar"]) assert.ok(nbArEntry.includes(locale + ":"), "missing " + locale + " translation for: " + key);
+    }
+  }
+});
