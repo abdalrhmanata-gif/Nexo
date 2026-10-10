@@ -412,6 +412,13 @@ test("approval request control localizes its states and always clears the busy s
   ]) {
     assert.ok(control.includes(key), "approval control must use the localized key: " + key);
     assert.ok(nbAr.includes('"' + key + '": { nb:'), "missing Norwegian/Arabic translations for: " + key);
-    assert.ok(esFrDe.includes('"' + key + '": { es:'), "missing Spanish/French/German translations for: " + key);
+    const translatedEntry = esFrDe.split("\n").find((entry) => entry.includes('"' + key + '":'));
+    assert.ok(translatedEntry, "missing Spanish/French/German translations for: " + key);
+    for (const locale of ["es", "fr", "de"]) {
+      assert.ok(
+        translatedEntry.includes(locale + ":") || translatedEntry.includes('"' + locale + '":'),
+        "missing " + locale + " translation for: " + key,
+      );
+    }
   }
 });

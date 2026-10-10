@@ -29,7 +29,6 @@ const DE: Record<string, string> = Object.fromEntries(Object.entries({"Mission c
 
 const WORKSPACE_TRANSLATIONS: Record<string, Partial<Record<AppLanguage, string>>> = {
   "Business workspace": { es: "Espacio de trabajo empresarial", fr: "Espace de travail professionnel", de: "Business-Arbeitsbereich" },
-  "Approval requested": { es: "Aprobación solicitada", fr: "Approbation demandée", de: "Freigabe angefordert" },
   "Request approval": { es: "Solicitar aprobación", fr: "Demander une approbation", de: "Freigabe anfordern" },
   "Requesting…": { es: "Solicitando…", fr: "Demande en cours…", de: "Wird angefordert…" },
   "Approval could not be requested. Check your connection and try again.": { es: "No se pudo solicitar la aprobación. Comprueba tu conexión e inténtalo de nuevo.", fr: "Impossible de demander l’approbation. Vérifiez votre connexion et réessayez.", de: "Freigabe konnte nicht angefordert werden. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut." },
