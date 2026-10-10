@@ -66,3 +66,5 @@ export declare function verificationReadiness(
 export declare function summariseApprovalScope(scope: unknown): string;
 
 export declare function summariseApprovalScope(scope: unknown): string;
+
+export declare function summariseApprovalPayloadPreview(preview: unknown): string;

@@ -33,10 +33,10 @@ export function ApprovalCenter({
               : <LocalizedText en="No fixed expiry; this approval still does not authorize a future execution unless its scope matches exactly." nb="Ingen fast utløpstid; denne godkjenningen gir likevel ikke tillatelse til fremtidig kjøring uten nøyaktig omfangstreff." ar="لا يوجد انتهاء محدد؛ ومع ذلك لا تسمح هذه الموافقة بتنفيذ مستقبلي ما لم يتطابق النطاق بدقة." />}</dd>
             <dt><LocalizedText en="Requested scope" nb="Forespurt omfang" ar="النطاق المطلوب" /></dt>
             <dd>{summariseApprovalScope(approval.requestedScope)}</dd>
-            <dt><LocalizedText en="Payload structure (values hidden)" nb="Innholdsstruktur (verdier skjult)" ar="بنية الحمولة (القيم مخفية)" es="Estructura de la carga (valores ocultos)" fr="Structure de la charge (valeurs masquées)" de="Payload-Struktur (Werte verborgen)" /></dt>
+            <dt><LocalizedText en="Payload structure (values hidden)" nb="Innholdsstruktur (verdier skjult)" ar="بنية الحمولة (القيم مخفية)" /></dt>
             <dd>{approval.requestedScope.type === "agent_execution_binding_v1"
               ? summariseApprovalPayloadPreview(approval.requestedScope.payload_preview)
-              : <LocalizedText en="No execution-bound payload is attached; this review request cannot authorize agent execution." nb="Ingen utførelsesbundet data er vedlagt; denne forespørselen kan ikke godkjenne agentkjøring." ar="لا توجد حمولة مرتبطة بالتنفيذ؛ لا يمكن لهذا الطلب أن يسمح بتنفيذ الوكيل." es="No hay una carga vinculada a la ejecución; esta revisión no puede autorizarla." fr="Aucune charge liée à l’exécution n’est jointe ; cette demande ne peut pas l’autoriser." de="Es ist kein ausführungsgebundener Payload angehängt; diese Prüfung kann die Ausführung nicht autorisieren." />}</dd>
+              : <LocalizedText en="No execution-bound payload is attached; this review request cannot authorize agent execution." nb="Ingen utførelsesbundet data er vedlagt; denne forespørselen kan ikke godkjenne agentkjøring." ar="لا توجد حمولة مرتبطة بالتنفيذ؛ لا يمكن لهذا الطلب أن يسمح بتنفيذ الوكيل." />}</dd>
             <dt><LocalizedText en="Agent authority" nb="Agentfullmakt" ar="صلاحيات الوكيل" /></dt>
             <dd>{approval.agentAuthority
               ? summariseApprovalScope(approval.agentAuthority)
