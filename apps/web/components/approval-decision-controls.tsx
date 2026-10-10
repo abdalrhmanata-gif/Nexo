@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LocalizedText } from "./localized-text";
 
@@ -9,6 +9,26 @@ export function ApprovalDecisionControls({ approvalId }: { approvalId: string })
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
+  const [language, setLanguage] = useState<"en" | "nb" | "ar" | "es" | "fr" | "de">("en");
+
+  useEffect(() => {
+    const syncLanguage = () => {
+      const value = document.documentElement.lang;
+      setLanguage((["en", "nb", "ar", "es", "fr", "de"].includes(value) ? value : "en") as typeof language);
+    };
+    syncLanguage();
+    window.addEventListener("zavqera-language-change", syncLanguage);
+    return () => window.removeEventListener("zavqera-language-change", syncLanguage);
+  }, []);
+
+  const notePlaceholder: Record<typeof language, string> = {
+    en: "Record the reason or any condition for this decision.",
+    nb: "Registrer begrunnelsen eller eventuelle vilkår for beslutningen.",
+    ar: "سجّل سبب القرار أو أي شروط مرتبطة به.",
+    es: "Registra el motivo o las condiciones de esta decisión.",
+    fr: "Consignez le motif ou toute condition de cette décision.",
+    de: "Dokumentieren Sie den Grund oder Bedingungen für diese Entscheidung.",
+  };
 
   async function decide(decision: "APPROVED" | "REJECTED") {
     setError("");
@@ -47,7 +67,7 @@ export function ApprovalDecisionControls({ approvalId }: { approvalId: string })
           onChange={(event) => setNote(event.target.value.slice(0, 4000))}
           maxLength={4000}
           rows={2}
-          placeholder="Record the reason or any condition for this decision."
+          placeholder={notePlaceholder[language]}
           disabled={busy}
         />
       </label>
@@ -57,7 +77,7 @@ export function ApprovalDecisionControls({ approvalId }: { approvalId: string })
           {busy ? <LocalizedText en="Saving…" nb="Lagrer…" ar="جارٍ الحفظ…" /> : <LocalizedText en="Approve bounded scope" nb="Godkjenn avgrenset omfang" ar="وافق على النطاق المحدد" />}
         </button>
         <button className="button button-small button-quiet" type="button" onClick={() => decide("REJECTED")} disabled={busy}>
-          Reject request
+          <LocalizedText en="Reject request" nb="Avslå forespørselen" ar="ارفض الطلب" />
         </button>
       </div>
     </div>

@@ -79,3 +79,20 @@ Port `3210` on `127.0.0.1` must be free (override with `ZAVQERA_E2E_BASE_URL=htt
   executable on PATH are absent, and no isolated schema/workdir is configured.
   `npm run test:e2e` therefore remains BLOCKED, not PASS. The owner-run setup above
   is the accepted W21 alternative; it does not claim a browser run occurred.
+
+
+## Transactional email invitations (Netlify Deploy Preview)
+
+Workspace invitations are only reported as accepted after the email provider accepts the message. The invitation token is never returned by the API or persisted in plaintext.
+
+To enable actual delivery in a Deploy Preview:
+
+1. Create a Resend account and verify a domain you control. Use the sender address only after Resend has verified the domain's sending DNS records.
+2. Create a server-side Resend API key restricted to sending email where the provider supports that permission. Never commit the key or paste it into chat.
+3. In Netlify, open the site's environment-variable settings and add:
+   - `RESEND_API_KEY`: the secret Resend API key.
+   - `RESEND_FROM_EMAIL`: a sender such as `ZAVQERA <invites@your-verified-domain.com>` using the verified domain.
+4. Scope these values to **Deploy Previews** while validating this PR. Do not change Production variables as part of this task.
+5. Trigger a fresh Deploy Preview. The invitation API uses Netlify's `DEPLOY_PRIME_URL` as the link origin for previews, applies an idempotency key per stored invitation, and refuses to claim an email was delivered when provider configuration is missing or a request is rejected.
+
+A successful provider API response confirms the message was accepted for sending; it does not prove it reached the recipient's inbox. Check provider event/log records for delivery, bounce, or suppression. If a network timeout makes the provider result ambiguous, the invitation stays pending so a link that may already have been emailed is not invalidated automatically.

@@ -90,3 +90,15 @@ test("notification bell is only active inside the authenticated workspace", () =
   assert.match(api, /status: 401/);
   assert.match(api, /Authentication is required\./);
 });
+
+test("Business owner metric uses persisted member data rather than a hard-coded fallback", () => {
+  assert.match(page, /members\.filter\(\(member\) => member\.role === "owner"\)\.length/);
+  assert.doesNotMatch(page, /members\.filter\(\(member\) => member\.role === "owner"\)\.length \|\| 1/);
+});
+
+test("mission cards route next-step states through the shared localization dictionary", () => {
+  const missionCard = read("components/mission-card.tsx");
+  assert.match(missionCard, /<LocalizedText en=\{next\.label\}/);
+  assert.match(missionCard, /<LocalizedText en=\{next\.detail\}/);
+  assert.match(missionCard, /actions complete/);
+});
