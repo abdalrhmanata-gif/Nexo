@@ -588,3 +588,30 @@ nav > a[aria-current="page"]:not(.button) {
   .template-share-control > .button { text-align: center; }
 }
 
+/* Invitation landing: recognizable brand, readable expiry and clear next action. */
+.invitation-page {
+  width: min(760px, calc(100% - 40px));
+  margin-inline: auto;
+}
+.invitation-page > h1 {
+  margin: 8px 0 18px;
+  color: var(--navy);
+  font-size: clamp(32px, 4vw, 46px);
+  line-height: 1.12;
+  letter-spacing: -.035em;
+}
+.invitation-card {
+  border-top: 4px solid var(--navy);
+  padding: clamp(22px, 4vw, 34px);
+}
+.invitation-card > p:first-child { line-height: 1.7; }
+.invitation-card .button { margin-top: 6px; }
+.invitation-card .form-note,
+.invitation-card .success-state,
+.invitation-card .field-error { margin-top: 18px; }
+.invitation-card .action-hint { overflow-wrap: anywhere; }
+@media (max-width: 700px) {
+  .invitation-page { width: calc(100% - 32px); padding-top: 28px; }
+  .invitation-card .button { width: 100%; text-align: center; }
+}
+
