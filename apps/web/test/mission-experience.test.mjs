@@ -384,3 +384,34 @@ test("research history is never reported as persisted when its repository writer
   assert.doesNotMatch(route, /recordResearchRun\?\./);
   assert.doesNotMatch(route, /let historyPersisted = true;/);
 });
+
+
+test("approval request control localizes its states and always clears the busy state after network failure", () => {
+  const control = read("components/approval-request-controls.tsx");
+  const dictionary = read("components/localized-text.tsx");
+
+  assert.match(control, /if \(busy\) return/);
+  assert.match(control, /if \(!response\.ok\)/);
+  assert.match(control, /catch \{/);
+  assert.match(control, /finally \{\s*setBusy\(false\)/s);
+  assert.match(control, /role="status"/);
+  assert.match(control, /role="alert"/);
+  assert.match(control, /requires_approval: true/);
+
+  const nbAr = dictionary.slice(dictionary.indexOf("const WORKSPACE_NB_AR:"));
+  const esFrDe = dictionary.slice(
+    dictionary.indexOf("const WORKSPACE_TRANSLATIONS:"),
+    dictionary.indexOf("const WORKSPACE_NB_AR:"),
+  );
+
+  for (const key of [
+    "Request approval",
+    "Requesting…",
+    "Approval requested",
+    "Approval could not be requested. Check your connection and try again.",
+  ]) {
+    assert.ok(control.includes(key), "approval control must use the localized key: " + key);
+    assert.ok(nbAr.includes('"' + key + '": { nb:'), "missing Norwegian/Arabic translations for: " + key);
+    assert.ok(esFrDe.includes('"' + key + '": { es:'), "missing Spanish/French/German translations for: " + key);
+  }
+});

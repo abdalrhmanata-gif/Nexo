@@ -29,6 +29,10 @@ const DE: Record<string, string> = Object.fromEntries(Object.entries({"Mission c
 
 const WORKSPACE_TRANSLATIONS: Record<string, Partial<Record<AppLanguage, string>>> = {
   "Business workspace": { es: "Espacio de trabajo empresarial", fr: "Espace de travail professionnel", de: "Business-Arbeitsbereich" },
+  "Approval requested": { es: "Aprobación solicitada", fr: "Approbation demandée", de: "Freigabe angefordert" },
+  "Request approval": { es: "Solicitar aprobación", fr: "Demander une approbation", de: "Freigabe anfordern" },
+  "Requesting…": { es: "Solicitando…", fr: "Demande en cours…", de: "Wird angefordert…" },
+  "Approval could not be requested. Check your connection and try again.": { es: "No se pudo solicitar la aprobación. Comprueba tu conexión e inténtalo de nuevo.", fr: "Impossible de demander l’approbation. Vérifiez votre connexion et réessayez.", de: "Freigabe konnte nicht angefordert werden. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut." },
   "Run AI work as a team": { es: "Trabaja con IA en equipo", fr: "Travaillez avec l’IA en équipe", de: "KI-Arbeit im Team erledigen" },
   "One mission engine for work, approvals, verification, and outcomes. This business workspace uses the same missions you already have.": { es: "Un motor de misiones para trabajo, aprobaciones, verificación y resultados. Este espacio utiliza las mismas misiones que ya tienes.", fr: "Un moteur de missions pour le travail, les approbations, la vérification et les résultats. Cet espace utilise les mêmes missions que vous avez déjà.", de: "Eine Missions-Engine für Arbeit, Freigaben, Verifizierung und Ergebnisse. Dieser Bereich nutzt dieselben Missionen, die Sie bereits haben." },
   "Workspace owner": { es: "Propietario del espacio", fr: "Propriétaire de l’espace", de: "Workspace-Eigentümer" },
@@ -448,6 +452,9 @@ const WORKSPACE_NB_AR: Record<string, { nb: string; ar: string }> = {
   "actions complete": { nb: "handlinger fullført", ar: "إجراءات مكتملة" },
   "Updated": { nb: "Oppdatert", ar: "تم التحديث" },
   "Approval requested": { nb: "Godkjenning forespurt", ar: "تم طلب الموافقة" },
+  "Request approval": { nb: "Be om godkjenning", ar: "طلب الموافقة" },
+  "Requesting…": { nb: "Ber om godkjenning…", ar: "جارٍ طلب الموافقة…" },
+  "Approval could not be requested. Check your connection and try again.": { nb: "Kunne ikke be om godkjenning. Kontroller tilkoblingen og prøv igjen.", ar: "تعذّر طلب الموافقة. تحقّق من الاتصال وحاول مرة أخرى." },
   "Approval decision": { nb: "Godkjenningsbeslutning", ar: "قرار الموافقة" },
   "Agent execution started": { nb: "Agentkjøring startet", ar: "بدأ تنفيذ الوكيل" },
   "Agent execution completed": { nb: "Agentkjøring fullført", ar: "اكتمل تنفيذ الوكيل" },
