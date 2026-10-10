@@ -1,7 +1,7 @@
 -- W57: exact, expiring approval binding for agent executions and retries.
 begin;
 create extension if not exists pgtap;
-select plan(25);
+select plan(29);
 
 select ok(exists (
   select 1 from information_schema.columns
@@ -49,7 +49,11 @@ declare
   v_workspace uuid := gen_random_uuid();
   v_mission uuid := gen_random_uuid();
   v_action uuid := gen_random_uuid();
+  v_action_b uuid := gen_random_uuid();
   v_agent uuid := gen_random_uuid();
+  v_agent_b uuid := gen_random_uuid();
+  v_original_mission_version bigint;
+  v_original_action_version bigint;
   v_approval public.mission_approvals;
   v_approval_b public.mission_approvals;
   v_approval_c public.mission_approvals;
@@ -83,9 +87,15 @@ begin
     jsonb_build_object('sub', v_owner, 'role', 'authenticated')::text, true);
 
   insert into public.mission_actions(id, mission_id, title, position, status)
-  values (v_action, v_mission, 'W57 controlled action', 0, 'PENDING');
+  values
+    (v_action, v_mission, 'W57 controlled action', 0, 'PENDING'),
+    (v_action_b, v_mission, 'W57 alternate action', 1, 'PENDING');
   insert into public.workspace_agents(id, workspace_id, name, description, status, authority, created_by)
-  values (v_agent, v_workspace, 'W57 test agent', 'Disposable approval binding agent', 'ACTIVE', v_authority, v_owner);
+  values
+    (v_agent, v_workspace, 'W57 test agent', 'Disposable approval binding agent', 'ACTIVE', v_authority, v_owner),
+    (v_agent_b, v_workspace, 'W57 alternate agent', 'Disposable wrong-agent binding test', 'ACTIVE', v_authority, v_owner);
+  select version into v_original_mission_version from public.missions where id = v_mission;
+  select version into v_original_action_version from public.mission_actions where id = v_action;
 
   v_request := jsonb_build_object(
     'destination', 'https://example.invalid/action',
@@ -103,6 +113,30 @@ begin
   select * into v_approval from public.decide_mission_approval(v_approval.id, 'APPROVED', null);
   if (v_approval.requested_scope ->> 'expires_at')::timestamptz is distinct from v_approval.expires_at then
     raise exception 'TEST_FAILED: the canonical approval scope did not bind the stored expiry';
+  end if;
+
+  v_caught := false;
+  begin
+    perform public.start_agent_execution(
+      v_mission, v_action, v_agent_b, 'w57-wrong-agent-key-0001', v_request
+    );
+  exception when sqlstate '42501' then
+    if sqlerrm = 'APPROVAL_REQUIRED' then v_caught := true; else raise; end if;
+  end;
+  if not v_caught then
+    raise exception 'TEST_FAILED: an approval for one agent authorized another agent';
+  end if;
+
+  v_caught := false;
+  begin
+    perform public.start_agent_execution(
+      v_mission, v_action_b, v_agent, 'w57-wrong-action-key-0001', v_request
+    );
+  exception when sqlstate '42501' then
+    if sqlerrm = 'APPROVAL_REQUIRED' then v_caught := true; else raise; end if;
+  end;
+  if not v_caught then
+    raise exception 'TEST_FAILED: an approval for one action authorized a different action';
   end if;
 
   v_changed_request := v_request || jsonb_build_object('payload', jsonb_build_object('quantity', 2, 'note', 'changed value'));
@@ -161,6 +195,30 @@ begin
   -- revision/content and prove the old approval no longer matches.
   select * into v_approval_b from public.request_mission_approval(v_mission, v_action, v_scope);
   select * into v_approval_b from public.decide_mission_approval(v_approval_b.id, 'APPROVED', null);
+
+  update public.missions set version = version + 1 where id = v_mission;
+  v_caught := false;
+  begin
+    perform public.start_agent_execution(v_mission, v_action, v_agent, 'w57-stale-mission-version', v_request);
+  exception when sqlstate '42501' then
+    if sqlerrm = 'APPROVAL_REQUIRED' then v_caught := true; else raise; end if;
+  end;
+  if not v_caught then
+    raise exception 'TEST_FAILED: a stale mission-version approval authorized execution';
+  end if;
+  update public.missions set version = v_original_mission_version where id = v_mission;
+
+  update public.mission_actions set version = version + 1 where id = v_action;
+  v_caught := false;
+  begin
+    perform public.start_agent_execution(v_mission, v_action, v_agent, 'w57-stale-action-version', v_request);
+  exception when sqlstate '42501' then
+    if sqlerrm = 'APPROVAL_REQUIRED' then v_caught := true; else raise; end if;
+  end;
+  if not v_caught then
+    raise exception 'TEST_FAILED: a stale action-version approval authorized execution';
+  end if;
+  update public.mission_actions set version = v_original_action_version where id = v_action;
 
   update public.mission_approvals
      set expires_at = expires_at + interval '1 hour'
@@ -285,6 +343,10 @@ select pass('retry idempotency replay cannot return an existing row as dispatch 
 select pass('deleting an execution does not resurrect its one-time approval');
 select pass('the exact approval scope binds and cross-checks its stored expiry');
 select pass('changing only the expiry column cannot extend an exact approval');
+select pass('an approval cannot be reused for another agent');
+select pass('an approval cannot be reused for another action');
+select pass('a mission-version change invalidates an older approval');
+select pass('an action-version change invalidates an older approval');
 
 select * from finish();
 rollback;
