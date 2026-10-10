@@ -107,15 +107,15 @@ test("Mission research UI copy is localized in every supported workspace languag
     "Unverified",
   ];
   for (const key of uiKeys) {
-    assert.ok(panel.includes(key), \`research panel is missing localized UI text: \${key}\`);
-    const line = dictionary.split("\\n").find((entry) => entry.startsWith(\`  "\${key}":\`));
-    assert.ok(line, \`missing localization dictionary entry for: \${key}\`);
+    assert.ok(panel.includes(key), "research panel is missing localized UI text: " + key);
+    const line = dictionary.split("\n").find((entry) => entry.startsWith('  "' + key + '":'));
+    assert.ok(line, "missing localization dictionary entry for: " + key);
     for (const language of ["nb", "ar", "es", "fr", "de"]) {
-      assert.match(line, new RegExp(\`\${language}:\\\\s*"[^"]+"\`), \`missing \${language} translation for: \${key}\`);
+      assert.ok(line.includes(language + ': "'), "missing " + language + " translation for: " + key);
     }
   }
-  assert.match(panel, /<LocalizedText en=\\{error\\} \\/>/);
-  assert.match(panel, /toLocaleString\\(\\)/);
+  assert.ok(panel.includes("<LocalizedText en={error} />"));
+  assert.ok(panel.includes("toLocaleString()"));
 });
 
 test("mission research is clearly treated as unverified execution", () => {
