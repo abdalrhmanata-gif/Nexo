@@ -229,6 +229,8 @@ const WORKSPACE_TRANSLATIONS: Record<string, Partial<Record<AppLanguage, string>
   "No follow-up tasks are overdue or due within the next 7 days.": { nb: "Ingen oppfølgingsoppgaver er forfalt eller forfaller i løpet av de neste 7 dagene.", ar: "لا توجد مهام متابعة متأخرة أو مستحقة خلال الأيام السبعة القادمة.", es: "No hay tareas de seguimiento vencidas ni que venzan en los próximos 7 días.", fr: "Aucune tâche de suivi n’est en retard ou à échéance dans les 7 prochains jours.", de: "Keine Nachverfolgungsaufgaben sind überfällig oder innerhalb der nächsten 7 Tage fällig." },
   "Mission approval": { nb: "Oppdragsgodkjenning", ar: "موافقة على المهمة", es: "Aprobación de misión", fr: "Approbation de mission", de: "Missionsfreigabe" },
 
+  "Boundaries and permissions": { es: "Límites y permisos", fr: "Limites et autorisations", de: "Grenzen und Berechtigungen" },
+
 };
 for (const [key, translations] of Object.entries(WORKSPACE_TRANSLATIONS)) {
   if (translations.nb) NB[key] = translations.nb;
