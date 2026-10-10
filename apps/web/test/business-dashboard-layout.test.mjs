@@ -136,3 +136,21 @@ test("Business, Templates, and dynamic workspace states have Norwegian and Arabi
     assert.match(dictionary, new RegExp(`"${escaped}": \\{ nb: "[^"]+", ar: "[^"]+"`), `missing nb/ar translation for: ${englishKey}`);
   }
 });
+
+
+test("Business and Templates navigation are intentionally prominent", () => {
+  const shell = read("components/shell.tsx");
+  assert.match(shell, /className="nav-featured nav-business" href="\/app\/business"/);
+  assert.match(shell, /className="nav-featured nav-templates" href="\/templates"/);
+  assert.match(css, /\.topbar > nav > \.nav-business/);
+  assert.match(css, /\.topbar > nav > \.nav-templates/);
+  assert.match(css, /@media \(max-width:700px\)[\s\S]*?\.hero-actions \.button \{ width:100%/);
+});
+
+test("landing copy emphasizes bounded delegation and makes templates a primary discovery path", () => {
+  const home = read("app/page.tsx");
+  assert.match(home, /Give AI a mission\. Keep control of the outcome\./);
+  assert.match(home, /delegate to AI without handing over the keys/);
+  assert.match(home, /Explore mission templates/);
+  assert.match(home, /Skip the blank page\. Start with a proven pattern\./);
+});
