@@ -12,7 +12,7 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
   const [intent, setIntent] = useState("");
   const [criteria, setCriteria] = useState("");
   const [actions, setActions] = useState("");
-  const [language, setLanguage] = useState("en");
+  const [language, setLanguage] = useState<"en" | "nb" | "ar" | "es" | "fr" | "de">("en");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [usage, setUsage] = useState<{remaining:number; monthly_limit:number} | null>(null);
@@ -26,7 +26,7 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
       try { saved = window.localStorage.getItem("zavqera-language"); } catch { /* storage may be blocked */ }
       const cookie = document.cookie.split("; ").find((part) => part.startsWith("zavqera-language="))?.split("=")[1];
       const candidate = saved || cookie || navigator.language.toLowerCase().split("-")[0];
-      setLanguage(candidate === "ar" || candidate === "nb" ? candidate : "en");
+      setLanguage(["en", "ar", "nb", "es", "fr", "de"].includes(candidate) ? candidate as "en" | "nb" | "ar" | "es" | "fr" | "de" : "en");
     };
     syncLanguage();
     try {
@@ -48,7 +48,7 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
     } catch {}
     const onLanguageChange = (event: Event) => {
       const value = (event as CustomEvent<string>).detail;
-      setLanguage(value === "ar" || value === "nb" ? value : "en");
+      setLanguage(["en", "ar", "nb", "es", "fr", "de"].includes(value) ? value as "en" | "nb" | "ar" | "es" | "fr" | "de" : "en");
     };
     window.addEventListener("zavqera-language-change", onLanguageChange);
     void fetch("/api/ai/usage", { cache: "no-store" })
@@ -83,16 +83,73 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
     } finally { setLoading(false); }
   }
 
-  const placeholder = language === "ar" ? "مثال: أريد إطلاق متجر إلكتروني صغير خلال ستة أسابيع" : language === "nb" ? "Eksempel: lanser en liten nettbutikk innen seks uker" : "Example: launch a small online shop in six weeks";
-  const namePlaceholder = language === "ar" ? "مثال: إطلاق متجري الإلكتروني" : language === "nb" ? "For eksempel: Lanser nettbutikken min" : "e.g. Launch my online shop";
-  const intentPlaceholder = language === "ar" ? "ما النتيجة التي تريد الوصول إليها؟" : language === "nb" ? "Hva ønsker du å oppnå med oppdraget?" : "What should this mission help you accomplish?";
-  const criteriaPlaceholder = language === "ar" ? "اكتب معيارًا واحدًا في كل سطر" : language === "nb" ? "Ett kriterium per linje" : "One criterion per line";
-  const actionsPlaceholder = language === "ar" ? "اكتب خطوة واحدة في كل سطر" : language === "nb" ? "Ett steg per linje" : "One step per line";
-  const examples = language === "ar"
-    ? ["أريد إطلاق متجر إلكتروني صغير خلال ستة أسابيع", "أريد تجهيز طلب تأشيرة السفر", "أريد تنظيم مشروع جانبي مع عملي"]
-    : language === "nb"
-      ? ["Jeg vil lansere en liten nettbutikk innen seks uker", "Jeg vil gjøre en visumsøknad klar", "Jeg vil organisere et sideprosjekt ved siden av jobben"]
-      : ["Launch a small online shop in six weeks", "Get my visa application ready", "Organize a side project alongside my job"];
+  const copy = {
+    en: {
+      goalPlaceholder: "Example: launch a small online shop in six weeks",
+      namePlaceholder: "e.g. Launch my online shop",
+      intentPlaceholder: "What should this mission help you accomplish?",
+      criteriaPlaceholder: "One criterion per line",
+      actionsPlaceholder: "One step per line",
+      boundariesPlaceholder: "Example: Public research only; budget under €500; do not send messages, make purchases, or change accounts.",
+      boundariesHelp: "Set budget or deadline limits, allowed sources, and actions that must stay off-limits. These boundaries are included in the mission.",
+      examples: ["Launch a small online shop in six weeks", "Get my visa application ready", "Organize a side project alongside my job"],
+    },
+    nb: {
+      goalPlaceholder: "Eksempel: lanser en liten nettbutikk innen seks uker",
+      namePlaceholder: "For eksempel: Lanser nettbutikken min",
+      intentPlaceholder: "Hva skal oppdraget hjelpe deg med å oppnå?",
+      criteriaPlaceholder: "Ett kriterium per linje",
+      actionsPlaceholder: "Ett steg per linje",
+      boundariesPlaceholder: "Eksempel: Bare offentlig research; budsjett under €500; ikke send meldinger eller kjøp noe.",
+      boundariesHelp: "Angi budsjett- eller tidsgrenser, tillatte kilder og handlinger som ikke er tillatt. Grensene lagres med oppdraget.",
+      examples: ["Jeg vil lansere en liten nettbutikk innen seks uker", "Jeg vil gjøre en visumsøknad klar", "Jeg vil organisere et sideprosjekt ved siden av jobben"],
+    },
+    ar: {
+      goalPlaceholder: "مثال: أريد إطلاق متجر إلكتروني صغير خلال ستة أسابيع",
+      namePlaceholder: "مثال: إطلاق متجري الإلكتروني",
+      intentPlaceholder: "ما الذي تريد أن تساعدك هذه المهمة على تحقيقه؟",
+      criteriaPlaceholder: "اكتب معيارًا واحدًا في كل سطر",
+      actionsPlaceholder: "اكتب خطوة واحدة في كل سطر",
+      boundariesPlaceholder: "مثال: البحث في المصادر العامة فقط؛ الميزانية أقل من 500 يورو؛ لا ترسل رسائل ولا تشترِ شيئًا ولا تغيّر الحسابات.",
+      boundariesHelp: "حدّد الميزانية أو الموعد النهائي والمصادر المسموحة والإجراءات الممنوعة. ستُحفظ هذه الحدود مع المهمة.",
+      examples: ["أريد إطلاق متجر إلكتروني صغير خلال ستة أسابيع", "أريد تجهيز طلب تأشيرة السفر", "أريد تنظيم مشروع جانبي مع عملي"],
+    },
+    es: {
+      goalPlaceholder: "Ejemplo: lanzar una pequeña tienda en línea en seis semanas",
+      namePlaceholder: "p. ej., lanzar mi tienda en línea",
+      intentPlaceholder: "¿Qué debería ayudarte a lograr esta misión?",
+      criteriaPlaceholder: "Un criterio por línea",
+      actionsPlaceholder: "Un paso por línea",
+      boundariesPlaceholder: "Ejemplo: solo investigación pública; presupuesto inferior a 500 €; no enviar mensajes ni comprar ni cambiar cuentas.",
+      boundariesHelp: "Indica límites de presupuesto o plazo, fuentes permitidas y acciones prohibidas. Estos límites se guardarán con la misión.",
+      examples: ["Lanzar una pequeña tienda en línea en seis semanas", "Preparar mi solicitud de visado", "Organizar un proyecto paralelo al trabajo"],
+    },
+    fr: {
+      goalPlaceholder: "Exemple : lancer une petite boutique en ligne en six semaines",
+      namePlaceholder: "Ex. : lancer ma boutique en ligne",
+      intentPlaceholder: "Quel résultat cette mission doit-elle vous aider à atteindre ?",
+      criteriaPlaceholder: "Un critère par ligne",
+      actionsPlaceholder: "Une étape par ligne",
+      boundariesPlaceholder: "Exemple : recherche publique uniquement ; budget inférieur à 500 € ; aucun message, achat ou changement de compte.",
+      boundariesHelp: "Précisez les limites de budget ou de délai, les sources autorisées et les actions interdites. Ces limites seront enregistrées avec la mission.",
+      examples: ["Lancer une petite boutique en ligne en six semaines", "Préparer ma demande de visa", "Organiser un projet parallèle à mon travail"],
+    },
+    de: {
+      goalPlaceholder: "Beispiel: einen kleinen Onlineshop in sechs Wochen starten",
+      namePlaceholder: "z. B. meinen Onlineshop starten",
+      intentPlaceholder: "Welches Ergebnis soll diese Mission Ihnen ermöglichen?",
+      criteriaPlaceholder: "Ein Kriterium pro Zeile",
+      actionsPlaceholder: "Ein Schritt pro Zeile",
+      boundariesPlaceholder: "Beispiel: nur öffentliche Recherche; Budget unter 500 €; keine Nachrichten senden, Käufe tätigen oder Konten ändern.",
+      boundariesHelp: "Legen Sie Budget- oder Fristgrenzen, erlaubte Quellen und verbotene Aktionen fest. Diese Grenzen werden mit der Mission gespeichert.",
+      examples: ["Einen kleinen Onlineshop in sechs Wochen starten", "Meinen Visumantrag vorbereiten", "Ein Nebenprojekt zusätzlich zur Arbeit organisieren"],
+    },
+  }[language];
+  const placeholder = copy.goalPlaceholder;
+  const namePlaceholder = copy.namePlaceholder;
+  const intentPlaceholder = copy.intentPlaceholder;
+  const criteriaPlaceholder = copy.criteriaPlaceholder;
+  const actionsPlaceholder = copy.actionsPlaceholder;
   const handleExampleClick = (value: string) => {
     setGoal(value);
     setError("");
@@ -109,13 +166,13 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
         <small id="ai-goal-help"><LocalizedText en="Mention deadlines, budget limits, allowed research, and actions that must not happen. Nothing is executed automatically." nb="Nevn tidsfrister, budsjettgrenser, tillatt research og handlinger som ikke må skje. Ingenting utføres automatisk." ar="اذكر المواعيد والميزانية والبحث المسموح والإجراءات الممنوعة. لن يتم تنفيذ أي شيء تلقائيًا." /></small>
         <div className="goal-examples" aria-label="Example goals">
           <span><LocalizedText en="Try an example" nb="Prøv et eksempel" ar="جرّب مثالًا" /></span>
-          {examples.map((example) => <button key={example} type="button" className="example-chip" onClick={() => handleExampleClick(example)}>{example}</button>)}
+          {copy.examples.map((example) => <button key={example} type="button" className="example-chip" onClick={() => handleExampleClick(example)}>{example}</button>)}
         </div>
       </div>
       <div className="field">
         <label htmlFor="ai-boundaries"><LocalizedText en="Boundaries and permissions" nb="Grenser og fullmakter" ar="الحدود والصلاحيات" /> <span className="field-optional"><LocalizedText en="optional" /></span></label>
-        <textarea id="ai-boundaries" name="boundaries" value={boundaries} onChange={(event) => { setBoundaries(event.target.value); setError(""); }} maxLength={1000} placeholder={language === "ar" ? "مثال: البحث في المصادر العامة فقط؛ الميزانية أقل من 500 يورو؛ لا ترسل رسائل ولا تشترِ شيئًا." : language === "nb" ? "Eksempel: Bare offentlig research; budsjett under €500; ikke send meldinger eller kjøp noe." : "Example: Public research only; budget under €500; do not send messages, make purchases, or change accounts."} aria-describedby="ai-boundaries-help" />
-        <small id="ai-boundaries-help"><LocalizedText en="Set budget or deadline limits, allowed sources, and actions that must stay off-limits. These boundaries are included in the mission." nb="Angi budsjett- eller tidsgrenser, tillatte kilder og handlinger som ikke er tillatt. Grensene lagres med oppdraget." ar="حدّد الميزانية أو الموعد النهائي والمصادر المسموحة والإجراءات الممنوعة. ستُحفظ هذه الحدود مع المهمة." /></small>
+        <textarea id="ai-boundaries" name="boundaries" value={boundaries} onChange={(event) => { setBoundaries(event.target.value); setError(""); }} maxLength={1000} placeholder={copy.boundariesPlaceholder} aria-describedby="ai-boundaries-help" />
+        <small id="ai-boundaries-help">{copy.boundariesHelp}</small>
       </div>
       <button className="button" type="button" disabled={loading || !goal.trim()} onClick={draftWithAi}>
         {loading ? <LocalizedText en="Building your plan…" nb="Bygger planen din…" ar="جارٍ بناء خطتك…" /> : <LocalizedText en="Draft my mission" nb="Lag et oppdragsutkast" ar="أنشئ مسودة مهمتي" />}
