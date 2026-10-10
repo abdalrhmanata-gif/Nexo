@@ -423,8 +423,10 @@ begin
     if v_existing.retry_of_execution_id = v_execution.id
        and v_existing.mission_id = v_execution.mission_id
        and v_existing.agent_id = v_execution.agent_id
-       and v_existing.action_id is not distinct from v_execution.action_id then
-      return v_existing;
+       and v_existing.action_id is not distinct from v_execution.action_id
+       and v_existing.request is not distinct from v_execution.request then
+      -- A repeated retry key is not permission to dispatch the same attempt again.
+      raise exception 'EXECUTION_ALREADY_EXISTS' using errcode = '22023';
     end if;
     raise exception 'EXECUTION_IDEMPOTENCY_BINDING_MISMATCH' using errcode = '22023';
   end if;
