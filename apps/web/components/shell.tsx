@@ -12,8 +12,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
       <nav aria-label="Primary navigation">
         <Link className="button button-small button-quiet nav-search" href="/app#mission-search"><span aria-hidden="true">⌕</span><LocalizedText en="Search" nb="Søk" ar="بحث" /></Link>
         <Link className="button button-small" href="/app/missions/new"><LocalizedText en="New mission" /></Link>
-        <NavLink href="/app/business"><LocalizedText en="Business" nb="Bedrift" ar="الأعمال" /></NavLink>
-        <NavLink href="/templates"><LocalizedText en="Templates" nb="Maler" ar="القوالب" /></NavLink>
+        <NavLink className="nav-featured nav-business" href="/app/business"><LocalizedText en="Business" nb="Bedrift" ar="الأعمال" /></NavLink>
+        <NavLink className="nav-featured nav-templates" href="/templates"><LocalizedText en="Templates" nb="Maler" ar="القوالب" /></NavLink>
         <NavLink href="/pricing"><LocalizedText en="Pricing" /></NavLink>
         <WorkspaceNavLink />
         <NotificationBell />
