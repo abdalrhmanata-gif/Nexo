@@ -627,3 +627,10 @@ nav > a[aria-current="page"]:not(.button) {
 .hero-actions .button { min-height:46px; }
 .hero-free { margin-top:18px; font-size:14px !important; }
 @media (max-width:700px) { .topbar > nav > .nav-featured { width:100%; min-height:44px; }.hero-actions { align-items:stretch; flex-direction:column; }.hero-actions .button { width:100%; text-align:center; } }
+
+
+/* Notifications should read as a persistent workspace control, not a hidden utility. */
+.notification-bell { border-color:#b9ddd8; background:#edf7f5; color:var(--navy); }
+.notification-bell svg { flex:none; color:var(--teal); }
+.notification-bell:hover,.notification-bell:focus-visible { border-color:var(--teal); background:#dff1ee; color:var(--navy); }
+.notification-count { box-shadow:0 0 0 2px #edf7f5; }
