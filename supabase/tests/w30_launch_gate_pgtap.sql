@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap;
 
-select plan(36);
+select plan(37);
 
 select ok(to_regclass('public.missions') is not null, 'missions exists');
 select ok(to_regclass('public.mission_actions') is not null, 'mission_actions exists');
