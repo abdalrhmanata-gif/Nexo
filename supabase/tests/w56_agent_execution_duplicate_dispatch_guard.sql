@@ -2,7 +2,7 @@
 -- This is a schema/function-definition test, not proof of provider-side reconciliation.
 begin;
 create extension if not exists pgtap;
-select plan(14);
+select plan(15);
 
 select ok(to_regclass('public.agent_executions') is not null,
   'agent execution ledger exists');
@@ -108,7 +108,7 @@ begin
   begin
     perform public.start_agent_execution(
       v_mission, null, v_agent_a, 'w56-duplicate-dispatch-key-0001',
-      '{"purpose":"same attempt replay"}'::jsonb
+      '{"purpose":"first attempt"}'::jsonb
     );
   exception when sqlstate '22023' then
     if sqlerrm = 'EXECUTION_ALREADY_EXISTS' then
@@ -142,6 +142,24 @@ begin
   v_caught := false;
   begin
     perform public.start_agent_execution(
+      v_mission, null, v_agent_a, 'w56-duplicate-dispatch-key-0001',
+      '{"purpose":"changed input under same key"}'::jsonb
+    );
+  exception when sqlstate '22023' then
+    if sqlerrm = 'EXECUTION_IDEMPOTENCY_BINDING_MISMATCH' then
+      v_caught := true;
+    else
+      raise;
+    end if;
+  end;
+
+  if not v_caught then
+    raise exception 'TEST_FAILED: idempotency key was not rejected when request contents changed';
+  end if;
+
+  v_caught := false;
+  begin
+    perform public.start_agent_execution(
       v_mission, null, v_agent_b, 'w56-duplicate-dispatch-key-0001',
       '{"purpose":"attempt to rebind key to another agent"}'::jsonb
     );
@@ -168,6 +186,7 @@ end;
 $behavior$;
 
 select pass('exact duplicate execution key is rejected without creating another row or start event');
+select pass('an idempotency key cannot be rebound to different request content');
 select pass('an idempotency key cannot be rebound to a different agent');
 
 select * from finish();

@@ -1,7 +1,7 @@
 -- W57: exact, expiring approval binding for agent executions and retries.
 begin;
 create extension if not exists pgtap;
-select plan(24);
+select plan(25);
 
 select ok(exists (
   select 1 from information_schema.columns
@@ -153,6 +153,23 @@ begin
   -- revision/content and prove the old approval no longer matches.
   select * into v_approval_b from public.request_mission_approval(v_mission, v_action, v_scope);
   select * into v_approval_b from public.decide_mission_approval(v_approval_b.id, 'APPROVED', null);
+
+  update public.mission_approvals
+     set expires_at = expires_at + interval '1 hour'
+   where id = v_approval_b.id;
+  v_caught := false;
+  begin
+    perform public.start_agent_execution(v_mission, v_action, v_agent, 'w57-expiry-diverge-key-01', v_request);
+  exception when sqlstate '42501' then
+    if sqlerrm = 'APPROVAL_REQUIRED' then v_caught := true; else raise; end if;
+  end;
+  if not v_caught then
+    raise exception 'TEST_FAILED: changing only the approval expiry column extended the binding';
+  end if;
+  update public.mission_approvals
+     set expires_at = (requested_scope ->> 'expires_at')::timestamptz
+   where id = v_approval_b.id;
+
   update public.workspace_agents set authority = v_authority || '{"budget":"changed"}'::jsonb where id = v_agent;
   v_caught := false;
   begin
@@ -259,6 +276,7 @@ select pass('a cancelled scoped approval cannot authorize execution');
 select pass('retry idempotency replay cannot return an existing row as dispatch permission');
 select pass('deleting an execution does not resurrect its one-time approval');
 select pass('the exact approval scope binds and cross-checks its stored expiry');
+select pass('changing only the expiry column cannot extend an exact approval');
 
 select * from finish();
 rollback;
