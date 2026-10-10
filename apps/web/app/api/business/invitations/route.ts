@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import crypto from "node:crypto";
 import { createSupabaseMissionRepository } from "../../../../lib/supabase/mission-repository";
 import { isSupabaseConfigured } from "../../../../lib/supabase/config";
+import { resolveInvitationConfiguredUrl } from "../../../../lib/invitation-origin.mjs";
 
 const ROLES = ["admin", "member", "viewer"] as const;
 type InvitationRole = (typeof ROLES)[number];
@@ -23,15 +24,17 @@ function getTrustedSiteOrigin(request: NextRequest) {
     || process.env.PULL_REQUEST?.trim().toLowerCase() === "true";
   const deployOrigin = process.env.DEPLOY_PRIME_URL?.trim();
   const explicitOrigin = process.env.ZAVQERA_INVITATION_BASE_URL?.trim();
-
-  // Never let a deploy preview generate invitation links to the production URL.
-  // Netlify provides DEPLOY_PRIME_URL for Deploy Previews; the explicit override
-  // exists for other preview providers and must be configured per preview.
-  const configured = isDeployPreview
-    ? deployOrigin || explicitOrigin
-    : deployOrigin || explicitOrigin || process.env.URL?.trim() || process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  const configured = resolveInvitationConfiguredUrl({
+    context,
+    pullRequest: process.env.PULL_REQUEST,
+    deployPrimeUrl: deployOrigin,
+    explicitOrigin,
+    siteUrl: process.env.URL,
+    publicSiteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+  });
 
   if (!configured) {
+    if (isDeployPreview) throw new Error("PREVIEW_ORIGIN_NOT_CONFIGURED");
     if (process.env.NODE_ENV === "production") throw new Error("SITE_URL_NOT_CONFIGURED");
     return request.nextUrl.origin;
   }
@@ -42,9 +45,6 @@ function getTrustedSiteOrigin(request: NextRequest) {
   }
   if (parsed.protocol !== "https:" && !(process.env.NODE_ENV !== "production" && parsed.protocol === "http:")) {
     throw new Error("SITE_URL_MUST_USE_HTTPS");
-  }
-  if (isDeployPreview && !deployOrigin && !explicitOrigin) {
-    throw new Error("PREVIEW_ORIGIN_NOT_CONFIGURED");
   }
   return parsed.origin;
 }
