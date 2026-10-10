@@ -289,7 +289,7 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
       await pageA.goto("/app/missions/new");
       const languageSelect = pageA.locator(".language-switcher select");
       await languageSelect.selectOption("ar");
-      await expect(pageA.getByRole("heading", { name: "أخبر ZAVQERA بما تريد." })).toBeVisible();
+      await expect(pageA.getByRole("heading", { name: "صف النتيجة التي تريد تحقيقها." })).toBeVisible();
       await expect(pageA.locator("#ai-goal")).toHaveAttribute("placeholder", "مثال: أريد إطلاق متجر إلكتروني صغير خلال ستة أسابيع");
       await languageSelect.selectOption("en");
       await expect(pageA.locator("#ai-goal")).toHaveAttribute("placeholder", "Example: launch a small online shop in six weeks");
