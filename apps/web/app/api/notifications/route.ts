@@ -32,7 +32,10 @@ export async function GET() {
       })),
     ].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 20);
     return NextResponse.json({ count: waiting.length + approvals.length, items }, { headers: { "Cache-Control": "no-store" } });
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.message === "Authentication required.") {
+      return NextResponse.json({ error: "Authentication is required." }, { status: 401, headers: { "Cache-Control": "no-store" } });
+    }
     return NextResponse.json({ error: "Notifications are temporarily unavailable." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   }
 }
