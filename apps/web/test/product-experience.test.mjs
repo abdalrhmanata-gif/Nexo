@@ -296,14 +296,17 @@ test("homepage presents the final launch pricing tiers and quotas", () => {
   assert.ok(page.includes("Billing is not enabled yet"));
 });
 
-test("homepage communicates the one-goal-first product loop", () => {
+test("homepage communicates bounded delegation and the one-goal-first product loop", () => {
   const page = read("app/page.tsx");
   assert.match(page, /From thought to mission/);
-  assert.match(page, /You describe the outcome\. ZAVQERA prepares the mission\./);
+  assert.match(page, /Describe the result\. Get a mission you can actually use\./);
+  assert.match(page, /Give AI a mission\. Keep control of the outcome\./);
   assert.match(page, /A clear mission and intent/);
   assert.match(page, /Success criteria/);
   assert.match(page, /Practical first steps/);
   assert.match(page, /Clear boundaries before execution/);
+  assert.match(page, /Explore mission templates/);
+  assert.match(page, /Skip the blank page\. Start with a proven pattern\./);
 });
 
 test("AI mission entry removes the blank-page moment with starter goals", () => {
