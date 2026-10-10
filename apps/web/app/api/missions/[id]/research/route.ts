@@ -108,17 +108,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const completion = await supabase.rpc("complete_agent_execution", { p_execution_id: executionId, p_status: "SUCCEEDED", p_result: { summary: research.summary, source_count: research.sources.length }, p_evidence: { verified: false, sources: research.sources } });
     if (completion.error) return NextResponse.json({ error: "Research completed but execution evidence could not be recorded." }, { status: 503 });
 
-    let historyPersisted = true;
-    try {
-      await repository.recordResearchRun?.({
-        missionId: mission.id,
-        runId,
-        requestId,
-        summary: research.summary,
-        sources: research.sources,
-      });
-    } catch {
-      historyPersisted = false;
+    let historyPersisted = false;
+    if (repository.recordResearchRun) {
+      try {
+        await repository.recordResearchRun({
+          missionId: mission.id,
+          runId,
+          requestId,
+          summary: research.summary,
+          sources: research.sources,
+        });
+        historyPersisted = true;
+      } catch {
+        historyPersisted = false;
+      }
     }
 
     return NextResponse.json(
