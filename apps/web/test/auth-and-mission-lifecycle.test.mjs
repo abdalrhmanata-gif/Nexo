@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
-import { DEFAULT_POST_AUTH_PATH, authErrorPath, resolveAuthCallbackOrigin, resolveRequestOrigin, safeNextPath } from "../lib/auth/redirect.mjs";
+import { DEFAULT_POST_AUTH_PATH, authErrorPath, getAuthCallbackConfiguredSiteUrl, resolveAuthCallbackOrigin, resolveRequestOrigin, safeNextPath } from "../lib/auth/redirect.mjs";
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const source = (path) => readFile(join(webRoot, path), "utf8");
@@ -84,12 +84,47 @@ test("confirmation redirects stay on the host the browser is actually using", ()
   );
 });
 
-test("confirmation endpoints redirect through the resolved request origin", async () => {
+test("confirmation endpoints select a deployment-aware configured origin before resolving redirects", async () => {
   for (const file of ["app/auth/callback/route.ts", "app/auth/confirm/route.ts"]) {
     const text = await source(file);
-    assert.match(text, /const origin = resolveAuthCallbackOrigin\(process\.env\.NEXT_PUBLIC_SITE_URL, request\.headers, request\.url\)/);
+    assert.match(text, /getAuthCallbackConfiguredSiteUrl\(/);
+    assert.match(text, /deployPrimeUrl: process\.env\.DEPLOY_PRIME_URL/);
+    assert.match(text, /publicSiteUrl: process\.env\.NEXT_PUBLIC_SITE_URL/);
+    assert.match(text, /resolveAuthCallbackOrigin\(configuredSiteUrl, request\.headers, request\.url\)/);
     assert.doesNotMatch(text, /NextResponse\.redirect\(new URL\([^)]*request\.url\)\)/);
   }
+});
+
+test("Netlify Deploy Preview auth callbacks prefer the preview permalink over a production URL", () => {
+  assert.equal(getAuthCallbackConfiguredSiteUrl({
+    context: "deploy-preview",
+    deployPrimeUrl: "https://deploy-preview-29--unique-kringle-3ce321.netlify.app",
+    publicSiteUrl: "https://zavqera.example",
+  }), "https://deploy-preview-29--unique-kringle-3ce321.netlify.app");
+
+  assert.equal(getAuthCallbackConfiguredSiteUrl({
+    pullRequest: "true",
+    deployPrimeUrl: "https://pr-42--unique-kringle-3ce321.netlify.app",
+    publicSiteUrl: "https://zavqera.example",
+  }), "https://pr-42--unique-kringle-3ce321.netlify.app");
+
+  assert.equal(getAuthCallbackConfiguredSiteUrl({
+    context: "production",
+    deployPrimeUrl: "https://deploy-preview-29--unique-kringle-3ce321.netlify.app",
+    publicSiteUrl: "https://zavqera.example",
+  }), "https://zavqera.example");
+
+  assert.equal(getAuthCallbackConfiguredSiteUrl({
+    context: "deploy-preview",
+    deployPrimeUrl: "",
+    publicSiteUrl: "https://zavqera.example",
+  }), "");
+});
+
+test("password reset links use the origin that initiated the recovery flow", async () => {
+  const form = await source("components/auth-form.tsx");
+  assert.match(form, /const redirectTo = `\$\{window\.location\.origin\}\/auth\/callback\?next=/);
+  assert.doesNotMatch(form, /const siteUrl = process\.env\.NEXT_PUBLIC_SITE_URL/);
 });
 
 test("workspace mission cards expose an explicit route into the mission detail page", async () => {
