@@ -50,7 +50,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     const requestId = normaliseRequestId(request);
     const agents = await repository.listWorkspaceAgents?.() ?? [];
-    const researchAgent = agents.find((agent) => agent.status === "ACTIVE" && agent.name === "ZAVQERA Research Agent");
+    const researchAgent = agents.find((agent) =>
+      agent.status === "ACTIVE"
+      && agent.name === "ZAVQERA Research Agent"
+      && agent.authority?.mode === "read_only"
+      && agent.authority?.external_side_effects === false
+    );
     if (!researchAgent) {
       return NextResponse.json({ error: "No active research agent is available for this workspace." }, { status: 503 });
     }
