@@ -26,7 +26,7 @@ export default function BusinessInvitePage() {
         setError(data.error || "The invitation email could not be sent.");
         return;
       }
-      setStatus("Invitation email sent. Your teammate can use the secure link in their inbox; it expires after 7 days.");
+      setStatus("sent");
       setEmail("");
     } catch {
       setError("The invitation could not be sent. Check your connection and try again.");
@@ -54,8 +54,8 @@ export default function BusinessInvitePage() {
         <small><LocalizedText en="Grant only the access needed. Admins can manage workspace access." nb="Gi bare nødvendig tilgang. Administratorer kan administrere tilgangen til arbeidsområdet." ar="امنح الصلاحيات الضرورية فقط. يستطيع المسؤولون إدارة الوصول إلى مساحة العمل." /></small>
       </div>
       <button className="button" type="submit" disabled={loading}>{loading ? <LocalizedText en="Sending invitation…" nb="Sender invitasjon…" ar="جارٍ إرسال الدعوة…" /> : <LocalizedText en="Send email invitation" nb="Send e-postinvitasjon" ar="أرسل الدعوة بالبريد" />}</button>
-      {status && <div className="success-state" role="status">{status}</div>}
-      {error && <div className="field-error" role="alert">{error}</div>}
+      {status === "sent" && <div className="success-state" role="status"><LocalizedText en="Invitation email sent. Your teammate can use the secure link in their inbox; it expires after 7 days." nb="E-postinvitasjonen er sendt. Kollegan din finner den sikre lenken i innboksen. Den utløper etter 7 dager." ar="تم إرسال الدعوة بالبريد الإلكتروني. سيجد زميلك الرابط الآمن في بريده، وتنتهي صلاحيته بعد 7 أيام." /></div>}
+      {error && <div className="field-error" role="alert"><LocalizedText en={error} /></div>}
     </form>
     <p className="action-hint"><Link href="/app/business"><LocalizedText en="Back to Business workspace" nb="Tilbake til arbeidsområdet" ar="العودة إلى مساحة العمل" /></Link></p>
   </div>;
