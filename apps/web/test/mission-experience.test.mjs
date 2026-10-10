@@ -375,3 +375,12 @@ test("execution history exposes reconciliation and attempt lineage without dumpi
   assert.ok(controls.includes("function failureLabel"));
   assert.ok(!controls.includes("execution.errorMessage"));
 });
+
+test("research history is never reported as persisted when its repository writer is unavailable", () => {
+  const route = read("app/api/missions/[id]/research/route.ts");
+  assert.match(route, /let historyPersisted = false;/);
+  assert.match(route, /if \(repository\.recordResearchRun\) \{/);
+  assert.match(route, /historyPersisted = true;/);
+  assert.doesNotMatch(route, /recordResearchRun\?\./);
+  assert.doesNotMatch(route, /let historyPersisted = true;/);
+});
