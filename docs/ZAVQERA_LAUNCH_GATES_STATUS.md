@@ -108,3 +108,15 @@ W56 is applied and catalog-verified in Development only, with migration version 
 - Universal JIT authority enforcement, complete attempt journaling and UNKNOWN reconciliation, and full Issues #23–#25 acceptance matrix: **NOT CERTIFIED**.
 
 **Release decision unchanged:** no merge, no Ready conversion, no Production promotion, and no Supabase Main/Production changes.
+
+
+## Side-effect inventory correction — 2026-10-10
+
+The feature branch has multiple real outbound boundaries, not only the Mission Research path:
+
+- Authenticated draft planning: `/api/ai/plan` → OpenAI Responses API, with user authentication and quota accounting, but no Mission Authority execution attempt. Output is draft-only.
+- Anonymous draft planning: `/api/ai/plan/anonymous` → OpenAI Responses API, with visitor/IP-based quota controls and fail-closed unknown-outcome accounting, but no durable Mission Authority attempt journal. Output is draft-only.
+- Authenticated Mission Research: `/api/missions/[id]/research` → OpenAI web search, with the route-specific `start_agent_execution` gate and W56 duplicate guard; this is partial enforcement, not a universal JIT gateway.
+- Workspace invitation: `/api/business/invitations` → Resend email API, initiated by a workspace owner/admin. Code is present, but actual delivery remains **NOT VERIFIED**.
+
+The updated [side-effect inventory](./ZAVQERA_WEB_MUTATION_AND_SIDE_EFFECT_INVENTORY_2026-10-01.md) distinguishes these boundaries and records their controls and limitations. This correction changes documentation only and does not alter the release decision.
