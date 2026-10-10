@@ -17,7 +17,24 @@ function escapeHtml(value: string) {
   return value.replace(/[&<>"']/g, (character) => entities[character] ?? character);
 }
 
-async function sendInvitationEmail(input: { email: string; role: InvitationRole; inviteUrl: string; expiresAt: string }) {
+function getTrustedSiteOrigin(request: NextRequest) {
+  const configured = [
+    process.env.DEPLOY_PRIME_URL,
+    process.env.NEXT_PUBLIC_SITE_URL,
+    process.env.URL,
+  ].map((value) => value?.trim()).find(Boolean);
+  if (!configured) {
+    if (process.env.NODE_ENV === "production") throw new Error("SITE_URL_NOT_CONFIGURED");
+    return request.nextUrl.origin;
+  }
+  const parsed = new URL(configured);
+  if (parsed.protocol !== "https:" && !(process.env.NODE_ENV !== "production" && parsed.protocol === "http:")) {
+    throw new Error("SITE_URL_MUST_USE_HTTPS");
+  }
+  return parsed.origin;
+}
+
+async function sendInvitationEmail(input: { email: string; role: InvitationRole; inviteUrl: string; expiresAt: string; idempotencyKey: string }) {
   const apiKey = process.env.RESEND_API_KEY?.trim();
   const from = process.env.RESEND_FROM_EMAIL?.trim();
   if (!apiKey || !from) return { ok: false as const, reason: "EMAIL_NOT_CONFIGURED" as const };
@@ -28,7 +45,7 @@ async function sendInvitationEmail(input: { email: string; role: InvitationRole;
   const expiry = new Date(input.expiresAt).toUTCString();
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", "Idempotency-Key": input.idempotencyKey },
     body: JSON.stringify({
       from,
       to: [input.email],
@@ -63,6 +80,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email invitations are not configured yet. Please contact the workspace owner." }, { status: 503 });
     }
 
+    let siteOrigin: string;
+    try {
+      siteOrigin = getTrustedSiteOrigin(request);
+    } catch {
+      return NextResponse.json({ error: "Secure invitation links are not configured for this deployment yet." }, { status: 503 });
+    }
+
     const token = crypto.randomBytes(32).toString("hex");
     const tokenHash = crypto.createHash("sha256").update(token).digest("hex");
     const expiresAt = new Date(Date.now() + 7 * 86400000).toISOString();
@@ -86,9 +110,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: known }, { status: message.includes("WORKSPACE_ADMIN_REQUIRED") ? 403 : 400 });
     }
 
-    const inviteUrl = new URL(`/invite/${token}`, request.nextUrl.origin).toString();
+    const inviteUrl = new URL(`/invite/${token}`, siteOrigin).toString();
     try {
-      const emailResult = await sendInvitationEmail({ email, role, inviteUrl, expiresAt });
+      const emailResult = await sendInvitationEmail({ email, role, inviteUrl, expiresAt, idempotencyKey: "workspace-invitation/" + invitation.id });
       if (!emailResult.ok) {
         await repository.revokeWorkspaceInvitation(invitation.id).catch(() => undefined);
         return NextResponse.json({
