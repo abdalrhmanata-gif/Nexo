@@ -93,8 +93,6 @@ async function main() {
   if (!usePreProvisionedAccount && adminKeyFormat === "unknown_format") {
     throw new Error("SUPABASE_DEV_SERVICE_ROLE_KEY is not in a supported raw API-key format; no secret value is printed.");
   }
-    throw new Error("SUPABASE_DEV_TEST_EMAIL must be a valid email address.");
-  }
   if (usePreProvisionedAccount && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testAccountEmail)) {
     throw new Error("SUPABASE_DEV_TEST_EMAIL must be a valid email address.");
   }
