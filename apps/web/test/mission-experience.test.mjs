@@ -337,7 +337,7 @@ test("Approval Center presents context and keeps decisions restricted to owners 
   assert.ok(center.includes("Requested scope"));
   assert.ok(center.includes("Agent authority"));
   assert.ok(center.includes("Why approval is required"));
-  assert.ok(center.includes("does not execute the action by itself"));
+  assert.ok(center.includes("Approval does not run an action by itself"));
   assert.ok(center.includes("Only workspace owners and admins"));
   assert.ok(repository.includes("async canDecideApprovals"));
   assert.ok(repository.includes('role === "owner" || role === "admin"'));
@@ -493,7 +493,7 @@ test("business approval, invitation, and notification copy is localized in all s
       "Why approval is required",
       "This action is gated by workspace policy and must be explicitly approved before execution.",
       "This request needs a recorded human decision before any approval-gated action can proceed.",
-      "Approving records permission for the bounded scope above. It does not execute the action by itself; the execution runtime must still enforce the approved scope and authority. Review the mission evidence before deciding. Rejected requests require a reason and remain non-executable.",
+      "Approval does not run an action by itself. Agent execution is allowed only when the database matches an unexpired approval to the exact agent, mission/action versions, request content, destination and audience. A generic mission/action approval cannot authorize a later payload or destination. Review the scope above before deciding.",
       "Open mission and evidence",
       "Only workspace owners and admins can approve or reject requests. You can still inspect the mission and its evidence.",
       "No approvals waiting",

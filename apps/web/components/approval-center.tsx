@@ -27,10 +27,10 @@ export function ApprovalCenter({
             <dd>{approval.requesterLabel || <LocalizedText en="Workspace member" nb="Medlem" ar="عضو مساحة العمل" />}</dd>
             <dt><LocalizedText en="Submitted" nb="Sendt inn" ar="تاريخ الإرسال" /></dt>
             <dd><time dateTime={approval.createdAt}>{new Date(approval.createdAt).toLocaleString()}</time></dd>
-            <dt><LocalizedText en="Approval expiry" nb="Godkjenningen utløper" ar="انتهاء صلاحية الموافقة" /></dt>
+            <dt><LocalizedText en="Approval expiry" nb="Godkjenningen utløper" ar="انتهاء صلاحية الموافقة" es="Caducidad de la aprobación" fr="Expiration de l’approbation" de="Ablauf der Genehmigung" /></dt>
             <dd>{approval.expiresAt
               ? <time dateTime={approval.expiresAt}>{new Date(approval.expiresAt).toLocaleString()}</time>
-              : <LocalizedText en="No fixed expiry; this approval still does not authorize a future execution unless its scope matches exactly." nb="Ingen fast utløpstid; denne godkjenningen gir likevel ikke tillatelse til fremtidig kjøring uten nøyaktig omfangstreff." ar="لا يوجد انتهاء محدد؛ ومع ذلك لا تسمح هذه الموافقة بتنفيذ مستقبلي ما لم يتطابق النطاق بدقة." />}</dd>
+              : <LocalizedText en="No fixed expiry; this approval still does not authorize a future execution unless its scope matches exactly." nb="Ingen fast utløpstid; denne godkjenningen gir likevel ikke tillatelse til fremtidig kjøring uten nøyaktig omfangstreff." ar="لا يوجد انتهاء محدد؛ ومع ذلك لا تسمح هذه الموافقة بتنفيذ مستقبلي ما لم يتطابق النطاق بدقة." es="Sin caducidad fija; esta aprobación tampoco autoriza una ejecución futura si el alcance no coincide exactamente." fr="Aucune expiration fixe ; cette approbation n’autorise pas non plus une exécution ultérieure si le périmètre ne correspond pas exactement." de="Kein festes Ablaufdatum; auch diese Genehmigung erlaubt keine spätere Ausführung, wenn der Umfang nicht exakt übereinstimmt." />}</dd>
             <dt><LocalizedText en="Requested scope" nb="Forespurt omfang" ar="النطاق المطلوب" /></dt>
             <dd>{summariseApprovalScope(approval.requestedScope)}</dd>
             <dt><LocalizedText en="Agent authority" nb="Agentfullmakt" ar="صلاحيات الوكيل" /></dt>
