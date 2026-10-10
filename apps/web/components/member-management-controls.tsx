@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { LocalizedText } from "./localized-text";
 
 type Role = "owner" | "admin" | "member" | "viewer";
 export function MemberManagementControls({ memberId, currentRole }: { memberId: string; currentRole: Role }) {
@@ -23,12 +24,12 @@ export function MemberManagementControls({ memberId, currentRole }: { memberId: 
     if (!response.ok) { setBusy(false); setMessage(data2.error || "Could not remove member."); return; }
     window.location.reload();
   };
-  if (currentRole === "owner") return <span className="status status-active">Owner protected</span>;
+  if (currentRole === "owner") return <span className="status status-active"><LocalizedText en="Owner protected" nb="Eier beskyttet" ar="المالك محمي" /></span>;
   return <div className="member-controls">
     <select aria-label="Member role" value={role} disabled={busy} onChange={(event) => void changeRole(event.target.value as Role)}>
-      <option value="admin">Admin</option><option value="member">Member</option><option value="viewer">Viewer</option>
+      <option value="admin"><LocalizedText en="Admin" nb="Administrator" ar="مسؤول" /></option><option value="member"><LocalizedText en="Member" nb="Medlem" ar="عضو" /></option><option value="viewer"><LocalizedText en="Viewer" nb="Leser" ar="قارئ" /></option>
     </select>
-    <button className="button button-small button-quiet" type="button" disabled={busy} onClick={remove}>Remove</button>
-    {message && <span className="action-hint">{message}</span>}
+    <button className="button button-small button-quiet" type="button" disabled={busy} onClick={remove}><LocalizedText en="Remove" nb="Fjern" ar="إزالة" /></button>
+    {message && <span className="action-hint"><LocalizedText en={message} /></span>}
   </div>;
 }
