@@ -115,6 +115,21 @@ const WORKSPACE_TRANSLATIONS: Record<string, Partial<Record<AppLanguage, string>
   "Bounded workspace agent": { es: "Agente con límites definidos", fr: "Agent à périmètre limité", de: "Begrenzter Workspace-Agent" },
   "Only owners and admins can decide.": { es: "Solo los propietarios y administradores pueden decidir.", fr: "Seuls les propriétaires et administrateurs peuvent décider.", de: "Nur Eigentümer und Admins dürfen entscheiden." },
 
+  "owner": { nb: "eier", ar: "مالك", es: "propietario", fr: "propriétaire", de: "Eigentümer" },
+  "admin": { nb: "administrator", ar: "مسؤول", es: "administrador", fr: "administrateur", de: "Admin" },
+  "member": { nb: "medlem", ar: "عضو", es: "miembro", fr: "membre", de: "Mitglied" },
+  "viewer": { nb: "leser", ar: "قارئ", es: "lector", fr: "lecteur", de: "Betrachter" },
+  "PENDING": { nb: "venter", ar: "معلّقة", es: "pendiente", fr: "en attente", de: "Ausstehend" },
+  "ACCEPTED": { nb: "godtatt", ar: "مقبولة", es: "aceptada", fr: "acceptée", de: "Angenommen" },
+  "REVOKED": { nb: "tilbakekalt", ar: "ملغاة", es: "revocada", fr: "révoquée", de: "Widerrufen" },
+  "EXPIRED": { nb: "utløpt", ar: "منتهية", es: "caducada", fr: "expirée", de: "Abgelaufen" },
+  "ACTIVE": { nb: "aktiv", ar: "نشط", es: "activo", fr: "actif", de: "Aktiv" },
+  "DISABLED": { nb: "deaktivert", ar: "معطّل", es: "desactivado", fr: "désactivé", de: "Deaktiviert" },
+  "Email invitations are not configured yet. Please contact the workspace owner.": { nb: "E-postinvitasjoner er ikke konfigurert ennå. Kontakt eieren av arbeidsområdet.", ar: "لم يتم إعداد دعوات البريد الإلكتروني بعد. يرجى التواصل مع مالك مساحة العمل.", es: "Las invitaciones por correo aún no están configuradas. Contacta con el propietario del espacio.", fr: "Les invitations par e-mail ne sont pas encore configurées. Contactez le propriétaire de l’espace.", de: "E-Mail-Einladungen sind noch nicht eingerichtet. Wenden Sie sich an den Workspace-Eigentümer." },
+  "Email invitations are not configured yet.": { nb: "E-postinvitasjoner er ikke konfigurert ennå.", ar: "لم يتم إعداد دعوات البريد الإلكتروني بعد.", es: "Las invitaciones por correo aún no están configuradas.", fr: "Les invitations par e-mail ne sont pas encore configurées.", de: "E-Mail-Einladungen sind noch nicht eingerichtet." },
+  "The invitation email could not be delivered. Check the sender configuration and try again.": { nb: "Invitasjons-e-posten kunne ikke leveres. Kontroller avsenderoppsettet og prøv igjen.", ar: "تعذّر تسليم رسالة الدعوة. تحقّق من إعدادات المرسل وحاول مرة أخرى.", es: "No se pudo entregar el correo de invitación. Revisa la configuración del remitente e inténtalo de nuevo.", fr: "L’e-mail d’invitation n’a pas pu être livré. Vérifiez la configuration de l’expéditeur et réessayez.", de: "Die Einladungs-E-Mail konnte nicht zugestellt werden. Prüfen Sie die Absenderkonfiguration und versuchen Sie es erneut." },
+  "The invitation could not be sent. Check your connection and try again.": { nb: "Invitasjonen kunne ikke sendes. Kontroller tilkoblingen og prøv igjen.", ar: "تعذّر إرسال الدعوة. تحقّق من الاتصال وحاول مرة أخرى.", es: "No se pudo enviar la invitación. Comprueba tu conexión e inténtalo de nuevo.", fr: "L’invitation n’a pas pu être envoyée. Vérifiez votre connexion et réessayez.", de: "Die Einladung konnte nicht gesendet werden. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut." },
+
 };
 for (const [key, translations] of Object.entries(WORKSPACE_TRANSLATIONS)) {
   if (translations.nb) NB[key] = translations.nb;
