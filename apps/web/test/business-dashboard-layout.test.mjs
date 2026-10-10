@@ -102,3 +102,27 @@ test("mission cards route next-step states through the shared localization dicti
   assert.match(missionCard, /<LocalizedText en=\{next\.detail\}/);
   assert.match(missionCard, /actions complete/);
 });
+
+
+test("Business, Templates, and dynamic workspace states have Norwegian and Arabic translations", () => {
+  const dictionary = read("components/localized-text.tsx");
+  for (const englishKey of [
+    "Run AI work as a team",
+    "Workspace owner",
+    "Active missions",
+    "Needs approval/input",
+    "Shared mission workspace",
+    "Plan a family trip",
+    "Find three family-friendly hotels in Copenhagen for three nights under €600. Compare location, room suitability, and total price. Do not book or pay.",
+    "Prepare lead follow-up",
+    "Share template",
+    "Link copied",
+    "Invitation accepted",
+    "PENDING",
+    "A human decision is needed before this action can proceed.",
+    "Your mission draft is ready.",
+  ]) {
+    const escaped = englishKey.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    assert.match(dictionary, new RegExp(`"${escaped}": \\{ nb: "[^"]+", ar: "[^"]+"`), `missing nb/ar translation for: ${englishKey}`);
+  }
+});
