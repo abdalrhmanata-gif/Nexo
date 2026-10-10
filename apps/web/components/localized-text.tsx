@@ -130,6 +130,12 @@ const WORKSPACE_TRANSLATIONS: Record<string, Partial<Record<AppLanguage, string>
   "The invitation email could not be delivered. Check the sender configuration and try again.": { nb: "Invitasjons-e-posten kunne ikke leveres. Kontroller avsenderoppsettet og prøv igjen.", ar: "تعذّر تسليم رسالة الدعوة. تحقّق من إعدادات المرسل وحاول مرة أخرى.", es: "No se pudo entregar el correo de invitación. Revisa la configuración del remitente e inténtalo de nuevo.", fr: "L’e-mail d’invitation n’a pas pu être livré. Vérifiez la configuration de l’expéditeur et réessayez.", de: "Die Einladungs-E-Mail konnte nicht zugestellt werden. Prüfen Sie die Absenderkonfiguration und versuchen Sie es erneut." },
   "The invitation could not be sent. Check your connection and try again.": { nb: "Invitasjonen kunne ikke sendes. Kontroller tilkoblingen og prøv igjen.", ar: "تعذّر إرسال الدعوة. تحقّق من الاتصال وحاول مرة أخرى.", es: "No se pudo enviar la invitación. Comprueba tu conexión e inténtalo de nuevo.", fr: "L’invitation n’a pas pu être envoyée. Vérifiez votre connexion et réessayez.", de: "Die Einladung konnte nicht gesendet werden. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut." },
 
+  "Try this mission": { nb: "Prøv dette oppdraget", ar: "جرّب هذه المهمة", es: "Probar esta misión", fr: "Essayer cette mission", de: "Diese Mission ausprobieren" },
+  "Share template": { nb: "Del mal", ar: "شارك القالب", es: "Compartir plantilla", fr: "Partager le modèle", de: "Vorlage teilen" },
+  "Shared": { nb: "Delt", ar: "تمت المشاركة", es: "Compartido", fr: "Partagé", de: "Geteilt" },
+  "Link copied": { nb: "Lenke kopiert", ar: "تم نسخ الرابط", es: "Enlace copiado", fr: "Lien copié", de: "Link kopiert" },
+  "Could not share. Copy the page URL from your browser.": { nb: "Kunne ikke dele. Kopier sidens URL fra nettleseren.", ar: "تعذّرت المشاركة. انسخ رابط الصفحة من المتصفح.", es: "No se pudo compartir. Copia la URL de la página desde el navegador.", fr: "Impossible de partager. Copiez l’URL de la page depuis le navigateur.", de: "Teilen nicht möglich. Kopieren Sie die Seiten-URL aus dem Browser." },
+
 };
 for (const [key, translations] of Object.entries(WORKSPACE_TRANSLATIONS)) {
   if (translations.nb) NB[key] = translations.nb;
