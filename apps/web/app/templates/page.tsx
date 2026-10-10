@@ -3,8 +3,8 @@ import { LocalizedText } from "../../components/localized-text";
 import { MISSION_TEMPLATES } from "../../lib/mission-templates";
 
 export default function TemplatesPage() {
-  return <div className="container">
-    <section className="hero">
+  return <div className="container templates-page">
+    <section className="hero template-hero-panel">
       <p className="eyebrow"><LocalizedText en="Mission templates" nb="Oppdragsmaler" ar="قوالب المهام" /></p>
       <h1><LocalizedText en="Start with a mission someone already made useful." nb="Start med et oppdrag som allerede er nyttig." ar="ابدأ بمهمة مفيدة وجاهزة." /></h1>
       <p><LocalizedText en="Use a template, change the details, and let ZAVQERA turn it into a mission you control." nb="Bruk en mal, endre detaljene og la ZAVQERA gjøre den om til et oppdrag du kontrollerer." ar="استخدم قالبًا، عدّل التفاصيل، ودع ZAVQERA يحوله إلى مهمة تحت سيطرتك." /></p>
