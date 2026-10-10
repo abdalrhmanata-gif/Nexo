@@ -41,9 +41,9 @@ export async function POST(request: Request) {
   const goal = typeof body === "object" && body !== null && "goal" in body
     ? (body as { goal?: unknown }).goal
     : undefined;
-  if (typeof goal !== "string" || !goal.trim() || goal.trim().length > 1200) {
+  if (typeof goal !== "string" || !goal.trim() || goal.trim().length > 2400) {
     return NextResponse.json(
-      { error: "Enter a goal between 1 and 1,200 characters." },
+      { error: "Enter a mission brief between 1 and 2,400 characters." },
       { status: 400 },
     );
   }
