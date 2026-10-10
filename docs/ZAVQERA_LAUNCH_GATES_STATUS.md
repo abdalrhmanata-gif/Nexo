@@ -120,3 +120,33 @@ The feature branch has multiple real outbound boundaries, not only the Mission R
 - Workspace invitation: `/api/business/invitations` → Resend email API, initiated by a workspace owner/admin. Code is present, but actual delivery remains **NOT VERIFIED**.
 
 The updated [side-effect inventory](./ZAVQERA_WEB_MUTATION_AND_SIDE_EFFECT_INVENTORY_2026-10-01.md) distinguishes these boundaries and records their controls and limitations. This correction changes documentation only and does not alter the release decision.
+
+
+---
+
+## Superseding verification update — 2026-10-10 13:36 UTC
+
+- **Verified PR head:** `8d357dba54199f9af70bad87d56ff46eddb3989b`.
+- **PR #29:** OPEN / Draft / UNMERGED. No production promotion or Supabase Main change.
+
+### Latest CI on this exact head
+- [W21 Local Launch Gate](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38056171481) — **PASS**.
+- [W25 Isolated PostgreSQL Atomic Fence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38056171490) — **PASS**.
+- [Web Unit](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38056171524) — **PASS**.
+- [Web CI / TypeScript / production build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38056171495) — **PASS**.
+- [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38056171504) — **PASS**.
+- [Netlify Deploy Preview checks](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38056171528) — **PASS** for the workflow's preview checks; the production deploy job was skipped as expected for a PR validation workflow.
+
+### Read-only hosted Development recheck
+- Latest repository migration remains `20261010125620_w56_agent_execution_duplicate_dispatch_guard`; no migration was applied during this verification.
+- Security Advisor still reports `auth_leaked_password_protection` **WARN / Disabled**. The owner has deferred the paid-plan change.
+- Performance Advisor reports 17 `unused_index` INFO findings. No index was removed; measure representative workload before any removal.
+
+### Gates still open (not inferred from CI)
+- Authenticated hosted live Mission Research with real citations and persisted history: **NOT VERIFIED / skipped** because the gated Development test credentials are not confirmed.
+- Actual Resend invitation delivery: **NOT VERIFIED**; preview-scoped configuration and a delivery/bounce-checked invitation are still required.
+- Hosted password-reset email/callback: **NOT VERIFIED**.
+- Manual desktop/mobile visual QA: **NOT VERIFIED**.
+- Universal Mission Authority JIT enforcement, durable UNKNOWN reconciliation across independent workers, and complete Issues #23–#25 acceptance matrix: **NOT CERTIFIED**.
+
+**Release decision:** all six automated PR gates pass on this head, but this is not full launch approval. Keep PR #29 OPEN / Draft / Unmerged. Do not modify Supabase Main/Production, change billing/DNS, or promote production without the remaining evidence and explicit release approval.
