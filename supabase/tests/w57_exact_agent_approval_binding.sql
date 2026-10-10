@@ -1,7 +1,7 @@
 -- W57: exact, expiring approval binding for agent executions and retries.
 begin;
 create extension if not exists pgtap;
-select plan(23);
+select plan(24);
 
 select ok(exists (
   select 1 from information_schema.columns
@@ -93,6 +93,9 @@ begin
   );
   select * into v_approval from public.request_mission_approval(v_mission, v_action, v_scope);
   select * into v_approval from public.decide_mission_approval(v_approval.id, 'APPROVED', null);
+  if (v_approval.requested_scope ->> 'expires_at')::timestamptz is distinct from v_approval.expires_at then
+    raise exception 'TEST_FAILED: the canonical approval scope did not bind the stored expiry';
+  end if;
 
   v_changed_request := v_request || jsonb_build_object('payload', jsonb_build_object('quantity', 2, 'note', 'changed value'));
   v_caught := false;
@@ -255,6 +258,7 @@ select pass('an expired approval cannot authorize a retry');
 select pass('a cancelled scoped approval cannot authorize execution');
 select pass('retry idempotency replay cannot return an existing row as dispatch permission');
 select pass('deleting an execution does not resurrect its one-time approval');
+select pass('the exact approval scope binds and cross-checks its stored expiry');
 
 select * from finish();
 rollback;
