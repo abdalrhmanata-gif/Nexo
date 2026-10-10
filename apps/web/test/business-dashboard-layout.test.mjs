@@ -81,12 +81,13 @@ test("mission templates provide a direct try link and a native-share/copy growth
   assert.match(share, /url\.searchParams\.set\("template", templateId\)/);
 });
 
-test("notification bell is only active inside the authenticated workspace", () => {
+test("notification bell is visible only in Business routes, never on home or personal workspace", () => {
   const bell = read("components/notification-bell.tsx");
   const api = read("app/api/notifications/route.ts");
-  assert.match(bell, /const inWorkspace = pathname === "\/app" \|\| pathname\.startsWith\("\/app\/"\)/);
-  assert.match(bell, /if \(!inWorkspace\) return null/);
-  assert.match(bell, /useEffect\(\(\) => \{\s*if \(!inWorkspace\) return/s);
+  assert.match(bell, /const inBusinessWorkspace = pathname === "\/app\/business" \|\| pathname\.startsWith\("\/app\/business\/"\)/);
+  assert.match(bell, /if \(!inBusinessWorkspace\) return null/);
+  assert.match(bell, /useEffect\(\(\) => \{\s*if \(!inBusinessWorkspace\) return/s);
+  assert.doesNotMatch(bell, /pathname === "\/app" \|\| pathname\.startsWith\("\/app\/"\)/);
   assert.match(api, /status: 401/);
   assert.match(api, /Authentication is required\./);
 });
