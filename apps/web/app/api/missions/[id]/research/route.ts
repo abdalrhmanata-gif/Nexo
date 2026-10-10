@@ -63,9 +63,29 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "AI execution is not configured yet." }, { status: 503 });
     }
 
+    let executionId: string | null = null;
     const result = await runAiGeneration({
       requestId,
       reserve: reserveAiGeneration,
+      prepare: async () => {
+        // The execution/approval gate must succeed before any data is sent to
+        // the external AI provider. This callback runs after quota reservation
+        // but before generate(), and a denied gate releases the unused quota.
+        const execution = await supabase.rpc("start_agent_execution", {
+          p_mission_id: mission.id,
+          p_action_id: null,
+          p_agent_id: agentId,
+          p_idempotency_key: `research-${requestId}`,
+          p_request: { type: "read_only_research", request_id: requestId },
+        });
+        if (execution.error) {
+          if (execution.error.message === "APPROVAL_REQUIRED") {
+            throw new Error("AGENT_APPROVAL_REQUIRED");
+          }
+          throw new Error("AGENT_EXECUTION_START_FAILED");
+        }
+        executionId = (execution.data as { id: string }).id;
+      },
       generate: () => providerMode === "mock"
         ? Promise.resolve(buildMockMissionResearch({ name: mission.name, intent: mission.intent, criteria: mission.criteria }))
         : requestMissionResearch(
@@ -79,35 +99,60 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (result.kind === AI_GENERATION_OUTCOMES.QUOTA) {
       return NextResponse.json({ error: "Monthly AI limit reached." }, { status: 429 });
     }
+
+    const startedExecutionId = executionId;
     if (result.kind === AI_GENERATION_OUTCOMES.SETTLEMENT_FAILED) {
+      if (startedExecutionId) {
+        const completion = await supabase.rpc("complete_agent_execution", {
+          p_execution_id: startedExecutionId,
+          p_status: "UNKNOWN",
+          p_result: { reason: "AI_USAGE_SETTLEMENT_FAILED" },
+          p_evidence: { outcome: "UNKNOWN", verified: false, request_id: requestId },
+        });
+        if (completion.error) {
+          return NextResponse.json({ error: "Research may have completed, but execution recovery evidence could not be recorded." }, { status: 503 });
+        }
+      }
       return NextResponse.json({ error: "Research completed, but usage settlement is temporarily unavailable." }, { status: 503 });
     }
+
     if (result.kind === AI_GENERATION_OUTCOMES.PROVIDER_ERROR) {
+      if (startedExecutionId) {
+        const executionStatus = result.disposition === "hold" ? "UNKNOWN" : "FAILED";
+        const completion = await supabase.rpc("complete_agent_execution", {
+          p_execution_id: startedExecutionId,
+          p_status: executionStatus,
+          p_result: { reason: result.code },
+          p_evidence: { outcome: executionStatus, verified: false, request_id: requestId },
+        });
+        if (completion.error) {
+          return NextResponse.json({ error: "The research attempt could not be safely reconciled. Inspect execution history before retrying." }, { status: 503 });
+        }
+      }
+      if (result.code === "AGENT_APPROVAL_REQUIRED") {
+        return NextResponse.json({ error: "This agent requires human approval before execution." }, { status: 409 });
+      }
+      if (result.code === "AGENT_EXECUTION_START_FAILED") {
+        return NextResponse.json({ error: "The agent execution boundary could not be opened." }, { status: 503 });
+      }
       if (result.code === "RATE_LIMITED") return NextResponse.json({ error: "AI usage is temporarily limited. Please try again later." }, { status: 429 });
       if (result.disposition === "hold") return NextResponse.json({ error: "The research result is uncertain; please retry after reconciliation." }, { status: 504 });
       return NextResponse.json({ error: "Mission research is temporarily unavailable." }, { status: 502 });
     }
 
     const research = result.plan as MissionResearch;
-    const runId = crypto.randomUUID();
-    const executionKey = `research-${requestId}`;
-    const execution = await supabase.rpc("start_agent_execution", {
-      p_mission_id: mission.id,
-      p_action_id: null,
-      p_agent_id: agentId,
-      p_idempotency_key: executionKey,
-      p_request: { type: "read_only_research", request_id: requestId },
-    });
-    if (execution.error) {
-      if (execution.error.message === "APPROVAL_REQUIRED") {
-        return NextResponse.json({ error: "This agent requires human approval before execution." }, { status: 409 });
-      }
-      return NextResponse.json({ error: "The agent execution boundary could not be opened." }, { status: 503 });
+    if (!startedExecutionId) {
+      return NextResponse.json({ error: "The research execution boundary was not recorded." }, { status: 503 });
     }
-    const executionId = (execution.data as { id: string }).id;
-    const completion = await supabase.rpc("complete_agent_execution", { p_execution_id: executionId, p_status: "SUCCEEDED", p_result: { summary: research.summary, source_count: research.sources.length }, p_evidence: { verified: false, sources: research.sources } });
+    const completion = await supabase.rpc("complete_agent_execution", {
+      p_execution_id: startedExecutionId,
+      p_status: "SUCCEEDED",
+      p_result: { summary: research.summary, source_count: research.sources.length },
+      p_evidence: { verified: false, sources: research.sources },
+    });
     if (completion.error) return NextResponse.json({ error: "Research completed but execution evidence could not be recorded." }, { status: 503 });
 
+    const runId = crypto.randomUUID();
     let historyPersisted = false;
     if (repository.recordResearchRun) {
       try {
