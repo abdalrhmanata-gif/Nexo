@@ -7,11 +7,11 @@ import { LocalizedText } from "./localized-text";
 
 export function NotificationBell() {
   const pathname = usePathname();
-  const inWorkspace = pathname === "/app" || pathname.startsWith("/app/");
+  const inBusinessWorkspace = pathname === "/app/business" || pathname.startsWith("/app/business/");
   const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!inWorkspace) return;
+    if (!inBusinessWorkspace) return;
     let mounted = true;
     const refresh = async () => {
       try {
@@ -33,9 +33,9 @@ export function NotificationBell() {
       window.clearInterval(interval);
       window.removeEventListener("focus", refresh);
     };
-  }, [inWorkspace]);
+  }, [inBusinessWorkspace]);
 
-  if (!inWorkspace) return null;
+  if (!inBusinessWorkspace) return null;
 
   return <Link href="/app/notifications" className="notification-bell" aria-label={count === null ? "Notifications" : `Notifications, ${count} items need attention`} title="Notifications">
     <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
