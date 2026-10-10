@@ -43,12 +43,12 @@ select ok(exists(
 select ok(exists(
   select 1 from pg_policies
   where schemaname='public' and tablename='workspace_members'
-    and policyname='workspace_members_owner_manage'
+    and policyname='workspace_members_owner_update'
     and qual like '%SELECT auth.uid()%'
     and qual like '%w.owner_id%'
     and with_check like '%SELECT auth.uid()%'
     and with_check like '%w.owner_id%'
-), 'workspace membership management still requires the workspace owner in both USING and WITH CHECK');
+), 'workspace membership updates still require the workspace owner in both USING and WITH CHECK');
 
 select ok(exists(
   select 1 from pg_policies
