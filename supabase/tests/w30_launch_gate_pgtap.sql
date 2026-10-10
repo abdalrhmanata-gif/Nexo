@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap;
 
-select plan(35);
+select plan(36);
 
 select ok(to_regclass('public.missions') is not null, 'missions exists');
 select ok(to_regclass('public.mission_actions') is not null, 'mission_actions exists');
@@ -59,6 +59,12 @@ select ok(not exists(
   where n.nspname='public' and p.prosecdef
     and has_function_privilege('authenticated', p.oid, 'EXECUTE')
 ), 'no public SECURITY DEFINER function is executable by authenticated');
+
+select ok(
+  pg_get_functiondef('private.start_agent_execution(uuid,uuid,uuid,text,jsonb)'::regprocedure)
+    like '%EXECUTION_ALREADY_EXISTS%',
+  'duplicate execution idempotency keys fail closed instead of authorizing a second provider dispatch'
+);
 
 select ok((
   select count(*) from pg_proc p join pg_namespace n on n.oid=p.pronamespace
