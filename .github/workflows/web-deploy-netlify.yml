@@ -175,16 +175,25 @@ jobs:
           }));
           NODE
 
-      - name: Check Development-only live research secret
+      - name: Check Development-only live research authentication config
         if: github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.body, '[live-openai-research]')
         env:
           SUPABASE_DEV_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}
+          SUPABASE_DEV_TEST_EMAIL: ${{ secrets.SUPABASE_DEV_TEST_EMAIL }}
+          SUPABASE_DEV_TEST_PASSWORD: ${{ secrets.SUPABASE_DEV_TEST_PASSWORD }}
         run: |
-          if [ -z "${SUPABASE_DEV_SERVICE_ROLE_KEY}" ]; then
-            echo "::error::Add the ZAVQERA Development service-role key to repository Actions Secrets as SUPABASE_DEV_SERVICE_ROLE_KEY. Never use the Production key."
+          if [ -n "${SUPABASE_DEV_TEST_EMAIL}" ] || [ -n "${SUPABASE_DEV_TEST_PASSWORD}" ]; then
+            if [ -z "${SUPABASE_DEV_TEST_EMAIL}" ] || [ -z "${SUPABASE_DEV_TEST_PASSWORD}" ]; then
+              echo "::error::Set both SUPABASE_DEV_TEST_EMAIL and SUPABASE_DEV_TEST_PASSWORD, or use the Development Auth Admin fallback."
+              exit 1
+            fi
+            echo "Dedicated Development test account is configured (values not printed)."
+          elif [ -n "${SUPABASE_DEV_SERVICE_ROLE_KEY}" ]; then
+            echo "Development-only Auth Admin fallback is configured (key value not printed)."
+          else
+            echo "::error::Configure a dedicated confirmed Development test account using SUPABASE_DEV_TEST_EMAIL and SUPABASE_DEV_TEST_PASSWORD, or configure SUPABASE_DEV_SERVICE_ROLE_KEY. Never use Production credentials."
             exit 1
           fi
-          echo "Development-only Auth Admin secret is configured (value not printed)."
 
       - name: Check out source for authenticated live mission research
         if: github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.body, '[live-openai-research]')
@@ -216,4 +225,6 @@ jobs:
           PREVIEW_URL: https://deploy-preview-29--unique-kringle-3ce321.netlify.app
           SUPABASE_URL: https://mrwmmbytcymqgwvcoywd.supabase.co
           SUPABASE_DEV_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}
+          SUPABASE_DEV_TEST_EMAIL: ${{ secrets.SUPABASE_DEV_TEST_EMAIL }}
+          SUPABASE_DEV_TEST_PASSWORD: ${{ secrets.SUPABASE_DEV_TEST_PASSWORD }}
         run: node test/e2e/live-preview-research.mjs
