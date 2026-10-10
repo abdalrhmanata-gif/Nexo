@@ -9,6 +9,7 @@ const script = readFileSync(join(root, "test/e2e/live-preview-research.mjs"), "u
 const workflow = readFileSync(join(root, "../../.github/workflows/web-deploy-netlify.yml"), "utf8");
 const readme = readFileSync(join(root, "README.md"), "utf8");
 const researchRoute = readFileSync(join(root, "app/api/missions/[id]/research/route.ts"), "utf8");
+const executionGuardMigration = readFileSync(join(root, "../../supabase/migrations/20261010130000_w56_agent_execution_duplicate_dispatch_guard.sql"), "utf8");
 
 test("live research prefers paired pre-provisioned Dev credentials and keeps values out of logs", () => {
   assert.match(script, /SUPABASE_DEV_TEST_EMAIL/);
@@ -52,4 +53,12 @@ test("Mission research opens the server-side agent/approval gate before calling 
   assert.match(researchRoute, /throw new Error\("AGENT_APPROVAL_REQUIRED"\)/);
   assert.match(researchRoute, /p_status: executionStatus/);
   assert.match(researchRoute, /result\.disposition === "hold" \? "UNKNOWN" : "FAILED"/);
+});
+
+
+test("duplicate execution keys cannot authorize a second external research dispatch", () => {
+  assert.match(executionGuardMigration, /raise exception 'EXECUTION_ALREADY_EXISTS'/);
+  assert.match(researchRoute, /execution\.error\.message === "EXECUTION_ALREADY_EXISTS"/);
+  assert.match(researchRoute, /AGENT_EXECUTION_ALREADY_EXISTS/);
+  assert.match(researchRoute, /status: 409/);
 });
