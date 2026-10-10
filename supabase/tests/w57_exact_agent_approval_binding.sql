@@ -22,14 +22,22 @@ select ok(not has_function_privilege('authenticated',
   'authenticated users cannot call the internal scope builder directly');
 select ok(lower(pg_get_functiondef('private.request_mission_approval(uuid,uuid,jsonb)'::regprocedure)) like '%agent_execution_binding_v1%',
   'approval requests store only the canonical execution-binding contract');
-select ok(lower(pg_get_functiondef('private.start_agent_execution(uuid,uuid,uuid,text,jsonb)'::regprocedure)) like '%requested_scope = v_expected_scope%',
-  'a start requires an exact match to the current request binding');
+select ok(
+  lower(pg_get_functiondef('private.start_agent_execution(uuid,uuid,uuid,text,jsonb)'::regprocedure))
+    like '%(requested_scope - ''expires_at'') = v_expected_scope%'
+  and lower(pg_get_functiondef('private.start_agent_execution(uuid,uuid,uuid,text,jsonb)'::regprocedure))
+    like '%(requested_scope ->> ''expires_at'')::timestamptz = expires_at%',
+  'a start requires an exact request binding and matching expiry');
 select ok(lower(pg_get_functiondef('private.start_agent_execution(uuid,uuid,uuid,text,jsonb)'::regprocedure)) like '%consumed_by_execution_id is null%',
   'a consumed approval cannot authorize an independent start');
 select ok(lower(pg_get_functiondef('private.start_agent_execution(uuid,uuid,uuid,text,jsonb)'::regprocedure)) like '%expires_at > clock_timestamp()%',
   'execution start rejects expired approvals');
-select ok(lower(pg_get_functiondef('private.retry_agent_execution(uuid,text)'::regprocedure)) like '%requested_scope = v_expected_scope%',
-  'retries re-check the exact current request binding');
+select ok(
+  lower(pg_get_functiondef('private.retry_agent_execution(uuid,text)'::regprocedure))
+    like '%(a.requested_scope - ''expires_at'') = v_expected_scope%'
+  and lower(pg_get_functiondef('private.retry_agent_execution(uuid,text)'::regprocedure))
+    like '%(a.requested_scope ->> ''expires_at'')::timestamptz = a.expires_at%',
+  'retries re-check the exact request binding and matching expiry');
 select ok(lower(pg_get_functiondef('private.retry_agent_execution(uuid,text)'::regprocedure)) like '%consumed_by_execution_id in%',
   'a retry may reuse only an approval consumed by its own execution chain');
 select ok(lower(pg_get_functiondef('private.decide_mission_approval(uuid,text,text)'::regprocedure)) like '%approval_expired%',
