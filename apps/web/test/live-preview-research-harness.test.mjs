@@ -9,7 +9,7 @@ const script = readFileSync(join(root, "test/e2e/live-preview-research.mjs"), "u
 const workflow = readFileSync(join(root, "../../.github/workflows/web-deploy-netlify.yml"), "utf8");
 const readme = readFileSync(join(root, "README.md"), "utf8");
 const researchRoute = readFileSync(join(root, "app/api/missions/[id]/research/route.ts"), "utf8");
-const executionGuardMigration = readFileSync(join(root, "../../supabase/migrations/20261010130000_w56_agent_execution_duplicate_dispatch_guard.sql"), "utf8");
+const executionGuardMigration = readFileSync(join(root, "../../supabase/migrations/20261010125620_w56_agent_execution_duplicate_dispatch_guard.sql"), "utf8");
 
 test("live research prefers paired pre-provisioned Dev credentials and keeps values out of logs", () => {
   assert.match(script, /SUPABASE_DEV_TEST_EMAIL/);
