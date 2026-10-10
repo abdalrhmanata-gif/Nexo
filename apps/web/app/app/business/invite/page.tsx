@@ -47,9 +47,9 @@ export default function BusinessInvitePage() {
       <div className="field">
         <label htmlFor="invite-role"><LocalizedText en="Workspace role" nb="Rolle i arbeidsområdet" ar="الدور في مساحة العمل" /></label>
         <select id="invite-role" value={role} onChange={(event) => setRole(event.target.value)}>
-          <option value="member">Member / Medlem / عضو</option>
-          <option value="viewer">Viewer / Lesetilgang / قارئ</option>
-          <option value="admin">Admin / Administrator / مسؤول</option>
+          <option value="member"><LocalizedText en="Member" nb="Medlem" ar="عضو" /></option>
+          <option value="viewer"><LocalizedText en="Viewer" nb="Leser" ar="قارئ" /></option>
+          <option value="admin"><LocalizedText en="Admin" nb="Administrator" ar="مسؤول" /></option>
         </select>
         <small><LocalizedText en="Grant only the access needed. Admins can manage workspace access." nb="Gi bare nødvendig tilgang. Administratorer kan administrere tilgangen til arbeidsområdet." ar="امنح الصلاحيات الضرورية فقط. يستطيع المسؤولون إدارة الوصول إلى مساحة العمل." /></small>
       </div>
