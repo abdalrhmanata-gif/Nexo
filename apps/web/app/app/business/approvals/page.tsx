@@ -26,7 +26,7 @@ export default async function BusinessApprovalsPage() {
       </div>
       <div className="stats" aria-label="Approval queue metrics">
         <div className="stat"><strong>{approvals.length}</strong><span><LocalizedText en="Awaiting decision" nb="Venter på beslutning" ar="بانتظار القرار" /></span></div>
-        <div className="stat"><strong>{canDecide ? "Yes" : "No"}</strong><span><LocalizedText en="You can decide" nb="Du kan beslutte" ar="يمكنك اتخاذ القرار" /></span></div>
+        <div className="stat"><strong><LocalizedText en={canDecide ? "Yes" : "No"} /></strong><span><LocalizedText en="You can decide" nb="Du kan beslutte" ar="يمكنك اتخاذ القرار" /></span></div>
         <div className="stat"><strong>0</strong><span><LocalizedText en="Implicit approvals" nb="Underforståtte godkjenninger" ar="موافقات ضمنية" /></span></div>
       </div>
       <ApprovalCenter approvals={approvals} canDecide={canDecide} />

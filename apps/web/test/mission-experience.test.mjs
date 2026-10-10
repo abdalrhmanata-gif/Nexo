@@ -478,6 +478,7 @@ test("business approval, invitation, and notification copy is localized in all s
       "Send a secure invitation directly to their inbox. Choose the least-privilege role they need. Invitations expire after 7 days.",
     ] },
     { path: "app/app/business/approvals/page.tsx", keys: [
+      "Yes", "No",
       "Human control", "Approval Center",
       "Review the requested action, scope, assigned agent, and authority before recording a decision.",
       "Awaiting decision", "You can decide", "Implicit approvals",

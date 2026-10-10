@@ -29,6 +29,8 @@ const DE: Record<string, string> = Object.fromEntries(Object.entries({"Mission c
 
 const WORKSPACE_TRANSLATIONS: Record<string, Partial<Record<AppLanguage, string>>> = {
   "Business workspace": { es: "Espacio de trabajo empresarial", fr: "Espace de travail professionnel", de: "Business-Arbeitsbereich" },
+  "Yes": { es: "Sí", fr: "Oui", de: "Ja" },
+  "No": { es: "No", fr: "Non", de: "Nein" },
   "Send a secure invitation directly to their inbox. Choose the least-privilege role they need. Invitations expire after 7 days.": { es: "Envía una invitación segura directamente a su bandeja de entrada. Elige el rol con los permisos mínimos necesarios. Las invitaciones caducan a los 7 días.", fr: "Envoyez une invitation sécurisée directement dans sa boîte de réception. Choisissez le rôle le moins privilégié dont la personne a besoin. Les invitations expirent après 7 jours.", de: "Senden Sie eine sichere Einladung direkt an den Posteingang. Wählen Sie die Rolle mit den geringstmöglichen Berechtigungen. Einladungen laufen nach 7 Tagen ab." },
   "Human control": { es: "Control humano", fr: "Contrôle humain", de: "Menschliche Kontrolle" },
   "Approval Center": { es: "Centro de aprobaciones", fr: "Centre des approbations", de: "Freigabecenter" },
@@ -359,6 +361,8 @@ for (const [key, translations] of Object.entries(WORKSPACE_TRANSLATIONS)) {
 
 const WORKSPACE_NB_AR: Record<string, { nb: string; ar: string }> = {
   "Business workspace": { nb: "Arbeidsområde", ar: "مساحة عمل الشركات" },
+  "Yes": { nb: "Ja", ar: "نعم" },
+  "No": { nb: "Nei", ar: "لا" },
   "Send a secure invitation directly to their inbox. Choose the least-privilege role they need. Invitations expire after 7 days.": { nb: "Send en sikker invitasjon direkte til innboksen deres. Velg rollen med minst nødvendige rettigheter. Invitasjoner utløper etter 7 dager.", ar: "أرسل دعوة آمنة مباشرة إلى صندوق البريد. اختر الدور الذي يمنح أقل الصلاحيات اللازمة. تنتهي صلاحية الدعوات بعد 7 أيام." },
   "Human control": { nb: "Menneskelig kontroll", ar: "التحكم البشري" },
   "Approval Center": { nb: "Godkjenningssenter", ar: "مركز الموافقات" },
