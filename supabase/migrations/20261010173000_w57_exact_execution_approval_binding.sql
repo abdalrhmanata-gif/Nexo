@@ -287,9 +287,11 @@ begin
     if v_execution.mission_id <> v_mission.id
        or v_execution.agent_id <> v_agent.id
        or coalesce(v_execution.action_id, '00000000-0000-0000-0000-000000000000')
-          <> coalesce(p_action_id, '00000000-0000-0000-0000-000000000000') then
+          <> coalesce(p_action_id, '00000000-0000-0000-0000-000000000000')
+       or v_execution.request is distinct from p_request then
       raise exception 'EXECUTION_IDEMPOTENCY_BINDING_MISMATCH' using errcode = '22023';
     end if;
+    -- Even an identical retry key cannot be used to dispatch a second time.
     raise exception 'EXECUTION_ALREADY_EXISTS' using errcode = '22023';
   end if;
 
