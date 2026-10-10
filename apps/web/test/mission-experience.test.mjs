@@ -114,6 +114,18 @@ test("Mission research UI copy is localized in every supported workspace languag
       assert.ok(line.includes(language + ': "'), "missing " + language + " translation for: " + key);
     }
   }
+  const apiErrorKeys = [
+    "Authentication is required.",
+    "Mission not found.",
+    "Research history could not be loaded.",
+  ];
+  for (const key of apiErrorKeys) {
+    const line = dictionary.split("\n").find((entry) => entry.startsWith('  "' + key + '":'));
+    assert.ok(line, "missing localization dictionary entry for: " + key);
+    for (const language of ["nb", "ar", "es", "fr", "de"]) {
+      assert.ok(line.includes(language + ': "'), "missing " + language + " translation for: " + key);
+    }
+  }
   assert.ok(panel.includes("<LocalizedText en={error} />"));
   assert.ok(panel.includes("toLocaleString()"));
 });
