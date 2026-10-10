@@ -1,7 +1,15 @@
-name: ZAVQERA W21 Isolated Browser E2E
+name: ZAVQERA W21 Local Launch Gate
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - "zavqera/alternative-web-deployment"
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: zavqera-w21-local-${{ github.sha }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -9,7 +17,7 @@ permissions:
 jobs:
   w21-e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
 
     steps:
       - name: Checkout
@@ -31,145 +39,203 @@ jobs:
         working-directory: apps/web
         run: npm ci
 
-      - name: Verify required Development DB secret
-        env:
-          ZAVQERA_DEVELOPMENT_DB_URL: ${{ secrets.ZAVQERA_DEVELOPMENT_DB_URL }}
+      - name: Install Chromium
+        working-directory: apps/web
+        run: timeout 10m npx playwright install chromium
+
+      - name: Prepare disposable PG17 migration replay
         run: |
           set -euo pipefail
-          if [ -z "${ZAVQERA_DEVELOPMENT_DB_URL}" ]; then
-            echo "::error::Missing GitHub Actions secret ZAVQERA_DEVELOPMENT_DB_URL."
-            exit 1
-          fi
-          case "${ZAVQERA_DEVELOPMENT_DB_URL}" in
-            *mrwmmbytcymqgwvcoywd.supabase.co*) ;;
-            *) echo "::error::Database URL is not the ZAVQERA Development project."; exit 1 ;;
-          esac
-
-      - name: Create disposable Supabase workdir
-        env:
-          ZAVQERA_DEVELOPMENT_DB_URL: ${{ secrets.ZAVQERA_DEVELOPMENT_DB_URL }}
-        run: |
-          set -euo pipefail
-          workdir="${RUNNER_TEMP}/zavqera-e2e"
-          rm -rf "${workdir}"
-          mkdir -p "${workdir}"
-
-          supabase init --workdir "${workdir}"
-
-          python3 - "${workdir}/supabase/config.toml" <<'PY'
+          workdir="$RUNNER_TEMP/zavqera-e2e"
+          rm -rf "$workdir"
+          mkdir -p "$workdir"
+          supabase init --workdir "$workdir"
+          python3 - "$workdir/supabase/config.toml" <<'PY'
           from pathlib import Path
           import sys
-
-          path = Path(sys.argv[1])
-          lines = path.read_text(encoding="utf-8").splitlines()
-
+          p = Path(sys.argv[1])
+          lines = p.read_text().splitlines()
           for i, line in enumerate(lines):
               if line.startswith("project_id"):
                   lines[i] = 'project_id = "zavqera-e2e-local"'
                   break
-
-          def set_section_value(lines, section, key, value):
+          def setv(lines, section, key, value):
               header = f"[{section}]"
               start = next((i for i, line in enumerate(lines) if line.strip() == header), None)
               if start is None:
-                  if lines and lines[-1] != "":
-                      lines.append("")
-                  lines.extend([header, f"{key} = {value}"])
+                  if lines and lines[-1] != "": lines.append("")
+                  lines += [header, f"{key} = {value}"]
                   return
-
               end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("[")), len(lines))
-              replacement = f"{key} = {value}"
               for i in range(start + 1, end):
                   if lines[i].lstrip().startswith(f"{key} ="):
-                      lines[i] = replacement
+                      lines[i] = f"{key} = {value}"
                       break
               else:
-                  lines.insert(start + 1, replacement)
-
-          set_section_value(lines, "db", "major_version", "17")
-          set_section_value(lines, "auth.email", "enable_confirmations", "false")
-          path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+                  lines.insert(start + 1, f"{key} = {value}")
+          setv(lines, "db", "major_version", "17")
+          # Avoid runner-host port collisions by selecting an available local DB port.
+          import socket
+          with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+              s.bind(("127.0.0.1", 0))
+              db_port = s.getsockname()[1]
+          setv(lines, "db", "port", str(db_port))
+          setv(lines, "auth", "site_url", '"http://127.0.0.1:3210"')
+          setv(lines, "auth", "additional_redirect_urls", '["http://127.0.0.1:3210/**"]')
+          setv(lines, "auth.email", "enable_confirmations", "false")
+          setv(lines, "auth.email.template.recovery", "subject", '"Reset your ZAVQERA password"')
+          setv(lines, "auth.email.template.recovery", "content_path", '"./supabase/templates/recovery.html"')
+          p.write_text("\n".join(lines) + "\n")
           PY
-
-          printf '%s\n' 'zavqera-e2e-local' > "${workdir}/ZAVQERA_E2E_DISPOSABLE"
-
-          schema_dir="${workdir}/supabase/migrations"
-          schema_file="${schema_dir}/$(date -u +%Y%m%d%H%M%S)_development_schema.sql"
-
-          supabase db dump \
-            --db-url "${ZAVQERA_DEVELOPMENT_DB_URL}" \
-            --schema public,private \
-            -f "${schema_file}"
-
-          cat >> "${schema_file}" <<'SQL'
-
-          CREATE TRIGGER on_auth_user_created
-          AFTER INSERT ON auth.users FOR EACH ROW
-          EXECUTE FUNCTION private.handle_new_user_profile();
+          mkdir -p "$workdir/supabase/templates"
+          cat > "$workdir/supabase/templates/recovery.html" <<'HTML'
+          <!doctype html>
+          <html><body>
+          <h2>Reset your ZAVQERA password</h2>
+          <p><a href="{{ .ConfirmationURL }}">Reset password</a></p>
+          </body></html>
+          HTML
+          mkdir -p "$workdir/volumes/db/init"
+          cat > "$workdir/volumes/db/init/00_private_schema.sql" <<'SQL'
+          create schema if not exists private;
           SQL
+          cp -R "$GITHUB_WORKSPACE/supabase/migrations/." "$workdir/supabase/migrations/"
+          mkdir -p "$workdir/supabase/tests"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w30_launch_gate_pgtap.sql" "$workdir/supabase/tests/w30_launch_gate_pgtap.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w29_ai_usage_quota_smoke.sql" "$workdir/supabase/tests/w29_ai_usage_quota_smoke.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w36_ai_plan_smoke.sql" "$workdir/supabase/tests/w36_ai_plan_smoke.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w44_workspace_invitations.sql" "$workdir/supabase/tests/w44_workspace_invitations.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w45_workspace_member_management.sql" "$workdir/supabase/tests/w45_workspace_member_management.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w46_workspace_activity.sql" "$workdir/supabase/tests/w46_workspace_activity.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w47_workspace_bootstrap.sql" "$workdir/supabase/tests/w47_workspace_bootstrap.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w48_workspace_research_agent_bootstrap.sql" "$workdir/supabase/tests/w48_workspace_research_agent_bootstrap.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w49_agent_execution_recovery.sql" "$workdir/supabase/tests/w49_agent_execution_recovery.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w50_expired_execution_lease_fence.sql" "$workdir/supabase/tests/w50_expired_execution_lease_fence.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w51_member_rpc_wrapper_permissions.sql" "$workdir/supabase/tests/w51_member_rpc_wrapper_permissions.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w52_foreign_key_indexes.sql" "$workdir/supabase/tests/w52_foreign_key_indexes.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w53_rls_initplan_optimization.sql" "$workdir/supabase/tests/w53_rls_initplan_optimization.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w54_workspace_policy_consolidation.sql" "$workdir/supabase/tests/w54_workspace_policy_consolidation.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w55_product_growth_signals.sql" "$workdir/supabase/tests/w55_product_growth_signals.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w56_agent_execution_duplicate_dispatch_guard.sql" "$workdir/supabase/tests/w56_agent_execution_duplicate_dispatch_guard.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w57_exact_agent_approval_binding.sql" "$workdir/supabase/tests/w57_exact_agent_approval_binding.sql"
+          cat > "$workdir/supabase/migrations/20260921180005_e2e_historical_auth_compat.sql" <<'SQL'
+          create schema if not exists private;
+          create or replace function private.handle_new_user_profile()
+          returns trigger
+          language plpgsql
+          security definer
+          set search_path = pg_catalog, public
+          as $body$
+          begin
+            insert into public.profiles (id)
+            values (new.id)
+            on conflict (id) do nothing;
+            return new;
+          end;
+          $body$;
+          revoke all privileges on function private.handle_new_user_profile() from public, anon, authenticated;
+          create or replace function public.handle_new_user_profile()
+          returns trigger
+          language plpgsql
+          security definer
+          set search_path = pg_catalog, public
+          as $body$
+          begin
+            insert into public.profiles (id)
+            values (new.id)
+            on conflict (id) do nothing;
+            return new;
+          end;
+          $body$;
+          revoke all privileges on function public.handle_new_user_profile() from public, anon, authenticated;
+          drop trigger if exists on_auth_user_created on auth.users;
+          create trigger on_auth_user_created
+          after insert on auth.users
+          for each row execute function private.handle_new_user_profile();
+          SQL
+          printf "%s\n" "zavqera-e2e-local" > "$workdir/ZAVQERA_E2E_DISPOSABLE"
+          echo "ZAVQERA_E2E_SUPABASE_WORKDIR=$workdir" >> "$GITHUB_ENV"
+          echo "ZAVQERA_E2E_MODE=disposable-full-loop" >> "$GITHUB_ENV"
+          echo "ZAVQERA_E2E_MIGRATION_SOURCE=repo-migrations" >> "$GITHUB_ENV"
+          echo "ZAVQERA_AI_PROVIDER_MODE=mock" >> "$GITHUB_ENV"
 
-          grep -q 'VERIFIED_OUTCOME_REQUIRED' "${schema_file}"
-          grep -q 'missions_initial_state' "${schema_file}"
-          grep -q 'mission_actions_completion_insert_guard' "${schema_file}"
-          grep -q 'handle_new_user_profile' "${schema_file}"
-
-          echo "${workdir}" > "${RUNNER_TEMP}/zavqera-e2e-workdir"
-          sha256sum "${schema_file}" > "${RUNNER_TEMP}/zavqera-e2e-schema.sha256"
-
-          unset ZAVQERA_DEVELOPMENT_DB_URL
-
-      - name: Run authenticated browser E2E
-        working-directory: apps/web
-        env:
-          ZAVQERA_E2E_MODE: disposable-full-loop
-          ZAVQERA_E2E_SUPABASE_WORKDIR: ${{ runner.temp }}/zavqera-e2e
+      - name: Run disposable PostgreSQL 17 pgTAP launch gate
         run: |
-          set -u
+          set -euo pipefail
+          supabase start --ignore-health-check -x "studio,imgproxy,realtime,storage-api,postgres-meta,edge-runtime,logflare,vector,supavisor" --workdir "$ZAVQERA_E2E_SUPABASE_WORKDIR"
+          admin_key="$(supabase status --workdir "$ZAVQERA_E2E_SUPABASE_WORKDIR" -o env | awk -F= '/^SERVICE_ROLE_KEY=/{print $2}' | tail -n 1)"
+          test -n "$admin_key"
+          echo "ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY=$admin_key" >> "$GITHUB_ENV"
+          (
+            cd "$ZAVQERA_E2E_SUPABASE_WORKDIR"
+            timeout 30m supabase test db supabase/tests/w30_launch_gate_pgtap.sql
+          )
+
+      - name: Run AI quota, plan and workspace security tests
+        run: |
+          set -euo pipefail
+          (
+            cd "$ZAVQERA_E2E_SUPABASE_WORKDIR"
+            supabase test db supabase/tests/w29_ai_usage_quota_smoke.sql
+            supabase test db supabase/tests/w36_ai_plan_smoke.sql
+            supabase test db supabase/tests/w44_workspace_invitations.sql
+            supabase test db supabase/tests/w45_workspace_member_management.sql
+            supabase test db supabase/tests/w46_workspace_activity.sql
+            supabase test db supabase/tests/w47_workspace_bootstrap.sql
+            supabase test db supabase/tests/w48_workspace_research_agent_bootstrap.sql
+            supabase test db supabase/tests/w49_agent_execution_recovery.sql
+            supabase test db supabase/tests/w50_expired_execution_lease_fence.sql
+            supabase test db supabase/tests/w51_member_rpc_wrapper_permissions.sql
+            supabase test db supabase/tests/w52_foreign_key_indexes.sql
+            supabase test db supabase/tests/w53_rls_initplan_optimization.sql
+            supabase test db supabase/tests/w54_workspace_policy_consolidation.sql
+            supabase test db supabase/tests/w55_product_growth_signals.sql
+            supabase test db supabase/tests/w56_agent_execution_duplicate_dispatch_guard.sql
+            supabase test db supabase/tests/w57_exact_agent_approval_binding.sql
+          )
+
+      - name: Run full launch-gate browser E2E
+        working-directory: apps/web
+        run: |
+          set -euo pipefail
           unset NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
           unset SUPABASE_SERVICE_ROLE_KEY SUPABASE_SECRET_KEY SERVICE_ROLE_KEY SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD
-          unset ZAVQERA_E2E_USER_A_EMAIL ZAVQERA_E2E_USER_A_PASSWORD ZAVQERA_E2E_USER_B_EMAIL ZAVQERA_E2E_USER_B_PASSWORD
-          log="${RUNNER_TEMP}/w21-e2e.log"
-          npm run test:e2e 2>&1 | tee "${log}"
+          mkdir -p "$RUNNER_TEMP/w21-playwright"
+          set +e
+          npm run test:e2e 2>&1 | tee "$RUNNER_TEMP/w21-playwright/test-e2e.log"
           status="${PIPESTATUS[0]}"
-          printf 'e2e_exit_status=%s\n' "${status}" > "${RUNNER_TEMP}/w21-e2e-result.env"
-          if grep -q '"cleanup"[[:space:]]*:[[:space:]]*"VERIFIED"' "${log}"; then
-            echo "W21 cleanup proof: VERIFIED"
-          else
-            echo "::error::W21 cleanup proof not found in the test output."
-            status=1
-          fi
-          exit "${status}"
+          set -e
+          if [ -d test-results ]; then cp -R test-results "$RUNNER_TEMP/w21-playwright/test-results"; fi
+          if [ -d playwright-report ]; then cp -R playwright-report "$RUNNER_TEMP/w21-playwright/playwright-report"; fi
+          exit "$status"
 
-      - name: Write W21 evidence
+      - name: Cleanup disposable Supabase stack
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -n "${ZAVQERA_E2E_SUPABASE_WORKDIR:-}" ]; then
+            supabase stop --no-backup --workdir "$ZAVQERA_E2E_SUPABASE_WORKDIR" >/dev/null 2>&1 || true
+          fi
+      - name: Write evidence
         if: always()
         run: |
           set -euo pipefail
           {
             echo "result=${{ job.status }}"
             echo "git_sha=${GITHUB_SHA}"
-            echo "utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            echo "node=$(node --version)"
-            echo "npm=$(npm --version)"
-            echo "supabase_cli=$(supabase --version)"
-            echo "playwright=$(cd apps/web && npx --no-install playwright --version)"
+            echo "migration_source=repo-migrations"
             echo "postgres_major=17"
-            if [ -f "${RUNNER_TEMP}/zavqera-e2e-result.env" ]; then
-              cat "${RUNNER_TEMP}/zavqera-e2e-result.env"
-            else
-              echo "e2e_exit_status=not-recorded"
-            fi
-            if [ -f "${RUNNER_TEMP}/zavqera-e2e-schema.sha256" ]; then
-              echo -n "schema_sha256="
-              cut -d' ' -f1 "${RUNNER_TEMP}/zavqera-e2e-schema.sha256"
-            fi
-            if [ -f "${RUNNER_TEMP}/w21-e2e.log" ] && grep -q '"cleanup"[[:space:]]*:[[:space:]]*"VERIFIED"' "${RUNNER_TEMP}/w21-e2e.log"; then
-              echo "cleanup=VERIFIED"
-            else
-              echo "cleanup=NOT_VERIFIED_OR_RUN_DID_NOT_REACH_TEARDOWN"
-            fi
-          } > "${RUNNER_TEMP}/W21_EVIDENCE.txt"
+          } > "$RUNNER_TEMP/W21_EVIDENCE.txt"
 
-      - name: Upload sanitized W21 evidence
+      - name: Upload browser diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zavqera-w21-browser-diagnostics
+          path: ${{ runner.temp }}/w21-playwright
+          if-no-files-found: warn
+
+      - name: Upload evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:

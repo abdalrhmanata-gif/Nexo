@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 import {
   CleanupNotVerifiedError,
+  E2E_COMPAT_MIGRATION_NAME,
   FORBIDDEN_ENV,
   HarnessBlockedError,
   LEGACY_ENV,
@@ -30,6 +31,7 @@ const repoRoot = path.resolve(webRoot, "..", "..");
 const PROJECT_ID = "zavqera-e2e-unit";
 const UUID_A = "11111111-1111-4111-8111-111111111111";
 const UUID_B = "22222222-2222-4222-8222-222222222222";
+const REPO_MIGRATIONS = readdirSync(path.join(repoRoot, "supabase", "migrations")).filter((name) => name.endsWith(".sql")).sort();
 
 function anonJwt(role = "anon") {
   const encode = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
@@ -119,6 +121,29 @@ test("static preconditions refuse each missing or unsafe precondition", (t) => {
   }
 });
 
+test("repo-migrations mode accepts exactly the repository migration set and resets the local DB", (t) => {
+  const workdir = makeWorkdir({ migrations: [...REPO_MIGRATIONS, E2E_COMPAT_MIGRATION_NAME] });
+  t.after(() => rmSync(workdir, { recursive: true, force: true }));
+  const env = readyEnv(workdir, { ZAVQERA_E2E_MIGRATION_SOURCE: "repo-migrations" });
+  const verdict = checkStaticPreconditions(env, { repoRoot });
+  assert.equal(verdict.ok, true);
+  assert.equal(verdict.plan.migrationSource, "repo-migrations");
+
+  const { run, calls } = fakeRunner();
+  const target = startFreshStack(verdict.plan, run, {});
+  assert.deepEqual(target, { apiUrl: "http://127.0.0.1:54321", publishableKey: "sb_publishable_local" });
+  assert.equal(target.serviceRoleKey, anonJwt("service_role"));
+  assert.ok(calls.includes("supabase db reset --yes --workdir "+workdir));
+
+  const wrong = makeWorkdir({ migrations: REPO_MIGRATIONS.slice(0, -1) });
+  t.after(() => rmSync(wrong, { recursive: true, force: true }));
+  const blocked = checkStaticPreconditions(
+    readyEnv(wrong, { ZAVQERA_E2E_MIGRATION_SOURCE: "repo-migrations" }),
+    { repoRoot },
+  );
+  assert.equal(blocked.ok, false);
+});
+
 test("static preconditions refuse workdirs that are not explicitly disposable", (t) => {
   const dirs = {
     "no config": makeWorkdir({ config: false }),
@@ -139,7 +164,9 @@ test("static preconditions refuse workdirs that are not explicitly disposable", 
 test("stack status validation keeps only loopback url and a non-privileged key", () => {
   const ok = validateStackStatus(`Some banner\n${goodStatus()}`);
   assert.deepEqual(ok.target, { apiUrl: "http://127.0.0.1:54321", publishableKey: "sb_publishable_local" });
-  assert.equal(validateStackStatus(JSON.stringify({ API_URL: "http://127.0.0.1:54321", ANON_KEY: anonJwt() })).ok, true);
+  assert.equal(ok.target.serviceRoleKey, anonJwt("service_role"));
+  assert.deepEqual(Object.keys(ok.target), ["apiUrl", "publishableKey"], "the local admin JWT must not be enumerable or logged with the target");
+  assert.equal(validateStackStatus(JSON.stringify({ API_URL: "http://127.0.0.1:54321", ANON_KEY: anonJwt(), SERVICE_ROLE_KEY: anonJwt("service_role") })).ok, true);
 
   const bad = {
     remote: { API_URL: "https://mrwmmbytcymqgwvcoywd.supabase.co", PUBLISHABLE_KEY: "sb_publishable_x" },
@@ -199,7 +226,7 @@ test("a fresh stack is destroyed and verified empty before it is started", () =>
     "supabase stop --no-backup --workdir /tmp/zavqera-e2e",
     `docker ps -aq --filter label=com.supabase.cli.project=${PROJECT_ID}`,
     `docker volume ls -q --filter label=com.supabase.cli.project=${PROJECT_ID}`,
-    "supabase start --workdir /tmp/zavqera-e2e",
+    "supabase start --ignore-health-check -x studio,imgproxy,realtime,storage-api,postgres-meta,edge-runtime,logflare,vector,supavisor --workdir /tmp/zavqera-e2e",
     "supabase status -o json --workdir /tmp/zavqera-e2e",
   ]);
 });
@@ -232,11 +259,11 @@ test("command runner only runs supabase/docker without a shell and strips privil
   assert.equal(seen[0].options.shell, false);
   assert.deepEqual(Object.keys(seen[0].options.env), ["PATH"]);
   const missing = createCommandRunner({ spawnSyncImpl: () => ({ status: null, error: { code: "ENOENT" } }) })("supabase", ["--version"]);
-  assert.deepEqual(missing, { status: -1, stdout: "", missing: true });
+  assert.deepEqual(missing, { status: -1, stdout: "", stderr: "", missing: true });
 });
 
 test("app env points only at the disposable stack", () => {
-  const env = buildAppEnv({ PATH: "p", SUPABASE_SECRET_KEY: "s", ZAVQERA_E2E_USER_A_EMAIL: "a", NEXT_PUBLIC_SUPABASE_URL: "https://x.supabase.co" }, { apiUrl: "http://127.0.0.1:54321", publishableKey: "pk" });
+  const env = buildAppEnv({ PATH: "p", SUPABASE_SECRET_KEY: "s", ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY: "test-only-admin-jwt", ZAVQERA_E2E_USER_A_EMAIL: "a", NEXT_PUBLIC_SUPABASE_URL: "https://x.supabase.co" }, { apiUrl: "http://127.0.0.1:54321", publishableKey: "pk" });
   assert.deepEqual(env, { PATH: "p", NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "pk", NEXT_TELEMETRY_DISABLED: "1" });
 });
 
@@ -297,5 +324,5 @@ test("Playwright discovers the full-loop spec without starting anything", { skip
   assert.equal(result.status, 0, result.stderr || result.stdout);
   assert.match(result.stdout, /authenticated-browser\.spec\.mjs/);
   assert.match(result.stdout, /disposable full loop/);
-  assert.match(result.stdout, /Total: 1 test/);
+  assert.match(result.stdout, /Total: 2 tests/);
 });

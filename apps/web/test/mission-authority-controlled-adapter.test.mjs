@@ -205,6 +205,16 @@ test("duplicate idempotency key is rejected before budget is considered", async 
   assert.equal(external.calls().length, 1);
 });
 
+test("concurrent requests with the same idempotency key dispatch exactly once", async () => {
+  const { adapter, external } = setup();
+  const results = await Promise.all([adapter.execute(request()), adapter.execute(request())]);
+
+  assert.equal(results.filter((result) => result.decision === DECISIONS.ALLOW).length, 1);
+  const rejected = results.find((result) => result.decision === DECISIONS.DENY);
+  assert.equal(rejected?.reasonCode, "IDEMPOTENCY_REPLAY");
+  assert.equal(external.calls().length, 1);
+});
+
 test("idempotency key cannot be rebound after authoritative revision changes", async () => {
   const { adapter, external, store } = setup();
   await adapter.execute(request());

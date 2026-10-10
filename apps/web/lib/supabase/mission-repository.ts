@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "./server";
-import { MissionMutationConflictError, MissionMutationRejectedError, type MissionRepository, type NewMission, type NewOutcome, type NewVerification, type UpdateMission } from "../mission-repository";import type { ActionStatus, Mission, MissionAction, MissionActivity, MissionOutcome, MissionVerification, MissionLifecycleStatus } from "../view-models";
-import { humaniseEventType, parseMissionObjective, summariseEventPayload } from "../mission-content.mjs";
+import { MissionMutationConflictError, MissionMutationRejectedError, MissionProvenanceDeleteError, type MissionRepository, type MissionResearchRun, type NewMission, type NewOutcome, type NewResearchRun, type NewVerification, type UpdateMission, type WorkspaceAgent, type WorkspaceMember, type WorkspaceInvitation, type MissionApproval } from "../mission-repository";import type { ActionStatus, Mission, MissionAction, MissionActivity, MissionOutcome, MissionVerification, MissionLifecycleStatus } from "../view-models";
+import { formatDateTime, humaniseEventType, parseMissionObjective, summariseEventPayload } from "../mission-content.mjs";
 
 type MissionRow = {
   id: string;
@@ -45,6 +45,42 @@ type EventRow = {
   created_at: string;
 };
 
+type ResearchEventRow = {
+  payload: Record<string, unknown>;
+  created_at: string;
+};
+
+function toResearchRun(row: ResearchEventRow): MissionResearchRun | null {
+  const runId = typeof row.payload.run_id === "string" ? row.payload.run_id : "";
+  const requestId = typeof row.payload.request_id === "string" ? row.payload.request_id : "";
+  const summary = typeof row.payload.summary === "string" ? row.payload.summary : "";
+  const verified = row.payload.verified === false;
+  const sourceRows = Array.isArray(row.payload.sources) ? row.payload.sources : [];
+  const sources = sourceRows
+    .map((source) => {
+      if (!source || typeof source !== "object" || Array.isArray(source)) return null;
+      const item = source as Record<string, unknown>;
+      const url = typeof item.url === "string" ? item.url : "";
+      if (!url.startsWith("http")) return null;
+      const title = typeof item.title === "string" && item.title.trim()
+        ? item.title.trim().slice(0, 200)
+        : url.slice(0, 500);
+      return { title, url };
+    })
+    .filter((source): source is { title: string; url: string } => Boolean(source))
+    .slice(0, 12);
+  if (!runId || !requestId || !summary || !verified) return null;
+  return {
+    runId,
+    requestId,
+    status: "COMPLETED",
+    summary,
+    sources,
+    createdAt: row.created_at,
+    verified: false,
+  };
+}
+
 function toVerification(row: VerificationRow): MissionVerification {
   return { id: row.id, status: row.status, criteria: row.criteria, evidence: row.evidence, confidence: row.confidence, failureReason: row.failure_reason, createdAt: row.created_at };
 }
@@ -54,7 +90,7 @@ function toOutcome(row: OutcomeRow): MissionOutcome {
 }
 
 function toActivity(row: EventRow): MissionActivity {
-  return { label: humaniseEventType(row.event_type), detail: summariseEventPayload(row.payload), time: new Date(row.created_at).toLocaleString() };
+  return { label: humaniseEventType(row.event_type), detail: summariseEventPayload(row.payload), time: formatDateTime(row.created_at) };
 }
 
 function toAction(row: ActionRow): MissionAction {
@@ -76,7 +112,7 @@ function toMission(row: MissionRow, actions: ActionRow[] = [], verifications: Mi
     progress: actions.length ? Math.round((resolved / actions.length) * 100) : status === "COMPLETED" ? 100 : 0,
     actionsTotal: actions.length,
     actionsCompleted: completed,
-    updated: new Date(row.updated_at).toLocaleString(),
+    updated: formatDateTime(row.updated_at),
     owner: "You",
     criteria,
     actions: actions.map(toAction),
@@ -87,12 +123,24 @@ function toMission(row: MissionRow, actions: ActionRow[] = [], verifications: Mi
 }
 
 async function ownedWorkspace(supabase: SupabaseClient, userId: string) {
-  const existing = await supabase.from("workspaces").select("id").eq("owner_id", userId).order("created_at").limit(1).maybeSingle();
-  if (existing.error) throw existing.error;
-  if (existing.data) return existing.data.id as string;
-  const created = await supabase.from("workspaces").insert({ owner_id: userId, name: "My workspace" }).select("id").single();
-  if (created.error) throw created.error;
-  return created.data.id as string;
+  // Prefer the workspace the authenticated user already belongs to. The
+  // workspace-membership RLS policy intentionally hides unjoined workspaces,
+  // so bootstrap must create/repair the owner membership atomically in SQL.
+  const membership = await supabase
+    .from("workspace_members")
+    .select("workspace_id")
+    .eq("user_id", userId)
+    .order("created_at")
+    .limit(1)
+    .maybeSingle();
+  if (!membership.error && membership.data) return membership.data.workspace_id as string;
+
+  const result = await supabase.rpc("ensure_owned_workspace");
+  if (result.error) throw result.error;
+  if (typeof result.data !== "string" || !result.data) {
+    throw new Error("Workspace bootstrap returned no workspace ID.");
+  }
+  return result.data;
 }
 
 async function actionsFor(supabase: SupabaseClient, missionId: string) {
@@ -201,22 +249,24 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       return completeMission(result.data as MissionRow);
     },
     async createMission(input: NewMission) {
-      const result = await supabase.from("missions").insert({ workspace_id: workspaceId, owner_id: user.id, objective: input.objective, status: "DRAFT" }).select(missionSelect).single();
-      if (result.error) throw result.error;
       const actionTitles = (input.actions ?? []).map((title) => title.trim()).filter(Boolean);
-      if (actionTitles.length) {
-        const actions = await supabase.from("mission_actions").insert(actionTitles.map((title, position) => ({
-          mission_id: result.data.id,
+      const result = await supabase.rpc("create_mission_with_actions", {
+        p_workspace_id: workspaceId,
+        p_objective: input.objective,
+        p_actions: actionTitles,
+      });
+      if (result.error) throw result.error;
+      const missionRow = result.data as MissionRow;
+      return toMission(
+        missionRow,
+        actionTitles.map((title, id) => ({
+          id: `new-${id}`,
           title,
-          position,
           status: "PENDING",
-        })));
-        if (actions.error) {
-          await supabase.from("missions").delete().eq("id", result.data.id).eq("workspace_id", workspaceId);
-          throw actions.error;
-        }
-      }
-      return toMission(result.data as MissionRow, actionTitles.map((title, id) => ({ id: `new-${id}`, title, status: "PENDING", version: 1, follow_up_at: null })));
+          version: 1,
+          follow_up_at: null,
+        })),
+      );
     },
     async updateMission(id: string, input: UpdateMission) {
       if (input.objective !== undefined && input.status !== undefined) {
@@ -237,8 +287,28 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       return completeMission(result.data as MissionRow);
     },
     async deleteMission(id: string) {
-      const result = await supabase.from("missions").delete().eq("id", id).eq("workspace_id", workspaceId);
-      if (result.error) throw result.error;
+      const result = await supabase
+        .from("missions")
+        .delete()
+        .eq("id", id)
+        .eq("workspace_id", workspaceId)
+        .select("id")
+        .maybeSingle();
+      if (result.error) {
+        const message = [
+          result.error.code,
+          result.error.message,
+          result.error.details,
+          result.error.hint,
+        ].filter((value): value is string => typeof value === "string").join(" ");
+        if (result.error.code === "23503" && /mission_events(?:_mission_id_fkey)?/i.test(message)) {
+          throw new MissionProvenanceDeleteError();
+        }
+        throw result.error;
+      }
+      // PostgREST can report no error when RLS or a stale ID matches no rows.
+      // Do not tell the user deletion succeeded unless a row was actually removed.
+      if (!result.data) throw new MissionMutationRejectedError("That mission is no longer available or cannot be deleted.");
     },
     async addAction(input) {
       // The mission is re-read through the workspace-scoped boundary first, so
@@ -296,6 +366,243 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       });
       if (result.error) throwMutationError(result.error);
       return toOutcome(result.data as OutcomeRow);
+    },
+    async recordResearchRun(input: NewResearchRun) {
+      const result = await supabase.rpc("record_mission_event", {
+        p_mission_id: input.missionId,
+        p_event_type: "RESEARCH_RUN_COMPLETED",
+        p_payload: {
+          schema_version: 1,
+          title: "Read-only research completed",
+          execution: "read_only_research",
+          status: "COMPLETED",
+          run_id: input.runId,
+          request_id: input.requestId,
+          summary: input.summary.slice(0, 12000),
+          sources: input.sources.slice(0, 12),
+          source_count: input.sources.length,
+          verified: false,
+        },
+      });
+      if (result.error) throw result.error;
+    },
+    async startAgentExecution(input: { missionId: string; actionId: string | null; agentId: string; idempotencyKey: string; request?: Record<string, unknown> }) {
+      const result = await supabase.rpc("start_agent_execution", {
+        p_mission_id: input.missionId,
+        p_action_id: input.actionId,
+        p_agent_id: input.agentId,
+        p_idempotency_key: input.idempotencyKey,
+        p_request: input.request ?? {},
+      });
+      if (result.error) throw result.error;
+      return result.data as Record<string, unknown>;
+    },
+    async completeAgentExecution(input: { executionId: string; status: "SUCCEEDED" | "FAILED" | "UNKNOWN" | "BLOCKED"; result?: Record<string, unknown>; evidence?: Record<string, unknown>; errorCode?: string; errorMessage?: string }) {
+      const result = await supabase.rpc("complete_agent_execution", {
+        p_execution_id: input.executionId,
+        p_status: input.status,
+        p_result: input.result ?? null,
+        p_evidence: input.evidence ?? null,
+        p_error_code: input.errorCode ?? null,
+        p_error_message: input.errorMessage ?? null,
+      });
+      if (result.error) throw result.error;
+      return result.data as Record<string, unknown>;
+    },
+    async listAgentExecutions(missionId: string) {
+      const result = await supabase.from("agent_executions")
+        .select("id,mission_id,action_id,agent_id,approval_id,status,authority_snapshot,request,result,evidence,error_code,error_message,created_at,completed_at,heartbeat_at,lease_expires_at,cancel_requested_at,retry_of_execution_id,attempt_number,reconciled_at")
+        .eq("mission_id", missionId).order("created_at", { ascending: false }).limit(20);
+      if (result.error) throw result.error;
+      return (result.data ?? []).map((row) => ({
+        id: row.id as string,
+        missionId: row.mission_id as string,
+        actionId: row.action_id as string | null,
+        agentId: row.agent_id as string,
+        approvalId: row.approval_id as string | null,
+        status: row.status as "RUNNING" | "SUCCEEDED" | "FAILED" | "UNKNOWN" | "BLOCKED",
+        authoritySnapshot: (row.authority_snapshot ?? {}) as Record<string, unknown>,
+        request: (row.request ?? {}) as Record<string, unknown>,
+        result: (row.result ?? null) as Record<string, unknown> | null,
+        evidence: (row.evidence ?? null) as Record<string, unknown> | null,
+        errorCode: row.error_code as string | null,
+        errorMessage: row.error_message as string | null,
+        createdAt: row.created_at as string,
+        completedAt: row.completed_at as string | null,
+        heartbeatAt: row.heartbeat_at as string,
+        leaseExpiresAt: row.lease_expires_at as string,
+        cancelRequestedAt: row.cancel_requested_at as string | null,
+        retryOfExecutionId: row.retry_of_execution_id as string | null,
+        attemptNumber: row.attempt_number as number,
+        reconciledAt: row.reconciled_at as string | null,
+      }));
+    },
+    async listWorkspaceAgents() {
+      const result = await supabase.from("workspace_agents").select("id,name,description,status,authority").eq("workspace_id", workspaceId).order("created_at");
+      if (result.error) throw result.error;
+      return (result.data ?? []) as WorkspaceAgent[];
+    },
+    async createWorkspaceInvitation(input) {
+      const result = await supabase.rpc("create_workspace_invitation", {
+        p_workspace_id: workspaceId,
+        p_email: input.email,
+        p_role: input.role,
+        p_token_hash: input.tokenHash,
+        p_expires_at: input.expiresAt,
+      });
+      if (result.error || !result.data) throw result.error ?? new Error("Invitation could not be created.");
+      const row = result.data as {
+        id: string;
+        email: string;
+        role: WorkspaceInvitation["role"];
+        status: WorkspaceInvitation["status"];
+        expires_at: string;
+        created_at: string;
+      };
+      return {
+        id: row.id,
+        email: row.email,
+        role: row.role,
+        status: row.status,
+        expiresAt: row.expires_at,
+        createdAt: row.created_at,
+      };
+    },
+    async getWorkspaceInvitation(tokenHash) {
+      const result = await supabase.rpc("get_workspace_invitation", { p_token_hash: tokenHash });
+      if (result.error) throw result.error;
+      const row = Array.isArray(result.data) ? result.data[0] : result.data;
+      if (!row) return null;
+      return {
+        id: row.id as string,
+        email: row.email as string,
+        role: row.role as WorkspaceInvitation["role"],
+        status: row.status as WorkspaceInvitation["status"],
+        expiresAt: row.expires_at as string,
+        createdAt: row.created_at as string,
+      };
+    },
+    async acceptWorkspaceInvitation(tokenHash) {
+      const result = await supabase.rpc("accept_workspace_invitation", { p_token_hash: tokenHash });
+      if (result.error || !result.data) throw result.error ?? new Error("Invitation could not be accepted.");
+      const row = result.data as { id: string; email: string; role: WorkspaceInvitation["role"]; status: WorkspaceInvitation["status"]; expires_at: string; created_at: string };
+      return { id: row.id, email: row.email, role: row.role, status: row.status, expiresAt: row.expires_at, createdAt: row.created_at };
+    },
+    async revokeWorkspaceInvitation(invitationId) {
+      const result = await supabase.rpc("revoke_workspace_invitation", { p_invitation_id: invitationId });
+      if (result.error || !result.data) throw result.error ?? new Error("Invitation could not be revoked.");
+      const row = result.data as { id: string; email: string; role: WorkspaceInvitation["role"]; status: WorkspaceInvitation["status"]; expires_at: string; created_at: string };
+      return { id: row.id, email: row.email, role: row.role, status: row.status, expiresAt: row.expires_at, createdAt: row.created_at };
+    },
+    async listWorkspaceInvitations() {
+      const result = await supabase.from("workspace_invitations").select("id,email,role,status,expires_at,created_at").eq("workspace_id", workspaceId).order("created_at",{ascending:false}).limit(20);
+      if (result.error) throw result.error;
+      return (result.data ?? []).map((row) => ({ id: row.id as string, email: row.email as string, role: row.role as WorkspaceInvitation["role"], status: row.status as WorkspaceInvitation["status"], expiresAt: row.expires_at as string, createdAt: row.created_at as string }));
+    },
+    async listWorkspaceMembers() {
+      const result = await supabase.rpc("list_workspace_members", { p_workspace_id: workspaceId });
+      if (result.error) throw result.error;
+      return (result.data as Array<{ id: string; user_id: string; email: string | null; role: WorkspaceMember["role"]; created_at: string }> | null ?? []).map((row) => ({ id: row.id, userId: row.user_id, email: row.email ?? null, role: row.role, createdAt: row.created_at }));
+    },
+    async updateWorkspaceMemberRole(memberId, role) {
+      const result = await supabase.rpc("update_workspace_member_role", { p_member_id: memberId, p_role: role });
+      if (result.error || !result.data) throw result.error ?? new Error("Member role could not be changed.");
+      const row = result.data as { id: string; user_id: string; role: WorkspaceMember["role"]; created_at: string };
+      return { id: row.id, userId: row.user_id, email: null, role: row.role, createdAt: row.created_at };
+    },
+    async removeWorkspaceMember(memberId) {
+      const result = await supabase.rpc("remove_workspace_member", { p_member_id: memberId });
+      if (result.error || !result.data) throw result.error ?? new Error("Member could not be removed.");
+      const row = result.data as { id: string; user_id: string; role: WorkspaceMember["role"]; created_at: string };
+      return { id: row.id, userId: row.user_id, email: null, role: row.role, createdAt: row.created_at };
+    },
+    async canDecideApprovals() {
+      const result = await supabase.rpc("list_workspace_members", { p_workspace_id: workspaceId });
+      if (result.error) throw result.error;
+      const rows = (result.data ?? []) as Array<{ user_id: string; role: WorkspaceMember["role"] }>;
+      const role = rows.find((row) => row.user_id === user.id)?.role;
+      return role === "owner" || role === "admin";
+    },
+    async listPendingApprovals() {
+      const result = await supabase
+        .from("mission_approvals")
+        .select("id,mission_id,action_id,status,requested_by,decided_by,requested_scope,decision_note,created_at,decided_at,expires_at")
+        .eq("workspace_id", workspaceId)
+        .eq("status", "PENDING")
+        .order("created_at", { ascending: false });
+      if (result.error) throw result.error;
+      const rows = (result.data ?? []) as Array<{
+        id: string; mission_id: string; action_id: string | null; status: MissionApproval["status"];
+        requested_by: string; decided_by: string | null; requested_scope: Record<string, unknown> | null;
+        decision_note: string | null; created_at: string; decided_at: string | null; expires_at: string | null;
+      }>;
+      if (!rows.length) return [];
+
+      const missionIds = Array.from(new Set(rows.map((row) => row.mission_id)));
+      const actionIds = Array.from(new Set(rows.map((row) => row.action_id).filter((id): id is string => Boolean(id))));
+      const [missionsResult, actionsResult, membersResult] = await Promise.all([
+        supabase.from("missions").select("id,objective,agent_id").eq("workspace_id", workspaceId).in("id", missionIds),
+        actionIds.length
+          ? supabase.from("mission_actions").select("id,title").in("id", actionIds)
+          : Promise.resolve({ data: [], error: null }),
+        supabase.rpc("list_workspace_members", { p_workspace_id: workspaceId }),
+      ]);
+      if (missionsResult.error) throw missionsResult.error;
+      if (actionsResult.error) throw actionsResult.error;
+      if (membersResult.error) throw membersResult.error;
+
+      const missionRows = (missionsResult.data ?? []) as Array<{ id: string; objective: string; agent_id: string | null }>;
+      const actionRows = (actionsResult.data ?? []) as Array<{ id: string; title: string }>;
+      const memberRows = (membersResult.data ?? []) as Array<{ user_id: string; email: string | null }>;
+      const missionById = new Map(missionRows.map((row) => [row.id, row]));
+      const actionById = new Map(actionRows.map((row) => [row.id, row]));
+      const memberByUserId = new Map(memberRows.map((row) => [row.user_id, row.email || "Workspace member"]));
+      const agentIds = Array.from(new Set(missionRows.map((row) => row.agent_id).filter((id): id is string => Boolean(id))));
+      const agentsResult = agentIds.length
+        ? await supabase.from("workspace_agents").select("id,name,authority").eq("workspace_id", workspaceId).in("id", agentIds)
+        : { data: [], error: null };
+      if (agentsResult.error) throw agentsResult.error;
+      const agentRows = (agentsResult.data ?? []) as Array<{ id: string; name: string; authority: Record<string, unknown> }>;
+      const agentById = new Map(agentRows.map((row) => [row.id, row]));
+
+      return rows.map((row) => {
+        const mission = missionById.get(row.mission_id);
+        const parsed = parseMissionObjective(mission?.objective ?? "");
+        const action = row.action_id ? actionById.get(row.action_id) : null;
+        const agent = mission?.agent_id ? agentById.get(mission.agent_id) : null;
+        return {
+          id: row.id,
+          missionId: row.mission_id,
+          actionId: row.action_id,
+          status: row.status,
+          requestedBy: row.requested_by,
+          decidedBy: row.decided_by,
+          requestedScope: (row.requested_scope ?? {}) as Record<string, unknown>,
+          decisionNote: row.decision_note,
+          createdAt: row.created_at,
+          decidedAt: row.decided_at,
+          expiresAt: row.expires_at,
+          missionName: parsed.name,
+          missionIntent: parsed.intent,
+          actionTitle: action?.title ?? null,
+          agentName: agent?.name ?? null,
+          agentAuthority: agent?.authority ?? null,
+          requesterLabel: memberByUserId.get(row.requested_by) ?? "Former workspace member",
+        };
+      });
+    },
+    async listResearchRuns(id: string) {
+      const result = await supabase
+        .from("mission_events")
+        .select("payload, created_at")
+        .eq("mission_id", id)
+        .eq("event_type", "RESEARCH_RUN_COMPLETED")
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (result.error) throw result.error;
+      return (result.data as ResearchEventRow[])
+        .map(toResearchRun)
+        .filter((run): run is MissionResearchRun => Boolean(run));
     },
   };
 }

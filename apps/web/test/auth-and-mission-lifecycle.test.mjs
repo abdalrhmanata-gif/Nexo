@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
-import { DEFAULT_POST_AUTH_PATH, authErrorPath, resolveRequestOrigin, safeNextPath } from "../lib/auth/redirect.mjs";
+import { DEFAULT_POST_AUTH_PATH, authErrorPath, getAuthCallbackConfiguredSiteUrl, resolveAuthCallbackOrigin, resolveRequestOrigin, safeNextPath } from "../lib/auth/redirect.mjs";
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const source = (path) => readFile(join(webRoot, path), "utf8");
@@ -84,12 +84,47 @@ test("confirmation redirects stay on the host the browser is actually using", ()
   );
 });
 
-test("confirmation endpoints redirect through the resolved request origin", async () => {
+test("confirmation endpoints select a deployment-aware configured origin before resolving redirects", async () => {
   for (const file of ["app/auth/callback/route.ts", "app/auth/confirm/route.ts"]) {
     const text = await source(file);
-    assert.match(text, /const origin = resolveRequestOrigin\(request\.headers, request\.url\)/);
+    assert.match(text, /getAuthCallbackConfiguredSiteUrl\(/);
+    assert.match(text, /deployPrimeUrl: process\.env\.DEPLOY_PRIME_URL/);
+    assert.match(text, /publicSiteUrl: process\.env\.NEXT_PUBLIC_SITE_URL/);
+    assert.match(text, /resolveAuthCallbackOrigin\(configuredSiteUrl, request\.headers, request\.url\)/);
     assert.doesNotMatch(text, /NextResponse\.redirect\(new URL\([^)]*request\.url\)\)/);
   }
+});
+
+test("Netlify Deploy Preview auth callbacks prefer the preview permalink over a production URL", () => {
+  assert.equal(getAuthCallbackConfiguredSiteUrl({
+    context: "deploy-preview",
+    deployPrimeUrl: "https://deploy-preview-29--unique-kringle-3ce321.netlify.app",
+    publicSiteUrl: "https://zavqera.example",
+  }), "https://deploy-preview-29--unique-kringle-3ce321.netlify.app");
+
+  assert.equal(getAuthCallbackConfiguredSiteUrl({
+    pullRequest: "true",
+    deployPrimeUrl: "https://pr-42--unique-kringle-3ce321.netlify.app",
+    publicSiteUrl: "https://zavqera.example",
+  }), "https://pr-42--unique-kringle-3ce321.netlify.app");
+
+  assert.equal(getAuthCallbackConfiguredSiteUrl({
+    context: "production",
+    deployPrimeUrl: "https://deploy-preview-29--unique-kringle-3ce321.netlify.app",
+    publicSiteUrl: "https://zavqera.example",
+  }), "https://zavqera.example");
+
+  assert.equal(getAuthCallbackConfiguredSiteUrl({
+    context: "deploy-preview",
+    deployPrimeUrl: "",
+    publicSiteUrl: "https://zavqera.example",
+  }), "");
+});
+
+test("password reset links use the origin that initiated the recovery flow", async () => {
+  const form = await source("components/auth-form.tsx");
+  assert.match(form, /const redirectTo = `\$\{window\.location\.origin\}\/auth\/callback\?next=/);
+  assert.doesNotMatch(form, /const siteUrl = process\.env\.NEXT_PUBLIC_SITE_URL/);
 });
 
 test("workspace mission cards expose an explicit route into the mission detail page", async () => {
@@ -123,4 +158,22 @@ test("mission deletion is authorized server-side and never trusts the client", a
 
   const repository = await source("lib/supabase/mission-repository.ts");
   assert.match(repository, /ownedWorkspace\(supabase, user\.id\)/);
+});
+
+test("configured public origin takes precedence over forwarded host for auth callbacks", () => {
+  const headers = new Headers({ "x-forwarded-host": "attacker.example", "x-forwarded-proto": "https" });
+  assert.equal(
+    resolveAuthCallbackOrigin("https://zavqera-preview.netlify.app", headers, "https://attacker.example/auth/callback"),
+    "https://zavqera-preview.netlify.app",
+  );
+  assert.equal(
+    resolveAuthCallbackOrigin("not a url", new Headers({ host: "localhost:3000" }), "http://localhost:3000/auth/callback"),
+    "http://localhost:3000",
+  );
+});
+
+test("mission deletion reports success only after a row is actually deleted", async () => {
+  const repository = await source("lib/supabase/mission-repository.ts");
+  assert.match(repository, /\.delete\(\)[\s\S]*?\.eq\("workspace_id", workspaceId\)[\s\S]*?\.select\("id"\)[\s\S]*?\.maybeSingle\(\)/);
+  assert.match(repository, /if \(!result\.data\) throw new MissionMutationRejectedError/);
 });

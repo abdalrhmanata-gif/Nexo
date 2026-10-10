@@ -3,6 +3,14 @@
   command = "npm run build"
   publish = ".next"
 
+[build.environment]
+  NODE_VERSION = "20"
+  # Run Next.js Middleware as a serverless function on Netlify instead of
+  # embedding its environment values into the generated Edge Function bundle.
+  # This keeps the Supabase publishable key runtime-resolved and prevents
+  # Netlify's secret scanner from matching it inside generated middleware.
+  NEXT_DISABLE_NETLIFY_EDGE = "true"
+
 # Framework auto-detection does not run for this site, so the deploy published
 # raw .next assets with no Functions or Edge Functions. Declaring the adapter
 # explicitly provisions SSR, Middleware, and Route Handlers. Left unpinned so

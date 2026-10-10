@@ -2,15 +2,23 @@ name: ZAVQERA Web Deploy (Netlify)
 
 # Deploys the ZAVQERA Web MVP (apps/web) to Netlify.
 #
-# This workflow is inert until the repository owner adds NETLIFY_AUTH_TOKEN.
-# It never prints secret values; NEXT_PUBLIC_* values are injected as masked
-# secrets so the Development backend is active in the deployed build.
+# Production deploys are restricted to the existing release branches.
+# Pull-request Deploy Previews are handled by the connected Netlify project,
+# while this workflow remains limited to the existing non-PR deploy paths.
 
 on:
   workflow_dispatch:
   push:
     branches:
       - "zavqera/integrate-origin-main-clean"
+      - "zavqera/alternative-web-deployment"
+    paths:
+      - "apps/web/**"
+      - "netlify.toml"
+      - ".github/workflows/web-deploy-netlify.yml"
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
       - "zavqera/alternative-web-deployment"
     paths:
       - "apps/web/**"
@@ -26,6 +34,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -52,7 +61,7 @@ jobs:
           SUPABASE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
         run: |
           if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_KEY}" ]; then
-            echo "::error::NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY must be set, otherwise /app silently falls back to the local mock repository."
+            echo "::error::NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY must be set."
             exit 1
           fi
           case "${SUPABASE_URL}" in
@@ -101,18 +110,121 @@ jobs:
           set -euo pipefail
           url="$(npx --yes netlify-cli@latest api getSite --data "{\"site_id\":\"${NETLIFY_SITE_ID}\"}" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).ssl_url))')"
           echo "Public URL: ${url}"
-
           root="$(curl -sS -o /dev/null -w '%{http_code}' "${url}/")"
           signin="$(curl -sS -o /dev/null -w '%{http_code}' "${url}/auth/sign-in")"
           app="$(curl -sS -o /dev/null -w '%{http_code}' "${url}/app")"
           appdest="$(curl -sS -o /dev/null -w '%{redirect_url}' "${url}/app")"
           echo "/=${root} /auth/sign-in=${signin} /app=${app} -> ${appdest}"
-
           test "${root}" = "200"
           test "${signin}" = "200"
-
-          # With Supabase configured, middleware must bounce anonymous /app to sign-in.
           case "${appdest}" in
             *"/auth/sign-in"*) echo "Auth middleware verified." ;;
-            *) echo "::error::/app did not redirect anonymously to /auth/sign-in. The deployment is likely running the local mock fallback."; exit 1 ;;
+            *) echo "::error::/app did not redirect anonymously to /auth/sign-in."; exit 1 ;;
           esac
+
+
+  verify-preview:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Wait for Netlify Deploy Preview
+        run: |
+          set -euo pipefail
+          url="https://deploy-preview-29--unique-kringle-3ce321.netlify.app"
+          for i in $(seq 1 36); do
+            code="$(curl -sS -o /tmp/root.html -w '%{http_code}' "$url/")" || code="000"
+            echo "attempt=$i http=$code"
+            if [ "$code" = "200" ]; then exit 0; fi
+            sleep 10
+          done
+          exit 1
+
+      - name: Verify preview routes
+        run: |
+          set -euo pipefail
+          url="https://deploy-preview-29--unique-kringle-3ce321.netlify.app"
+          root="$(curl -sS -o /dev/null -w '%{http_code}' "$url/")"
+          signin="$(curl -sS -o /dev/null -w '%{http_code}' "$url/auth/sign-in")"
+          app="$(curl -sS -o /dev/null -w '%{http_code}' -L "$url/app")"
+          echo "/=$root /auth/sign-in=$signin /app(final)=$app"
+          test "$root" = "200"
+          test "$signin" = "200"
+          test "$app" = "200"
+
+      - name: Verify real OpenAI mission planning
+        run: |
+          set -euo pipefail
+          url="https://deploy-preview-29--unique-kringle-3ce321.netlify.app/api/ai/plan/anonymous"
+          body="$(curl -sS -c /tmp/zavqera-cookie.txt -b /tmp/zavqera-cookie.txt \
+            -H 'content-type: application/json' \
+            --data '{"goal":"Plan a simple launch checklist for a small software product"}' \
+            "$url")"
+          echo "$body" > /tmp/ai.json
+          node <<'NODE'
+          const fs = require("fs");
+          const data = JSON.parse(fs.readFileSync("/tmp/ai.json","utf8"));
+          if (data.provider_mode !== "openai") throw new Error("provider_mode is not openai");
+          if (typeof data.title !== "string" || !data.title.trim()) throw new Error("missing title");
+          if (!Array.isArray(data.steps) || data.steps.length < 3) throw new Error("fewer than 3 steps");
+          console.log(JSON.stringify({
+            provider_mode: data.provider_mode,
+            title: data.title,
+            steps: data.steps.length,
+            anonymous: data.anonymous
+          }));
+          NODE
+
+      - name: Check Development-only live research authentication config
+        if: github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.body, '[live-openai-research]')
+        env:
+          SUPABASE_DEV_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}
+          SUPABASE_DEV_TEST_EMAIL: ${{ secrets.SUPABASE_DEV_TEST_EMAIL }}
+          SUPABASE_DEV_TEST_PASSWORD: ${{ secrets.SUPABASE_DEV_TEST_PASSWORD }}
+        run: |
+          if [ -n "${SUPABASE_DEV_TEST_EMAIL}" ] || [ -n "${SUPABASE_DEV_TEST_PASSWORD}" ]; then
+            if [ -z "${SUPABASE_DEV_TEST_EMAIL}" ] || [ -z "${SUPABASE_DEV_TEST_PASSWORD}" ]; then
+              echo "::error::Set both SUPABASE_DEV_TEST_EMAIL and SUPABASE_DEV_TEST_PASSWORD, or use the Development Auth Admin fallback."
+              exit 1
+            fi
+            echo "Dedicated Development test account is configured (values not printed)."
+          elif [ -n "${SUPABASE_DEV_SERVICE_ROLE_KEY}" ]; then
+            echo "Development-only Auth Admin fallback is configured (key value not printed)."
+          else
+            echo "::error::Configure a dedicated confirmed Development test account using SUPABASE_DEV_TEST_EMAIL and SUPABASE_DEV_TEST_PASSWORD, or configure SUPABASE_DEV_SERVICE_ROLE_KEY. Never use Production credentials."
+            exit 1
+          fi
+
+      - name: Check out source for authenticated live mission research
+        if: github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.body, '[live-openai-research]')
+        uses: actions/checkout@v4
+
+      # This additional live integration is enabled only for the explicitly marked PR run.
+      # It creates its own dedicated Development test account/workspace/mission and never uses Production.
+      - name: Set up Node for authenticated live mission research
+        if: github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.body, '[live-openai-research]')
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install authenticated live research test dependencies
+        if: github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.body, '[live-openai-research]')
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Install Chromium for authenticated live research test
+        if: github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.body, '[live-openai-research]')
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify authenticated live OpenAI mission research
+        if: github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.body, '[live-openai-research]')
+        timeout-minutes: 8
+        working-directory: apps/web
+        env:
+          PREVIEW_URL: https://deploy-preview-29--unique-kringle-3ce321.netlify.app
+          SUPABASE_URL: https://mrwmmbytcymqgwvcoywd.supabase.co
+          SUPABASE_DEV_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}
+          SUPABASE_DEV_TEST_EMAIL: ${{ secrets.SUPABASE_DEV_TEST_EMAIL }}
+          SUPABASE_DEV_TEST_PASSWORD: ${{ secrets.SUPABASE_DEV_TEST_PASSWORD }}
+        run: node test/e2e/live-preview-research.mjs

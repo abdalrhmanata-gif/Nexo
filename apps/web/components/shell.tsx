@@ -1,25 +1,31 @@
 import Link from "next/link";
 import { SignOutButton } from "./auth-form";
+import { LanguageSwitcher } from "./language-switcher";
+import { LocalizedText } from "./localized-text";
+import { NavLink, WorkspaceNavLink } from "./nav-link";
+import { NotificationBell } from "./notification-bell";
 
 export function Shell({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="site-shell">
-      <header className="topbar">
-        <Link className="brand" href="/">
-          ZAVQERA <span>MISSION CONTROL</span>
-        </Link>
-        <nav aria-label="Primary navigation">
-          <Link href="/app">Workspace</Link>
-          <Link className="button button-small" href="/app/missions/new">New mission</Link>
-          <SignOutButton />
-        </nav>
-      </header>
-      <main>{children}</main>
-      <footer className="footer">A calm control plane for bounded AI work.</footer>
-    </div>
-  );
+  return <div className="site-shell">
+    <header className="topbar">
+      <Link className="brand" href="/">ZAVQERA <span><LocalizedText en="MISSION CONTROL" /></span></Link>
+      <nav aria-label="Primary navigation">
+        <Link className="button button-small button-quiet nav-search" href="/app#mission-search"><span aria-hidden="true">⌕</span><LocalizedText en="Search" nb="Søk" ar="بحث" /></Link>
+        <Link className="button button-small" href="/app/missions/new"><LocalizedText en="New mission" /></Link>
+        <NavLink className="nav-featured nav-business" href="/app/business"><LocalizedText en="Business" nb="Bedrift" ar="الأعمال" /></NavLink>
+        <NavLink className="nav-featured nav-templates" href="/templates"><LocalizedText en="Templates" nb="Maler" ar="القوالب" /></NavLink>
+        <NavLink href="/pricing"><LocalizedText en="Pricing" nb="Priser" ar="الأسعار" /></NavLink>
+        <WorkspaceNavLink />
+        <NotificationBell />
+        <LanguageSwitcher />
+        <SignOutButton />
+      </nav>
+    </header>
+    <main>{children}</main>
+    <footer className="footer"><LocalizedText en="A calm control plane for bounded AI work." /></footer>
+  </div>;
 }
-
 export function StatusPill({ status }: { status: string }) {
-  return <span className={`status status-${status.toLowerCase()}`}>{status === "WAITING" ? "Needs input" : status}</span>;
+  const label = status === "WAITING" ? <LocalizedText en="Needs input" /> : status === "ACTIVE" ? <LocalizedText en="Active" /> : status === "COMPLETED" ? <LocalizedText en="Completed" /> : status;
+  return <span className={`status status-${status.toLowerCase()}`}>{label}</span>;
 }

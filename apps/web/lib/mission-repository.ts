@@ -10,6 +10,23 @@ export interface MissionRepository {
   updateAction?(input: UpdateAction): Promise<MissionAction>;
   recordVerification?(input: NewVerification): Promise<MissionVerification>;
   commitOutcome?(input: NewOutcome): Promise<MissionOutcome>;
+  recordResearchRun?(input: NewResearchRun): Promise<void>;
+  listResearchRuns?(missionId: string): Promise<MissionResearchRun[]>;
+  listWorkspaceAgents?(): Promise<WorkspaceAgent[]>;
+  listWorkspaceMembers?(): Promise<WorkspaceMember[]>;
+  listPendingApprovals?(): Promise<MissionApproval[]>;
+  canDecideApprovals?(): Promise<boolean>;
+  listAgentExecutions?(missionId: string): Promise<AgentExecution[]>;
+  listWorkspaceInvitations?(): Promise<WorkspaceInvitation[]>;
+  createWorkspaceInvitation?(input: { email: string; role: "admin" | "member" | "viewer"; tokenHash: string; expiresAt: string }): Promise<WorkspaceInvitation>;
+  getWorkspaceInvitation?(tokenHash: string): Promise<WorkspaceInvitation | null>;
+  acceptWorkspaceInvitation?(tokenHash: string): Promise<WorkspaceInvitation>;
+  revokeWorkspaceInvitation?(invitationId: string): Promise<WorkspaceInvitation>;
+  updateWorkspaceMemberRole?(memberId: string, role: "owner" | "admin" | "member" | "viewer"): Promise<WorkspaceMember>;
+  removeWorkspaceMember?(memberId: string): Promise<WorkspaceMember>;
+  listWorkspaceActivity?(): Promise<WorkspaceActivity[]>;
+  startAgentExecution?(input: { missionId: string; actionId: string | null; agentId: string; idempotencyKey: string; request?: Record<string, unknown> }): Promise<Record<string, unknown>>;
+  completeAgentExecution?(input: { executionId: string; status: "SUCCEEDED" | "FAILED" | "UNKNOWN" | "BLOCKED"; result?: Record<string, unknown>; evidence?: Record<string, unknown>; errorCode?: string; errorMessage?: string }): Promise<Record<string, unknown>>;
 }
 
 export type NewMission = { objective: string; actions?: string[] };
@@ -52,6 +69,31 @@ export class MissionMutationRejectedError extends Error {
     this.name = "MissionMutationRejectedError";
   }
 }
+
+export class MissionProvenanceDeleteError extends Error {
+  constructor() {
+    super("Mission history prevents deletion.");
+    this.name = "MissionProvenanceDeleteError";
+  }
+}
+export type MissionResearchSource = { title: string; url: string };
+export type MissionResearchRun = {
+  runId: string;
+  requestId: string;
+  status: "COMPLETED";
+  summary: string;
+  sources: MissionResearchSource[];
+  createdAt: string;
+  verified: false;
+};
+export type NewResearchRun = {
+  missionId: string;
+  runId: string;
+  requestId: string;
+  summary: string;
+  sources: MissionResearchSource[];
+};
+
 export type NewVerification = {
   missionId: string;
   status: "VERIFIED" | "FAILED";
@@ -67,3 +109,10 @@ export type NewOutcome = {
   successScore?: number;
   status?: "COMPLETED" | "FAILED";
 };
+
+export type WorkspaceAgent = { id: string; name: string; description: string; status: "ACTIVE" | "PAUSED"; authority: Record<string, unknown>; };
+export type WorkspaceMember = { id: string; userId: string; email: string | null; role: "owner" | "admin" | "member" | "viewer"; createdAt: string; };
+export type WorkspaceActivity = { id: string; eventType: string; entityType: string; entityId: string | null; payload: Record<string, unknown>; actorUserId: string | null; createdAt: string; };
+export type WorkspaceInvitation = { id: string; email: string; role: "admin" | "member" | "viewer"; status: "PENDING" | "ACCEPTED" | "REVOKED" | "EXPIRED"; expiresAt: string; createdAt: string; };
+export type MissionApproval = { id: string; missionId: string; actionId: string | null; status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED"; requestedBy: string; decidedBy: string | null; requestedScope: Record<string, unknown>; decisionNote: string | null; createdAt: string; decidedAt: string | null; expiresAt?: string | null; missionName?: string; missionIntent?: string; actionTitle?: string | null; agentName?: string | null; agentAuthority?: Record<string, unknown> | null; requesterLabel?: string; };
+export type AgentExecution = { id: string; missionId: string; actionId: string | null; agentId: string; approvalId: string | null; status: "RUNNING" | "SUCCEEDED" | "FAILED" | "UNKNOWN" | "BLOCKED"; authoritySnapshot: Record<string, unknown>; request: Record<string, unknown>; result: Record<string, unknown> | null; evidence: Record<string, unknown> | null; errorCode: string | null; errorMessage: string | null; createdAt: string; completedAt: string | null; heartbeatAt: string; leaseExpiresAt: string; cancelRequestedAt: string | null; retryOfExecutionId: string | null; attemptNumber: number; reconciledAt: string | null; };

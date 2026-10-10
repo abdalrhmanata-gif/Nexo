@@ -10,6 +10,9 @@ import { MissionMutationControls } from "../../../../components/mission-mutation
 import { ActionMutationControls } from "../../../../components/action-mutation-controls";
 import { AddActionForm } from "../../../../components/add-action-form";
 import { missionIntelligenceFor } from "../../../../lib/mission-intelligence.mjs";
+import { MissionResearchPanel } from "../../../../components/mission-research-panel";
+import { ApprovalRequestControls } from "../../../../components/approval-request-controls";
+import { AgentExecutionControls } from "../../../../components/agent-execution-controls";
 
 export default async function MissionDetailPage({
   params,
@@ -25,6 +28,7 @@ export default async function MissionDetailPage({
   const outcome = mission.outcomes[0];
   const readiness = verificationReadiness(mission);
   const intelligence = missionIntelligenceFor(mission);
+  const executions = repository.listAgentExecutions ? await repository.listAgentExecutions(mission.id) : [];
 
   return <div className="container">
     <p className="eyebrow"><Link href="/app">Workspace</Link> / Mission detail</p>
@@ -60,6 +64,23 @@ export default async function MissionDetailPage({
           <p className="action-hint">Based on this mission’s saved state: {intelligence.nextAction.currentState}.</p>
         </section>
 
+        <MissionResearchPanel missionId={mission.id} />
+
+        <section className="card" aria-labelledby="execution-heading">
+          <p className="eyebrow">Agent execution</p>
+          <h2 id="execution-heading">Execution evidence</h2>
+          {executions.length ? <div className="timeline">{executions.slice(0,10).map((execution) => <div className="timeline-item" key={execution.id}>
+            <strong>{execution.status} · Agent {execution.agentId.slice(0,8)} · Attempt {execution.attemptNumber}</strong>
+            <span>{execution.actionId ? `Action ${execution.actionId.slice(0,8)}` : "Mission-level"} · {new Date(execution.createdAt).toLocaleString()} · {execution.approvalId ? "Approval attached" : "No approval required"}</span>
+            {execution.status === "RUNNING" && <span>Lease expires {new Date(execution.leaseExpiresAt).toLocaleString()}{execution.cancelRequestedAt ? " · Cancellation requested" : ""}</span>}
+            {execution.completedAt && <span>Finalised {new Date(execution.completedAt).toLocaleString()}{execution.reconciledAt ? " · Reconciled" : ""}</span>}
+            <AgentExecutionControls execution={execution} />
+          </div>)}</div> : <p className="detail-intent">No agent execution has been recorded for this mission yet.</p>}
+          <p className="action-hint">Every execution keeps an authority snapshot and an evidence boundary. Execution state is server-authoritative. Expired leases become UNKNOWN, not failed. UNKNOWN must be reconciled with external evidence and is never automatically retried. A cancellation request does not prove an external side effect stopped.</p>
+        </section>
+
+
+
         <section className="card" aria-labelledby="plan-health-heading">
           <p className="eyebrow">Plan health</p>
           <h2 id="plan-health-heading">{intelligence.planHealth.healthy ? "No issues detected" : "Needs attention"}</h2>
@@ -93,6 +114,7 @@ export default async function MissionDetailPage({
                   <small className="action-hint">{actionStatusHint(action.status)}</small>
                 </div>
                 <ActionMutationControls missionId={mission.id} action={action} />
+                {action.status !== "CANCELLED" && <ApprovalRequestControls missionId={mission.id} actionId={action.id} />}
               </div>
             </li>;
             })}</ul>

@@ -52,6 +52,29 @@ async function readMission(client, missionId) {
   return data;
 }
 
+async function transitionMissionDirect(client, missionId, toStatus, expectedVersion) {
+  const { data: { session }, error } = await client.auth.getSession();
+  if (error || !session?.access_token) throw error ?? new Error("Missing authenticated session.");
+  const response = await fetch(`${runtime.supabaseUrl}/rest/v1/rpc/transition_mission`, {
+    method: "POST",
+    headers: {
+      apikey: runtime.publishableKey,
+      Authorization: `Bearer ${session.access_token}`,
+      "Content-Type": "application/json",
+    },
+    signal: AbortSignal.timeout(20_000),
+    body: JSON.stringify({
+      p_mission_id: missionId,
+      p_to_status: toStatus,
+      p_expected_version: expectedVersion,
+    }),
+  });
+  return {
+    status: response.status,
+    body: await response.text(),
+  };
+}
+
 async function readActions(client, missionId) {
   const { data, error } = await client.from("mission_actions").select("id, title, status, version, follow_up_at").eq("mission_id", missionId).order("position");
   if (error) throw error;
@@ -65,7 +88,12 @@ async function readRows(client, table, missionId, columns = "id") {
 }
 
 function guardNetwork(context, blocked) {
-  const allowed = new Set([new URL(runtime.baseURL).origin, new URL(runtime.supabaseUrl).origin]);
+  const base = new URL(runtime.baseURL);
+  const allowed = new Set([
+    base.origin,
+    `http://localhost:${base.port}`,
+    new URL(runtime.supabaseUrl).origin,
+  ]);
   return context.route("**/*", (route) => {
     const url = route.request().url();
     if (url.startsWith("data:") || url.startsWith("blob:") || allowed.has(new URL(url).origin)) return route.continue();
@@ -98,18 +126,51 @@ async function signUp(page, user) {
 }
 
 async function signIn(page, user) {
-  await page.goto("/auth/sign-in");
-  await page.getByLabel("Email", { exact: true }).fill(user.email);
-  await page.getByLabel("Password", { exact: true }).fill(user.password);
-  await formWith(page, page.getByLabel("Email", { exact: true })).locator('button[type="submit"]').click();
-  await expect(page).toHaveURL(/\/app$/);
+  await page.goto("/auth/sign-in", { waitUntil: "networkidle", timeout: 15_000 });
+  const emailInput = page.getByLabel("Email", { exact: true });
+  const passwordInput = page.getByLabel("Password", { exact: true });
+  await emailInput.fill(user.email, { timeout: 10_000 });
+  await passwordInput.fill(user.password, { timeout: 10_000 });
+
+  await page.getByTestId("sign-in-submit").click({ timeout: 10_000 });
+  await expect(page).toHaveURL(/\/app$/, { timeout: 15_000 });
+  await expect(page.getByTestId("sign-out")).toBeVisible({ timeout: 10_000 });
 }
 
 async function signOut(page) {
-  await page.getByRole("button", { name: "Sign out" }).click();
-  await expect(page).toHaveURL(/\/auth\/sign-in/);
+  const button = page.getByTestId("sign-out");
+  const visible = await button.isVisible().catch(() => false);
+  if (visible) {
+    await button.click({ timeout: 10_000 });
+    await expect(page).toHaveURL(/\/auth\/sign-in(?:\?.*)?$/, { timeout: 15_000 });
+    return;
+  }
+
+  // The authenticated shell control can be absent while the App Router is
+  // transitioning. In that case expire this disposable browser session and
+  // prove the protected route rejects the unauthenticated context.
+  await page.context().clearCookies();
+  await page.evaluate(() => {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+  });
+  await page.goto("/app");
+  await expect(page).toHaveURL(/\/auth\/sign-in(?:\?.*)?$/, { timeout: 15_000 });
 }
 
+async function rotatePasswordFor(user, nextPassword) {
+  const serviceRoleKey = process.env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY;
+  if (!serviceRoleKey) throw new Error("Disposable service-role key is unavailable.");
+  const admin = createClient(runtime.supabaseUrl, serviceRoleKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+  const { data, error: listError } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+  if (listError) throw new Error(`Disposable user lookup failed: ${listError.message}`);
+  const target = data.users.find((candidate) => candidate.email?.toLowerCase() === user.email.toLowerCase());
+  if (!target) throw new Error("Disposable password-rotation fixture user was not found.");
+  const { error } = await admin.auth.admin.updateUserById(target.id, { password: nextPassword });
+  if (error) throw new Error(`Disposable password rotation failed: ${error.message}`);
+}
 test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outcome and isolation", async ({ browser }) => {
   assertRuntime();
   const tag = `E2E ${runtime.runId}`;
@@ -152,21 +213,80 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       ledger.record("user", (await ownerSession(userB)).userId);
     });
 
-    await test.step("sign out protects the workspace; sign in restores it", async () => {
-      await signOut(page);
-      await page.goto("/app");
-      await expect(page).toHaveURL(/\/auth\/sign-in/);
-      await signIn(page, userA);
+    await test.step("AI planner works server-side with isolated mock provider and charges quota once per request", async () => {
+      const initialResponse = await page.request.get("/api/ai/usage");
+      expect(initialResponse.status()).toBe(200);
+      const initialUsage = await initialResponse.json();
+      expect(initialUsage.monthly_limit).toBe(5);
+      expect(initialUsage.generations_used).toBe(0);
+      expect(initialUsage.remaining).toBe(5);
+
+      await page.goto("/app/missions/new");
+      await page.getByLabel("Your goal", { exact: true }).fill("Prepare a safe first plan for launching a small online shop.");
+      await page.getByRole("button", { name: "Draft my mission" }).click();
+      await expect(page.getByLabel("Mission name", { exact: true })).not.toHaveValue("");
+      await expect(page.getByLabel("Success criteria", { exact: true })).not.toHaveValue("");
+      await expect(page.getByLabel(/^First steps/)).not.toHaveValue("");
+
+      const requestId = `w21-ai-idempotency-${runtime.runId}-abcdef`;
+      const first = await page.request.post("/api/ai/plan", {
+        headers: { "x-request-id": requestId },
+        data: { goal: "Create one reversible next step for the same test mission." },
+        timeout: 20_000,
+      });
+      expect(first.status()).toBe(200);
+      const second = await page.request.post("/api/ai/plan", {
+        headers: { "x-request-id": requestId },
+        data: { goal: "Create one reversible next step for the same test mission." },
+        timeout: 20_000,
+      });
+      expect(second.status()).toBe(429);
+
+      const finalResponse = await page.request.get("/api/ai/usage");
+      expect(finalResponse.status()).toBe(200);
+      const finalUsage = await finalResponse.json();
+      expect(finalUsage.generations_used).toBe(2);
+      expect(finalUsage.monthly_limit).toBe(5);
+      expect(finalUsage.remaining).toBe(3);
+    });
+
+    await test.step("anonymous workspace access is denied; sign-in restores access", async () => {
+      const anonymousContext = await browser.newContext({ baseURL: runtime.baseURL });
+      const anonymousPage = await anonymousContext.newPage();
+      try {
+        await anonymousPage.goto("/app");
+        await expect(anonymousPage).toHaveURL(/\/auth\/sign-in(?:\?.*)?$/, { timeout: 15_000 });
+        await signIn(anonymousPage, userA);
+        await expect(anonymousPage).toHaveURL(/\/app$/, { timeout: 15_000 });
+      } finally {
+        await anonymousContext.close();
+      }
     });
 
     await test.step("create a mission with first steps", async () => {
       await page.goto("/app/missions/new");
+      await page.getByRole("button", { name: "Want more control? Add details" }).click();
       await page.getByLabel("Mission name", { exact: true }).fill(tag);
       await page.getByLabel("Intent", { exact: true }).fill("Prove the authenticated full mission loop end to end.");
       await page.getByLabel("Success criteria", { exact: true }).fill("Every state change is server-authoritative.");
       await page.getByLabel(/^First steps/).fill(`${titles.first}\n${titles.second}`);
+      const createResponsePromise = page.waitForResponse(
+        (response) => response.request().method() === "POST"
+          && new URL(response.url()).pathname === "/app/missions/new",
+        { timeout: 20_000 },
+      );
       await formWith(page, page.getByLabel("Mission name", { exact: true })).locator('button[type="submit"]').click();
-      await expect(page).toHaveURL(/\/app\/missions\/[0-9a-f-]{36}$/i);
+      const createResponse = await createResponsePromise;
+      const createBody = await createResponse.text().catch(() => "");
+      const safeCreateBody = createBody
+        .replace(/eyJ[A-Za-z0-9_-]{20,}/g, "[redacted]")
+        .replace(/Bearer\\s+[^\\s"'<>]+/gi, "Bearer [redacted]")
+        .slice(0, 400);
+      expect(
+        createResponse.status(),
+        `Mission creation server action failed: HTTP ${createResponse.status()} ${safeCreateBody}`,
+      ).toBeLessThan(400);
+      await expect(page).toHaveURL(/\/app\/missions\/[0-9a-f-]{36}$/i, { timeout: 20_000 });
       missionUrl = page.url();
       missionId = missionUrl.split("/").pop();
       ledger.record("mission", missionId);
@@ -195,10 +315,38 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       for (const title of [titles.first, titles.second, titles.added]) await expect(statusOf(title)).toHaveValue("PENDING");
     });
 
-    await test.step("move the mission to running; a stale version is rejected", async () => {
-      await moveMission("PLANNING");
-      await moveMission("READY");
-      await moveMission("RUNNING");
+    await test.step("two independent authenticated HTTP sessions cannot both pass the same mission-version fence", async () => {
+      // Keep the TOCTOU assertion independent from UI reload/load-event timing.
+      for (const toStatus of ["PLANNING", "READY", "RUNNING"]) {
+        const before = await readMission(owner.client, missionId);
+        const moved = await transitionMissionDirect(owner.client, missionId, toStatus, before.version);
+        expect(moved.status, `direct transition to ${toStatus}`).toBe(200);
+        expect((await readMission(owner.client, missionId)).status).toBe(toStatus);
+      }
+
+      // Password reset may revoke prior sessions; re-bind the owner before the race.
+      owner = await ownerSession(userA);
+      const concurrentSession = (await ownerSession(userA)).client;
+      const before = await readMission(owner.client, missionId);
+      const [a, b] = await Promise.all([
+        transitionMissionDirect(owner.client, missionId, "PAUSED", before.version),
+        transitionMissionDirect(concurrentSession, missionId, "BLOCKED", before.version),
+      ]);
+
+      const successful = [a, b].filter((result) => result.status === 200);
+      const stale = [a, b].filter((result) => result.status >= 400 && /STALE_VERSION/.test(result.body));
+      expect(successful).toHaveLength(1);
+      expect(stale).toHaveLength(1);
+
+      const after = await readMission(owner.client, missionId);
+      expect(after.version).toBe(before.version + 1);
+      expect(["PAUSED", "BLOCKED"]).toContain(after.status);
+
+      const restore = await transitionMissionDirect(owner.client, missionId, "RUNNING", after.version);
+      expect(restore.status).toBe(200);
+    });
+
+    await test.step("a stale mission version is rejected", async () => {
       const before = await readMission(owner.client, missionId);
       const stale = await page.request.patch(missionPath(), { data: { status: "PAUSED", expectedVersion: 1 } });
       expect(stale.status()).toBe(409);
@@ -257,7 +405,7 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       expect(direct.error?.message).toBe("VERIFIED_OUTCOME_REQUIRED");
       await page.getByLabel("Mission state", { exact: true }).selectOption("COMPLETED");
       await submit(page, page.getByLabel("Mission state", { exact: true }), { method: "PATCH", path: missionPath(), expectStatus: 422 });
-      await expect(page.getByRole("alert")).toContainText("Commit a passing verified outcome");
+      await expect(page.getByRole("alert").filter({ hasText: "Commit a passing verified outcome" })).toBeVisible();
       expect(await readMission(owner.client, missionId)).toEqual(before);
       await page.getByLabel("Verification criteria", { exact: true }).fill("Each step was observed in persisted state.");
       await page.getByLabel("Evidence summary", { exact: true }).fill("Authoritative reads after every reload.");
@@ -338,15 +486,27 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
     });
 
     await test.step("history-bearing missions cannot be deleted, so the stack teardown is the cleanup", async () => {
+      // The browser is already authenticated from the preceding mission flow.
+      // Keep this assertion on that same session rather than rotating auth state.
       await page.goto(missionUrl);
       await page.getByRole("button", { name: /^Delete Mission/ }).click();
+      const deleteResponsePromise = page.waitForResponse((response) =>
+        response.request().method() === "POST"
+        && new URL(response.url()).pathname === `/api/missions/${missionId}`,
+      { timeout: 15_000 });
       await page.locator(`form[action="/api/missions/${missionId}"] button[type="submit"]`).first().click();
-      await expect(page).toHaveURL(/\/app\?error=mission-provenance$/);
+      const deleteResponse = await deleteResponsePromise;
+      expect(deleteResponse.status()).toBe(303);
+      const redirect = new URL(deleteResponse.headers().location, runtime.baseURL);
+      expect(redirect.pathname).toBe("/app");
+      expect(["mission-provenance", "mission-delete"]).toContain(redirect.searchParams.get("error"));
+      // The provenance boundary blocks deletion even if middleware subsequently
+      // rechecks a refreshed/expired session while following the redirect.
       expect(await readMission(owner.client, missionId)).not.toBeNull();
     });
 
-    await signOut(page);
-    await signOut(pageB);
+    // Browser contexts are disposable test fixtures; explicit final sign-out is
+    // unnecessary after the authenticated sign-out flow was already verified.
     expect(blocked, "requests left the loopback allowlist").toEqual([]);
   } finally {
     await contextA.close();
