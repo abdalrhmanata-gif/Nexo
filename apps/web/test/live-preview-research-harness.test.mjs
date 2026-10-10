@@ -16,7 +16,7 @@ test("live research prefers paired pre-provisioned Dev credentials and keeps val
   assert.match(script, /if \(hasTestAccountEmail !== hasTestAccountPassword\)/);
   assert.match(script, /pre-provisioned-development-test-account/);
   assert.match(script, /Never log mission intent, credentials, raw provider output, tokens, or complete URLs/);
-  assert.doesNotMatch(script, /console\.log\([^\n]*(testAccountEmail|testAccountPassword|adminApiKey|password)\s*[,)]]/);
+  assert.doesNotMatch(script, /console\.log\([^\n]*(testAccountEmail|testAccountPassword|adminApiKey|password)\s*[,)]/);
 });
 
 test("the live gate refuses any target other than the fixed HTTPS preview and Development project", () => {
