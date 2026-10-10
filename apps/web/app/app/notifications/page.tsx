@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { LocalizedText } from "../../../../components/localized-text";
-import { isSupabaseConfigured } from "../../../../lib/supabase/config";
-import { createSupabaseMissionRepository } from "../../../../lib/supabase/mission-repository";
-import { localMockMissionRepository } from "../../../../lib/local-mock-repository";
+import { LocalizedText } from "../../../components/localized-text";
+import { isSupabaseConfigured } from "../../../lib/supabase/config";
+import { createSupabaseMissionRepository } from "../../../lib/supabase/mission-repository";
+import { localMockMissionRepository } from "../../../lib/local-mock-repository";
 
 export default async function NotificationsPage() {
   const repository = isSupabaseConfigured() ? await createSupabaseMissionRepository() : localMockMissionRepository;
