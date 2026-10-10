@@ -430,3 +430,48 @@ export function summariseApprovalScope(scope) {
     ? parts.join(" · ").slice(0, 360)
     : "No readable scope details were provided; inspect the mission before deciding.";
 }
+
+
+/**
+ * Render the DB-generated approval payload shape. This formatter deliberately
+ * accepts only type/field metadata; it never reads request payload values.
+ */
+function payloadShapeDescription(shape, depth = 0) {
+  if (!shape || typeof shape !== "object" || Array.isArray(shape)) return "unknown";
+  const type = ["object", "array", "string", "number", "boolean", "null", "missing"].includes(shape.type)
+    ? shape.type
+    : "unknown";
+  if (shape.details_omitted === true || depth >= 3) return `${type} (nested structure omitted)`;
+
+  if (type === "object") {
+    const fields = Array.isArray(shape.fields)
+      ? shape.fields.slice(0, 8).map((entry) => {
+          if (!entry || typeof entry !== "object") return "field (unknown)";
+          const field = typeof entry.field === "string"
+            ? entry.field.replace(/[^A-Za-z0-9_. -]/g, "").slice(0, 64) || "field"
+            : "field";
+          return `${field} (${payloadShapeDescription(entry.shape, depth + 1)})`;
+        })
+      : [];
+    const omitted = Number.isInteger(shape.omitted_fields) && shape.omitted_fields > 0
+      ? `; ${shape.omitted_fields} additional field(s) omitted`
+      : "";
+    return fields.length ? `object: ${fields.join(", ")}${omitted}` : "object (no visible fields)";
+  }
+
+  if (type === "array") {
+    if (shape.empty === true) return "array (empty)";
+    return shape.item_shape
+      ? `array (sample item shape: ${payloadShapeDescription(shape.item_shape, depth + 1)})`
+      : "array (item structure unavailable)";
+  }
+
+  return type;
+}
+
+export function summariseApprovalPayloadPreview(preview) {
+  if (!preview || typeof preview !== "object" || Array.isArray(preview)) {
+    return "No safe payload-shape preview is attached; do not approve execution from this request.";
+  }
+  return `Field names and data types only; values hidden: ${payloadShapeDescription(preview)}`.slice(0, 600);
+}

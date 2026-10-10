@@ -12,6 +12,7 @@ import {
   nextStepFor,
   parseMissionObjective,
   summariseEventPayload,
+  summariseApprovalPayloadPreview,
   summariseApprovalScope,
 } from "../lib/mission-content.mjs";
 
@@ -588,6 +589,33 @@ test("collaboration, approval, research recovery, and execution API errors are l
 });
 
 
+test("approval payload preview shows safe field names and types but never payload values", () => {
+  const preview = {
+    type: "object",
+    omitted_fields: 0,
+    fields: [
+      { field: "quantity", shape: { type: "number" } },
+      { field: "[sensitive field]", shape: { type: "string" } },
+      { field: "details", shape: { type: "object", omitted_fields: 0, fields: [
+        { field: "note", shape: { type: "string" } },
+      ] } },
+    ],
+  };
+  const summary = summariseApprovalPayloadPreview(preview);
+  assert.match(summary, /quantity \(number\)/);
+  assert.match(summary, /\[sensitive field\] \(string\)/);
+  assert.match(summary, /details \(object: note \(string\)\)/);
+  assert.match(summary, /values hidden/i);
+  assert.ok(!summary.includes("approved value"));
+  assert.ok(!summary.includes("secret-sentinel"));
+  assert.match(summariseApprovalPayloadPreview({ type: "array", empty: true }), /array \(empty\)/);
+  assert.match(summariseApprovalPayloadPreview(null), /do not approve execution/i);
+
+  const center = read("components/approval-center.tsx");
+  assert.ok(center.includes("summariseApprovalPayloadPreview"));
+  assert.ok(center.includes("Payload structure (values hidden)"));
+});
+
 test("exact execution approval UI sends a canonical review-only binding", () => {
   const source = read("components/exact-execution-approval-request.tsx");
   const page = read("app/app/missions/[id]/page.tsx");
@@ -598,6 +626,7 @@ test("exact execution approval UI sends a canonical review-only binding", () => 
   assert.ok(source.includes("audience: trimmedAudience"));
   assert.ok(source.includes("summary: trimmedSummary"));
   assert.ok(source.includes("JSON.parse(payloadText)"));
+  assert.ok(source.includes("safe preview of field names and data types, not payload values"));
   assert.ok(source.includes("Array.isArray(parsed)"));
   assert.ok(source.includes("/api/missions/"));
   assert.ok(!source.includes("/api/agent-executions/"));
