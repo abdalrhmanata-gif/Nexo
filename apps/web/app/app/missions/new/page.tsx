@@ -9,9 +9,10 @@ async function createMission(formData: FormData) {
   "use server";
   const name = String(formData.get("name") ?? "").trim();
   const intent = String(formData.get("intent") ?? "").trim();
+  const boundaries = String(formData.get("boundaries") ?? "").trim();
   const criteria = String(formData.get("criteria") ?? "").trim();
   const steps = String(formData.get("actions") ?? "").trim();
-  if (!name || intent.length < 12 || !criteria) {
+  if (!name || intent.length < 12 || !criteria || boundaries.length > 1000) {
     redirect("/app/missions/new?error=validation");
   }
   const repository = await createSupabaseMissionRepository();
@@ -20,7 +21,8 @@ async function createMission(formData: FormData) {
   // no separate first steps are given the criteria seed the plan, which keeps
   // every mission created before these were separated behaving as it did.
   const actions = steps ? toLines(steps) : toLines(criteria);
-  const mission = await repository.createMission!({ objective: composeMissionObjective({ name, intent, criteria }), actions });
+  const persistedIntent = boundaries ? `${intent}\n\nBoundaries and permissions:\n${boundaries}` : intent;
+  const mission = await repository.createMission!({ objective: composeMissionObjective({ name, intent: persistedIntent, criteria }), actions });
   redirect(`/app/missions/${mission.id}`);
 }
 
