@@ -378,7 +378,7 @@ const APPROVAL_SCOPE_FIELDS = [
   ["request_hash", "Request SHA-256", "text"],
   ["bounded_action", "Bounded action", "boolean"],
   ["reason", "Reason", "text"],
-  ["request_summary", "Execution summary", "text"],
+  ["summary", "Execution summary", "text"],
   ["purpose", "Purpose", "text"],
   ["requested_action", "Requested action", "text"],
   ["action", "Requested action", "text"],
