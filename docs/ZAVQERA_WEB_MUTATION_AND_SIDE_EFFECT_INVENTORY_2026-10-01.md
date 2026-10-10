@@ -84,3 +84,19 @@ The current attempt row and UNKNOWN handling are useful safety primitives, but t
 - Do not label Mission Authority production-certified.
 - Continue implementation against Issues #23–#25 in an isolated fake-adapter/contract-test seam, with the existing web research route treated as a first partial integration rather than universal enforcement.
 - No Supabase Main/Production change, production deployment, DNS or billing change was made in this follow-up.
+
+
+## Inventory completeness correction — 2026-10-10
+
+A further source pass found additional real provider calls and one external email side effect. The phrase “one confirmed real external provider path” in the earlier W56 follow-up refers only to the Mission Research route and must not be read as a complete inventory.
+
+| Route / source | External boundary | Current controls | Remaining limitation |
+|---|---|---|---|
+| `apps/web/app/api/ai/plan/route.ts` POST | OpenAI Responses API for authenticated draft planning | Authenticated user required; goal bounded to 2,400 chars; AI quota reservation/settlement; timeout/unknown failures hold quota | Does not create an agent execution attempt or invoke the Mission Authority JIT gate. This is draft generation, not authorization to perform the proposed actions. |
+| `apps/web/app/api/ai/plan/anonymous/route.ts` POST | OpenAI Responses API for anonymous draft planning | Goal bounded to 900 chars; visitor/IP hashes; anonymous quota reservation; timeout/unknown failures do not release the reservation; no tool execution is offered | No durable Mission Authority attempt journal. Keep the returned plan explicitly draft-only; do not interpret this endpoint as action execution. |
+| `apps/web/app/api/missions/[id]/research/route.ts` POST | OpenAI Responses API with required web search | Authenticated mission lookup; quota reservation; execution/approval gate before provider call; W56 duplicate-key rejection; execution evidence/history writes | Partial gate for this route only; exact action/input hash, authority revision, lease, policy version, destination/audience and cross-worker reconciliation are not yet proven together at one atomic boundary. |
+| `apps/web/app/api/business/invitations/route.ts` POST | Resend email API sends a workspace invitation | Server-side role validation, authenticated workspace repository path, trusted-origin checks, escaped email content, idempotency key, hashed invitation token and expiry | Real delivery is not verified. This is a user/admin-initiated email action, not an agent-authorized Mission action; still requires a real delivery test and should never claim inbox delivery solely from provider acceptance. |
+
+The source inventory now distinguishes (a) AI provider requests that send user-provided mission content outside ZAVQERA, (b) the gated read-only research operation, and (c) human/admin-triggered email delivery. The two planning endpoints must remain draft-only and must not gain tool execution implicitly. Any future agent tool or external side effect must use the shared server-side authority boundary rather than treating planner output or a provider response as permission.
+
+No runtime code, hosted schema, Production, DNS, or billing was changed by this inventory correction.
