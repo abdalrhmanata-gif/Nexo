@@ -213,9 +213,41 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
+          proof="$RUNNER_TEMP/W21_CLEANUP_PROOF.txt"
+          {
+            echo "cleanup_attempted=true"
+            echo "project_id=zavqera-e2e-local"
+          } > "$proof"
+          stop_status=0
           if [ -n "${ZAVQERA_E2E_SUPABASE_WORKDIR:-}" ]; then
-            supabase stop --no-backup --workdir "$ZAVQERA_E2E_SUPABASE_WORKDIR" >/dev/null 2>&1 || true
+            supabase stop --no-backup --workdir "$ZAVQERA_E2E_SUPABASE_WORKDIR" >/dev/null 2>&1 || stop_status=$?
           fi
+          echo "supabase_stop_exit_code=$stop_status" >> "$proof"
+
+      - name: Verify disposable Supabase cleanup
+        if: always()
+        run: |
+          set -euo pipefail
+          proof="$RUNNER_TEMP/W21_CLEANUP_PROOF.txt"
+          project="zavqera-e2e-local"
+          labelled_containers="$(docker ps -aq --filter "label=com.supabase.cli.project=$project")"
+          named_containers="$(docker ps -aq --filter "name=$project")"
+          containers="$(printf '%s\n%s\n' "$labelled_containers" "$named_containers" | sed '/^$/d' | sort -u)"
+          labelled_volumes="$(docker volume ls -q --filter "label=com.supabase.cli.project=$project")"
+          named_volumes="$(docker volume ls -q --filter "name=$project")"
+          volumes="$(printf '%s\n%s\n' "$labelled_volumes" "$named_volumes" | sed '/^$/d' | sort -u)"
+          {
+            printf 'remaining_containers=%s\n' "${containers:-none}"
+            printf 'remaining_volumes=%s\n' "${volumes:-none}"
+          } >> "$proof"
+          if [ -n "$containers" ] || [ -n "$volumes" ]; then
+            echo "cleanup_verified=false" >> "$proof"
+            cat "$proof"
+            exit 1
+          fi
+          echo "cleanup_verified=true" >> "$proof"
+          cat "$proof"
+
       - name: Write evidence
         if: always()
         run: |
@@ -225,7 +257,32 @@ jobs:
             echo "git_sha=${GITHUB_SHA}"
             echo "migration_source=repo-migrations"
             echo "postgres_major=17"
+            if [ -f "$RUNNER_TEMP/W21_CLEANUP_PROOF.txt" ]; then
+              cat "$RUNNER_TEMP/W21_CLEANUP_PROOF.txt"
+            else
+              echo "cleanup_proof=missing"
+            fi
           } > "$RUNNER_TEMP/W21_EVIDENCE.txt"
+          if [ ! -f "$RUNNER_TEMP/W21_CLEANUP_PROOF.txt" ] || ! grep -q '^cleanup_verified=true
+      - name: Upload browser diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zavqera-w21-browser-diagnostics
+          path: ${{ runner.temp }}/w21-playwright
+          if-no-files-found: warn
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zavqera-w21-evidence
+          path: ${{ runner.temp }}/W21_EVIDENCE.txt
+          if-no-files-found: error
+ "$RUNNER_TEMP/W21_CLEANUP_PROOF.txt"; then
+            echo "Cleanup proof missing or not verified; see W21 evidence artifact." >&2
+            exit 1
+          fi
 
       - name: Upload browser diagnostics
         if: always()

@@ -589,6 +589,17 @@ test("collaboration, approval, research recovery, and execution API errors are l
 });
 
 
+test("W21 verifies disposable Supabase containers and volumes are gone before passing", () => {
+  const workflow = read("../../.github/workflows/zavqera-w21-e2e.yml");
+  assert.ok(workflow.includes("Cleanup disposable Supabase stack"));
+  assert.ok(workflow.includes("Verify disposable Supabase cleanup"));
+  assert.ok(workflow.includes('docker ps -aq --filter "label=com.supabase.cli.project=$project"'));
+  assert.ok(workflow.includes('docker volume ls -q --filter "label=com.supabase.cli.project=$project"'));
+  assert.ok(workflow.includes("cleanup_verified=true"));
+  assert.ok(workflow.includes("W21_CLEANUP_PROOF.txt"));
+  assert.ok(workflow.includes("if: always()"));
+});
+
 test("approval payload preview shows safe field names and types but never payload values", () => {
   const preview = {
     type: "object",
