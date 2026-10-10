@@ -14,7 +14,7 @@ const KNOWN_PROVIDER_FAILURES = new Map([
   ["INCOMPLETE_PROVIDER_RESPONSE", { kind: "definite", status: 502 }],
   ["INVALID_PROVIDER_RESPONSE", { kind: "definite", status: 502 }],
   ["AGENT_APPROVAL_REQUIRED", { kind: "definite", status: 409 }],
-  ["AGENT_EXECUTION_ALREADY_EXISTS", { kind: "definite", status: 409 }],
+  ["AGENT_EXECUTION_ALREADY_EXISTS", { kind: "unknown", status: 409 }],
   ["AGENT_EXECUTION_START_FAILED", { kind: "definite", status: 503 }],
 ]);
 
