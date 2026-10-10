@@ -100,19 +100,19 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
   return <form className="form-grid card mission-create-form" action={action}>
     <section className="mission-ai-draft" aria-labelledby="mission-ai-heading">
       <p className="eyebrow"><LocalizedText en="ZAVQERA AI" nb="ZAVQERA KI" ar="ZAVQERA بالذكاء الاصطناعي" /></p>
-      <h2 id="mission-ai-heading"><LocalizedText en="Tell ZAVQERA what you want." nb="Fortell ZAVQERA hva du vil." ar="أخبر ZAVQERA بما تريد." /></h2>
-      <p><LocalizedText en="Just describe the outcome. ZAVQERA will shape the plan for you." nb="Beskriv bare resultatet. ZAVQERA lager planen for deg." ar="اشرح فقط النتيجة التي تريدها. ZAVQERA ستبني الخطة لك." /></p>
+      <h2 id="mission-ai-heading"><LocalizedText en="Describe the outcome you want." nb="Beskriv resultatet du ønsker." ar="صف النتيجة التي تريد تحقيقها." /></h2>
+      <p><LocalizedText en="Share the result, any deadline or budget, and what must not happen. ZAVQERA drafts the steps and success criteria for you to review." nb="Beskriv resultatet, eventuell tidsfrist eller budsjett, og hva som ikke må skje. ZAVQERA lager et utkast med steg og suksesskriterier som du kan gjennomgå." ar="اذكر النتيجة والموعد النهائي أو الميزانية وأي إجراءات ممنوعة. سيعدّ ZAVQERA مسودة للخطوات ومعايير النجاح لتراجعها." /></p>
       <div className="field">
         <label htmlFor="ai-goal"><LocalizedText en="Your goal" nb="Målet ditt" ar="هدفك" /></label>
         <textarea id="ai-goal" value={goal} onChange={(event) => { setGoal(event.target.value); setError(""); }} maxLength={1200} placeholder={placeholder} aria-describedby="ai-goal-help" />
-        <small id="ai-goal-help"><LocalizedText en="Describe the result, not the project structure. You can be messy." nb="Beskriv resultatet, ikke prosjektstrukturen. Du kan skrive fritt." ar="اشرح النتيجة، وليس هيكل المشروع. يمكنك الكتابة بحرية." /></small>
+        <small id="ai-goal-help"><LocalizedText en="Mention deadlines, budget limits, allowed research, and actions that must not happen. Nothing is executed automatically." nb="Nevn tidsfrister, budsjettgrenser, tillatt research og handlinger som ikke må skje. Ingenting utføres automatisk." ar="اذكر المواعيد والميزانية والبحث المسموح والإجراءات الممنوعة. لن يتم تنفيذ أي شيء تلقائيًا." /></small>
         <div className="goal-examples" aria-label="Example goals">
           <span><LocalizedText en="Try an example" nb="Prøv et eksempel" ar="جرّب مثالًا" /></span>
           {examples.map((example) => <button key={example} type="button" className="example-chip" onClick={() => handleExampleClick(example)}>{example}</button>)}
         </div>
       </div>
       <button className="button" type="button" disabled={loading || !goal.trim()} onClick={draftWithAi}>
-        {loading ? <LocalizedText en="Building your plan…" nb="Bygger planen din…" ar="جارٍ بناء خطتك…" /> : <LocalizedText en="Build my plan" nb="Bygg planen min" ar="ابنِ خطتي" />}
+        {loading ? <LocalizedText en="Building your plan…" nb="Bygger planen din…" ar="جارٍ بناء خطتك…" /> : <LocalizedText en="Draft my mission" nb="Lag et oppdragsutkast" ar="أنشئ مسودة مهمتي" />}
       </button>
       {usage && <p className="ai-usage" aria-live="polite">{usage.remaining} / {usage.monthly_limit} <LocalizedText en="AI generations remaining this month." /></p>}
       {error && <p className="field-error" role="alert"><LocalizedText en={error} /></p>}
@@ -129,7 +129,7 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
         <div className="ai-plan-preview-header">
           <div>
             <p className="eyebrow"><LocalizedText en="AI draft" nb="KI-utkast" ar="مسودة الذكاء الاصطناعي" /></p>
-            <h3 id="ai-plan-preview-heading"><LocalizedText en="Your plan is ready." nb="Planen din er klar." ar="خطتك جاهزة." /></h3>
+            <h3 id="ai-plan-preview-heading"><LocalizedText en="Your mission draft is ready." nb="Oppdragsutkastet er klart." ar="مسودة المهمة جاهزة." /></h3>
           </div>
           <span className="ai-plan-review-badge"><LocalizedText en="Review and edit before creating" nb="Se gjennom og rediger før du oppretter" ar="راجع وعدّل قبل الإنشاء" /></span>
         </div>
