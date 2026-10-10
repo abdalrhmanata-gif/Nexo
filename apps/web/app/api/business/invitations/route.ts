@@ -114,21 +114,31 @@ export async function POST(request: NextRequest) {
     try {
       const emailResult = await sendInvitationEmail({ email, role, inviteUrl, expiresAt, idempotencyKey: "workspace-invitation/" + invitation.id });
       if (!emailResult.ok) {
-        await repository.revokeWorkspaceInvitation(invitation.id).catch(() => undefined);
+        let revoked = false;
+        try {
+          await repository.revokeWorkspaceInvitation(invitation.id);
+          revoked = true;
+        } catch {
+          // Report the orphaned pending invitation explicitly; never imply cleanup succeeded.
+        }
+        const message = emailResult.reason === "EMAIL_NOT_CONFIGURED"
+          ? "Email invitations are not configured yet."
+          : "The email provider rejected the invitation. Check the sender configuration and try again.";
         return NextResponse.json({
-          error: emailResult.reason === "EMAIL_NOT_CONFIGURED"
-            ? "Email invitations are not configured yet."
-            : "The invitation email could not be delivered. Check the sender configuration and try again.",
+          error: revoked ? message : message + " The pending invitation could not be cleared; revoke it in Business before retrying.",
         }, { status: 503 });
       }
     } catch {
-      await repository.revokeWorkspaceInvitation(invitation.id).catch(() => undefined);
-      return NextResponse.json({ error: "The invitation email could not be delivered. The pending invitation was revoked; please try again." }, { status: 502 });
+      // A network timeout is ambiguous: the provider may already have accepted the email.
+      // Keep the pending invitation so a delivered link is not invalidated by speculative cleanup.
+      return NextResponse.json({
+        error: "We could not confirm whether the email provider accepted this invitation. Check provider logs before retrying; revoke the pending invitation in Business only if it was not sent.",
+      }, { status: 502 });
     }
 
     return NextResponse.json({
       invitation: { id: invitation.id, email: invitation.email, role: invitation.role, status: invitation.status, expiresAt: invitation.expiresAt },
-      delivery: "sent",
+      delivery: "accepted",
     });
   } catch {
     return NextResponse.json({ error: "The invitation request could not be processed." }, { status: 400 });
