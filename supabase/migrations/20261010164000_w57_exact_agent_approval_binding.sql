@@ -16,9 +16,9 @@ create index if not exists mission_approvals_agent_execution_scope_idx
 create or replace function private.agent_execution_approval_scope(
   p_workspace_id uuid,
   p_mission_id uuid,
-  p_mission_version integer,
+  p_mission_version bigint,
   p_action_id uuid,
-  p_action_version integer,
+  p_action_version bigint,
   p_agent_id uuid,
   p_authority jsonb,
   p_request jsonb
@@ -66,7 +66,7 @@ begin
 end;
 $function$;
 
-revoke all on function private.agent_execution_approval_scope(uuid,uuid,integer,uuid,integer,uuid,jsonb,jsonb)
+revoke all on function private.agent_execution_approval_scope(uuid,uuid,bigint,uuid,bigint,uuid,jsonb,jsonb)
   from public, anon, authenticated;
 
 create or replace function private.request_mission_approval(

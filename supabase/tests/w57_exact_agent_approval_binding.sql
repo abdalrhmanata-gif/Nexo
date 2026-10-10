@@ -11,10 +11,10 @@ select ok(exists (
   select 1 from information_schema.columns
    where table_schema = 'public' and table_name = 'mission_approvals' and column_name = 'consumed_by_execution_id'
 ), 'an execution approval records the execution chain that consumed it');
-select ok(to_regprocedure('private.agent_execution_approval_scope(uuid,uuid,integer,uuid,integer,uuid,jsonb,jsonb)') is not null,
+select ok(to_regprocedure('private.agent_execution_approval_scope(uuid,uuid,bigint,uuid,bigint,uuid,jsonb,jsonb)') is not null,
   'canonical versioned approval-scope builder exists');
 select ok(not has_function_privilege('authenticated',
-  'private.agent_execution_approval_scope(uuid,uuid,integer,uuid,integer,uuid,jsonb,jsonb)', 'EXECUTE'),
+  'private.agent_execution_approval_scope(uuid,uuid,bigint,uuid,bigint,uuid,jsonb,jsonb)', 'EXECUTE'),
   'authenticated users cannot call the internal scope builder directly');
 select ok(lower(pg_get_functiondef('private.request_mission_approval(uuid,uuid,jsonb)'::regprocedure)) like '%agent_execution_binding_v1%',
   'approval requests store only the canonical execution-binding contract');
