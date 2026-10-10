@@ -11,7 +11,24 @@ export default async function NotificationsPage() {
     repository.listPendingApprovals ? repository.listPendingApprovals() : Promise.resolve([]),
   ]);
   const waiting = missions.filter((mission) => mission.status === "WAITING");
-  const attentionCount = waiting.length + approvals.length;
+  const now = Date.now();
+  const followUpWindow = now + 7 * 24 * 60 * 60 * 1000;
+  const followUps = missions.flatMap((mission) => mission.actions
+    .filter((action) => {
+      if (!action.followUpAt || action.status === "COMPLETED" || action.status === "CANCELLED") return false;
+      const dueAt = Date.parse(action.followUpAt);
+      return Number.isFinite(dueAt) && dueAt <= followUpWindow;
+    })
+    .map((action) => ({
+      id: action.id,
+      missionId: mission.id,
+      missionName: mission.name,
+      title: action.title,
+      dueAt: action.followUpAt as string,
+      overdue: Date.parse(action.followUpAt as string) < now,
+    })))
+    .sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt));
+  const attentionCount = waiting.length + approvals.length + followUps.length;
 
   return <div className="container notifications-page">
     <section className="section-heading">
@@ -32,6 +49,21 @@ export default async function NotificationsPage() {
           <Link className="button button-small" href={`/app/missions/${mission.id}`}><LocalizedText en="Review mission" nb="Se gjennom oppdraget" ar="راجع المهمة" /></Link>
         </div>
       </li>)}</ul> : <p className="detail-intent"><LocalizedText en="You’re all caught up. No missions are waiting for your input." nb="Alt er oppdatert. Ingen oppdrag venter på avklaring." ar="أنت على اطلاع. لا توجد مهام تنتظر توجيهك." /></p>}
+    </section>
+
+    <section className="card notification-section">
+      <p className="eyebrow"><LocalizedText en="Follow-up" nb="Oppfølging" ar="المتابعة" /></p>
+      <h2><LocalizedText en="Due and overdue tasks" nb="Oppgaver som forfaller" ar="المهام المستحقة والمتأخرة" /></h2>
+      {followUps.length ? <ul className="list">{followUps.map((followUp) => <li key={followUp.id}>
+        <div className="notification-item">
+          <div>
+            <strong>{followUp.title}</strong>
+            <p className="action-hint">{followUp.missionName}</p>
+            <p className="action-hint"><span className={followUp.overdue ? "status status-waiting" : "status status-active"}><LocalizedText en={followUp.overdue ? "Overdue" : "Due within 7 days"} nb={followUp.overdue ? "Forfalt" : "Innen 7 dager"} ar={followUp.overdue ? "متأخرة" : "خلال 7 أيام"} /></span> · {new Date(followUp.dueAt).toLocaleString()}</p>
+          </div>
+          <Link className="button button-small" href={`/app/missions/${followUp.missionId}`}><LocalizedText en="Open task" nb="Åpne oppgaven" ar="افتح المهمة" /></Link>
+        </div>
+      </li>)}</ul> : <p className="detail-intent"><LocalizedText en="No follow-up tasks are overdue or due within the next 7 days." nb="Ingen oppfølgingsoppgaver er forfalt eller forfaller i løpet av de neste 7 dagene." ar="لا توجد مهام متابعة متأخرة أو مستحقة خلال الأيام السبعة القادمة." /></p>}
     </section>
 
     <section className="card notification-section">
