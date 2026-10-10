@@ -5,14 +5,14 @@ import { LocalizedText } from "../components/localized-text";
 export default function HomePage() {
   return <div className="container">
     <section className="hero">
-      <p className="eyebrow"><LocalizedText en="Bounded AI work for people and teams" nb="Avgrenset KI-arbeid for personer og team" ar="عمل بالذكاء الاصطناعي بحدود واضحة للأفراد والفرق" /></p>
-      <h1><LocalizedText en="Give AI work to do, not just questions to answer." nb="Gi KI arbeid å gjøre, ikke bare spørsmål å svare på." ar="أعطِ الذكاء الاصطناعي عملاً لينجزه، وليس أسئلة فقط ليجيب عنها." /></h1>
-      <p><LocalizedText en="ZAVQERA turns plain-language goals into bounded missions you can review, run, and verify." nb="ZAVQERA gjør mål skrevet med vanlig språk om til avgrensede oppdrag du kan gjennomgå, kjøre og verifisere." ar="يحوّل ZAVQERA أهدافك بلغة طبيعية إلى مهام بحدود واضحة يمكنك مراجعتها وتنفيذها والتحقق منها." /></p>
+      <p className="eyebrow"><LocalizedText en="AI missions for real work — with you in control" nb="KI-oppdrag for ekte arbeid – med deg i kontroll" ar="مهام ذكاء اصطناعي لإنجاز عمل حقيقي، وأنت صاحب القرار" /></p>
+      <h1><LocalizedText en="Give AI a mission. Keep control of the outcome." nb="Gi KI et oppdrag. Behold kontrollen over resultatet." ar="امنح الذكاء الاصطناعي مهمة، واحتفظ أنت بالتحكم في النتيجة." /></h1>
+      <p><LocalizedText en="Turn a goal into a clear plan, defined boundaries, and work you can review step by step. ZAVQERA helps you delegate to AI without handing over the keys." nb="Gjør et mål om til en tydelig plan, klare grenser og arbeid du kan følge steg for steg. ZAVQERA hjelper deg å delegere til KI uten å gi fra deg kontrollen." ar="حوّل هدفك إلى خطة واضحة وحدود محددة وعمل يمكنك مراجعته خطوة بخطوة. يساعدك ZAVQERA على تفويض العمل للذكاء الاصطناعي دون التنازل عن التحكم." /></p>
       <div className="hero-actions">
         <Link className="button" href="/try"><LocalizedText en="Try ZAVQERA free" /></Link>
-        <Link className="button button-quiet" href="/pricing"><LocalizedText en="View pricing" /></Link>
+        <Link className="button button-quiet" href="/templates"><LocalizedText en="Explore mission templates" nb="Utforsk oppdragsmaler" ar="اكتشف قوالب المهام" /></Link>
       </div>
-      <p className="hero-free"><strong><LocalizedText en="Free to start." /></strong> <LocalizedText en="5 AI generations each month. No payment required." /></p>
+      <p className="hero-free"><strong><LocalizedText en="Start free." nb="Start gratis." ar="ابدأ مجانًا." /></strong> <LocalizedText en="5 AI generations each month. No payment required." nb="5 KI-genereringer hver måned. Ingen betaling nødvendig." ar="5 عمليات توليد بالذكاء الاصطناعي شهريًا، دون الحاجة إلى الدفع." /></p>
       <span className="visually-hidden">Free $0 / 5 AI generations. Plus $9 / 50 AI generations. Pro $25 / 300 AI generations. See Pricing for full plan details. Billing is not enabled yet; paid plans are shown for launch planning.</span>
     </section>
 
@@ -20,7 +20,7 @@ export default function HomePage() {
       <div className="section-heading">
         <div>
           <p className="eyebrow"><LocalizedText en="From thought to mission" nb="Fra tanke til oppdrag" ar="من الفكرة إلى المهمة" /></p>
-          <h2 id="ai-value-heading"><LocalizedText en="You describe the outcome. ZAVQERA prepares the mission." nb="Du beskriver resultatet. ZAVQERA gjør oppdraget klart." ar="تصف النتيجة. وZAVQERA تجهز المهمة." /></h2>
+          <h2 id="ai-value-heading"><LocalizedText en="Describe the result. Get a mission you can actually use." nb="Beskriv resultatet. Få et oppdrag du kan bruke." ar="صف النتيجة، واحصل على مهمة عملية يمكنك استخدامها." /></h2>
         </div>
         <p><LocalizedText en="No project-management setup required." nb="Ingen prosjektstyring nødvendig." ar="لا حاجة لإعدادات معقدة لإدارة المشاريع." /></p>
       </div>
@@ -47,8 +47,8 @@ export default function HomePage() {
     <section className="card mission-template-callout" aria-labelledby="templates-heading">
       <div>
         <p className="eyebrow"><LocalizedText en="Start faster" nb="Kom raskere i gang" ar="ابدأ بسرعة" /></p>
-        <h2 id="templates-heading"><LocalizedText en="Use a mission template." nb="Bruk en oppdragsmal." ar="استخدم قالب مهمة." /></h2>
-        <p><LocalizedText en="Start from a useful real-world example, then make it yours." nb="Start med et nyttig eksempel fra virkeligheten og gjør det til ditt." ar="ابدأ من مثال عملي مفيد ثم اجعله مناسبًا لك." /></p>
+        <h2 id="templates-heading"><LocalizedText en="Skip the blank page. Start with a proven pattern." nb="Hopp over den tomme siden. Start med en gjennomprøvd mal." ar="تجاوز الصفحة الفارغة وابدأ بقالب عملي جاهز." /></h2>
+        <p><LocalizedText en="Choose a goal, adapt it to your needs, and share the template with your team." nb="Velg et mål, tilpass det og del malen med teamet." ar="اختر هدفًا، وعدّله ليناسبك، وشارك القالب مع فريقك." /></p>
       </div>
       <Link className="button button-quiet" href="/templates"><LocalizedText en="Browse mission templates" nb="Se oppdragsmaler" ar="تصفح قوالب المهام" /></Link>
     </section>
