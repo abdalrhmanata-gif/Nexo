@@ -7,6 +7,7 @@ type Plan = { title: string; summary: string; successCriteria: string[]; steps: 
 
 export function MissionCreateForm({ action }: { action: (formData: FormData) => void | Promise<void> }) {
   const [goal, setGoal] = useState("");
+  const [boundaries, setBoundaries] = useState("");
   const [name, setName] = useState("");
   const [intent, setIntent] = useState("");
   const [criteria, setCriteria] = useState("");
@@ -63,7 +64,7 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
       const response = await fetch("/api/ai/plan", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-request-id": crypto.randomUUID() },
-        body: JSON.stringify({ goal }),
+        body: JSON.stringify({ goal: goal.trim() + (boundaries.trim() ? `\n\nMission boundaries and permissions:\n${boundaries.trim()}` : "") }),
       });
       const result = await response.json();
       if (!response.ok) {
@@ -110,6 +111,11 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
           <span><LocalizedText en="Try an example" nb="Prøv et eksempel" ar="جرّب مثالًا" /></span>
           {examples.map((example) => <button key={example} type="button" className="example-chip" onClick={() => handleExampleClick(example)}>{example}</button>)}
         </div>
+      </div>
+      <div className="field">
+        <label htmlFor="ai-boundaries"><LocalizedText en="Boundaries and permissions" nb="Grenser og fullmakter" ar="الحدود والصلاحيات" /> <span className="field-optional"><LocalizedText en="optional" /></span></label>
+        <textarea id="ai-boundaries" name="boundaries" value={boundaries} onChange={(event) => { setBoundaries(event.target.value); setError(""); }} maxLength={1000} placeholder={language === "ar" ? "مثال: البحث في المصادر العامة فقط؛ الميزانية أقل من 500 يورو؛ لا ترسل رسائل ولا تشترِ شيئًا." : language === "nb" ? "Eksempel: Bare offentlig research; budsjett under €500; ikke send meldinger eller kjøp noe." : "Example: Public research only; budget under €500; do not send messages, make purchases, or change accounts."} aria-describedby="ai-boundaries-help" />
+        <small id="ai-boundaries-help"><LocalizedText en="Set budget or deadline limits, allowed sources, and actions that must stay off-limits. These boundaries are included in the mission." nb="Angi budsjett- eller tidsgrenser, tillatte kilder og handlinger som ikke er tillatt. Grensene lagres med oppdraget." ar="حدّد الميزانية أو الموعد النهائي والمصادر المسموحة والإجراءات الممنوعة. ستُحفظ هذه الحدود مع المهمة." /></small>
       </div>
       <button className="button" type="button" disabled={loading || !goal.trim()} onClick={draftWithAi}>
         {loading ? <LocalizedText en="Building your plan…" nb="Bygger planen din…" ar="جارٍ بناء خطتك…" /> : <LocalizedText en="Draft my mission" nb="Lag et oppdragsutkast" ar="أنشئ مسودة مهمتي" />}
