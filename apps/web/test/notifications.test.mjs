@@ -32,11 +32,12 @@ test("notification center renders separate actionable sections and direct links"
   assert.match(page, /Review approval/);
 });
 
-test("notification bell only polls inside the authenticated app route family", () => {
-  assert.match(bell, /pathname === "\/app" \|\| pathname\.startsWith\("\/app\/"\)/);
-  assert.match(bell, /if \(!inWorkspace\) return/);
+test("notification bell only polls inside Business routes, never on home or personal workspace", () => {
+  assert.match(bell, /const inBusinessWorkspace = pathname === "\/app\/business" \|\| pathname\.startsWith\("\/app\/business\/"\)/);
+  assert.match(bell, /if \(!inBusinessWorkspace\) return/);
   assert.match(bell, /setInterval/);
   assert.match(bell, /Cache-Control|cache: "no-store"/);
+  assert.doesNotMatch(bell, /pathname === "\/app" \|\| pathname\.startsWith\("\/app\/"\)/);
 });
 
 test("notification labels include Arabic, Norwegian, Spanish, French and German translations", () => {
