@@ -557,7 +557,13 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       const missionById = new Map(missionRows.map((row) => [row.id, row]));
       const actionById = new Map(actionRows.map((row) => [row.id, row]));
       const memberByUserId = new Map(memberRows.map((row) => [row.user_id, row.email || "Workspace member"]));
-      const agentIds = Array.from(new Set(missionRows.map((row) => row.agent_id).filter((id): id is string => Boolean(id))));
+      const scopedAgentIds = rows
+        .map((row) => typeof row.requested_scope?.agent_id === "string" ? row.requested_scope.agent_id : null)
+        .filter((id): id is string => Boolean(id));
+      const agentIds = Array.from(new Set([
+        ...missionRows.map((row) => row.agent_id).filter((id): id is string => Boolean(id)),
+        ...scopedAgentIds,
+      ]));
       const agentsResult = agentIds.length
         ? await supabase.from("workspace_agents").select("id,name,authority").eq("workspace_id", workspaceId).in("id", agentIds)
         : { data: [], error: null };
@@ -569,7 +575,10 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
         const mission = missionById.get(row.mission_id);
         const parsed = parseMissionObjective(mission?.objective ?? "");
         const action = row.action_id ? actionById.get(row.action_id) : null;
-        const agent = mission?.agent_id ? agentById.get(mission.agent_id) : null;
+        const scopedAgentId = typeof row.requested_scope?.agent_id === "string"
+          ? row.requested_scope.agent_id
+          : mission?.agent_id;
+        const agent = scopedAgentId ? agentById.get(scopedAgentId) : null;
         return {
           id: row.id,
           missionId: row.mission_id,

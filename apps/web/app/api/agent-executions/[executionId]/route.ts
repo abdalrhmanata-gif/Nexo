@@ -4,6 +4,7 @@ import { createSupabaseServerClient } from "../../../../lib/supabase/server";
 type Action = "REQUEST_CANCELLATION" | "RECONCILE" | "RETRY";
 
 function publicError(message: string, code?: string) {
+  if (message.includes("EXECUTION_ALREADY_EXISTS")) return { status: 409, error: "This execution attempt already exists. Refresh and inspect its status; it must not be dispatched again." };
   if (code === "42501") return { status: 403, error: "You do not have permission to change this execution." };
   if (message.includes("EXECUTION_LEASE_NOT_EXPIRED")) return { status: 409, error: "This execution lease has not expired. Refresh its status and try again later." };
   if (message.includes("EXECUTION_OUTCOME_UNKNOWN_NOT_RETRYABLE")) return { status: 409, error: "The outcome is unknown. Verify the external result before attempting new work." };

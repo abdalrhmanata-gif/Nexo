@@ -238,11 +238,26 @@ test("business control center exposes approvals, agents, and roles", () => {
   assert.ok(page.includes("ApprovalDecisionControls"));
 });
 
+test("exact approval scope is summarized for a human reviewer", () => {
+  const text = summariseApprovalScope({
+    type: "agent_execution_binding_v1",
+    summary: "Send the approved report to the selected audience",
+    destination: "https://example.invalid/reports",
+    audience: "workspace-admins",
+    request_hash: "a".repeat(64),
+  });
+  assert.ok(text.includes("Send the approved report"));
+  assert.ok(text.includes("https://example.invalid/reports"));
+  assert.ok(text.includes("workspace-admins"));
+  assert.ok(text.includes("Request SHA-256"));
+});
+
 test("approval request is explicit and bounded", () => {
   const control = read("components/approval-request-controls.tsx");
   assert.ok(control.includes("Request approval"));
   assert.ok(control.includes("requires_approval"));
   assert.ok(control.includes("bounded_action"));
+  assert.ok(control.includes("cannot authorize a future agent run or external effect"));
   const route = read("app/api/missions/[id]/approval/route.ts");
   assert.ok(route.includes("request_mission_approval"));
 });

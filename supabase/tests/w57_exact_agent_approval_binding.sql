@@ -1,7 +1,7 @@
 -- W57: exact, expiring approval binding for agent executions and retries.
 begin;
 create extension if not exists pgtap;
-select plan(20);
+select plan(23);
 
 select ok(exists (
   select 1 from information_schema.columns
@@ -11,6 +11,10 @@ select ok(exists (
   select 1 from information_schema.columns
    where table_schema = 'public' and table_name = 'mission_approvals' and column_name = 'consumed_by_execution_id'
 ), 'an execution approval records the execution chain that consumed it');
+select ok(exists (
+  select 1 from information_schema.columns
+   where table_schema = 'public' and table_name = 'mission_approvals' and column_name = 'consumed_at'
+), 'approval consumption has a durable tombstone timestamp');
 select ok(to_regprocedure('private.agent_execution_approval_scope(uuid,uuid,bigint,uuid,bigint,uuid,jsonb,jsonb)') is not null,
   'canonical versioned approval-scope builder exists');
 select ok(not has_function_privilege('authenticated',
@@ -47,8 +51,12 @@ declare
   v_changed_request jsonb;
   v_wrong_destination jsonb;
   v_request_c jsonb;
+  v_request_d jsonb;
   v_scope jsonb;
   v_scope_c jsonb;
+  v_scope_d jsonb;
+  v_approval_d public.mission_approvals;
+  v_execution_d public.agent_executions;
   v_authority jsonb := '{"mode":"bounded","requires_approval":true,"external_side_effects":false}'::jsonb;
   v_caught boolean;
 begin
@@ -74,6 +82,7 @@ begin
   v_request := jsonb_build_object(
     'destination', 'https://example.invalid/action',
     'audience', 'w57-disposable-test',
+    'summary', 'Submit the approved quantity and note to the controlled test destination',
     'payload', jsonb_build_object('quantity', 1, 'note', 'approved value')
   );
   v_scope := jsonb_build_object(
@@ -127,6 +136,16 @@ begin
     raise exception 'TEST_FAILED: a valid exact approval could not authorize a same-chain retry';
   end if;
 
+  v_caught := false;
+  begin
+    perform public.retry_agent_execution(v_execution.id, 'w57-valid-retry-key-0001');
+  exception when sqlstate '22023' then
+    if sqlerrm = 'EXECUTION_ALREADY_EXISTS' then v_caught := true; else raise; end if;
+  end;
+  if not v_caught then
+    raise exception 'TEST_FAILED: retry replay returned an existing execution as dispatch permission';
+  end if;
+
   -- A new scoped approval captures the current authority. Change the authority
   -- revision/content and prove the old approval no longer matches.
   select * into v_approval_b from public.request_mission_approval(v_mission, v_action, v_scope);
@@ -167,6 +186,7 @@ begin
   v_request_c := jsonb_build_object(
     'destination', 'https://example.invalid/cancelled',
     'audience', 'w57-disposable-test',
+    'summary', 'Do not execute the cancelled controlled request',
     'payload', jsonb_build_object('quantity', 3, 'note', 'cancelled scope')
   );
   v_scope_c := jsonb_build_object(
@@ -184,6 +204,43 @@ begin
     if sqlerrm = 'APPROVAL_REQUIRED' then v_caught := true; else raise; end if;
   end;
   if not v_caught then raise exception 'TEST_FAILED: a cancelled approval authorized execution'; end if;
+
+  v_request_d := jsonb_build_object(
+    'destination', 'https://example.invalid/tombstone',
+    'audience', 'w57-disposable-test',
+    'summary', 'Confirm a consumed approval remains consumed after ledger cleanup',
+    'payload', jsonb_build_object('quantity', 4, 'note', 'tombstone test')
+  );
+  v_scope_d := jsonb_build_object(
+    'schema_version', 1,
+    'type', 'agent_execution_binding_v1',
+    'agent_id', v_agent,
+    'request', v_request_d
+  );
+  select * into v_approval_d from public.request_mission_approval(v_mission, v_action, v_scope_d);
+  select * into v_approval_d from public.decide_mission_approval(v_approval_d.id, 'APPROVED', null);
+  select * into v_execution_d
+    from public.start_agent_execution(v_mission, v_action, v_agent, 'w57-tombstone-start-key', v_request_d);
+  delete from public.agent_executions where id = v_execution_d.id;
+
+  if not exists (
+    select 1 from public.mission_approvals
+     where id = v_approval_d.id
+       and consumed_at is not null
+       and consumed_by_execution_id = v_execution_d.id
+  ) then
+    raise exception 'TEST_FAILED: deleting an execution erased the approval consumption tombstone';
+  end if;
+
+  v_caught := false;
+  begin
+    perform public.start_agent_execution(v_mission, v_action, v_agent, 'w57-tombstone-reuse-key', v_request_d);
+  exception when sqlstate '42501' then
+    if sqlerrm = 'APPROVAL_REQUIRED' then v_caught := true; else raise; end if;
+  end;
+  if not v_caught then
+    raise exception 'TEST_FAILED: deleted execution made a consumed approval reusable';
+  end if;
 end;
 $behavior$;
 
@@ -196,6 +253,8 @@ select pass('a changed authority invalidates a previously requested approval');
 select pass('an expired approval cannot authorize a new start');
 select pass('an expired approval cannot authorize a retry');
 select pass('a cancelled scoped approval cannot authorize execution');
+select pass('retry idempotency replay cannot return an existing row as dispatch permission');
+select pass('deleting an execution does not resurrect its one-time approval');
 
 select * from finish();
 rollback;
