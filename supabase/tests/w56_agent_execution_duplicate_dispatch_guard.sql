@@ -2,7 +2,7 @@
 -- This is a schema/function-definition test, not proof of provider-side reconciliation.
 begin;
 create extension if not exists pgtap;
-select plan(21);
+select plan(22);
 
 select ok(to_regclass('public.agent_executions') is not null,
   'agent execution ledger exists');
@@ -244,6 +244,15 @@ begin
   );
   select * into v_retry
     from public.retry_agent_execution(v_first.id, 'w56-valid-retry-key-0006');
+  v_caught := false;
+  begin
+    perform public.retry_agent_execution(v_first.id, 'w56-valid-retry-key-0006');
+  exception when sqlstate '22023' then
+    if sqlerrm = 'EXECUTION_ALREADY_EXISTS' then v_caught := true; else raise; end if;
+  end;
+  if not v_caught then
+    raise exception 'TEST_FAILED: retry idempotency replay returned an execution as permission to dispatch it again';
+  end if;
   if v_retry.retry_of_execution_id is distinct from v_first.id
      or v_retry.approval_id is distinct from v_first.approval_id
      or v_retry.request is distinct from v_first.request then
@@ -334,6 +343,7 @@ $behavior$;
 
 select pass('exact unexpired request-bound approval permits one execution');
 select pass('exact same-request retry remains inside the original execution lineage');
+select pass('retry idempotency replay is rejected rather than returned as dispatch permission');
 select pass('expired execution approval cannot authorize a retry');
 select pass('exact duplicate execution key is rejected without another row or start event');
 select pass('changed request content cannot reuse an execution approval or idempotency key');
