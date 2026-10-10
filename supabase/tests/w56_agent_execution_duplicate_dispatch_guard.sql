@@ -2,7 +2,7 @@
 -- This is a schema/function-definition test, not proof of provider-side reconciliation.
 begin;
 create extension if not exists pgtap;
-select plan(15);
+select plan(19);
 
 select ok(to_regclass('public.agent_executions') is not null,
   'agent execution ledger exists');
@@ -77,6 +77,12 @@ declare
   v_agent_a uuid := gen_random_uuid();
   v_agent_b uuid := gen_random_uuid();
   v_first public.agent_executions;
+  v_mission_row public.missions;
+  v_approval public.mission_approvals;
+  v_stale_approval public.mission_approvals;
+  v_expired_approval public.mission_approvals;
+  v_request jsonb;
+  v_scope jsonb;
   v_caught boolean := false;
   v_rows integer;
   v_start_events integer;
@@ -91,18 +97,37 @@ begin
   insert into public.workspace_agents(id, workspace_id, name, description, status, authority, created_by)
   values
     (v_agent_a, v_workspace, 'W56 agent A', 'Disposable duplicate test agent', 'ACTIVE',
-      '{"mode":"read_only","requires_approval":false}'::jsonb, v_owner),
+      '{"mode":"read_only","requires_approval":true,"revision":1}'::jsonb, v_owner),
     (v_agent_b, v_workspace, 'W56 agent B', 'Disposable binding test agent', 'ACTIVE',
-      '{"mode":"read_only","requires_approval":false}'::jsonb, v_owner);
+      '{"mode":"read_only","requires_approval":true,"revision":1}'::jsonb, v_owner);
 
   perform set_config('request.jwt.claim.sub', v_owner::text, true);
   perform set_config('request.jwt.claims',
     jsonb_build_object('sub', v_owner, 'role', 'authenticated')::text, true);
 
+  select * into v_mission_row from public.missions where id = v_mission;
+  v_request := '{"destination":"test://w56","audience":"w56-test","purpose":"first attempt"}'::jsonb;
+  v_scope := jsonb_build_object(
+    'type', 'agent_execution',
+    'schema_version', 1,
+    'workspace_id', v_workspace,
+    'mission_id', v_mission,
+    'mission_version', v_mission_row.version,
+    'action_id', null,
+    'action_version', null,
+    'agent_id', v_agent_a,
+    'destination', 'test://w56',
+    'audience', 'w56-test',
+    'expires_at', (clock_timestamp() + interval '20 minutes')::text,
+    'request', v_request
+  );
+  select * into v_approval from public.request_mission_approval(v_mission, null, v_scope);
+  perform public.decide_mission_approval(v_approval.id, 'APPROVED', 'W56 exact binding fixture');
+
   select * into v_first
     from public.start_agent_execution(
       v_mission, null, v_agent_a, 'w56-duplicate-dispatch-key-0001',
-      '{"purpose":"first attempt"}'::jsonb
+      v_request
     );
 
   begin
@@ -182,11 +207,105 @@ begin
   if v_rows <> 1 then
     raise exception 'TEST_FAILED: a mismatched binding created a second execution row';
   end if;
+
+  -- A new key cannot reuse the prior human approval with changed request content.
+  v_caught := false;
+  begin
+    perform public.start_agent_execution(
+      v_mission, null, v_agent_a, 'w56-changed-request-key-0002',
+      '{"destination":"test://w56","audience":"w56-test","purpose":"changed request"}'::jsonb
+    );
+  exception when sqlstate '42501' then
+    if sqlerrm = 'APPROVAL_REQUIRED' then v_caught := true; else raise; end if;
+  end;
+  if not v_caught then
+    raise exception 'TEST_FAILED: changed request was accepted by a different idempotency key';
+  end if;
+
+  -- A scoped approval for agent A cannot authorize agent B.
+  v_caught := false;
+  begin
+    perform public.start_agent_execution(
+      v_mission, null, v_agent_b, 'w56-wrong-agent-key-0003', v_request
+    );
+  exception when sqlstate '42501' then
+    if sqlerrm = 'APPROVAL_REQUIRED' then v_caught := true; else raise; end if;
+  end;
+  if not v_caught then
+    raise exception 'TEST_FAILED: an approval bound to agent A authorized agent B';
+  end if;
+
+  -- Approve the exact request, then mutate authority; the old approval must stop matching.
+  v_scope := jsonb_build_object(
+    'type', 'agent_execution', 'schema_version', 1,
+    'workspace_id', v_workspace, 'mission_id', v_mission,
+    'mission_version', v_mission_row.version,
+    'action_id', null, 'action_version', null, 'agent_id', v_agent_a,
+    'destination', 'test://w56', 'audience', 'w56-test',
+    'expires_at', (clock_timestamp() + interval '20 minutes')::text,
+    'request', v_request
+  );
+  select * into v_stale_approval from public.request_mission_approval(v_mission, null, v_scope);
+  perform public.decide_mission_approval(v_stale_approval.id, 'APPROVED', 'Will become stale');
+  update public.workspace_agents
+     set authority = '{"mode":"read_only","requires_approval":true,"revision":2}'::jsonb
+   where id = v_agent_a;
+
+  v_caught := false;
+  begin
+    perform public.start_agent_execution(
+      v_mission, null, v_agent_a, 'w56-changed-authority-key-0004', v_request
+    );
+  exception when sqlstate '42501' then
+    if sqlerrm = 'APPROVAL_REQUIRED' then v_caught := true; else raise; end if;
+  end;
+  if not v_caught then
+    raise exception 'TEST_FAILED: an approval remained valid after agent authority changed';
+  end if;
+
+  -- Even a newly approved exact binding cannot execute after its database expiry.
+  v_scope := jsonb_build_object(
+    'type', 'agent_execution', 'schema_version', 1,
+    'workspace_id', v_workspace, 'mission_id', v_mission,
+    'mission_version', v_mission_row.version,
+    'action_id', null, 'action_version', null, 'agent_id', v_agent_a,
+    'destination', 'test://w56', 'audience', 'w56-test',
+    'expires_at', (clock_timestamp() + interval '20 minutes')::text,
+    'request', v_request
+  );
+  select * into v_expired_approval from public.request_mission_approval(v_mission, null, v_scope);
+  perform public.decide_mission_approval(v_expired_approval.id, 'APPROVED', 'Will be expired by the test');
+  update public.mission_approvals
+     set expires_at = clock_timestamp() - interval '1 second'
+   where id = v_expired_approval.id;
+
+  v_caught := false;
+  begin
+    perform public.start_agent_execution(
+      v_mission, null, v_agent_a, 'w56-expired-approval-key-0005', v_request
+    );
+  exception when sqlstate '42501' then
+    if sqlerrm = 'APPROVAL_REQUIRED' then v_caught := true; else raise; end if;
+  end;
+  if not v_caught then
+    raise exception 'TEST_FAILED: an expired approval authorized execution';
+  end if;
+
+  select count(*) into v_rows
+    from public.agent_executions
+   where workspace_id = v_workspace and mission_id = v_mission;
+  if v_rows <> 1 then
+    raise exception 'TEST_FAILED: blocked approval-binding requests created extra execution rows';
+  end if;
 end;
 $behavior$;
 
-select pass('exact duplicate execution key is rejected without creating another row or start event');
-select pass('an idempotency key cannot be rebound to different request content');
+select pass('exact unexpired request-bound approval permits one execution');
+select pass('exact duplicate execution key is rejected without another row or start event');
+select pass('changed request content cannot reuse an execution approval or idempotency key');
+select pass('an approval bound to one agent cannot authorize another agent');
+select pass('agent authority changes invalidate previously approved execution bindings');
+select pass('expired execution approvals are rejected before creating an execution row');
 select pass('an idempotency key cannot be rebound to a different agent');
 
 select * from finish();
