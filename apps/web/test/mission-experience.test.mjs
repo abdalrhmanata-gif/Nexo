@@ -522,6 +522,17 @@ test("business approval, invitation, and notification copy is localized in all s
     { path: "components/approval-decision-controls.tsx", keys: [
       "Decision note", "required to reject", "Saving…", "Approve bounded scope",
     ] },
+    { path: "components/exact-execution-approval-request.tsx", keys: [
+      "No active agent currently requires approval.",
+      "Request exact execution approval",
+      "This submits a review request only; nothing is executed. The approval will match this exact request, agent authority, mission/action versions, destination, audience and expiry.",
+      "Agent", "Action scope", "Mission-level", "Request summary", "Destination", "Audience",
+      "Exact payload (JSON object)",
+      "Enter the exact object that the future execution request will contain. It is hashed for matching; this approval record does not store the payload.",
+      "Check the summary and destination fields, and make sure the payload is a JSON object within the size limit.",
+      "The approval request could not be created. An approval may already be pending or the agent policy may have changed. Refresh and review the workspace.",
+      "Submit exact-scope request", "Exact-scope approval requested. Nothing was executed.",
+    ] },
     { path: "app/app/notifications/page.tsx", keys: ["Human decision required", "Review this decision"] },
   ];
   const dictionary = read("components/localized-text.tsx");
@@ -574,4 +585,23 @@ test("collaboration, approval, research recovery, and execution API errors are l
       for (const locale of ["nb", "ar"]) assert.ok(nbArEntry.includes(locale + ":"), "missing " + locale + " translation for: " + key);
     }
   }
+});
+
+
+test("exact execution approval UI sends a canonical review-only binding", () => {
+  const source = read("components/exact-execution-approval-request.tsx");
+  const page = read("app/app/missions/[id]/page.tsx");
+  assert.ok(source.includes('type: "agent_execution_binding_v1"'));
+  assert.ok(source.includes("schema_version: 1"));
+  assert.ok(source.includes("agent_id: agentId"));
+  assert.ok(source.includes("destination: trimmedDestination"));
+  assert.ok(source.includes("audience: trimmedAudience"));
+  assert.ok(source.includes("summary: trimmedSummary"));
+  assert.ok(source.includes("JSON.parse(payloadText)"));
+  assert.ok(source.includes("Array.isArray(parsed)"));
+  assert.ok(source.includes("/api/missions/"));
+  assert.ok(!source.includes("/api/agent-executions/"));
+  assert.ok(page.includes("ExactExecutionApprovalRequest"));
+  assert.ok(page.includes('agent.authority.requires_approval === true'));
+  assert.ok(page.includes('agent.status === "ACTIVE"'));
 });
