@@ -422,3 +422,52 @@ test("approval request control localizes its states and always clears the busy s
     }
   }
 });
+
+test("business invitation form and endpoint errors are localized in all supported languages", () => {
+  const invite = read("app/app/business/invite/page.tsx");
+  const route = read("app/api/business/invitations/route.ts");
+  const dictionary = read("components/localized-text.tsx");
+  const esFrDe = dictionary.slice(
+    dictionary.indexOf("const WORKSPACE_TRANSLATIONS:"),
+    dictionary.indexOf("const WORKSPACE_NB_AR:"),
+  );
+  const nbAr = dictionary.slice(
+    dictionary.indexOf("const WORKSPACE_NB_AR:"),
+    dictionary.indexOf("for (const [key, translations] of Object.entries(WORKSPACE_NB_AR))"),
+  );
+  const formKeys = [
+    "Email address",
+    "Workspace role",
+    "Grant only the access needed. Admins can manage workspace access.",
+    "Admin",
+    "Member",
+    "Viewer",
+    "Sending invitation…",
+    "Send email invitation",
+    "Back to Business workspace",
+    "The invitation email could not be sent.",
+  ];
+  const endpointErrorKeys = [
+    "Workspace invitations require the connected workspace backend.",
+    "Workspace invitations are not available.",
+  ];
+
+  for (const key of formKeys) {
+    assert.ok(invite.includes(key), "invitation form must use the localized key: " + key);
+  }
+  for (const key of endpointErrorKeys) {
+    assert.ok(route.includes(key), "invitation endpoint must use the localized error key: " + key);
+  }
+  for (const key of [...formKeys, ...endpointErrorKeys]) {
+    const esFrDeEntry = esFrDe.split("\\n").find((entry) => entry.trimStart().startsWith('"' + key + '":'));
+    const nbArEntry = nbAr.split("\\n").find((entry) => entry.trimStart().startsWith('"' + key + '":'));
+    assert.ok(esFrDeEntry, "missing Spanish/French/German mapping for: " + key);
+    assert.ok(nbArEntry, "missing Norwegian/Arabic mapping for: " + key);
+    for (const locale of ["es", "fr", "de"]) {
+      assert.ok(esFrDeEntry.includes(locale + ":"), "missing " + locale + " translation for: " + key);
+    }
+    for (const locale of ["nb", "ar"]) {
+      assert.ok(nbArEntry.includes(locale + ":"), "missing " + locale + " translation for: " + key);
+    }
+  }
+});
