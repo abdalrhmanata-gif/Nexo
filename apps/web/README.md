@@ -96,3 +96,23 @@ To enable actual delivery in a Deploy Preview:
 5. Trigger a fresh Deploy Preview. The invitation API uses Netlify's `DEPLOY_PRIME_URL` as the link origin for previews, applies an idempotency key per stored invitation, and refuses to claim an email was delivered when provider configuration is missing or a request is rejected.
 
 A successful provider API response confirms the message was accepted for sending; it does not prove it reached the recipient's inbox. Check provider event/log records for delivery, bounce, or suppression. If a network timeout makes the provider result ambiguous, the invitation stays pending so a link that may already have been emailed is not invalidated automatically.
+
+
+## Authenticated live Mission research verification (Development-only)
+
+The one-run live research test is deliberately separate from the local W21 gate and only runs for same-repository PR #29 when the PR body contains the temporary marker `[live-openai-research]`. It validates the actual Netlify Deploy Preview and the fixed ZAVQERA Development project before logging in or creating any Mission.
+
+**Preferred setup: use a dedicated pre-provisioned Development test account rather than an Auth Admin secret.**
+
+1. In the Supabase dashboard for **ZAVQERA Development** (`mrwmmbytcymqgwvcoywd`), create one dedicated test user in Authentication → Users. Mark it as email-confirmed so the test does not depend on invitation or confirmation-email delivery. Do not use a real person's account or any Production user.
+2. Generate a unique, strong password for this test-only user. Do not commit or paste the credentials into source code, PR comments, logs or chat.
+3. In GitHub repository Settings → Secrets and variables → Actions, add these repository secrets:
+   - `SUPABASE_DEV_TEST_EMAIL`: the dedicated Development test user's email.
+   - `SUPABASE_DEV_TEST_PASSWORD`: its generated password.
+4. The workflow checks that both secrets are present without printing their values. The browser then signs in through the real application UI. A successful live research test creates a Mission and immutable research/audit history in Development; those records are intentionally retained as provenance and must not be deleted or cleaned by weakening database protections.
+5. Do not run this marked workflow repeatedly: it creates another persisted Mission each time. Add the marker to PR #29 only for one intentional run, wait until the authenticated research job has started, then remove the marker. Verify that the workflow captured the marker before removing it.
+
+The previous `SUPABASE_DEV_SERVICE_ROLE_KEY` path remains a fallback, but modern `sb_secret_…` keys are not legacy JWTs and may be rejected by the hosted Auth Admin mutation path. The pre-provisioned-account path avoids requiring a service-role key for the test. Either path is restricted to Development, and the test refuses to proceed if the Netlify preview or configured Supabase URL does not match the expected Development target.
+
+The test proves live OpenAI research, actual public citations, persisted research history and source links after reload. It performs no external side effects. A successful plan-generation smoke test alone is not proof that live Mission research works.
+
