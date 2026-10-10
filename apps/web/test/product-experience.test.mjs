@@ -309,6 +309,23 @@ test("homepage communicates bounded delegation and the one-goal-first product lo
   assert.match(page, /Skip the blank page\. Start with a proven pattern\./);
 });
 
+test("homepage eyebrow wraps on narrow screens instead of causing horizontal overflow", () => {
+  const css = read("app/globals.css");
+  assert.match(css, /@media \(max-width:700px\) \{\s*\.hero \.eyebrow \{ white-space:normal; \}\s*\}/);
+});
+
+test("homepage calls to action and product principles are localized for Norwegian and Arabic", () => {
+  const page = read("app/page.tsx");
+  const shell = read("components/shell.tsx");
+  assert.match(page, /en="Try ZAVQERA free" nb="Prøv ZAVQERA gratis" ar="جرّب ZAVQERA مجانًا"/);
+  assert.match(page, /en="Start with the outcome\." nb="Begynn med resultatet\." ar="ابدأ بالنتيجة\."/);
+  assert.match(page, /en="Review before action\." nb="Gå gjennom før handling\." ar="راجع الخطة قبل التنفيذ\."/);
+  assert.match(page, /en="See what needs attention\." nb="Se hva som krever oppmerksomhet\." ar="اعرف ما الذي يحتاج إلى اهتمام\."/);
+  assert.match(page, /aria-labelledby="product-principles-heading"/);
+  assert.match(page, /en="Product principles" nb="Prinsipper for produktet" ar="مبادئ المنتج"/);
+  assert.match(shell, /en="Pricing" nb="Priser" ar="الأسعار"/);
+});
+
 test("AI mission entry removes the blank-page moment with starter goals", () => {
   const source = read("components/mission-create-form.tsx");
   assert.match(source, /Try an example/);

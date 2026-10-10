@@ -9,7 +9,7 @@ export default function HomePage() {
       <h1><LocalizedText en="Give AI a mission. Keep control of the outcome." nb="Gi KI et oppdrag. Behold kontrollen over resultatet." ar="امنح الذكاء الاصطناعي مهمة، واحتفظ أنت بالتحكم في النتيجة." /></h1>
       <p><LocalizedText en="Turn a goal into a clear plan, defined boundaries, and work you can review step by step. ZAVQERA helps you delegate to AI without handing over the keys." nb="Gjør et mål om til en tydelig plan, klare grenser og arbeid du kan følge steg for steg. ZAVQERA hjelper deg å delegere til KI uten å gi fra deg kontrollen." ar="حوّل هدفك إلى خطة واضحة وحدود محددة وعمل يمكنك مراجعته خطوة بخطوة. يساعدك ZAVQERA على تفويض العمل للذكاء الاصطناعي دون التنازل عن التحكم." /></p>
       <div className="hero-actions">
-        <Link className="button" href="/try"><LocalizedText en="Try ZAVQERA free" /></Link>
+        <Link className="button" href="/try"><LocalizedText en="Try ZAVQERA free" nb="Prøv ZAVQERA gratis" ar="جرّب ZAVQERA مجانًا" /></Link>
         <Link className="button button-quiet" href="/templates"><LocalizedText en="Explore mission templates" nb="Utforsk oppdragsmaler" ar="اكتشف قوالب المهام" /></Link>
       </div>
       <p className="hero-free"><strong><LocalizedText en="Start free." nb="Start gratis." ar="ابدأ مجانًا." /></strong> <LocalizedText en="5 AI generations each month. No payment required." nb="5 KI-genereringer hver måned. Ingen betaling nødvendig." ar="5 عمليات توليد بالذكاء الاصطناعي شهريًا، دون الحاجة إلى الدفع." /></p>
@@ -53,21 +53,22 @@ export default function HomePage() {
       <Link className="button button-quiet" href="/templates"><LocalizedText en="Browse mission templates" nb="Se oppdragsmaler" ar="تصفح قوالب المهام" /></Link>
     </section>
 
-    <section className="value-grid" aria-label="Product principles">
+    <section className="value-grid" aria-labelledby="product-principles-heading">
+      <h2 className="visually-hidden" id="product-principles-heading"><LocalizedText en="Product principles" nb="Prinsipper for produktet" ar="مبادئ المنتج" /></h2>
       <article className="card value-card">
-        <p className="eyebrow"><LocalizedText en="01 · Intent" /></p>
-        <h2><LocalizedText en="Start with the outcome." /></h2>
-        <p><LocalizedText en="Tell ZAVQERA what you want in plain language. The structure comes after." /></p>
+        <p className="eyebrow"><LocalizedText en="01 · Intent" nb="01 · Intensjon" ar="01 · الهدف" /></p>
+        <h2><LocalizedText en="Start with the outcome." nb="Begynn med resultatet." ar="ابدأ بالنتيجة." /></h2>
+        <p><LocalizedText en="Tell ZAVQERA what you want in plain language. The structure comes after." nb="Fortell ZAVQERA hva du ønsker, med egne ord. Strukturen kommer etterpå." ar="أخبر ZAVQERA بما تريد بلغة واضحة، ثم تأتي البنية بعد ذلك." /></p>
       </article>
       <article className="card value-card">
-        <p className="eyebrow"><LocalizedText en="02 · Control" /></p>
-        <h2><LocalizedText en="Review before action." /></h2>
-        <p><LocalizedText en="AI can draft. You decide what gets created and what moves." /></p>
+        <p className="eyebrow"><LocalizedText en="02 · Control" nb="02 · Kontroll" ar="02 · التحكم" /></p>
+        <h2><LocalizedText en="Review before action." nb="Gå gjennom før handling." ar="راجع الخطة قبل التنفيذ." /></h2>
+        <p><LocalizedText en="AI can draft. You decide what gets created and what moves." nb="KI kan lage et utkast. Du bestemmer hva som opprettes og settes i gang." ar="يمكن للذكاء الاصطناعي إعداد مسودة. أنت تقرر ما الذي يُنشأ وما الذي يبدأ تنفيذه." /></p>
       </article>
       <article className="card value-card">
-        <p className="eyebrow"><LocalizedText en="03 · Clarity" /></p>
-        <h2><LocalizedText en="See what needs attention." /></h2>
-        <p><LocalizedText en="Keep long-running work understandable instead of turning it into a black box." /></p>
+        <p className="eyebrow"><LocalizedText en="03 · Clarity" nb="03 · Klarhet" ar="03 · الوضوح" /></p>
+        <h2><LocalizedText en="See what needs attention." nb="Se hva som krever oppmerksomhet." ar="اعرف ما الذي يحتاج إلى اهتمام." /></h2>
+        <p><LocalizedText en="Keep long-running work understandable instead of turning it into a black box." nb="Hold arbeid som tar tid forståelig, i stedet for å gjøre det til en svart boks." ar="اجعل الأعمال الطويلة الأمد واضحة، بدلًا من تحويلها إلى صندوق أسود." /></p>
       </article>
     </section>
   </div>;

@@ -87,6 +87,9 @@ html { background:linear-gradient(180deg,#f0f6f7 0%,var(--paper) 380px); }
 .hero { position:relative; }
 .hero h1 { color:var(--navy); text-wrap:balance; }
 .hero .eyebrow { display:inline-flex; align-items:center; gap:8px; padding:7px 11px; border:1px solid #cce5e1; border-radius:999px; background:#e9f5f3; white-space:nowrap; max-width:100%; font-size:10px; letter-spacing:.1em; }
+@media (max-width:700px) {
+  .hero .eyebrow { white-space:normal; }
+}
 .ai-planner { border-top:3px solid var(--teal); box-shadow:0 12px 34px rgba(22,50,79,.07); }
 .ai-planner h2 { color:var(--navy); }
 .ai-planner textarea { min-height:128px; border-color:#b9cbd3; background:#fcfefe; }
