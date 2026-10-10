@@ -170,16 +170,5 @@ $behavior$;
 select pass('exact duplicate execution key is rejected without creating another row or start event');
 select pass('an idempotency key cannot be rebound to a different agent');
 
--- The current DB start contract is intentionally audited here so approval-bound
--- execution can be hardened in a subsequent migration without a silent widening
--- of the accepted request scope.
-select ok(
-  lower(pg_get_functiondef('private.start_agent_execution(uuid,uuid,uuid,text,jsonb)'::regprocedure))
-    like '%status = ''approved''%'
-  and lower(pg_get_functiondef('private.start_agent_execution(uuid,uuid,uuid,text,jsonb)'::regprocedure))
-    like '%requested_scope%' = false,
-  'current start function still lacks exact requested_scope binding (tracked as an explicit open gate)'
-);
-
 select * from finish();
 rollback;
