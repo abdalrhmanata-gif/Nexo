@@ -312,9 +312,12 @@ test("homepage communicates bounded delegation and the one-goal-first product lo
 test("AI mission entry removes the blank-page moment with starter goals", () => {
   const source = read("components/mission-create-form.tsx");
   assert.match(source, /Try an example/);
-  assert.match(source, /Launch a small online shop in six weeks/);
-  assert.match(source, /Get my visa application ready/);
-  assert.match(source, /Organize a side project alongside my job/);
+  assert.match(source, /Plan a project/);
+  assert.match(source, /Plan a product launch in four weeks/);
+  assert.match(source, /Research & compare/);
+  assert.match(source, /Compare three project management tools/);
+  assert.match(source, /Team follow-up/);
+  assert.match(source, /Prepare follow-up for three leads this week/);
   assert.match(source, /Mention deadlines, budget limits, allowed research, and actions that must not happen/);
 });
 
@@ -365,8 +368,10 @@ test("mission templates create a low-friction sharing loop", () => {
   const home = read("app/page.tsx");
   assert.match(templates, /family-travel-research/);
   assert.match(templates, /competitor-research/);
-  assert.match(gallery, /Try this mission/);
+  assert.match(gallery, /Preview & try free/);
+  assert.match(gallery, /Preview a free AI plan before signing up/);
   assert.match(gallery, /\/try\?template=/);
   assert.match(tryForm, /missionTemplateById/);
+  assert.match(tryForm, /if \(template\)[\s\S]*setGoal\(template\.goal\)[\s\S]*sessionStorage\.removeItem\(DRAFT_KEY\)/);
   assert.match(home, /mission-template-callout/);
 });

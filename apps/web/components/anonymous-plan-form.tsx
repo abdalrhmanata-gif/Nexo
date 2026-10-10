@@ -14,26 +14,44 @@ export function AnonymousPlanForm() {
   const [plan, setPlan] = useState<Plan | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [language, setLanguage] = useState<"en" | "nb" | "ar">("en");
 
   useEffect(() => {
-    try {
-      const templateId = new URLSearchParams(window.location.search).get("template");
-      const template = missionTemplateById(templateId);
-      if (template) setGoal(template.goal);
-    } catch {
-      // Ignore malformed template parameters.
-    }
-    try {
-      const saved = sessionStorage.getItem(DRAFT_KEY);
-      if (!saved) return;
-      const parsed = JSON.parse(saved) as { goal?: unknown; plan?: Plan };
-      if (typeof parsed.goal === "string" && parsed.plan?.title && Array.isArray(parsed.plan.successCriteria) && Array.isArray(parsed.plan.clarifyingQuestions)) {
-        setGoal(parsed.goal);
-        setPlan(parsed.plan);
+    const syncLanguage = () => {
+      let saved: string | null = null;
+      try { saved = window.localStorage.getItem("zavqera-language"); } catch { /* storage may be blocked */ }
+      const cookie = document.cookie.split("; ").find((part) => part.startsWith("zavqera-language="))?.split("=")[1];
+      const candidate = saved || cookie || navigator.language.toLowerCase().split("-")[0];
+      setLanguage(candidate === "nb" || candidate === "ar" ? candidate : "en");
+    };
+    syncLanguage();
+    const onLanguageChange = (event: Event) => {
+      const value = (event as CustomEvent<string>).detail;
+      setLanguage(value === "nb" || value === "ar" ? value : "en");
+    };
+    window.addEventListener("zavqera-language-change", onLanguageChange);
+
+    const templateId = new URLSearchParams(window.location.search).get("template");
+    const template = missionTemplateById(templateId);
+    if (template) {
+      setGoal(template.goal);
+      setPlan(null);
+      try { sessionStorage.removeItem(DRAFT_KEY); } catch { /* storage may be blocked */ }
+    } else {
+      try {
+        const saved = sessionStorage.getItem(DRAFT_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved) as { goal?: unknown; plan?: Plan };
+          if (typeof parsed.goal === "string" && parsed.plan?.title && Array.isArray(parsed.plan.successCriteria) && Array.isArray(parsed.plan.clarifyingQuestions)) {
+            setGoal(parsed.goal);
+            setPlan(parsed.plan);
+          }
+        }
+      } catch {
+        // Ignore malformed or unavailable session storage.
       }
-    } catch {
-      // Ignore malformed or unavailable session storage.
     }
+    return () => window.removeEventListener("zavqera-language-change", onLanguageChange);
   }, []);
 
   async function buildPlan() {
@@ -65,9 +83,21 @@ export function AnonymousPlanForm() {
   }
 
   const examples = [
-    "Launch a small online shop in six weeks",
-    "Get my visa application ready",
-    "Organize a side project alongside my job",
+    { key: "project", label: { en: "Plan a project", nb: "Planlegg et prosjekt", ar: "خطط لمشروع" }, goal: {
+      en: "Plan a product launch in four weeks with milestones, a budget, and a launch checklist. Do not make purchases.",
+      nb: "Planlegg en produktlansering om fire uker med milepæler, budsjett og sjekkliste. Ikke foreta kjøp.",
+      ar: "خطط لإطلاق منتج خلال أربعة أسابيع، مع مراحل وميزانية وقائمة تحقق. لا تُجرِ أي عمليات شراء."
+    }},
+    { key: "research", label: { en: "Research & compare", nb: "Undersøk og sammenlign", ar: "ابحث وقارن" }, goal: {
+      en: "Compare three project management tools for a small team. Compare pricing, strengths, and limitations. Do not create accounts or subscribe.",
+      nb: "Sammenlign tre prosjektverktøy for et lite team. Vurder pris, styrker og begrensninger. Ikke opprett konto eller abonnement.",
+      ar: "قارن بين ثلاث أدوات لإدارة المشاريع لفريق صغير من حيث السعر ونقاط القوة والقيود. لا تنشئ حسابات أو اشتراكات."
+    }},
+    { key: "team-follow-up", label: { en: "Team follow-up", nb: "Følg opp teamet", ar: "متابعة الفريق" }, goal: {
+      en: "Prepare follow-up for three leads this week. Prioritize next steps and draft suggestions, but do not send messages.",
+      nb: "Forbered oppfølging av tre leads denne uken. Prioriter neste steg og lag forslag, men ikke send meldinger.",
+      ar: "جهّز خطة متابعة لثلاثة عملاء محتملين هذا الأسبوع. رتّب الأولويات واكتب مقترحات، لكن لا ترسل رسائل."
+    }}
   ];
 
   return <div className="form-grid card mission-create-form">
@@ -81,7 +111,11 @@ export function AnonymousPlanForm() {
         <small><LocalizedText en="Describe the outcome. You can write freely." nb="Beskriv resultatet. Du kan skrive fritt." ar="اشرح النتيجة. يمكنك الكتابة بحرية." /></small>
         <div className="goal-examples" aria-label="Example goals">
           <span><LocalizedText en="Try an example" nb="Prøv et eksempel" ar="جرّب مثالًا" /></span>
-          {examples.map((example) => <button key={example} type="button" className="example-chip" onClick={() => setGoal(example)}>{example}</button>)}
+          {examples.map((example) => <button key={example.key} type="button" className="example-chip" onClick={() => {
+            setGoal(example.goal[language] || example.goal.en);
+            setPlan(null); setError("");
+            try { sessionStorage.removeItem(DRAFT_KEY); } catch { /* storage may be blocked */ }
+          }} title={example.goal[language] || example.goal.en}>{example.label[language] || example.label.en}</button>)}
         </div>
       </div>
       {!plan && <button className="button" type="button" disabled={loading || !goal.trim()} onClick={buildPlan}>

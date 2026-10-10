@@ -1,0 +1,14 @@
+begin;
+create extension if not exists pgtap;
+select plan(9);
+select ok(exists (select 1 from information_schema.tables where table_schema='public' and table_name='product_growth_events'), 'growth event table exists');
+select ok((select c.relrowsecurity from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relname='product_growth_events'), 'growth event table has RLS enabled');
+select ok(exists (select 1 from pg_policies where schemaname='public' and tablename='product_growth_events' and policyname='product_growth_events_select_own' and cmd='SELECT' and qual like '%auth.uid()%'), 'users can read only their own signals');
+select ok(exists (select 1 from pg_policies where schemaname='public' and tablename='product_growth_events' and policyname='product_growth_events_insert_template_share' and cmd='INSERT' and with_check like '%auth.uid()%' and with_check like '%template_shared%'), 'clients can insert only their own template-share signals');
+select ok(exists (select 1 from pg_index i join pg_class x on x.oid=i.indexrelid where x.relname='product_growth_template_shared_once_idx' and i.indisunique and i.indpred is not null and pg_get_expr(i.indpred, i.indrelid) like '%template_shared%'), 'shares are deduplicated per user and template');
+select ok(exists (select 1 from pg_index i join pg_class x on x.oid=i.indexrelid where x.relname='product_growth_second_mission_once_idx' and i.indisunique and i.indpred is not null and pg_get_expr(i.indpred, i.indrelid) like '%second_mission_created%'), 'repeat conversion is deduplicated per user');
+select ok(exists (select 1 from pg_trigger t join pg_class tbl on tbl.oid=t.tgrelid join pg_namespace n on n.oid=tbl.relnamespace where n.nspname='public' and tbl.relname='missions' and t.tgname='missions_record_second_mission_conversion' and not t.tgisinternal and t.tgenabled <> 'D'), 'mission insertion fires the repeat-mission trigger');
+select ok(exists (select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='private' and p.proname='record_second_mission_conversion' and p.prosecdef), 'conversion trigger uses a security-definer function');
+select ok(not exists (select 1 from information_schema.columns where table_schema='public' and table_name='product_growth_events' and column_name in ('goal','intent','prompt','mission_name','email','url')), 'events do not store prompts or contact details');
+select * from finish();
+rollback;

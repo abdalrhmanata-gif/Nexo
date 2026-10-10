@@ -14,7 +14,7 @@ export function ApprovalCenter({
   return (
     <section className="grid" aria-label="Pending approval requests">
       {approvals.length ? approvals.map((approval) => (
-        <article className="card" key={approval.id}>
+        <article id={`approval-${approval.id}`} className="card approval-card" key={approval.id}>
           <p className="eyebrow"><LocalizedText en="Approval request · Pending" nb="Godkjenningsforespørsel · Venter" ar="طلب موافقة · معلّق" /></p>
           <h2>{approval.missionName || `Mission ${approval.missionId.slice(0, 8)}`}</h2>
           {approval.missionIntent && <p>{approval.missionIntent}</p>}

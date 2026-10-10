@@ -93,8 +93,11 @@ test("notification bell is visible only in Business routes, never on home or per
 });
 
 test("Business owner metric uses persisted member data rather than a hard-coded fallback", () => {
-  assert.match(page, /members\.filter\(\(member\) => member\.role === "owner"\)\.length/);
-  assert.doesNotMatch(page, /members\.filter\(\(member\) => member\.role === "owner"\)\.length \|\| 1/);
+  assert.match(page, /\{members\.length\}<\/strong><span><LocalizedText en="Team members"/);
+  assert.match(page, /business-focus-panel/);
+  assert.match(page, /Review human decisions/);
+  assert.match(page, /Evidence & outcomes/);
+  assert.match(page, /business-recent-missions/);
 });
 
 test("mission cards route next-step states through the shared localization dictionary", () => {

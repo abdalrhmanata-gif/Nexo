@@ -45,7 +45,7 @@ export async function GET() {
         kind: "approval",
         title: approval.missionName || "Mission approval",
         detail: approval.actionTitle ? `Approval needed: ${approval.actionTitle}` : "A human decision is needed before this action can proceed.",
-        href: "/app/business/approvals",
+        href: `/app/business/approvals#approval-${approval.id}`,
         sortAt: Date.parse(approval.createdAt) || now,
       })),
       ...followUps.map((item) => ({

@@ -28,8 +28,9 @@ test("notification center renders separate actionable sections and direct links"
   assert.match(page, /Due and overdue tasks/);
   assert.match(page, /Pending approvals/);
   assert.match(page, /\/app\/missions\/\$\{followUp\.missionId\}/);
-  assert.match(page, /\/app\/business\/approvals/);
-  assert.match(page, /Review approval/);
+  assert.match(page, /\/app\/business\/approvals#approval-\$\{approval\.id\}/);
+  assert.match(page, /Review this decision/);
+  assert.match(page, /Human decision required/);
 });
 
 test("notification bell only polls inside Business routes, never on home or personal workspace", () => {
