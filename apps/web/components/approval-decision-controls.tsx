@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { LocalizedText } from "./localized-text";
 
 export function ApprovalDecisionControls({ approvalId }: { approvalId: string }) {
   const router = useRouter();
@@ -40,7 +41,7 @@ export function ApprovalDecisionControls({ approvalId }: { approvalId: string })
   return (
     <div className="approval-actions">
       <label className="field">
-        <span>Decision note <span className="action-hint">(required to reject)</span></span>
+        <span><LocalizedText en="Decision note" nb="Beslutningsnotat" ar="ملاحظة القرار" /> <span className="action-hint">(<LocalizedText en="required to reject" nb="påkrevd ved avslag" ar="مطلوب عند الرفض" />)</span></span>
         <textarea
           value={note}
           onChange={(event) => setNote(event.target.value.slice(0, 4000))}
@@ -50,10 +51,10 @@ export function ApprovalDecisionControls({ approvalId }: { approvalId: string })
           disabled={busy}
         />
       </label>
-      {error && <p role="alert" className="field-error">{error}</p>}
+      {error && <p role="alert" className="field-error"><LocalizedText en={error} /></p>}
       <div className="approval-actions">
         <button className="button button-small" type="button" onClick={() => decide("APPROVED")} disabled={busy}>
-          {busy ? "Saving…" : "Approve bounded scope"}
+          {busy ? <LocalizedText en="Saving…" nb="Lagrer…" ar="جارٍ الحفظ…" /> : <LocalizedText en="Approve bounded scope" nb="Godkjenn avgrenset omfang" ar="وافق على النطاق المحدد" />}
         </button>
         <button className="button button-small button-quiet" type="button" onClick={() => decide("REJECTED")} disabled={busy}>
           Reject request
