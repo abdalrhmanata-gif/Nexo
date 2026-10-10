@@ -54,7 +54,7 @@ export default function BusinessInvitePage() {
         <small><LocalizedText en="Grant only the access needed. Admins can manage workspace access." nb="Gi bare nødvendig tilgang. Administratorer kan administrere tilgangen til arbeidsområdet." ar="امنح الصلاحيات الضرورية فقط. يستطيع المسؤولون إدارة الوصول إلى مساحة العمل." /></small>
       </div>
       <button className="button" type="submit" disabled={loading}>{loading ? <LocalizedText en="Sending invitation…" nb="Sender invitasjon…" ar="جارٍ إرسال الدعوة…" /> : <LocalizedText en="Send email invitation" nb="Send e-postinvitasjon" ar="أرسل الدعوة بالبريد" />}</button>
-      {status === "sent" && <div className="success-state" role="status"><LocalizedText en="Invitation email sent. Your teammate can use the secure link in their inbox; it expires after 7 days." nb="E-postinvitasjonen er sendt. Kollegan din finner den sikre lenken i innboksen. Den utløper etter 7 dager." ar="تم إرسال الدعوة بالبريد الإلكتروني. سيجد زميلك الرابط الآمن في بريده، وتنتهي صلاحيته بعد 7 أيام." /></div>}
+      {status === "sent" && <div className="success-state" role="status"><LocalizedText en="The email provider accepted the invitation. Delivery can take a moment; the secure link expires after 7 days." nb="E-posttjenesten har godtatt invitasjonen for sending. Levering kan ta litt tid. Den sikre lenken utløper etter 7 dager." ar="قبلت خدمة البريد إرسال الدعوة. قد يستغرق وصولها بعض الوقت، وتنتهي صلاحية الرابط الآمن بعد 7 أيام." /></div>}
       {error && <div className="field-error" role="alert"><LocalizedText en={error} /></div>}
     </form>
     <p className="action-hint"><Link href="/app/business"><LocalizedText en="Back to Business workspace" nb="Tilbake til arbeidsområdet" ar="العودة إلى مساحة العمل" /></Link></p>
