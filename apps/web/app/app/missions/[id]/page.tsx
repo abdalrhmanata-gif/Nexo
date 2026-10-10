@@ -12,6 +12,7 @@ import { AddActionForm } from "../../../../components/add-action-form";
 import { missionIntelligenceFor } from "../../../../lib/mission-intelligence.mjs";
 import { MissionResearchPanel } from "../../../../components/mission-research-panel";
 import { ApprovalRequestControls } from "../../../../components/approval-request-controls";
+import { ExactExecutionApprovalRequest } from "../../../../components/exact-execution-approval-request";
 import { AgentExecutionControls } from "../../../../components/agent-execution-controls";
 
 export default async function MissionDetailPage({
@@ -29,6 +30,13 @@ export default async function MissionDetailPage({
   const readiness = verificationReadiness(mission);
   const intelligence = missionIntelligenceFor(mission);
   const executions = repository.listAgentExecutions ? await repository.listAgentExecutions(mission.id) : [];
+  const workspaceAgents = repository.listWorkspaceAgents ? await repository.listWorkspaceAgents() : [];
+  const approvalAgents = workspaceAgents
+    .filter((agent) => agent.status === "ACTIVE" && agent.authority.requires_approval === true)
+    .map((agent) => ({ id: agent.id, name: agent.name }));
+  const approvalActions = mission.actions
+    .filter((action) => action.status !== "CANCELLED")
+    .map((action) => ({ id: action.id, title: action.title }));
 
   return <div className="container">
     <p className="eyebrow"><Link href="/app">Workspace</Link> / Mission detail</p>
@@ -69,6 +77,7 @@ export default async function MissionDetailPage({
         <section className="card" aria-labelledby="execution-heading">
           <p className="eyebrow">Agent execution</p>
           <h2 id="execution-heading">Execution evidence</h2>
+          <ExactExecutionApprovalRequest missionId={mission.id} agents={approvalAgents} actions={approvalActions} />
           {executions.length ? <div className="timeline">{executions.slice(0,10).map((execution) => <div className="timeline-item" key={execution.id}>
             <strong>{execution.status} · Agent {execution.agentId.slice(0,8)} · Attempt {execution.attemptNumber}</strong>
             <span>{execution.actionId ? `Action ${execution.actionId.slice(0,8)}` : "Mission-level"} · {new Date(execution.createdAt).toLocaleString()} · {execution.approvalId ? "Approval attached" : "No approval required"}</span>
