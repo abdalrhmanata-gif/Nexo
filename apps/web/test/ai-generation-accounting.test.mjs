@@ -126,3 +126,20 @@ test("invalid provider request releases the reservation exactly once", async () 
   assert.deepEqual(fake.calls.release, ["reservation-1"]);
   assert.deepEqual(fake.calls.consume, []);
 });
+
+
+test("duplicate execution attempts keep quota reserved because another dispatch may be in flight", async () => {
+  const fake = fakes();
+  const result = await runAiGeneration({
+    requestId: "request-duplicate-execution",
+    ...fake,
+    prepare: async () => { throw new Error("AGENT_EXECUTION_ALREADY_EXISTS"); },
+  });
+  assert.equal(result.kind, AI_GENERATION_OUTCOMES.PROVIDER_ERROR);
+  assert.equal(result.code, "AGENT_EXECUTION_ALREADY_EXISTS");
+  assert.equal(result.status, 409);
+  assert.equal(result.disposition, "hold");
+  assert.equal(fake.calls.generate, 0);
+  assert.deepEqual(fake.calls.consume, []);
+  assert.deepEqual(fake.calls.release, []);
+});
