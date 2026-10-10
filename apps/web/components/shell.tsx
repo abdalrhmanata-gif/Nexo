@@ -3,6 +3,7 @@ import { SignOutButton } from "./auth-form";
 import { LanguageSwitcher } from "./language-switcher";
 import { LocalizedText } from "./localized-text";
 import { NavLink, WorkspaceNavLink } from "./nav-link";
+import { NotificationBell } from "./notification-bell";
 
 export function Shell({ children }: { children: React.ReactNode }) {
   return <div className="site-shell">
@@ -15,6 +16,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <NavLink href="/templates"><LocalizedText en="Templates" nb="Maler" ar="القوالب" /></NavLink>
         <NavLink href="/pricing"><LocalizedText en="Pricing" /></NavLink>
         <WorkspaceNavLink />
+        <NotificationBell />
         <LanguageSwitcher />
         <SignOutButton />
       </nav>
