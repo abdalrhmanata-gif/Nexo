@@ -312,12 +312,7 @@ test("homepage communicates bounded delegation and the one-goal-first product lo
 test("AI mission entry removes the blank-page moment with starter goals", () => {
   const source = read("components/mission-create-form.tsx");
   assert.match(source, /Try an example/);
-  assert.match(source, /Plan a project/);
-  assert.match(source, /Plan a product launch in four weeks/);
-  assert.match(source, /Research & compare/);
-  assert.match(source, /Compare three project management tools/);
-  assert.match(source, /Team follow-up/);
-  assert.match(source, /Prepare follow-up for three leads this week/);
+  assert.match(source, /getMissionStarterExamples\(language\)/);
   assert.match(source, /Mention deadlines, budget limits, allowed research, and actions that must not happen/);
 });
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { LocalizedText } from "./localized-text";
+import { getMissionStarterExamples } from "../lib/mission-starter-examples.mjs";
 
 type Plan = { title: string; summary: string; successCriteria: string[]; steps: { title: string; reason: string }[]; clarifyingQuestions: string[] };
 
@@ -92,11 +93,6 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
       actionsPlaceholder: "One step per line",
       boundariesPlaceholder: "Example: Public research only; budget under €500; do not send messages, make purchases, or change accounts.",
       boundariesHelp: "Set budget or deadline limits, allowed sources, and actions that must stay off-limits. These boundaries are included in the mission.",
-      examples: [
-        { label: "Plan a project", goal: "Plan a product launch in four weeks with milestones, a budget, and a launch checklist. Do not make purchases." },
-        { label: "Research & compare", goal: "Compare three project management tools for a small team. Compare pricing, strengths, and limitations. Do not create accounts or subscribe." },
-        { label: "Team follow-up", goal: "Prepare follow-up for three leads this week. Prioritize next steps and draft suggestions, but do not send messages." },
-      ],
     },
     nb: {
       goalPlaceholder: "Eksempel: lanser en liten nettbutikk innen seks uker",
@@ -106,11 +102,6 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
       actionsPlaceholder: "Ett steg per linje",
       boundariesPlaceholder: "Eksempel: Bare offentlig research; budsjett under €500; ikke send meldinger eller kjøp noe.",
       boundariesHelp: "Angi budsjett- eller tidsgrenser, tillatte kilder og handlinger som ikke er tillatt. Grensene lagres med oppdraget.",
-      examples: [
-        { label: "Planlegg et prosjekt", goal: "Planlegg en produktlansering om fire uker med milepæler, budsjett og sjekkliste. Ikke foreta kjøp." },
-        { label: "Undersøk og sammenlign", goal: "Sammenlign tre prosjektverktøy for et lite team. Vurder pris, styrker og begrensninger. Ikke opprett konto eller abonnement." },
-        { label: "Følg opp teamet", goal: "Forbered oppfølging av tre leads denne uken. Prioriter neste steg og lag forslag, men ikke send meldinger." },
-      ],
     },
     ar: {
       goalPlaceholder: "مثال: أريد إطلاق متجر إلكتروني صغير خلال ستة أسابيع",
@@ -120,11 +111,6 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
       actionsPlaceholder: "اكتب خطوة واحدة في كل سطر",
       boundariesPlaceholder: "مثال: البحث في المصادر العامة فقط؛ الميزانية أقل من 500 يورو؛ لا ترسل رسائل ولا تشترِ شيئًا ولا تغيّر الحسابات.",
       boundariesHelp: "حدّد الميزانية أو الموعد النهائي والمصادر المسموحة والإجراءات الممنوعة. ستُحفظ هذه الحدود مع المهمة.",
-      examples: [
-        { label: "خطط لمشروع", goal: "خطط لإطلاق منتج خلال أربعة أسابيع، مع مراحل وميزانية وقائمة تحقق. لا تُجرِ أي عمليات شراء." },
-        { label: "ابحث وقارن", goal: "قارن بين ثلاث أدوات لإدارة المشاريع لفريق صغير من حيث السعر ونقاط القوة والقيود. لا تنشئ حسابات أو اشتراكات." },
-        { label: "متابعة الفريق", goal: "جهّز خطة متابعة لثلاثة عملاء محتملين هذا الأسبوع. رتّب الأولويات واكتب مقترحات، لكن لا ترسل رسائل." },
-      ],
     },
     es: {
       goalPlaceholder: "Ejemplo: lanzar una pequeña tienda en línea en seis semanas",
@@ -134,11 +120,6 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
       actionsPlaceholder: "Un paso por línea",
       boundariesPlaceholder: "Ejemplo: solo investigación pública; presupuesto inferior a 500 €; no enviar mensajes ni comprar ni cambiar cuentas.",
       boundariesHelp: "Indica límites de presupuesto o plazo, fuentes permitidas y acciones prohibidas. Estos límites se guardarán con la misión.",
-      examples: [
-        { label: "Planificar un proyecto", goal: "Planifica el lanzamiento de un producto en cuatro semanas con hitos, presupuesto y lista de lanzamiento. No hagas compras." },
-        { label: "Investigar y comparar", goal: "Compara tres herramientas de gestión de proyectos para un equipo pequeño: precios, ventajas y limitaciones. No crees cuentas ni te suscribas." },
-        { label: "Seguimiento del equipo", goal: "Prepara el seguimiento de tres contactos esta semana. Prioriza los próximos pasos, pero no envíes mensajes." },
-      ],
     },
     fr: {
       goalPlaceholder: "Exemple : lancer une petite boutique en ligne en six semaines",
@@ -148,11 +129,6 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
       actionsPlaceholder: "Une étape par ligne",
       boundariesPlaceholder: "Exemple : recherche publique uniquement ; budget inférieur à 500 € ; aucun message, achat ou changement de compte.",
       boundariesHelp: "Précisez les limites de budget ou de délai, les sources autorisées et les actions interdites. Ces limites seront enregistrées avec la mission.",
-      examples: [
-        { label: "Planifier un projet", goal: "Planifiez le lancement d’un produit dans quatre semaines avec jalons, budget et liste de contrôle. N’effectuez aucun achat." },
-        { label: "Rechercher et comparer", goal: "Comparez trois outils de gestion de projet pour une petite équipe : prix, avantages et limites. Ne créez aucun compte et ne souscrivez à rien." },
-        { label: "Suivi d’équipe", goal: "Préparez le suivi de trois prospects cette semaine. Priorisez les prochaines étapes, mais n’envoyez aucun message." },
-      ],
     },
     de: {
       goalPlaceholder: "Beispiel: einen kleinen Onlineshop in sechs Wochen starten",
@@ -162,13 +138,9 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
       actionsPlaceholder: "Ein Schritt pro Zeile",
       boundariesPlaceholder: "Beispiel: nur öffentliche Recherche; Budget unter 500 €; keine Nachrichten senden, Käufe tätigen oder Konten ändern.",
       boundariesHelp: "Legen Sie Budget- oder Fristgrenzen, erlaubte Quellen und verbotene Aktionen fest. Diese Grenzen werden mit der Mission gespeichert.",
-      examples: [
-        { label: "Projekt planen", goal: "Plane eine Produkteinführung in vier Wochen mit Meilensteinen, Budget und Checkliste. Tätige keine Käufe." },
-        { label: "Recherchieren und vergleichen", goal: "Vergleiche drei Projektmanagement-Tools für ein kleines Team nach Preis, Stärken und Grenzen. Erstelle keine Konten und schließe keine Abos ab." },
-        { label: "Team-Follow-up", goal: "Bereite diese Woche die Nachverfolgung von drei Leads vor. Priorisiere nächste Schritte, aber sende keine Nachrichten." },
-      ],
     },
   }[language];
+  const examples = getMissionStarterExamples(language);
   const placeholder = copy.goalPlaceholder;
   const namePlaceholder = copy.namePlaceholder;
   const intentPlaceholder = copy.intentPlaceholder;
@@ -190,7 +162,7 @@ export function MissionCreateForm({ action }: { action: (formData: FormData) => 
         <small id="ai-goal-help"><LocalizedText en="Mention deadlines, budget limits, allowed research, and actions that must not happen. Nothing is executed automatically." nb="Nevn tidsfrister, budsjettgrenser, tillatt research og handlinger som ikke må skje. Ingenting utføres automatisk." ar="اذكر المواعيد والميزانية والبحث المسموح والإجراءات الممنوعة. لن يتم تنفيذ أي شيء تلقائيًا." /></small>
         <div className="goal-examples" aria-label="Example goals">
           <span><LocalizedText en="Try an example" nb="Prøv et eksempel" ar="جرّب مثالًا" /></span>
-          {copy.examples.map((example) => <button key={example.label} type="button" className="example-chip" onClick={() => handleExampleClick(example.goal)} title={example.goal}>{example.label}</button>)}
+          {examples.map((example) => <button key={example.key} type="button" className="example-chip" onClick={() => handleExampleClick(example.goal)} title={example.goal}>{example.label}</button>)}
         </div>
       </div>
       <div className="field">

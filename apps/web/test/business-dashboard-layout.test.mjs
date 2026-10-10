@@ -44,8 +44,8 @@ test("notification bell and center reflect missions waiting for input and pendin
   assert.match(shell, /NotificationBell/);
   assert.match(bell, /fetch\("\/api\/notifications"/);
   assert.match(bell, /setInterval/);
-  assert.match(api, /mission\.status === "WAITING"/);
-  assert.match(api, /listPendingApprovals/);
+  assert.match(api, /buildNotificationSummary\(missions, approvals\)/);
+  assert.match(api, /repository\.listPendingApprovals/);
   assert.match(page, /Missions waiting for you/);
   assert.match(page, /Pending approvals/);
 });
@@ -138,6 +138,67 @@ test("Business, Templates, and dynamic workspace states have Norwegian and Arabi
   ]) {
     const escaped = englishKey.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     assert.match(dictionary, new RegExp(`"${escaped}": \\{ nb: "[^"]+", ar: "[^"]+"`), `missing nb/ar translation for: ${englishKey}`);
+  }
+});
+
+test("all static Business and template copy is translated in each supported locale", () => {
+  const templates = read("app/templates/page.tsx");
+  const dictionary = read("components/localized-text.tsx");
+  const sources = [page, templates];
+  const keys = new Map();
+  for (const source of sources) {
+    for (const match of source.matchAll(/<LocalizedText en="([^"]+)"([^>]*)>/g)) {
+      keys.set(match[1], (keys.get(match[1]) || "") + match[2]);
+    }
+  }
+
+  const hasDictionaryLocale = (key, locale) => {
+    const token = '"' + key + '"';
+    let position = dictionary.indexOf(token);
+    while (position >= 0) {
+      let cursor = position + token.length;
+      while (/\s/.test(dictionary[cursor] || "")) cursor += 1;
+      if (dictionary[cursor] === ":") {
+        cursor += 1;
+        while (/\s/.test(dictionary[cursor] || "")) cursor += 1;
+        if (dictionary[cursor] === "{") {
+          const end = dictionary.indexOf("}", cursor);
+          const entry = dictionary.slice(cursor, end < 0 ? undefined : end);
+          if (entry.includes(locale + ":") || entry.includes('"' + locale + '":')) return true;
+        }
+      }
+      position = dictionary.indexOf(token, position + token.length);
+    }
+    return false;
+  };
+
+  for (const [key, attributes] of keys) {
+    for (const locale of ["nb", "ar", "es", "fr", "de"]) {
+      assert.ok(
+        attributes.includes(locale + "=") || hasDictionaryLocale(key, locale),
+        "missing " + locale + " translation for: " + key,
+      );
+    }
+  }
+
+  const dynamicTemplateCopy = [
+    "Plan a family trip",
+    "Research options, compare them, and keep the final booking under your control.",
+    "Find three family-friendly hotels in Copenhagen for three nights under €600. Compare location, room suitability, and total price. Do not book or pay.",
+    "Compare a major purchase",
+    "Turn a product search into a bounded comparison before you decide what to buy.",
+    "Find the best laptop for programming under €1,500. Compare performance, battery life, warranty, and total price. Do not purchase anything.",
+    "Research competitors",
+    "Create a repeatable research mission with clear criteria and evidence.",
+    "Research three main competitors in my market. Compare their pricing, target customers, key features, and positioning, and provide sources for each finding.",
+    "Prepare lead follow-up",
+    "Organize the work first, while keeping sending and consequential actions under approval.",
+    "Review my new sales leads, group them by priority, and prepare a concise follow-up plan for each. Do not send messages or change CRM records.",
+  ];
+  for (const key of dynamicTemplateCopy) {
+    for (const locale of ["nb", "ar", "es", "fr", "de"]) {
+      assert.ok(hasDictionaryLocale(key, locale), "missing " + locale + " translation for template copy: " + key);
+    }
   }
 });
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LocalizedText } from "./localized-text";
 import { missionTemplateById } from "../lib/mission-templates";
+import { getMissionStarterExamples } from "../lib/mission-starter-examples.mjs";
 
 type Plan = { title: string; summary: string; successCriteria: string[]; steps: { title: string; reason: string }[]; clarifyingQuestions: string[] };
 
@@ -14,7 +15,7 @@ export function AnonymousPlanForm() {
   const [plan, setPlan] = useState<Plan | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [language, setLanguage] = useState<"en" | "nb" | "ar">("en");
+  const [language, setLanguage] = useState<"en" | "nb" | "ar" | "es" | "fr" | "de">("en");
 
   useEffect(() => {
     const syncLanguage = () => {
@@ -22,12 +23,12 @@ export function AnonymousPlanForm() {
       try { saved = window.localStorage.getItem("zavqera-language"); } catch { /* storage may be blocked */ }
       const cookie = document.cookie.split("; ").find((part) => part.startsWith("zavqera-language="))?.split("=")[1];
       const candidate = saved || cookie || navigator.language.toLowerCase().split("-")[0];
-      setLanguage(candidate === "nb" || candidate === "ar" ? candidate : "en");
+      setLanguage(["en", "nb", "ar", "es", "fr", "de"].includes(candidate) ? candidate as "en" | "nb" | "ar" | "es" | "fr" | "de" : "en");
     };
     syncLanguage();
     const onLanguageChange = (event: Event) => {
       const value = (event as CustomEvent<string>).detail;
-      setLanguage(value === "nb" || value === "ar" ? value : "en");
+      setLanguage(["en", "nb", "ar", "es", "fr", "de"].includes(value) ? value as "en" | "nb" | "ar" | "es" | "fr" | "de" : "en");
     };
     window.addEventListener("zavqera-language-change", onLanguageChange);
 
@@ -82,23 +83,7 @@ export function AnonymousPlanForm() {
     }
   }
 
-  const examples = [
-    { key: "project", label: { en: "Plan a project", nb: "Planlegg et prosjekt", ar: "خطط لمشروع" }, goal: {
-      en: "Plan a product launch in four weeks with milestones, a budget, and a launch checklist. Do not make purchases.",
-      nb: "Planlegg en produktlansering om fire uker med milepæler, budsjett og sjekkliste. Ikke foreta kjøp.",
-      ar: "خطط لإطلاق منتج خلال أربعة أسابيع، مع مراحل وميزانية وقائمة تحقق. لا تُجرِ أي عمليات شراء."
-    }},
-    { key: "research", label: { en: "Research & compare", nb: "Undersøk og sammenlign", ar: "ابحث وقارن" }, goal: {
-      en: "Compare three project management tools for a small team. Compare pricing, strengths, and limitations. Do not create accounts or subscribe.",
-      nb: "Sammenlign tre prosjektverktøy for et lite team. Vurder pris, styrker og begrensninger. Ikke opprett konto eller abonnement.",
-      ar: "قارن بين ثلاث أدوات لإدارة المشاريع لفريق صغير من حيث السعر ونقاط القوة والقيود. لا تنشئ حسابات أو اشتراكات."
-    }},
-    { key: "team-follow-up", label: { en: "Team follow-up", nb: "Følg opp teamet", ar: "متابعة الفريق" }, goal: {
-      en: "Prepare follow-up for three leads this week. Prioritize next steps and draft suggestions, but do not send messages.",
-      nb: "Forbered oppfølging av tre leads denne uken. Prioriter neste steg og lag forslag, men ikke send meldinger.",
-      ar: "جهّز خطة متابعة لثلاثة عملاء محتملين هذا الأسبوع. رتّب الأولويات واكتب مقترحات، لكن لا ترسل رسائل."
-    }}
-  ];
+  const examples = getMissionStarterExamples(language);
 
   return <div className="form-grid card mission-create-form">
     <section className="mission-ai-draft" aria-labelledby="anonymous-plan-heading">
@@ -112,10 +97,10 @@ export function AnonymousPlanForm() {
         <div className="goal-examples" aria-label="Example goals">
           <span><LocalizedText en="Try an example" nb="Prøv et eksempel" ar="جرّب مثالًا" /></span>
           {examples.map((example) => <button key={example.key} type="button" className="example-chip" onClick={() => {
-            setGoal(example.goal[language] || example.goal.en);
+            setGoal(example.goal);
             setPlan(null); setError("");
             try { sessionStorage.removeItem(DRAFT_KEY); } catch { /* storage may be blocked */ }
-          }} title={example.goal[language] || example.goal.en}>{example.label[language] || example.label.en}</button>)}
+          }} title={example.goal}>{example.label}</button>)}
         </div>
       </div>
       {!plan && <button className="button" type="button" disabled={loading || !goal.trim()} onClick={buildPlan}>

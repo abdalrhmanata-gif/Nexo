@@ -8,6 +8,7 @@ import { createSupabaseMissionRepository } from "../../../lib/supabase/mission-r
 import { InvitationRevokeButton } from "../../../components/invitation-revoke-button";
 import { MemberManagementControls } from "../../../components/member-management-controls";
 import { humaniseEventType, summariseApprovalScope, summariseEventPayload } from "../../../lib/mission-content.mjs";
+import { getBusinessFocus } from "../../../lib/business-focus.mjs";
 
 export default async function BusinessWorkspacePage() {
   const repository = isSupabaseConfigured() ? await createSupabaseMissionRepository() : localMockMissionRepository;
@@ -23,6 +24,11 @@ export default async function BusinessWorkspacePage() {
   const canDecideApprovals = repository.canDecideApprovals ? await repository.canDecideApprovals() : false;
   const invitations = repository.listWorkspaceInvitations ? await repository.listWorkspaceInvitations() : [];
   const activity = repository.listWorkspaceActivity ? await repository.listWorkspaceActivity() : [];
+  const focus = getBusinessFocus({
+    pendingApprovals: approvals.length,
+    waitingMissions: waiting.length,
+    activeMissions: active.length,
+  });
 
   return <div className="container business-dashboard">
     <div className="section-heading"><div>
@@ -42,13 +48,13 @@ export default async function BusinessWorkspacePage() {
     <section className={`business-focus-panel ${approvals.length ? "business-focus-urgent" : ""}`} aria-labelledby="business-focus-title">
       <div className="business-focus-copy">
         <p className="eyebrow"><LocalizedText en="Next best action" nb="Neste anbefalte handling" ar="الخطوة التالية" /></p>
-        {approvals.length > 0 ? <>
+        {focus.kind === "approval" ? <>
           <h2 id="business-focus-title">{approvals.length} <LocalizedText en={approvals.length === 1 ? "human decision needs your review" : "human decisions need your review"} nb={approvals.length === 1 ? "menneskelig beslutning trenger din gjennomgang" : "menneskelige beslutninger trenger din gjennomgang"} ar="قرارات بشرية تحتاج إلى مراجعتك" /></h2>
           <p><LocalizedText en="Keep approval-gated work blocked until an authorized person reviews the scope and evidence." nb="Hold arbeid som krever godkjenning blokkert til en autorisert person har vurdert omfang og dokumentasjon." ar="أبقِ الإجراءات التي تتطلب موافقة محظورة حتى يراجع شخص مخوّل النطاق والأدلة." /></p>
-        </> : waiting.length > 0 ? <>
+        </> : focus.kind === "waiting" ? <>
           <h2 id="business-focus-title">{waiting.length} <LocalizedText en={waiting.length === 1 ? "mission needs your input" : "missions need your input"} nb={waiting.length === 1 ? "oppdrag trenger avklaring" : "oppdrag trenger avklaringer"} ar="مهام تحتاج إلى توجيهك" /></h2>
           <p><LocalizedText en="Resolve the next decision so the team can move work forward." nb="Avklar neste beslutning slik at teamet kan gå videre." ar="احسم القرار التالي حتى يتمكن الفريق من متابعة العمل." /></p>
-        </> : active.length > 0 ? <>
+        </> : focus.kind === "active" ? <>
           <h2 id="business-focus-title"><LocalizedText en="Keep active work moving" nb="Hold aktivt arbeid i gang" ar="واصل العمل النشط" /></h2>
           <p><LocalizedText en="Review the next steps, evidence, and outcomes in your shared mission workspace." nb="Gjennomgå neste steg, dokumentasjon og resultater i det delte oppdragsområdet." ar="راجع الخطوات التالية والأدلة والنتائج في مساحة المهام المشتركة." /></p>
         </> : <>
@@ -57,13 +63,13 @@ export default async function BusinessWorkspacePage() {
         </>}
       </div>
       <div className="business-focus-actions">
-        {approvals.length > 0
-          ? <Link className="button" href="/app/business/approvals"><LocalizedText en="Review human decisions" nb="Gjennomgå beslutninger" ar="راجع القرارات البشرية" /></Link>
-          : waiting.length > 0
-            ? <Link className="button" href="/app"><LocalizedText en="Review waiting missions" nb="Gjennomgå oppdrag som venter" ar="راجع المهام المنتظرة" /></Link>
-            : active.length > 0
-              ? <Link className="button" href="/app"><LocalizedText en="Open active missions" nb="Åpne aktive oppdrag" ar="افتح المهام النشطة" /></Link>
-              : <Link className="button" href="/app/missions/new"><LocalizedText en="Create your first mission" nb="Opprett ditt første oppdrag" ar="أنشئ مهمتك الأولى" /></Link>}
+        {focus.kind === "approval"
+          ? <Link className="button" href={focus.href}><LocalizedText en="Review human decisions" nb="Gjennomgå beslutninger" ar="راجع القرارات البشرية" /></Link>
+          : focus.kind === "waiting"
+            ? <Link className="button" href={focus.href}><LocalizedText en="Review waiting missions" nb="Gjennomgå oppdrag som venter" ar="راجع المهام المنتظرة" /></Link>
+            : focus.kind === "active"
+              ? <Link className="button" href={focus.href}><LocalizedText en="Open active missions" nb="Åpne aktive oppdrag" ar="افتح المهام النشطة" /></Link>
+              : <Link className="button" href={focus.href}><LocalizedText en="Create your first mission" nb="Opprett ditt første oppdrag" ar="أنشئ مهمتك الأولى" /></Link>}
         <Link className="button button-quiet" href="#business-recent-missions"><LocalizedText en="Review recent missions" nb="Se nylige oppdrag" ar="راجع المهام الأخيرة" /></Link>
       </div>
     </section>
