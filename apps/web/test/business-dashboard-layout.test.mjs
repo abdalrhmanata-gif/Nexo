@@ -121,6 +121,16 @@ test("Business, Templates, and dynamic workspace states have Norwegian and Arabi
     "PENDING",
     "A human decision is needed before this action can proceed.",
     "Your mission draft is ready.",
+    "Provide a valid email address and role.",
+    "An invitation is already pending for this email.",
+    "This user is already a workspace member.",
+    "Only a workspace owner or admin can invite teammates.",
+    "The invitation could not be created.",
+    "The email provider rejected the invitation. Check the sender configuration and try again.",
+    "The email provider rejected the invitation. Check the sender configuration and try again. The pending invitation could not be cleared; revoke it in Business before retrying.",
+    "We could not confirm whether the email provider accepted this invitation. Check provider logs before retrying; revoke the pending invitation in Business only if it was not sent.",
+    "Secure invitation links are not configured for this deployment yet.",
+    "The invitation request could not be processed.",
   ]) {
     const escaped = englishKey.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     assert.match(dictionary, new RegExp(`"${escaped}": \\{ nb: "[^"]+", ar: "[^"]+"`), `missing nb/ar translation for: ${englishKey}`);
