@@ -389,6 +389,22 @@ const WORKSPACE_TRANSLATIONS: Record<string, Partial<Record<AppLanguage, string>
   "Preview & try free": { es: "Previsualizar y probar gratis", fr: "Prévisualiser et essayer gratuitement", de: "Vorschau ansehen und kostenlos testen" },
   "For signed-in users, we count successful template shares in aggregate. Mission text and prompts are never sent to product metrics.": { es: "Para usuarios registrados, contamos las veces que se comparten plantillas correctamente de forma agregada. El texto de las misiones y las instrucciones no se envían a las métricas del producto.", fr: "Pour les utilisateurs connectés, nous comptons les partages de modèles réussis de manière agrégée. Le texte des missions et les instructions ne sont jamais transmis aux mesures produit.", de: "Bei angemeldeten Nutzern erfassen wir erfolgreiche Vorlagenfreigaben nur zusammengefasst. Missionstexte und Eingaben werden niemals an Produktmetriken gesendet." },
 
+  // Exact execution approval request UI
+  "No active agent currently requires approval.": { es: "Ningún agente activo requiere aprobación actualmente.", fr: "Aucun agent actif ne nécessite actuellement d’approbation.", de: "Derzeit benötigt kein aktiver Agent eine Freigabe." },
+  "Request exact execution approval": { es: "Solicitar aprobación exacta de ejecución", fr: "Demander une approbation d’exécution exacte", de: "Exakte Ausführungsfreigabe anfordern" },
+  "This submits a review request only; nothing is executed. The approval will match this exact request, agent authority, mission/action versions, destination, audience and expiry.": { es: "Esto solo envía una solicitud de revisión; no se ejecuta nada. La aprobación se vinculará a esta solicitud exacta, la autoridad del agente, las versiones de misión/acción, el destino, la audiencia y el vencimiento.", fr: "Cela soumet uniquement une demande de revue ; rien n’est exécuté. L’approbation sera liée à cette demande exacte, à l’autorité de l’agent, aux versions de mission/action, à la destination, au public visé et à l’expiration.", de: "Dies übermittelt nur eine Prüfanfrage; es wird nichts ausgeführt. Die Freigabe wird an diese genaue Anfrage, die Agentenberechtigung, Missions-/Aktionsversionen, das Ziel, die Zielgruppe und den Ablauf gebunden." },
+  "Agent": { es: "Agente", fr: "Agent", de: "Agent" },
+  "Action scope": { es: "Alcance de la acción", fr: "Périmètre de l’action", de: "Aktionsumfang" },
+  "Mission-level": { es: "Nivel de misión", fr: "Niveau de mission", de: "Missionsebene" },
+  "Request summary": { es: "Resumen de la solicitud", fr: "Résumé de la demande", de: "Zusammenfassung der Anfrage" },
+  "Destination": { es: "Destino", fr: "Destination", de: "Ziel" },
+  "Audience": { es: "Audiencia", fr: "Public visé", de: "Zielgruppe" },
+  "Exact payload (JSON object)": { es: "Contenido exacto (objeto JSON)", fr: "Charge utile exacte (objet JSON)", de: "Exakte Nutzlast (JSON-Objekt)" },
+  "Enter the exact object that the future execution request will contain. It is hashed for matching; this approval record does not store the payload.": { es: "Introduce el objeto exacto que contendrá la futura solicitud de ejecución. Se calcula su hash para comparar; el registro de aprobación no almacena el contenido.", fr: "Saisissez l’objet exact que contiendra la future demande d’exécution. Son empreinte sert à la comparaison ; le dossier d’approbation ne stocke pas la charge utile.", de: "Geben Sie das genaue Objekt ein, das die spätere Ausführungsanfrage enthalten wird. Zum Abgleich wird ein Hash erstellt; der Freigabedatensatz speichert die Nutzlast nicht." },
+  "Check the summary and destination fields, and make sure the payload is a JSON object within the size limit.": { es: "Revisa el resumen y el destino, y asegúrate de que el contenido sea un objeto JSON dentro del límite de tamaño.", fr: "Vérifiez le résumé et la destination, et assurez-vous que la charge utile est un objet JSON dans la limite de taille.", de: "Prüfen Sie Zusammenfassung und Ziel und stellen Sie sicher, dass die Nutzlast ein JSON-Objekt innerhalb der Größenbegrenzung ist." },
+  "The approval request could not be created. An approval may already be pending or the agent policy may have changed. Refresh and review the workspace.": { es: "No se pudo crear la solicitud de aprobación. Puede que ya haya una aprobación pendiente o que la política del agente haya cambiado. Actualiza y revisa el espacio de trabajo.", fr: "La demande d’approbation n’a pas pu être créée. Une approbation est peut-être déjà en attente ou la politique de l’agent a changé. Actualisez et vérifiez l’espace de travail.", de: "Die Freigabeanfrage konnte nicht erstellt werden. Möglicherweise ist bereits eine Freigabe ausstehend oder die Agentenrichtlinie hat sich geändert. Aktualisieren Sie und prüfen Sie den Workspace." },
+  "Submit exact-scope request": { es: "Enviar solicitud de alcance exacto", fr: "Envoyer une demande au périmètre exact", de: "Anfrage mit genauem Umfang senden" },
+  "Exact-scope approval requested. Nothing was executed.": { es: "Se solicitó la aprobación del alcance exacto. No se ejecutó nada.", fr: "L’approbation du périmètre exact a été demandée. Rien n’a été exécuté.", de: "Die Freigabe für den exakten Umfang wurde angefordert. Es wurde nichts ausgeführt." },
 };
 for (const [key, translations] of Object.entries(WORKSPACE_TRANSLATIONS)) {
   if (translations.nb) NB[key] = translations.nb;
@@ -652,6 +668,22 @@ const WORKSPACE_NB_AR: Record<string, { nb: string; ar: string }> = {
   "A human decision is needed before this action can proceed.": { nb: "En menneskelig beslutning kreves før handlingen kan fortsette.", ar: "يلزم قرار بشري قبل متابعة هذا الإجراء." },
   "Mission approval": { nb: "Oppdragsgodkjenning", ar: "موافقة على المهمة" },
   "Boundaries and permissions": { nb: "Grenser og tillatelser", ar: "الحدود والصلاحيات" },
+  // Exact execution approval request UI
+  "No active agent currently requires approval.": { nb: "Ingen aktive agenter krever godkjenning nå.", ar: "لا يوجد وكيل نشط يتطلب موافقة حاليًا." },
+  "Request exact execution approval": { nb: "Be om nøyaktig godkjenning for kjøring", ar: "طلب موافقة دقيقة على التنفيذ" },
+  "This submits a review request only; nothing is executed. The approval will match this exact request, agent authority, mission/action versions, destination, audience and expiry.": { nb: "Dette sender bare en forespørsel til vurdering; ingenting utføres. Godkjenningen bindes til nøyaktig forespørsel, agentfullmakt, oppdrags-/handlingsversjoner, mål, målgruppe og utløp.", ar: "هذا يرسل طلب مراجعة فقط ولا ينفّذ شيئًا. سترتبط الموافقة بالطلب الدقيق وصلاحيات الوكيل وإصدارات المهمة/الإجراء والوجهة والجمهور المستهدف وموعد الانتهاء." },
+  "Agent": { nb: "Agent", ar: "الوكيل" },
+  "Action scope": { nb: "Handlingsomfang", ar: "نطاق الإجراء" },
+  "Mission-level": { nb: "Oppdragsnivå", ar: "على مستوى المهمة" },
+  "Request summary": { nb: "Sammendrag av forespørselen", ar: "ملخص الطلب" },
+  "Destination": { nb: "Mål", ar: "الوجهة" },
+  "Audience": { nb: "Målgruppe", ar: "الجمهور المستهدف" },
+  "Exact payload (JSON object)": { nb: "Nøyaktig innhold (JSON-objekt)", ar: "الحمولة الدقيقة (كائن JSON)" },
+  "Enter the exact object that the future execution request will contain. It is hashed for matching; this approval record does not store the payload.": { nb: "Oppgi det nøyaktige objektet den fremtidige kjøringen skal inneholde. Det brukes til hashing og lagres ikke i selve godkjenningsposten.", ar: "أدخل الكائن الدقيق الذي سيحتويه طلب التنفيذ لاحقًا. تُحسب بصمته للمطابقة ولا تُخزّن الحمولة داخل سجل الموافقة." },
+  "Check the summary and destination fields, and make sure the payload is a JSON object within the size limit.": { nb: "Kontroller sammendrag og mål, og sørg for at innholdet er et JSON-objekt innenfor størrelsesgrensen.", ar: "تحقّق من الملخص والوجهة وتأكد أن الحمولة كائن JSON ضمن حد الحجم." },
+  "The approval request could not be created. An approval may already be pending or the agent policy may have changed. Refresh and review the workspace.": { nb: "Kunne ikke opprette godkjenningsforespørselen. Det kan allerede finnes en ventende forespørsel, eller agentpolicyen kan ha endret seg. Oppdater siden og kontroller arbeidsområdet.", ar: "تعذّر إنشاء طلب الموافقة. قد يكون هناك طلب معلّق بالفعل أو ربما تغيرت سياسة الوكيل. حدّث الصفحة وراجع مساحة العمل." },
+  "Submit exact-scope request": { nb: "Send forespørsel med nøyaktig omfang", ar: "إرسال طلب بالنطاق الدقيق" },
+  "Exact-scope approval requested. Nothing was executed.": { nb: "Godkjenning med nøyaktig omfang er forespurt. Ingenting ble utført.", ar: "تم طلب موافقة بالنطاق الدقيق. لم يتم تنفيذ أي شيء." },
 };
 
 for (const [key, translations] of Object.entries(WORKSPACE_NB_AR)) {
