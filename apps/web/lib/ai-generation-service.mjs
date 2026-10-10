@@ -13,6 +13,8 @@ const KNOWN_PROVIDER_FAILURES = new Map([
   ["INVALID_PROVIDER_REQUEST", { kind: "definite", status: 502 }],
   ["INCOMPLETE_PROVIDER_RESPONSE", { kind: "definite", status: 502 }],
   ["INVALID_PROVIDER_RESPONSE", { kind: "definite", status: 502 }],
+  ["AGENT_APPROVAL_REQUIRED", { kind: "definite", status: 409 }],
+  ["AGENT_EXECUTION_START_FAILED", { kind: "definite", status: 503 }],
 ]);
 
 export function classifyProviderFailure(error) {
@@ -41,6 +43,7 @@ export function classifyProviderFailure(error) {
 export async function runAiGeneration({
   requestId,
   reserve,
+  prepare,
   generate,
   consume,
   release,
@@ -56,6 +59,10 @@ export async function runAiGeneration({
   const reservationId = reservation.reservation_id;
 
   try {
+    // Preparation is a server-side authorization gate. It must finish before
+    // any provider request or other externally observable work begins.
+    if (prepare) await prepare();
+
     const plan = await generate();
 
     try {
@@ -77,7 +84,7 @@ export async function runAiGeneration({
     const classified = classifyProviderFailure(error);
 
     if (classified.disposition === "release") {
-      // Known provider rejection means no usable generation result was produced.
+      // Known pre-dispatch or provider rejection means no usable result exists.
       // If release itself fails, fail closed by leaving the reservation intact.
       await release(reservationId).catch(() => undefined);
     }
