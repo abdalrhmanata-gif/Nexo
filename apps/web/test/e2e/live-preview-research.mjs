@@ -93,7 +93,9 @@ async function main() {
   if (!usePreProvisionedAccount && adminKeyFormat === "unknown_format") {
     throw new Error("SUPABASE_DEV_SERVICE_ROLE_KEY is not in a supported raw API-key format; no secret value is printed.");
   }
-  if (usePreProvisionedAccount && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(testAccountEmail)) {
+    throw new Error("SUPABASE_DEV_TEST_EMAIL must be a valid email address.");
+  }
+  if (usePreProvisionedAccount && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testAccountEmail)) {
     throw new Error("SUPABASE_DEV_TEST_EMAIL must be a valid email address.");
   }
   console.log(JSON.stringify({
@@ -104,7 +106,6 @@ async function main() {
     ...(usePreProvisionedAccount ? {} : { adminKeyFormat }),
   }));
 
-  const usePreProvisionedAccount = Boolean(testAccountEmail && testAccountPassword);
   const email = usePreProvisionedAccount ? testAccountEmail : `zavqera-live-research-${runId}-${randomBytes(5).toString("hex")}@example.com`;
   const password = usePreProvisionedAccount ? testAccountPassword : `${randomBytes(28).toString("base64url")}Zz9!`;
   const browser = await chromium.launch({ headless: true });
@@ -141,10 +142,10 @@ async function main() {
         const message = typeof createUserError.message === "string" ? createUserError.message : "";
         const status = typeof createUserError.status === "number" ? `HTTP ${createUserError.status}` : "HTTP status unavailable";
         const safeDetail = `${code} ${message}`
-          .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/gi, "[redacted-email]")
+          .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, "[redacted-email]")
           .replace(/sb_secret_[A-Za-z0-9_-]+/g, "[redacted-key]")
           .replace(/eyJ[A-Za-z0-9_-]{20,}/g, "[redacted-token]")
-          .replace(/Bearer\\s+[^\\s]+/gi, "Bearer [redacted]")
+          .replace(/Bearer\s+[^\s]+/gi, "Bearer [redacted]")
           .slice(0, 160).trim();
         throw new Error(`Development Auth Admin could not create the dedicated test user (${status})${safeDetail ? `: ${safeDetail}` : ""}.`);
       }
