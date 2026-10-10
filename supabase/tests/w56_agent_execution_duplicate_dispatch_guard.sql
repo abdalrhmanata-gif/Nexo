@@ -2,7 +2,7 @@
 -- This is a schema/function-definition test, not proof of provider-side reconciliation.
 begin;
 create extension if not exists pgtap;
-select plan(19);
+select plan(21);
 
 select ok(to_regclass('public.agent_executions') is not null,
   'agent execution ledger exists');
@@ -77,6 +77,7 @@ declare
   v_agent_a uuid := gen_random_uuid();
   v_agent_b uuid := gen_random_uuid();
   v_first public.agent_executions;
+  v_retry public.agent_executions;
   v_mission_row public.missions;
   v_approval public.mission_approvals;
   v_stale_approval public.mission_approvals;
@@ -235,6 +236,35 @@ begin
     raise exception 'TEST_FAILED: an approval bound to agent A authorized agent B';
   end if;
 
+  -- A retry is permitted only within the original execution lineage and while
+  -- the same exact approval binding remains unexpired.
+  perform public.complete_agent_execution(
+    v_first.id, 'FAILED', '{}'::jsonb, null, 'W56_TEST_FAILURE', 'Intentional fixture failure'
+  );
+  select * into v_retry
+    from public.retry_agent_execution(v_first.id, 'w56-valid-retry-key-0006');
+  if v_retry.retry_of_execution_id is distinct from v_first.id
+     or v_retry.approval_id is distinct from v_first.approval_id
+     or v_retry.request is distinct from v_first.request then
+    raise exception 'TEST_FAILED: valid retry did not preserve approval, lineage, and exact request';
+  end if;
+
+  perform public.complete_agent_execution(
+    v_retry.id, 'FAILED', '{}'::jsonb, null, 'W56_TEST_FAILURE', 'Intentional retry fixture failure'
+  );
+  update public.mission_approvals
+     set expires_at = clock_timestamp() - interval '1 second'
+   where id = v_approval.id;
+  v_caught := false;
+  begin
+    perform public.retry_agent_execution(v_retry.id, 'w56-expired-retry-key-0007');
+  exception when sqlstate '42501' then
+    if sqlerrm = 'APPROVAL_REQUIRED' then v_caught := true; else raise; end if;
+  end;
+  if not v_caught then
+    raise exception 'TEST_FAILED: expired execution approval authorized a retry';
+  end if;
+
   -- Approve the exact request, then mutate authority; the old approval must stop matching.
   v_scope := jsonb_build_object(
     'type', 'agent_execution', 'schema_version', 1,
@@ -294,13 +324,15 @@ begin
   select count(*) into v_rows
     from public.agent_executions
    where workspace_id = v_workspace and mission_id = v_mission;
-  if v_rows <> 1 then
-    raise exception 'TEST_FAILED: blocked approval-binding requests created extra execution rows';
+  if v_rows <> 2 then
+    raise exception 'TEST_FAILED: blocked approval-binding requests created extra execution rows or valid retry was missing';
   end if;
 end;
 $behavior$;
 
 select pass('exact unexpired request-bound approval permits one execution');
+select pass('exact same-request retry remains inside the original execution lineage');
+select pass('expired execution approval cannot authorize a retry');
 select pass('exact duplicate execution key is rejected without another row or start event');
 select pass('changed request content cannot reuse an execution approval or idempotency key');
 select pass('an approval bound to one agent cannot authorize another agent');
