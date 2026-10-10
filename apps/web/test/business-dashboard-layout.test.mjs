@@ -80,3 +80,13 @@ test("mission templates provide a direct try link and a native-share/copy growth
   assert.match(share, /navigator\.clipboard\.writeText/);
   assert.match(share, /url\.searchParams\.set\("template", templateId\)/);
 });
+
+test("notification bell is only active inside the authenticated workspace", () => {
+  const bell = read("components/notification-bell.tsx");
+  const api = read("app/api/notifications/route.ts");
+  assert.match(bell, /const inWorkspace = pathname === "\/app" \|\| pathname\.startsWith\("\/app\/"\)/);
+  assert.match(bell, /if \(!inWorkspace\) return null/);
+  assert.match(bell, /useEffect\(\(\) => \{\s*if \(!inWorkspace\) return/s);
+  assert.match(api, /status: 401/);
+  assert.match(api, /Authentication is required\./);
+});
