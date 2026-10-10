@@ -31,7 +31,7 @@ export async function GET() {
         overdue: Date.parse(action.followUpAt as string) < now,
       })))
       .sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt));
-    const items = [
+    const rankedItems = [
       ...waiting.map((mission) => ({
         id: `mission-${mission.id}`,
         kind: "mission",
@@ -54,6 +54,7 @@ export async function GET() {
         sortAt: Date.parse(item.dueAt),
       })),
     ].sort((a, b) => a.sortAt - b.sortAt).slice(0, 20);
+    const items = rankedItems.map(({ sortAt: _sortAt, ...item }) => item);
     return NextResponse.json({ count: waiting.length + approvals.length + followUps.length, items }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     if (error instanceof Error && error.message === "Authentication required.") {
