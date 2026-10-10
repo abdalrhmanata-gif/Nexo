@@ -30,7 +30,7 @@ test("AI route authenticates before invoking the provider service and keeps the 
 });
 
 test("AI planner bounds input, output, time and response caching", () => {
-  assert.ok(route.includes("length > 1200"));
+  assert.ok(route.includes("length > 2400"));
   assert.ok(planner.includes("max_output_tokens: 2000"));
   assert.ok(planner.includes("AbortSignal.timeout(24_000)"));
   assert.ok(route.includes('"Cache-Control": "no-store"'));
@@ -86,4 +86,15 @@ test("mission creation maps AI success criteria to mission criteria and keeps AI
   assert.ok(integratedForm.includes('setCriteria(plan.successCriteria.join("\\n"))'));
   assert.ok(integratedForm.includes('setName((current) => current || plan.title)'));
   assert.ok(integratedForm.includes('"zavqera-anonymous-plan-v2"'));
+});
+
+test("mission boundaries are sent to AI drafting and persisted with the saved mission", () => {
+  assert.match(integratedForm, /name="boundaries"/);
+  assert.match(integratedForm, /Mission boundaries and permissions:/);
+  assert.match(integratedForm, /Set budget or deadline limits, allowed sources, and actions that must stay off-limits\./);
+  assert.match(newMission, /formData\.get\("boundaries"\)/);
+  assert.match(newMission, /boundaries\.length > 1000/);
+  assert.match(newMission, /Boundaries and permissions:/);
+  assert.match(newMission, /intent: persistedIntent/);
+  assert.match(route, /length > 2400/);
 });
