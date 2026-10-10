@@ -471,3 +471,61 @@ test("business invitation form and endpoint errors are localized in all supporte
     }
   }
 });
+
+test("business approval, invitation, and notification copy is localized in all supported languages", () => {
+  const groups = [
+    { path: "app/app/business/invite/page.tsx", keys: [
+      "Send a secure invitation directly to their inbox. Choose the least-privilege role they need. Invitations expire after 7 days.",
+    ] },
+    { path: "app/app/business/approvals/page.tsx", keys: [
+      "Human control", "Approval Center",
+      "Review the requested action, scope, assigned agent, and authority before recording a decision.",
+      "Awaiting decision", "You can decide", "Implicit approvals",
+    ] },
+    { path: "components/approval-center.tsx", keys: [
+      "Approval request · Pending", "Requested action", "Mission-level approval", "Assigned agent",
+      "No agent linked to this mission", "Requested by", "Submitted", "Requested scope",
+      "Agent authority", "No agent authority snapshot is attached to this request.",
+      "Why approval is required",
+      "This action is gated by workspace policy and must be explicitly approved before execution.",
+      "This request needs a recorded human decision before any approval-gated action can proceed.",
+      "Approving records permission for the bounded scope above. It does not execute the action by itself; the execution runtime must still enforce the approved scope and authority. Review the mission evidence before deciding. Rejected requests require a reason and remain non-executable.",
+      "Open mission and evidence",
+      "Only workspace owners and admins can approve or reject requests. You can still inspect the mission and its evidence.",
+      "No approvals waiting",
+      "There are no pending requests in this workspace. Actions that require approval remain blocked until an explicit approval is recorded.",
+      "Back to business workspace",
+    ] },
+    { path: "components/member-management-controls.tsx", keys: ["Owner protected", "Remove"] },
+    { path: "components/invitation-revoke-button.tsx", keys: ["Revoking…", "Revoke"] },
+    { path: "components/approval-decision-controls.tsx", keys: [
+      "Decision note", "required to reject", "Saving…", "Approve bounded scope",
+    ] },
+    { path: "app/app/notifications/page.tsx", keys: ["Human decision required", "Review this decision"] },
+  ];
+  const dictionary = read("components/localized-text.tsx");
+  const esFrDe = dictionary.slice(
+    dictionary.indexOf("const WORKSPACE_TRANSLATIONS:"),
+    dictionary.indexOf("const WORKSPACE_NB_AR:"),
+  );
+  const nbAr = dictionary.slice(
+    dictionary.indexOf("const WORKSPACE_NB_AR:"),
+    dictionary.indexOf("for (const [key, translations] of Object.entries(WORKSPACE_NB_AR))"),
+  );
+  for (const group of groups) {
+    const source = read(group.path);
+    for (const key of group.keys) {
+      assert.ok(source.includes(key), group.path + " must use localized copy: " + key);
+      const esFrDeEntry = esFrDe.split(String.fromCharCode(10)).find((entry) => entry.trimStart().startsWith(JSON.stringify(key) + ":"));
+      const nbArEntry = nbAr.split(String.fromCharCode(10)).find((entry) => entry.trimStart().startsWith(JSON.stringify(key) + ":"));
+      assert.ok(esFrDeEntry, "missing Spanish/French/German mapping for: " + key);
+      assert.ok(nbArEntry, "missing Norwegian/Arabic mapping for: " + key);
+      for (const locale of ["es", "fr", "de"]) {
+        assert.ok(esFrDeEntry.includes(locale + ":"), "missing " + locale + " translation for: " + key);
+      }
+      for (const locale of ["nb", "ar"]) {
+        assert.ok(nbArEntry.includes(locale + ":"), "missing " + locale + " translation for: " + key);
+      }
+    }
+  }
+});
