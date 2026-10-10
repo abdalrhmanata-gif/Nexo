@@ -13,6 +13,24 @@ export async function GET() {
       repository.listPendingApprovals ? repository.listPendingApprovals() : Promise.resolve([]),
     ]);
     const waiting = missions.filter((mission) => mission.status === "WAITING");
+    const now = Date.now();
+    const followUpWindow = now + 7 * 24 * 60 * 60 * 1000;
+    const followUps = missions.flatMap((mission) => mission.actions
+      .filter((action) => {
+        if (!action.followUpAt || action.status === "COMPLETED" || action.status === "CANCELLED") return false;
+        const dueAt = Date.parse(action.followUpAt);
+        return Number.isFinite(dueAt) && dueAt <= followUpWindow;
+      })
+      .map((action) => ({
+        id: `follow-up-${action.id}`,
+        kind: "follow_up",
+        title: mission.name,
+        detail: action.title,
+        href: `/app/missions/${mission.id}`,
+        dueAt: action.followUpAt as string,
+        overdue: Date.parse(action.followUpAt as string) < now,
+      })))
+      .sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt));
     const items = [
       ...waiting.map((mission) => ({
         id: `mission-${mission.id}`,
@@ -20,7 +38,7 @@ export async function GET() {
         title: mission.name,
         detail: "This mission is waiting for your input.",
         href: `/app/missions/${mission.id}`,
-        createdAt: mission.updated,
+        sortAt: Date.parse(mission.updated) || now,
       })),
       ...approvals.map((approval) => ({
         id: `approval-${approval.id}`,
@@ -28,10 +46,15 @@ export async function GET() {
         title: approval.missionName || "Mission approval",
         detail: approval.actionTitle ? `Approval needed: ${approval.actionTitle}` : "A human decision is needed before this action can proceed.",
         href: "/app/business/approvals",
-        createdAt: approval.createdAt,
+        sortAt: Date.parse(approval.createdAt) || now,
       })),
-    ].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 20);
-    return NextResponse.json({ count: waiting.length + approvals.length, items }, { headers: { "Cache-Control": "no-store" } });
+      ...followUps.map((item) => ({
+        ...item,
+        detail: item.overdue ? `Overdue: ${item.detail}` : `Due within 7 days: ${item.detail}`,
+        sortAt: Date.parse(item.dueAt),
+      })),
+    ].sort((a, b) => a.sortAt - b.sortAt).slice(0, 20);
+    return NextResponse.json({ count: waiting.length + approvals.length + followUps.length, items }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     if (error instanceof Error && error.message === "Authentication required.") {
       return NextResponse.json({ error: "Authentication is required." }, { status: 401, headers: { "Cache-Control": "no-store" } });
