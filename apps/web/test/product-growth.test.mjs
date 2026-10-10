@@ -24,7 +24,7 @@ test("template share signals are sent only after successful sharing or copying",
 });
 
 test("repeat-mission measurement is database-triggered and content-minimal", () => {
-  const migration = read("../../supabase/migrations/20261010103000_w55_product_growth_signals.sql");
+  const migration = read("../../supabase/migrations/20261010110509_w55_product_growth_signals.sql");
   assert.match(migration, /after insert on public\.missions/);
   assert.match(migration, /owned_mission_count >= 2/);
   assert.match(migration, /second_mission_created/);
