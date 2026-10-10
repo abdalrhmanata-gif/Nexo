@@ -122,8 +122,10 @@ export function ForgotPasswordForm() {
     const email = String(form.get("email") ?? "").trim();
     if (!email || !email.includes("@")) return setError("Enter a valid email address.");
     setLoading(true);
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || window.location.origin;
-    const redirectTo = `${siteUrl}/auth/callback?next=${encodeURIComponent("/auth/reset-password")}`;
+    // Use the origin where the reset was requested. A preview build can have
+    // NEXT_PUBLIC_SITE_URL set to the production domain; using it here would
+    // move the recovery session away from the preview that initiated the flow.
+    const redirectTo = `${window.location.origin}/auth/callback?next=${encodeURIComponent("/auth/reset-password")}`;
     const { error: requestError } = await createSupabaseBrowserClient().auth.resetPasswordForEmail(email, { redirectTo });
     setLoading(false);
     if (requestError) return setError("We couldn't send a reset email. Please try again.");
