@@ -71,7 +71,7 @@ export default async function NotificationsPage() {
       <h2><LocalizedText en="Pending approvals" nb="Ventende godkjenninger" ar="الموافقات المعلّقة" /></h2>
       {approvals.length ? <ul className="list">{approvals.map((approval) => <li key={approval.id}>
         <div className="notification-item">
-          <div><strong>{approval.missionName || "Mission approval"}</strong><p className="action-hint">{approval.actionTitle || "A human decision is needed before this action can proceed."}</p><p className="action-hint">{new Date(approval.createdAt).toLocaleString()}</p></div>
+          <div><strong><LocalizedText en={approval.missionName || "Mission approval"} /></strong><p className="action-hint"><LocalizedText en={approval.actionTitle || "A human decision is needed before this action can proceed."} /></p><p className="action-hint">{new Date(approval.createdAt).toLocaleString()}</p></div>
           <Link className="button button-small" href="/app/business/approvals"><LocalizedText en="Review approval" nb="Se gjennom godkjenningen" ar="راجع الموافقة" /></Link>
         </div>
       </li>)}</ul> : <p className="detail-intent"><LocalizedText en="No approval decisions are waiting. Actions requiring approval remain blocked until an authorized person decides." nb="Ingen godkjenninger venter. Handlinger som krever godkjenning forblir blokkert til en autorisert person bestemmer." ar="لا توجد موافقات معلّقة. تبقى الإجراءات التي تتطلب موافقة محظورة حتى يتخذ شخص مخوّل القرار." /></p>}
