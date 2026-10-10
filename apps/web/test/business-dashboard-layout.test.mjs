@@ -69,3 +69,14 @@ test("Business copy and mission template library are wired to localization", () 
   assert.match(dictionary, /"Plan a family trip":/);
   assert.match(dictionary, /"Describe the outcome you want\.":/);
 });
+
+
+test("mission templates provide a direct try link and a native-share/copy growth loop", () => {
+  const templates = read("app/templates/page.tsx");
+  const share = read("components/share-template-button.tsx");
+  assert.match(templates, /ShareTemplateButton/);
+  assert.match(templates, /\/try\?template=/);
+  assert.match(share, /navigator\.share/);
+  assert.match(share, /navigator\.clipboard\.writeText/);
+  assert.match(share, /url\.searchParams\.set\("template", templateId\)/);
+});
