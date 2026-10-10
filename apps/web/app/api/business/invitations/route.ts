@@ -18,18 +18,33 @@ function escapeHtml(value: string) {
 }
 
 function getTrustedSiteOrigin(request: NextRequest) {
-  const configured = [
-    process.env.DEPLOY_PRIME_URL,
-    process.env.NEXT_PUBLIC_SITE_URL,
-    process.env.URL,
-  ].map((value) => value?.trim()).find(Boolean);
+  const context = process.env.CONTEXT?.trim().toLowerCase();
+  const isDeployPreview = context === "deploy-preview"
+    || process.env.PULL_REQUEST?.trim().toLowerCase() === "true";
+  const deployOrigin = process.env.DEPLOY_PRIME_URL?.trim();
+  const explicitOrigin = process.env.ZAVQERA_INVITATION_BASE_URL?.trim();
+
+  // Never let a deploy preview generate invitation links to the production URL.
+  // Netlify provides DEPLOY_PRIME_URL for Deploy Previews; the explicit override
+  // exists for other preview providers and must be configured per preview.
+  const configured = isDeployPreview
+    ? deployOrigin || explicitOrigin
+    : deployOrigin || explicitOrigin || process.env.URL?.trim() || process.env.NEXT_PUBLIC_SITE_URL?.trim();
+
   if (!configured) {
     if (process.env.NODE_ENV === "production") throw new Error("SITE_URL_NOT_CONFIGURED");
     return request.nextUrl.origin;
   }
+
   const parsed = new URL(configured);
+  if (parsed.username || parsed.password || parsed.search || parsed.hash) {
+    throw new Error("SITE_URL_INVALID");
+  }
   if (parsed.protocol !== "https:" && !(process.env.NODE_ENV !== "production" && parsed.protocol === "http:")) {
     throw new Error("SITE_URL_MUST_USE_HTTPS");
+  }
+  if (isDeployPreview && !deployOrigin && !explicitOrigin) {
+    throw new Error("PREVIEW_ORIGIN_NOT_CONFIGURED");
   }
   return parsed.origin;
 }
