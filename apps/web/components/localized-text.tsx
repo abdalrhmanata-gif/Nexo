@@ -81,13 +81,9 @@ const WORKSPACE_TRANSLATIONS: Record<string, Partial<Record<AppLanguage, string>
   "Missions waiting for you": { es: "Misiones pendientes de ti", fr: "Missions en attente de votre intervention", de: "Missionen, die auf Sie warten" },
   "You’re all caught up. No missions are waiting for your input.": { es: "Todo está al día. No hay misiones pendientes de tu intervención.", fr: "Tout est à jour. Aucune mission n’attend votre intervention.", de: "Alles ist auf dem neuesten Stand. Keine Mission wartet auf Ihre Eingabe." },
   "Review mission": { es: "Revisar misión", fr: "Examiner la mission", de: "Mission prüfen" },
-  "Pending approvals": { es: "Aprobaciones pendientes", fr: "Approbations en attente", de: "Ausstehende Freigaben" },
   "No approval decisions are waiting. Actions requiring approval remain blocked until an authorized person decides.": { es: "No hay decisiones de aprobación pendientes. Las acciones siguen bloqueadas hasta que decida una persona autorizada.", fr: "Aucune décision d’approbation n’est en attente. Les actions restent bloquées jusqu’à la décision d’une personne autorisée.", de: "Keine Freigabeentscheidung ausstehend. Aktionen bleiben blockiert, bis eine berechtigte Person entscheidet." },
   "Review approval": { es: "Revisar aprobación", fr: "Examiner l’approbation", de: "Freigabe prüfen" },
   "Back to workspace": { es: "Volver al espacio", fr: "Retour à l’espace", de: "Zurück zum Workspace" },
-  "Invite a teammate": { es: "Invitar a un compañero", fr: "Inviter un collègue", de: "Teammitglied einladen" },
-  "Invite a teammate": { es: "Invitar a un compañero", fr: "Inviter un collègue", de: "Teammitglied einladen" },
-  "Invite a teammate": { es: "Invitar a un compañero", fr: "Inviter un collègue", de: "Teammitglied einladen" },
 };
 for (const [key, translations] of Object.entries(WORKSPACE_TRANSLATIONS)) {
   if (translations.nb) NB[key] = translations.nb;
