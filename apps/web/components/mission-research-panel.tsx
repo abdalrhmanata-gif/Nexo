@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { LocalizedText } from "./localized-text";
 
 type Source = { title: string; url: string };
 type Research = { summary: string; sources: Source[] };
@@ -90,26 +91,26 @@ export function MissionResearchPanel({ missionId }: { missionId: string }) {
 
   return (
     <section className="card mission-execution" aria-labelledby="mission-execution-heading">
-      <p className="eyebrow">Execution · Read-only</p>
-      <h2 id="mission-execution-heading">Run this mission safely</h2>
+      <p className="eyebrow"><LocalizedText en="Execution · Read-only" /></p>
+      <h2 id="mission-execution-heading"><LocalizedText en="Run this mission safely" /></h2>
       <p className="detail-intent">
-        ZAVQERA can safely research the public web against this mission&apos;s intent and success criteria. It will not buy, book, contact anyone, submit forms, or change an account.
+        <LocalizedText en="ZAVQERA can safely research the public web against this mission's intent and success criteria. It will not buy, book, contact anyone, submit forms, or change an account." />
       </p>
       <button className="button" type="button" onClick={runResearch} disabled={busy}>
-        {busy ? "Researching…" : research ? "Run research again" : "Run research"}
+        <LocalizedText en={busy ? "Researching…" : research ? "Run research again" : "Run research"} />
       </button>
-      {loadingHistory && <p className="action-hint">Checking saved research…</p>}
-      {historyWarning && !loadingHistory && <p className="action-hint">Research ran, but saved history could not be confirmed. The findings below still remain unverified.</p>}
-      {error && <p className="field-error" role="alert">{error}</p>}
+      {loadingHistory && <p className="action-hint"><LocalizedText en="Checking saved research…" /></p>}
+      {historyWarning && !loadingHistory && <p className="action-hint"><LocalizedText en="Research ran, but saved history could not be confirmed. The findings below still remain unverified." /></p>}
+      {error && <p className="field-error" role="alert"><LocalizedText en={error} /></p>}
       {research && (
         <div className="mission-research-result" aria-live="polite">
           <div className="research-summary">
-            <p className="eyebrow">Research result · Unverified</p>
+            <p className="eyebrow"><LocalizedText en="Research result · Unverified" /></p>
             <div className="research-body">{research.summary}</div>
           </div>
           {research.sources.length > 0 && (
             <div className="research-sources">
-              <p className="eyebrow">Sources</p>
+              <p className="eyebrow"><LocalizedText en="Sources" /></p>
               <ul className="list">
                 {research.sources.map((source) => (
                   <li key={source.url}>
@@ -120,18 +121,18 @@ export function MissionResearchPanel({ missionId }: { missionId: string }) {
             </div>
           )}
           <p className="action-hint">
-            This run has no external side effects. Review the findings before treating them as evidence or making a consequential decision.
+            <LocalizedText en="This run has no external side effects. Review the findings before treating them as evidence or making a consequential decision." />
           </p>
         </div>
       )}
       {runs.length > 0 && (
         <div className="research-history">
-          <p className="eyebrow">Saved research runs</p>
+          <p className="eyebrow"><LocalizedText en="Saved research runs" /></p>
           <ul className="list">
             {runs.map((run) => (
               <li key={run.runId}>
                 <button className="button button-small button-quiet" type="button" onClick={() => setResearch(run)}>
-                  {new Date(run.createdAt).toLocaleString("en-GB")} · {run.sources.length} source{run.sources.length === 1 ? "" : "s"} · Unverified
+                  {new Date(run.createdAt).toLocaleString()} · {run.sources.length} <LocalizedText en={run.sources.length === 1 ? "source" : "sources"} /> · <LocalizedText en="Unverified" />
                 </button>
               </li>
             ))}

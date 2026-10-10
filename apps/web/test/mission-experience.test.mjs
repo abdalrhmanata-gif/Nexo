@@ -86,6 +86,38 @@ test("workspace guidance selects available work before a future follow-up", () =
   assert.equal(result.detail, "Now");
 });
 
+test("Mission research UI copy is localized in every supported workspace language", () => {
+  const panel = read("components/mission-research-panel.tsx");
+  const dictionary = read("components/localized-text.tsx");
+  const uiKeys = [
+    "Execution · Read-only",
+    "Run this mission safely",
+    "ZAVQERA can safely research the public web against this mission's intent and success criteria. It will not buy, book, contact anyone, submit forms, or change an account.",
+    "Researching…",
+    "Run research again",
+    "Run research",
+    "Checking saved research…",
+    "Research ran, but saved history could not be confirmed. The findings below still remain unverified.",
+    "Research result · Unverified",
+    "Sources",
+    "This run has no external side effects. Review the findings before treating them as evidence or making a consequential decision.",
+    "Saved research runs",
+    "source",
+    "sources",
+    "Unverified",
+  ];
+  for (const key of uiKeys) {
+    assert.ok(panel.includes(key), \`research panel is missing localized UI text: \${key}\`);
+    const line = dictionary.split("\\n").find((entry) => entry.startsWith(\`  "\${key}":\`));
+    assert.ok(line, \`missing localization dictionary entry for: \${key}\`);
+    for (const language of ["nb", "ar", "es", "fr", "de"]) {
+      assert.match(line, new RegExp(\`\${language}:\\\\s*"[^"]+"\`), \`missing \${language} translation for: \${key}\`);
+    }
+  }
+  assert.match(panel, /<LocalizedText en=\\{error\\} \\/>/);
+  assert.match(panel, /toLocaleString\\(\\)/);
+});
+
 test("mission research is clearly treated as unverified execution", () => {
   const panel = read("components/mission-research-panel.tsx");
   assert.match(panel, /Research result · Unverified/);
