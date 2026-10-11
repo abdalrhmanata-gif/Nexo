@@ -61,3 +61,22 @@ was changed for this follow-up.
 - The Netlify preview workflow's real OpenAI planning smoke test is now opt-in via the exact `[live-openai-planning]` marker in the same-repository PR body. Ordinary PR updates no longer make this live provider call. The separately gated authenticated Mission Research test remains controlled by `[live-openai-research]`.
 - These changes are recorded on the PR branch at `c882ba52049aeae06f88265cdb030d45d4850a5d`. CI must complete on the final updated HEAD before this follow-up is considered verified; no live OpenAI planning request was intentionally invoked by this change.
 
+## Follow-up evidence — 2026-10-11 — HEAD `3086220616ea8d4493e15afbb585af8a69c55b8c`
+
+All six core PR gates passed on this exact HEAD; PR #29 remains OPEN / Draft / UNMERGED:
+
+- Web Unit: PASS — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38130708465
+- Web CI / TypeScript / production build: PASS — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38130708489
+- Flutter CI: PASS — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38130708500
+- W25 isolated PostgreSQL atomic fence: PASS — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38130708494
+- W21 Local Launch Gate: PASS — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38130708555
+- Netlify Deploy Preview workflow: PASS — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38130708581
+
+W21 reported both browser scenarios passed and verified disposal cleanup. Artifacts:
+- Browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38130708555/artifacts/11698283558
+- Evidence and cleanup proof: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38130708555/artifacts/11698373437
+
+Netlify preview route checks passed. The real OpenAI planning and authenticated live OpenAI research steps were skipped because the explicit opt-in markers were not present. Playwright screenshot capture is now set to `only-on-failure`; this run did not emit the previously observed `step id not found` internal reporter message and both E2E scenarios passed.
+
+These CI results verify the exercised isolated test harness and routes, not a universal production external-side-effect gateway, hosted Mission Research persistence, or real invitation email delivery. Supabase Main/Production was not changed.
+
