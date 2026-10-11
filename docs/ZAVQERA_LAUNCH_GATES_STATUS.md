@@ -176,3 +176,28 @@ The live OpenAI planning and authenticated hosted Mission Research tests were **
 5. Complete provider-neutral just-in-time authority enforcement and durable UNKNOWN-outcome reconciliation before enabling real external side effects. Current in-memory adapter tests are not production persistence or external-provider certification.
 
 PR #29 remains **OPEN / Draft / UNMERGED**. Supabase Main/Production, production deployment, DNS, billing, and real provider side effects remain untouched. Automated candidate gates are green; **full production launch is not approved**.
+
+
+## Exact-head verification — W67 actual ledger concurrency
+
+Verified candidate HEAD: `c1ce23840f442edcf7a84149f34e7b8b3ba460f4`.
+
+All six automated gates passed on this exact HEAD:
+- Web Unit: **PASS** — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38170577742
+- Web CI / typecheck / build: **PASS** — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38170577804
+- Flutter CI: **PASS** — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38170577763
+- W25 isolated PostgreSQL atomic-fence harness: **PASS** — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38170577756
+- Netlify Deploy Preview verification: **PASS** — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38170577798
+- W21 disposable local launch gate: **PASS** — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38170577786
+
+W21 now runs the W66-specific pgTAP file and W67 actual-ledger race test. W67 opened two independent PostgreSQL sessions authenticated as the same disposable workspace owner and called the actual migration-replayed `public.start_agent_execution` RPC with the same mission, agent, request and idempotency key. Its recorded assertions were:
+- `W67_ACTUAL_LEDGER_IDEMPOTENCY_RACE=PASS`
+- `actual_start_same_key_concurrency=PASS`
+- `actual_start_replay_refusal=PASS`
+- `actual_start_changed_request_refusal=PASS`
+
+The test verified one durable execution row and one `AGENT_EXECUTION_STARTED` event; the losing session got `EXECUTION_ALREADY_EXISTS`. Exact replay was rejected, and changed request content under the same key was rejected with `EXECUTION_IDEMPOTENCY_BINDING_MISMATCH`. The launch gate also completed browser E2E (2/2), disposable-stack cleanup verification, and artifact uploads:
+- Evidence: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38170577786/artifacts/11713543943
+- Browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38170577786/artifacts/11713514214
+
+**Scope limit:** W67 proves concurrent same-key idempotency against the actual ledger and RPC; it does **not** prove atomic action/spend budget reservation. The script explicitly emits `W67_BUDGET_RESERVATION=NOT_TESTED`. Production JIT dispatch and real-provider UNKNOWN reconciliation remain unverified. PR #29 remains OPEN / Draft / UNMERGED; production, hosted Development, DNS and billing were untouched.

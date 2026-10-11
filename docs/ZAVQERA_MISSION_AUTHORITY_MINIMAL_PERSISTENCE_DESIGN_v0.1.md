@@ -97,14 +97,25 @@ W25 runs a two-session test over dedicated disposable harness objects named `aut
 
 It does **not** yet prove that the app's current `public.start_agent_execution` RPC and `public.agent_executions` table atomically reserve Mission Authority action/spend budgets, or that the reservation is held across the external dispatch/receipt crash window. The current persistent ledger lacks dedicated normalized budget-counter/reservation fields for the full provider-neutral contract. JSON request and approval-scope bindings are useful protections but should not be presented as a universal JIT gate.
 
-### Next proof, still before any schema migration
+### Remaining proof, before any schema migration
 
-1. In disposable PostgreSQL 17 (never hosted Development), invoke the **actual** migration-replayed `public.start_agent_execution` RPC from two independently connected sessions. Verify same-key and different-key races create at most one execution per idempotency key and no replay is returned as dispatch permission.
-2. Test stale action/mission/agent authority and lease state against the same actual lock boundary, including revocation/expiry competing with a start.
-3. Demonstrate whether action/spend budget can be reserved atomically with start using the current schema. If not, record the smallest missing invariant and only then propose a separate minimal migration/RPC.
-4. Keep real external I/O behind a disabled/fake adapter in the test. A successful SQL start transaction is not proof that an external request was sent, nor that an UNKNOWN result can be reconciled with a real provider.
-5. Include evidence for grant checks and teardown; do not test against hosted Development/Main or attach any secrets to artifacts.
+W67 has completed the actual-ledger idempotency part on candidate HEAD `c1ce23840f442edcf7a84149f34e7b8b3ba460f4`: two independent PostgreSQL sessions called `public.start_agent_execution` against the disposable W21-migrated Supabase schema. Exactly one same-key attempt row and one start event remained; the losing session returned `EXECUTION_ALREADY_EXISTS`; replay and changed request content under the same key were refused. See https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38170577786.
 
-The current six CI gates passed on HEAD `95fcbb5ee64548e2e5b4117284474c9ff0e34b01`, including Web Unit, Web CI/build, Flutter, W25, Netlify Preview verification and W21. W21 proved the current branch migrates and passes its pgTAP/E2E suite in a disposable local stack. This is not the missing actual-ledger budget/dispatch proof above.
+The remaining design and evidence tasks are narrower now:
+
+1. **Atomic budget reservation is still MISSING.** The actual ledger has no dedicated action/spend reservation counters to atomically coordinate concurrent starts. W67 explicitly reported `W67_BUDGET_RESERVATION=NOT_TESTED`; do not infer budget proof from idempotency.
+2. Design the smallest durable authority-budget row or equivalent invariant, scoped to workspace/mission/agent/authority revision. It must carry the current revision/status/validity, action limit with reserved/consumed counts, and spend limit with reserved/consumed amount/currency. Avoid overloading `workspace_agents.authority` JSON as a concurrency counter.
+3. A future guarded start/claim transaction must lock the current authority and mission/agent records in a consistent order, reject stale/revoked/expired/mismatched authority, reject duplicate idempotency keys, conditionally reserve action/spend budget, and insert the attempt under the same transaction. If this cannot be tested as one atomic fence, do not enable a real dispatch.
+4. Specify when reservations are settled or released. UNKNOWN must keep the reservation held until authoritative reconciliation. A success must require trusted receipt evidence; a retry must require confirmed safe-to-retry evidence plus fresh authorization.
+5. Prove one remaining action unit and one remaining spend budget cannot authorize two independent concurrent workers in disposable PostgreSQL 17. Separately race expiry/revocation against the same actual start/claim boundary. Never call hosted Development or real providers for these E2E tests.
+6. Keep the universal JIT dispatch boundary, independent provider-side reconciliation and real external-effect verification as explicit blockers until a first real provider adapter is reviewed and tested.
+
+W66's dedicated pgTAP test is now wired into W21 and passed on the later candidate; W66 is still only in the PR branch and was not applied to hosted Development. All six automated gates passed on HEAD `c1ce23840f442edcf7a84149f34e7b8b3ba460f4`; W21's W67 markers and teardown evidence are recorded in the run above.
+
 
 **No new schema/RPC is approved by this design update.** Keep issue #25 open until actual-ledger concurrency evidence is attached. PR #29 stays OPEN / Draft / UNMERGED; Supabase Main/Production and hosted Development remain unmodified.
+
+
+## W67 evidence and remaining budget-fence design — 2026-10-11
+
+W67 is a provider-free test of the real persisted start RPC. It establishes concurrency/replay behavior for a single idempotency key in `public.agent_executions`, not action/spend consumption. This is an important narrow proof, not production authorization certification. Do not mark issue #25 complete until the actual authority-budget row/counter and dispatch fence have an independent-session proof.

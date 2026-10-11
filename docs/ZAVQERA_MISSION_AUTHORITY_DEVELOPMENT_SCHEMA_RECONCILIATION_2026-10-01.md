@@ -60,8 +60,12 @@ This follow-up supersedes the historical 2026-10-01 schema snapshot where it con
 
 On candidate HEAD `95fcbb5ee64548e2e5b4117284474c9ff0e34b01`, all six automated gates passed: [Web Unit](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38169191379), [Web CI/build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38169191459), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38169191360), [W25 disposable PostgreSQL fence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38169191369), [Netlify Preview verification](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38169191404), and [W21 local launch gate](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38169191446). W21 completed PostgreSQL 17 migration replay/pgTAP, AI quota/plan/workspace security tests, browser E2E (2/2), disposable-stack cleanup verification and artifact uploads.
 
-### Decision
+### Decision after W67 — 2026-10-11
 
-Keep issue #25 open. Do not apply W66 to hosted Development from this session and do not add another table/RPC yet. The next proof should execute the actual existing `start_agent_execution` and `agent_executions` contract in an isolated disposable PostgreSQL 17 environment under two independent sessions, including idempotency/replay and stale/expired/revoked bindings. Then document the exact missing atomic budget invariant. Only propose new persistence if those tests isolate a gap the existing ledger cannot enforce. Production JIT dispatch and real-provider reconciliation remain **NOT ESTABLISHED**.
+W67 now invokes the actual migration-replayed `public.start_agent_execution` RPC through two independent sessions in the disposable W21 Supabase PostgreSQL 17 stack. Same-key concurrent start, exact replay refusal, changed-request refusal, one durable attempt row, and one start event passed on candidate HEAD `c1ce23840f442edcf7a84149f34e7b8b3ba460f4`: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38170577786.
 
-PR #29 remains OPEN / Draft / UNMERGED. Supabase Main/Production remains untouched.
+This closes the **actual-ledger idempotency race** subtask only. It does not prove the remaining atomic action/spend budget reservation, simultaneous revocation/expiry against a real dispatch claim, or provider-side reconciliation. The current schema has no dedicated atomic Mission Authority budget reservation/counter. Keep issue #25 open and do not apply a new schema change or W66 to hosted Development from this session. W66 remains branch-only; the read-only hosted privilege catalog still showed service_role's existing direct table grants before any deployment of the migration.
+
+Next: design and independently test the smallest durable action/spend reservation invariant in disposable PostgreSQL 17; only then propose a schema/RPC migration. Production JIT dispatch and real-provider UNKNOWN reconciliation remain **NOT ESTABLISHED**.
+
+PR #29 remains OPEN / Draft / UNMERGED. Supabase Main/Production and hosted Development remain untouched.

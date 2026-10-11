@@ -190,3 +190,12 @@ This is a source-and-test evidence review of the current PR candidate, not a pro
 Do not add another table or RPC merely to complete the matrix. First design the minimal provider-neutral dispatch contract and identify the first real delegated side effect to control. Then test the existing PostgreSQL contract against that exact request and the independent-worker race cases. Only propose persistence changes if those tests demonstrate a missing invariant. Keep real provider dispatch disabled until durable reconciliation can prove whether a timed-out request was sent.
 
 Hosted authenticated Mission Research, real Resend invitation delivery, human visual QA, and Development leaked-password protection remain separate release gates. PR #29 stays OPEN / Draft / UNMERGED; Supabase Main/Production and production deployment remain untouched.
+
+
+## W66/W67 execution-boundary evidence — 2026-10-11
+
+- **W66:** its dedicated pgTAP test is now wired into the W21 local launch gate and passed on the branch candidate. The migration removes direct `service_role` table grants on `public.agent_executions`; it has not been applied to hosted Development, whose read-only catalog still showed those grants.
+- **W67:** the disposable W21 run invoked the actual `public.start_agent_execution` RPC from two independent sessions. Same-key concurrency left one attempt row and one start event; replay returned `EXECUTION_ALREADY_EXISTS`; altered request contents under that key returned `EXECUTION_IDEMPOTENCY_BINDING_MISMATCH`. Evidence: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38170577786.
+- **Still missing:** the runtime schema has not established an atomic action/spend budget reservation at that same boundary. W67 explicitly says the budget check was not tested. Universal provider-neutral JIT enforcement, real-provider reconciliation, hosted Research/citations/history, real Resend inbox delivery, and human visual QA remain separate release acceptance items.
+
+The candidate HEAD `c1ce23840f442edcf7a84149f34e7b8b3ba460f4` passed Web Unit, Web CI/build, Flutter CI, W25, Netlify Preview verification and W21. This is automated candidate evidence, not production launch approval.
