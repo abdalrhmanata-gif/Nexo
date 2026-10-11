@@ -31,10 +31,12 @@ select ok(has_function_privilege('authenticated',
 select ok(lower(pg_get_functiondef('private.start_agent_execution(uuid,uuid,uuid,text,jsonb)'::regprocedure))
   like '%authority_budget_revision%'
   and lower(pg_get_functiondef('private.start_agent_execution(uuid,uuid,uuid,text,jsonb)'::regprocedure))
+    like '%for update%'
+  and lower(pg_get_functiondef('private.reserve_agent_execution_budget(uuid,uuid)'::regprocedure))
     like '%authority_budget_exhausted%'
-  and lower(pg_get_functiondef('private.start_agent_execution(uuid,uuid,uuid,text,jsonb)'::regprocedure))
+  and lower(pg_get_functiondef('private.reserve_agent_execution_budget(uuid,uuid)'::regprocedure))
     like '%for update%',
-  'actual start RPC binds the budget revision and atomically reserves under a row lock');
+  'actual start RPC binds the budget revision and calls the row-locked atomic reservation helper');
 select ok(lower(pg_get_functiondef('private.retry_agent_execution(uuid,text)'::regprocedure))
   like '%execution_budget_not_released_for_retry%'
   and lower(pg_get_functiondef('private.retry_agent_execution(uuid,text)'::regprocedure))
