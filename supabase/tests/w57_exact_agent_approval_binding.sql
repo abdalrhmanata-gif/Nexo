@@ -1,7 +1,7 @@
 -- W57: exact, expiring approval binding for agent executions and retries.
 begin;
 create extension if not exists pgtap;
-select plan(34);
+select plan(35);
 
 select ok(exists (
   select 1 from information_schema.columns
@@ -200,6 +200,32 @@ begin
   end;
   if not v_caught then raise exception 'TEST_FAILED: one approval authorized more than one independent execution'; end if;
 
+  -- Legacy generic mission/action approvals are for human collaboration review only.
+  -- They must never authorize an exact execution request, and rejection must be side-effect free.
+  select * into v_approval_c
+    from public.request_mission_approval(
+      v_mission,
+      v_action,
+      jsonb_build_object('type', 'bounded_action', 'requires_approval', true, 'action_id', v_action)
+    );
+  select * into v_approval_c
+    from public.decide_mission_approval(v_approval_c.id, 'APPROVED', 'Generic review only; not execution authorization');
+
+  v_caught := false;
+  begin
+    perform public.start_agent_execution(v_mission, v_action, v_agent, 'w57-generic-scope-deny-01', v_request);
+  exception when sqlstate '42501' then
+    if sqlerrm = 'APPROVAL_REQUIRED' then v_caught := true; else raise; end if;
+  end;
+  if not v_caught then
+    raise exception 'TEST_FAILED: a generic mission/action approval authorized an exact execution request';
+  end if;
+  if exists (
+    select 1 from public.agent_executions where idempotency_key = 'w57-generic-scope-deny-01'
+  ) then
+    raise exception 'TEST_FAILED: rejected generic approval created an execution row';
+  end if;
+
   perform public.complete_agent_execution(v_execution.id, 'FAILED', null, null, 'TEST_FAILURE', 'Known disposable failure');
   select * into v_retry from public.retry_agent_execution(v_execution.id, 'w57-valid-retry-key-0001');
   if v_retry.retry_of_execution_id is distinct from v_execution.id
@@ -360,6 +386,7 @@ select pass('changed request input cannot reuse an approval');
 select pass('changed destination cannot reuse an approval');
 select pass('valid exact approval is linked to a start and consumed once');
 select pass('one approval cannot authorize a second independent start');
+select pass('legacy generic approvals cannot authorize execution and rejected starts create no row');
 select pass('a live exact approval can authorize a retry in its existing execution chain');
 select pass('a changed authority invalidates a previously requested approval');
 select pass('an expired approval cannot authorize a new start');
