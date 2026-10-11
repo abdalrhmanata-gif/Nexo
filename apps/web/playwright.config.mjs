@@ -9,7 +9,7 @@ import { DEFAULT_BASE_URL } from "./test/e2e/harness.mjs";
 // stack has been reset and verified.
 export default defineConfig({
   testDir: "./test/e2e",
-  outputDir: path.join(os.tmpdir(), "zavqera-e2e", "playwright-results"),
+  outputDir: process.env.ZAVQERA_E2E_OUTPUT_DIR || path.join(os.tmpdir(), "zavqera-e2e", "playwright-results"),
   globalSetup: "./test/e2e/global-setup.mjs",
   timeout: 180_000,
   expect: { timeout: 15_000 },
