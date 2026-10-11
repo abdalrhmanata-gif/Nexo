@@ -197,7 +197,7 @@ jobs:
             supabase test db supabase/tests/w57_exact_agent_approval_binding.sql
             supabase test db supabase/tests/w63_trusted_execution_completion.sql
             supabase test db supabase/tests/w64_read_only_research_completion.sql
-          supabase test db supabase/tests/w65_agent_execution_table_write_boundary.sql
+            supabase test db supabase/tests/w65_agent_execution_table_write_boundary.sql
           )
 
       - name: Run full launch-gate browser E2E
