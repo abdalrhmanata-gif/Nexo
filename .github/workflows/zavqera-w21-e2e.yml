@@ -223,6 +223,11 @@ jobs:
           set -euo pipefail
           bash "$GITHUB_WORKSPACE/tool/w69_actual_dispatch_claim_race.sh"
 
+      - name: Run actual-ledger one-time reconciliation-claim race
+        run: |
+          set -euo pipefail
+          bash "$GITHUB_WORKSPACE/tool/w70_actual_reconciliation_claim_race.sh"
+
       - name: Run full launch-gate browser E2E
         working-directory: apps/web
         run: |
