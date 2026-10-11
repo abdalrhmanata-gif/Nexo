@@ -85,8 +85,8 @@ begin
   insert into public.missions(id, workspace_id, owner_id, objective, status)
   values (v_mission, v_workspace, v_owner, 'Prove one-time JIT dispatch claim', 'READY');
   insert into public.mission_actions(id, mission_id, title, position, status)
-  select v_actions[i], v_mission, 'W69 action ' || i, i - 1, 'PENDING'
-    from generate_subscripts(v_actions, 1) as seq(i);
+  select v_actions[seq.idx], v_mission, 'W69 action ' || seq.idx, seq.idx - 1, 'PENDING'
+    from generate_subscripts(v_actions, 1) as seq(idx);
   insert into public.workspace_agents(id, workspace_id, name, description, status, authority, created_by)
   values (v_agent, v_workspace, 'W69 bounded side-effect agent', 'Disposable JIT claim test', 'ACTIVE',
     '{"mode":"bounded","external_side_effects":true,"requires_approval":true}'::jsonb, v_owner);
