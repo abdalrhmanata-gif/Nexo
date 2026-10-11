@@ -150,3 +150,29 @@ The updated [side-effect inventory](./ZAVQERA_WEB_MUTATION_AND_SIDE_EFFECT_INVEN
 - Universal Mission Authority JIT enforcement, durable UNKNOWN reconciliation across independent workers, and complete Issues #23–#25 acceptance matrix: **NOT CERTIFIED**.
 
 **Release decision:** all six automated PR gates pass on this head, but this is not full launch approval. Keep PR #29 OPEN / Draft / Unmerged. Do not modify Supabase Main/Production, change billing/DNS, or promote production without the remaining evidence and explicit release approval.
+
+
+## Exact-head follow-up — 2026-10-11 — `e06198d6e1f987c41cc005fce29ef806a19f79fb`
+
+The following six core gates were independently checked after completion, all on the exact same candidate commit:
+
+- Web Unit — **PASS**, 270/270 tests: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38131070850
+- Web CI / TypeScript / production build — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38131070829
+- Flutter CI — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38131070824
+- W25 isolated PostgreSQL atomic fence — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38131070847
+- Netlify Deploy Preview verification — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38131070859
+- W21 Local Launch Gate — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38131070887
+
+W21 completed disposable PostgreSQL 17 migration replay, pgTAP, AI quota/plan/workspace security tests, full browser E2E, disposable-stack cleanup verification, and evidence/diagnostics uploads. Artifacts: [W21 evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38131070887/artifacts/11699162595) and [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38131070887/artifacts/11698054415).
+
+The live OpenAI planning and authenticated hosted Mission Research tests were **SKIPPED / NOT VERIFIED** because they require explicit opt-in and private Development-only credentials. W21 uses the mock AI provider and does not prove live-provider correctness. Automated browser E2E passed, but a separate human visual QA record is still missing.
+
+### Remaining release acceptance items
+
+1. Run the intentionally gated hosted Mission Research/citations/persisted-history test against the fixed Supabase Development project with a dedicated confirmed test account and privately configured GitHub Actions secrets. Never use Production credentials or paste secrets into chat/issues.
+2. Verify real invitation email delivery in Netlify Deploy Previews only, using privately configured Resend credentials and a verified sender domain; confirm delivery/bounce state rather than treating provider acceptance as inbox delivery.
+3. An authorized owner must decide whether to enable leaked-password protection in Supabase Development; it remains WARN / Disabled. No plan/billing change was made.
+4. Record human visual QA on the current Netlify preview at desktop and mobile widths.
+5. Complete provider-neutral just-in-time authority enforcement and durable UNKNOWN-outcome reconciliation before enabling real external side effects. Current in-memory adapter tests are not production persistence or external-provider certification.
+
+PR #29 remains **OPEN / Draft / UNMERGED**. Supabase Main/Production, production deployment, DNS, billing, and real provider side effects remain untouched. Automated candidate gates are green; **full production launch is not approved**.
