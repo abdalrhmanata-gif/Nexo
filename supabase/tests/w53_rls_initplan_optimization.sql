@@ -4,14 +4,14 @@ begin;
 create extension if not exists pgtap;
 select plan(6);
 
-select ok(exists(
-  select 1 from pg_policies
-  where schemaname='public' and tablename='agent_executions'
-    and policyname='agent_executions_editor_insert'
-    and with_check like '%SELECT auth.uid()%'
-    and with_check like '%private.can_edit_workspace%'
-    and with_check like '%requested_by%'
-), 'agent execution inserts still require workspace edit permission and the caller as requester');
+select ok(
+  not exists (
+    select 1 from pg_policies
+    where schemaname='public' and tablename='agent_executions'
+      and policyname='agent_executions_editor_insert'
+  )
+  and not has_table_privilege('authenticated', 'public.agent_executions', 'INSERT'),
+  'agent execution rows can only be created through the guarded RPC, not direct client inserts');
 
 select ok(exists(
   select 1 from pg_policies
