@@ -29,18 +29,30 @@ select ok(not has_function_privilege('authenticated',
   'authenticated users cannot call the internal scope builder directly');
 select ok(
   private.agent_execution_payload_shape(
-    '{"quantity":1,"api_token":"UNIQUE_PAYLOAD_SECRET_SENTINEL_31917","details":{"note":true}}'::jsonb, 0
+    '{"quantity":1,"api_token":"UNIQUE_PAYLOAD_SECRET_SENTINEL_31917","email_address":"UNIQUE_PII_EMAIL_SENTINEL_31917","phone_number":"UNIQUE_PII_PHONE_SENTINEL_31917","details":{"note":true}}'::jsonb, 0
   )::text like '%quantity%'
   and private.agent_execution_payload_shape(
-    '{"quantity":1,"api_token":"UNIQUE_PAYLOAD_SECRET_SENTINEL_31917","details":{"note":true}}'::jsonb, 0
+    '{"quantity":1,"api_token":"UNIQUE_PAYLOAD_SECRET_SENTINEL_31917","email_address":"UNIQUE_PII_EMAIL_SENTINEL_31917","phone_number":"UNIQUE_PII_PHONE_SENTINEL_31917","details":{"note":true}}'::jsonb, 0
   )::text like '%[sensitive field]%'
   and private.agent_execution_payload_shape(
-    '{"quantity":1,"api_token":"UNIQUE_PAYLOAD_SECRET_SENTINEL_31917","details":{"note":true}}'::jsonb, 0
+    '{"quantity":1,"api_token":"UNIQUE_PAYLOAD_SECRET_SENTINEL_31917","email_address":"UNIQUE_PII_EMAIL_SENTINEL_31917","phone_number":"UNIQUE_PII_PHONE_SENTINEL_31917","details":{"note":true}}'::jsonb, 0
   )::text not like '%UNIQUE_PAYLOAD_SECRET_SENTINEL_31917%'
   and private.agent_execution_payload_shape(
-    '{"quantity":1,"api_token":"UNIQUE_PAYLOAD_SECRET_SENTINEL_31917","details":{"note":true}}'::jsonb, 0
-  )::text not like '%api_token%',
-  'payload shape includes types but redacts sensitive field names and all values');
+    '{"quantity":1,"api_token":"UNIQUE_PAYLOAD_SECRET_SENTINEL_31917","email_address":"UNIQUE_PII_EMAIL_SENTINEL_31917","phone_number":"UNIQUE_PII_PHONE_SENTINEL_31917","details":{"note":true}}'::jsonb, 0
+  )::text not like '%api_token%'
+  and private.agent_execution_payload_shape(
+    '{"quantity":1,"api_token":"UNIQUE_PAYLOAD_SECRET_SENTINEL_31917","email_address":"UNIQUE_PII_EMAIL_SENTINEL_31917","phone_number":"UNIQUE_PII_PHONE_SENTINEL_31917","details":{"note":true}}'::jsonb, 0
+  )::text not like '%email_address%'
+  and private.agent_execution_payload_shape(
+    '{"quantity":1,"api_token":"UNIQUE_PAYLOAD_SECRET_SENTINEL_31917","email_address":"UNIQUE_PII_EMAIL_SENTINEL_31917","phone_number":"UNIQUE_PII_PHONE_SENTINEL_31917","details":{"note":true}}'::jsonb, 0
+  )::text not like '%phone_number%'
+  and private.agent_execution_payload_shape(
+    '{"quantity":1,"api_token":"UNIQUE_PAYLOAD_SECRET_SENTINEL_31917","email_address":"UNIQUE_PII_EMAIL_SENTINEL_31917","phone_number":"UNIQUE_PII_PHONE_SENTINEL_31917","details":{"note":true}}'::jsonb, 0
+  )::text not like '%UNIQUE_PII_EMAIL_SENTINEL_31917%'
+  and private.agent_execution_payload_shape(
+    '{"quantity":1,"api_token":"UNIQUE_PAYLOAD_SECRET_SENTINEL_31917","email_address":"UNIQUE_PII_EMAIL_SENTINEL_31917","phone_number":"UNIQUE_PII_PHONE_SENTINEL_31917","details":{"note":true}}'::jsonb, 0
+  )::text not like '%UNIQUE_PII_PHONE_SENTINEL_31917%',
+  'payload shape omits values and redacts secret and personal-data field names');
 select ok(lower(pg_get_functiondef('private.request_mission_approval(uuid,uuid,jsonb)'::regprocedure)) like '%agent_execution_binding_v1%',
   'approval requests store only the canonical execution-binding contract');
 select ok(
