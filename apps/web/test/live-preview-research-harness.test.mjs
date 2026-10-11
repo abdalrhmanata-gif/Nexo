@@ -10,6 +10,7 @@ const workflow = readFileSync(join(root, "../../.github/workflows/web-deploy-net
 const readme = readFileSync(join(root, "README.md"), "utf8");
 const researchRoute = readFileSync(join(root, "app/api/missions/[id]/research/route.ts"), "utf8");
 const executionGuardMigration = readFileSync(join(root, "../../supabase/migrations/20261010125620_w56_agent_execution_duplicate_dispatch_guard.sql"), "utf8");
+const researchCompletionMigration = readFileSync(join(root, "../../supabase/migrations/20261011140000_w64_read_only_research_completion.sql"), "utf8");
 
 test("live research prefers paired pre-provisioned Dev credentials and keeps values out of logs", () => {
   assert.match(script, /SUPABASE_DEV_TEST_EMAIL/);
@@ -62,6 +63,15 @@ test("Mission research opens the server-side agent/approval gate before calling 
   assert.match(researchRoute, /result\.disposition === "hold" \? "UNKNOWN" : "FAILED"/);
 });
 
+
+test("read-only research uses a narrow unverified completion boundary", () => {
+  assert.match(researchRoute, /supabase\\.rpc\\("complete_read_only_research_execution"/);
+  assert.doesNotMatch(researchRoute, /supabase\\.rpc\\("complete_agent_execution"/);
+  assert.match(researchRoute, /outcome: "SUCCEEDED", request_id: requestId, verified: false, sources: research\\.sources/);
+  assert.match(researchCompletionMigration, /requested_by <> auth\\.uid\\(\\)/);
+  assert.match(researchCompletionMigration, /external_side_effects/);
+  assert.match(researchCompletionMigration, /RESEARCH_RESULT_MUST_REMAIN_UNVERIFIED/);
+});
 
 test("duplicate execution keys cannot authorize a second external research dispatch", () => {
   assert.match(executionGuardMigration, /raise exception 'EXECUTION_ALREADY_EXISTS'/);

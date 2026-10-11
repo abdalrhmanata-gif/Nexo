@@ -111,7 +111,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const startedExecutionId = executionId;
     if (result.kind === AI_GENERATION_OUTCOMES.SETTLEMENT_FAILED) {
       if (startedExecutionId) {
-        const completion = await supabase.rpc("complete_agent_execution", {
+        const completion = await supabase.rpc("complete_read_only_research_execution", {
           p_execution_id: startedExecutionId,
           p_status: "UNKNOWN",
           p_result: { reason: "AI_USAGE_SETTLEMENT_FAILED" },
@@ -127,7 +127,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (result.kind === AI_GENERATION_OUTCOMES.PROVIDER_ERROR) {
       if (startedExecutionId) {
         const executionStatus = result.disposition === "hold" ? "UNKNOWN" : "FAILED";
-        const completion = await supabase.rpc("complete_agent_execution", {
+        const completion = await supabase.rpc("complete_read_only_research_execution", {
           p_execution_id: startedExecutionId,
           p_status: executionStatus,
           p_result: { reason: result.code },
@@ -155,11 +155,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (!startedExecutionId) {
       return NextResponse.json({ error: "The research execution boundary was not recorded." }, { status: 503 });
     }
-    const completion = await supabase.rpc("complete_agent_execution", {
+    const completion = await supabase.rpc("complete_read_only_research_execution", {
       p_execution_id: startedExecutionId,
       p_status: "SUCCEEDED",
       p_result: { summary: research.summary, source_count: research.sources.length },
-      p_evidence: { verified: false, sources: research.sources },
+      p_evidence: { outcome: "SUCCEEDED", request_id: requestId, verified: false, sources: research.sources },
     });
     if (completion.error) return NextResponse.json({ error: "Research completed but execution evidence could not be recorded." }, { status: 503 });
 
