@@ -80,3 +80,42 @@ Netlify preview route checks passed. The real OpenAI planning and authenticated 
 
 These CI results verify the exercised isolated test harness and routes, not a universal production external-side-effect gateway, hosted Mission Research persistence, or real invitation email delivery. Supabase Main/Production was not changed.
 
+## Trusted completion boundary and final W21 evidence — 2026-10-11
+
+**Implementation head tested:** `60d72966e8e033fc016442e99f43997cf9c442f1`  
+**PR:** #29 remains OPEN / Draft / UNMERGED. The follow-up commit after this evidence is documentation-only; it does not alter application code, migrations, workflows, or provider configuration.
+
+### W63 — generic execution completion is trusted-worker-only
+
+- `public.complete_agent_execution` and its private implementation are executable by `service_role`, not by `authenticated` or `anon` callers.
+- A `SUCCEEDED` result requires non-empty structured `provider_receipt` evidence. Empty or nested-empty receipt objects are rejected.
+- A worker cannot finalize a RUNNING execution after its lease expires; the attempt must go through reconciliation.
+- Regression test: `supabase/tests/w63_trusted_execution_completion.sql` — **PASS** in the disposable PostgreSQL 17 launch gate.
+
+### W64 — bounded read-only research recording
+
+- The dedicated research completion RPC is limited to the requesting user's own execution, an active `read_only` agent with `external_side_effects=false`, a research request with a matching request ID, no action ID, and an unverified result.
+- Successful results are shape-checked (summary and source count, at most 12 source entries, bounded titles/URLs); exact completion replays are idempotent. Expired leases and attempts to claim independent verification are rejected.
+- Regression test: `supabase/tests/w64_read_only_research_completion.sql` — **PASS** in the disposable PostgreSQL 17 launch gate.
+- **Important limitation:** this narrow user-scoped RPC records results as `verified=false`; it does not independently prove that the AI provider generated the result. Do not treat its output as verified evidence or extend this authenticated path to agents with external side-effect authority. Provider provenance and the universal just-in-time external execution/reconciliation boundary remain separate acceptance requirements.
+
+### Final automated evidence on the tested implementation head
+
+All six core PR gates passed:
+
+- Web Unit: PASS — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38142661247
+- Web CI / typecheck / production build: PASS — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38142661361
+- Flutter CI: PASS — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38142661300
+- W25 isolated PostgreSQL atomic fence: PASS — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38142661331
+- W21 Local Launch Gate: PASS — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38142661262
+- Netlify Web Deploy / preview verification: PASS — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38142661444
+
+W21 details: both browser scenarios passed (`2 passed`); W63 and W64 pgTAP tests passed; the AI quota/plan/workspace security tests passed; disposable Supabase cleanup verified `remaining_containers=none`, `remaining_volumes=none`, and `cleanup_verified=true`.
+
+- W21 evidence and cleanup proof: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38142661262/artifacts/11703488092
+- W21 browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38142661262/artifacts/11702658945
+- Netlify Deploy Preview: https://deploy-preview-29--unique-kringle-3ce321.netlify.app/app
+
+The real OpenAI planning and authenticated live OpenAI research checks remained skipped because the explicit opt-in markers were not present. Vercel status contexts still report the account's build-rate limit; Vercel was not used or modified. Netlify is the active preview path and its deploy-preview status is successful.
+
+**Launch decision remains BLOCKED.** These results prove the tested isolated harness and bounded routes, not production readiness, real provider provenance, hosted authenticated research persistence, invitation-email delivery, or a universal external-side-effect authority gateway. Supabase Main/Production was not changed, and PR #29 was not merged or marked ready.
