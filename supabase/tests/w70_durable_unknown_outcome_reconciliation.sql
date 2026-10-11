@@ -1,7 +1,7 @@
 -- W70: only a trusted leased worker can settle UNKNOWN external outcomes.
 begin;
 create extension if not exists pgtap;
-select plan(17);
+select plan(18);
 
 select ok(to_regprocedure('public.claim_agent_execution_reconciliation(uuid)') is not null,
   'trusted reconciliation-claim RPC exists');
@@ -84,7 +84,7 @@ begin
   for v_i in 1..3 loop
     insert into public.agent_executions(
       id, workspace_id, mission_id, action_id, agent_id, requested_by, idempotency_key,
-      status, authority_snapshot, request, lease_expires_at, completed_at, reconciled_at,
+      status, authority_snapshot, request, evidence, lease_expires_at, completed_at, reconciled_at,
       dispatch_claimed_at, dispatch_claim_authority_hash, dispatch_claim_request_hash, dispatch_claim_budget_revision
     ) values (
       v_exec_ids[v_i], v_workspace, v_mission, v_actions[v_i], v_agent, v_owner,
@@ -92,6 +92,9 @@ begin
       '{"mode":"bounded","external_side_effects":true,"requires_approval":true}'::jsonb,
       jsonb_build_object('destination', 'https://provider.example.test/w70/' || v_i,
         'audience', 'provider.operation.v1', 'authority_budget_revision', '1'),
+      case when v_i = 2
+        then '{"outcome":"UNKNOWN","provider_receipt":{"request_id":"prior-accepted-ref"}}'::jsonb
+        else '{"outcome":"UNKNOWN","reconciliation_required":true}'::jsonb end,
       clock_timestamp() - interval '1 minute', clock_timestamp() - interval '1 minute',
       clock_timestamp() - interval '30 seconds', clock_timestamp() - interval '2 minutes',
       repeat('a',64), repeat('b',64), 1
@@ -161,6 +164,14 @@ begin
     and v_reservation.status = 'RELEASED' and v_budget.actions_reserved = 1
     and v_budget.actions_consumed = 1 and v_budget.spend_reserved = 10 and v_budget.spend_consumed = 3.5);
 
+  select * into v_done from public.reconcile_agent_execution_outcome(
+    v_exec_ids[2], v_claim.reconciliation_claim_token, 'FAILED', v_failed_result, v_failed_evidence);
+  select * into v_reservation from public.mission_authority_budget_reservations where execution_id = v_exec_ids[2];
+  insert into w70_behavior_results values ('failed_no_send_replay_is_idempotent',
+    v_done.status = 'FAILED'
+    and v_done.evidence -> 'provider_receipt' ->> 'request_id' = 'prior-accepted-ref'
+    and v_reservation.status = 'RELEASED');
+
   select * into v_claim from public.claim_agent_execution_reconciliation(v_exec_ids[3]);
   v_caught := false;
   begin
@@ -201,6 +212,8 @@ select ok((select passed from w70_behavior_results where name = 'exact_success_r
   'a lost completion response can be replayed without settling budget twice');
 select ok((select passed from w70_behavior_results where name = 'confirmed_no_send_releases_budget'),
   'authoritative no-send evidence releases held budget for explicit safe retry');
+select ok((select passed from w70_behavior_results where name = 'failed_no_send_replay_is_idempotent'),
+  'failed no-send replay preserves a prior provider reference without settling twice');
 select ok((select passed from w70_behavior_results where name = 'overcap_receipt_keeps_unknown_held'),
   'over-cap provider charges leave the execution UNKNOWN and reservation held');
 select ok((select passed from w70_behavior_results where name = 'valid_retry_after_rejected_settlement_succeeds'),

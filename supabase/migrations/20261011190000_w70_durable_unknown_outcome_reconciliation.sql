@@ -200,8 +200,9 @@ begin
      and v_execution.evidence -> 'reconciliation' is not distinct from v_reconciliation
      and (not (p_evidence ? 'provider_receipt')
        or v_execution.evidence -> 'provider_receipt' is not distinct from v_receipt)
-     and v_execution.evidence -> 'provider_not_sent' is not distinct from p_evidence -> 'provider_not_sent'
-     and v_execution.evidence -> 'safe_to_retry' is not distinct from p_evidence -> 'safe_to_retry'
+     and (not (p_evidence ? 'provider_not_sent')
+       or v_execution.evidence -> 'provider_not_sent' is not distinct from p_evidence -> 'provider_not_sent')
+     and v_execution.evidence -> 'safe_to_retry' is not distinct from to_jsonb(p_status = 'FAILED')
      and v_execution.result is not distinct from p_result then
     return v_execution;
   end if;
