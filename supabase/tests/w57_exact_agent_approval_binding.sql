@@ -238,7 +238,13 @@ begin
     raise exception 'TEST_FAILED: rejected generic approval created an execution row';
   end if;
 
+  perform set_config('request.jwt.claim.role', 'service_role', true);
+  perform set_config('request.jwt.claims',
+    jsonb_build_object('sub', v_owner, 'role', 'service_role')::text, true);
   perform public.complete_agent_execution(v_execution.id, 'FAILED', null, null, 'TEST_FAILURE', 'Known disposable failure');
+  perform set_config('request.jwt.claim.role', 'authenticated', true);
+  perform set_config('request.jwt.claims',
+    jsonb_build_object('sub', v_owner, 'role', 'authenticated')::text, true);
   select * into v_retry from public.retry_agent_execution(v_execution.id, 'w57-valid-retry-key-0001');
   if v_retry.retry_of_execution_id is distinct from v_execution.id
      or v_retry.approval_id is distinct from v_approval.id then
@@ -321,7 +327,13 @@ begin
   end;
   if not v_caught then raise exception 'TEST_FAILED: an expired approval authorized a new execution'; end if;
 
+  perform set_config('request.jwt.claim.role', 'service_role', true);
+  perform set_config('request.jwt.claims',
+    jsonb_build_object('sub', v_owner, 'role', 'service_role')::text, true);
   perform public.complete_agent_execution(v_retry.id, 'FAILED', null, null, 'TEST_FAILURE', 'Known disposable retry failure');
+  perform set_config('request.jwt.claim.role', 'authenticated', true);
+  perform set_config('request.jwt.claims',
+    jsonb_build_object('sub', v_owner, 'role', 'authenticated')::text, true);
   update public.mission_approvals
      set expires_at = clock_timestamp() - interval '1 second'
    where id = v_approval.id;
