@@ -202,7 +202,7 @@ jobs:
           unset SUPABASE_SERVICE_ROLE_KEY SUPABASE_SECRET_KEY SERVICE_ROLE_KEY SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD
           mkdir -p "$RUNNER_TEMP/w21-playwright"
           set +e
-          npm run test:e2e 2>&1 | tee "$RUNNER_TEMP/w21-playwright/test-e2e.log"
+          ZAVQERA_E2E_OUTPUT_DIR="$RUNNER_TEMP/w21-playwright/playwright-results" npm run test:e2e 2>&1 | tee "$RUNNER_TEMP/w21-playwright/test-e2e.log"
           status="${PIPESTATUS[0]}"
           set -e
           if [ -d test-results ]; then cp -R test-results "$RUNNER_TEMP/w21-playwright/test-results"; fi
