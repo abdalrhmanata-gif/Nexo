@@ -153,6 +153,8 @@ jobs:
           test "$app" = "200"
 
       - name: Verify real OpenAI mission planning
+        # Real provider calls require an explicit [live-openai-planning] marker in the PR body.
+        if: github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.body, '[live-openai-planning]'))
         run: |
           set -euo pipefail
           url="https://deploy-preview-29--unique-kringle-3ce321.netlify.app/api/ai/plan/anonymous"
