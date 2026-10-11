@@ -1,7 +1,7 @@
 -- W69: every delegated external side effect needs a single-use server JIT claim.
 begin;
 create extension if not exists pgtap;
-select plan(18);
+select plan(19);
 
 select ok(
   (select count(*) = 4 from information_schema.columns
@@ -45,6 +45,12 @@ select ok(
   and lower(pg_get_functiondef('private.complete_agent_execution(uuid,text,jsonb,jsonb,text,text)'::regprocedure))
     like '%provider_not_sent%',
   'trusted completion requires a dispatch claim unless trusted evidence proves no send before dispatch');
+select ok(
+  position('v_now := clock_timestamp()' in lower(pg_get_functiondef('private.claim_agent_execution_dispatch(uuid)'::regprocedure)))
+    > position('from public.mission_approvals a' in lower(pg_get_functiondef('private.claim_agent_execution_dispatch(uuid)'::regprocedure)))
+  and lower(pg_get_functiondef('private.claim_agent_execution_dispatch(uuid)'::regprocedure))
+    like '%approval_expired_requires_reapproval%',
+  'the final clock sample and expiry check happen after the approval row lock');
 
 create temporary table w69_behavior_results (
   name text primary key,

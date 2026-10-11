@@ -95,10 +95,6 @@ begin
     raise exception 'EXECUTION_NOT_RUNNING' using errcode = '22023';
   end if;
 
-  v_now := clock_timestamp();
-  if v_execution.lease_expires_at <= v_now then
-    raise exception 'EXECUTION_LEASE_EXPIRED_REQUIRES_RECONCILIATION' using errcode = '22023';
-  end if;
   if v_execution.cancel_requested_at is not null then
     raise exception 'EXECUTION_CANCELLATION_REQUESTED' using errcode = '22023';
   end if;
@@ -169,10 +165,6 @@ begin
      or v_reservation.reserved_spend > v_budget.max_spend_per_action then
     raise exception 'AUTHORITY_BUDGET_BINDING_MISMATCH' using errcode = '22023';
   end if;
-  if v_budget.not_before > v_now or v_budget.expires_at <= v_now then
-    raise exception 'AUTHORITY_BUDGET_NOT_IN_VALIDITY_WINDOW' using errcode = '22023';
-  end if;
-
   v_expected_scope := private.agent_execution_approval_scope(
     v_mission.workspace_id,
     v_mission.id,
@@ -191,7 +183,6 @@ begin
      and a.action_id = v_execution.action_id
      and a.status = 'APPROVED'
      and a.decided_at is not null
-     and a.expires_at > v_now
      and a.consumed_at is not null
      and (a.requested_scope - 'expires_at') = v_expected_scope
      and (a.requested_scope ->> 'expires_at')::timestamptz = a.expires_at
@@ -208,8 +199,22 @@ begin
        select id from execution_chain
      )
    for share;
+
+  -- Final wall-clock check only after the mission, execution, agent, action,
+  -- reservation, budget and approval rows are locked. A lease or approval
+  -- that expires while a lock wait is in progress must fail closed.
+  v_now := clock_timestamp();
+  if v_execution.lease_expires_at <= v_now then
+    raise exception 'EXECUTION_LEASE_EXPIRED_REQUIRES_RECONCILIATION' using errcode = '22023';
+  end if;
+  if v_budget.not_before > v_now or v_budget.expires_at <= v_now then
+    raise exception 'AUTHORITY_BUDGET_NOT_IN_VALIDITY_WINDOW' using errcode = '22023';
+  end if;
   if not found then
     raise exception 'APPROVAL_REQUIRED_OR_SCOPE_CHANGED' using errcode = '42501';
+  end if;
+  if v_approval.expires_at is null or v_approval.expires_at <= v_now then
+    raise exception 'APPROVAL_EXPIRED_REQUIRES_REAPPROVAL' using errcode = '42501';
   end if;
 
   update public.agent_executions
