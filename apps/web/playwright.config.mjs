@@ -22,5 +22,6 @@ export default defineConfig({
     baseURL: process.env.ZAVQERA_E2E_BASE_URL || DEFAULT_BASE_URL,
     headless: true,
     trace: "retain-on-failure",
+    screenshot: "on",
   },
 });
