@@ -156,6 +156,8 @@ test("requires exact approval binding instead of dispatching when approval is re
     actionVersion: 7,
     inputHash: hashInput(input),
     destination: "https://fake.external.test/action",
+    audience: "fake.external.v1",
+    policyVersion: 4,
     authorityRevision: 9,
     expiresAt: "2026-10-01T12:30:00.000Z",
   };
@@ -172,6 +174,8 @@ test("requires exact approval binding instead of dispatching when approval is re
       actionVersion: 99,
       inputHash: "wrong",
       destination: "https://evil.example",
+      audience: "fake.external.evil",
+      policyVersion: 99,
       authorityRevision: 99,
       expiresAt: new Date(NOW).toISOString(),
     }).map(([field, value]) => ({ ...validApproval, [field]: value })),
