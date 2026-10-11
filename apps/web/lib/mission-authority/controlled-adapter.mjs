@@ -23,6 +23,20 @@ const PROVIDER_RESULT_STATES = new Set([
   ATTEMPT_STATES.FAILED,
 ]);
 
+function hasProviderReceipt(result) {
+  const receipt = result?.receipt;
+  if (!receipt || typeof receipt !== "object" || Array.isArray(receipt)) return false;
+  return Object.values(receipt).some((value) => value !== null
+    && value !== undefined
+    && (typeof value !== "string" || value.trim() !== ""));
+}
+
+function isReconciledProviderResult(result) {
+  return Boolean(result
+    && PROVIDER_RESULT_STATES.has(result.state)
+    && hasProviderReceipt(result));
+}
+
 export class AuthorityViolation extends Error {
   constructor(code, message = code) {
     super(message);
@@ -348,7 +362,7 @@ export class InMemoryAuthorityStore {
       }
 
       if (externalRecord?.kind !== "FOUND" ||
-          !PROVIDER_RESULT_STATES.has(externalRecord.record?.state)) {
+          !isReconciledProviderResult(externalRecord.record)) {
         this.#journal.push({
           type: "RECONCILIATION",
           attemptId,
@@ -458,7 +472,7 @@ export class ControlledServerAdapter {
       // A dispatch adapter cannot prove reconciliation merely by returning a
       // state label. Only the reconciliation path may accept authoritative
       // provider lookup evidence for RECONCILED_NOT_SENT.
-      if (!result || !PROVIDER_RESULT_STATES.has(result.state)) {
+      if (!isReconciledProviderResult(result)) {
         const attempt = await this.authorityStore.markResult(
           decision.attemptId,
           { state: ATTEMPT_STATES.UNKNOWN },
