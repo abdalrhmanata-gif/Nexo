@@ -1,0 +1,375 @@
+/**
+ * Server-side dispatch orchestration for the persistent W69 JIT gate.
+ *
+ * The caller MUST inject a service-role Supabase client and a trusted adapter.
+ * This module performs no network/provider work except the adapter.dispatch call.
+ * No route currently wires a real provider to this module; tests use fake adapters.
+ */
+
+export const PERSISTENT_DISPATCH_DECISIONS = Object.freeze({
+  DENY: "DENY",
+  DISPATCHED: "DISPATCHED",
+  RECONCILE_REQUIRED: "RECONCILE_REQUIRED",
+});
+
+const KNOWN_DENIAL_CODES = new Set([
+  "TRUSTED_EXECUTOR_REQUIRED",
+  "EXECUTION_NOT_FOUND",
+  "MISSION_CLOSED_OR_NOT_FOUND",
+  "EXECUTION_NOT_RUNNING",
+  "EXECUTION_CANCELLATION_REQUESTED",
+  "EXECUTION_ALREADY_CLAIMED_FOR_DISPATCH",
+  "EXECUTION_LEASE_EXPIRED_REQUIRES_RECONCILIATION",
+  "AGENT_AUTHORITY_CHANGED",
+  "AGENT_NOT_FOUND_OR_FORBIDDEN",
+  "JIT_EXTERNAL_SIDE_EFFECT_SCOPE_REQUIRED",
+  "ACTION_NOT_EXECUTABLE",
+  "EXECUTION_BUDGET_RESERVATION_NOT_OPEN",
+  "AUTHORITY_BUDGET_MISSING_OR_INACTIVE",
+  "AUTHORITY_BUDGET_BINDING_MISMATCH",
+  "AUTHORITY_BUDGET_NOT_IN_VALIDITY_WINDOW",
+  "APPROVAL_REQUIRED_OR_SCOPE_CHANGED",
+  "APPROVAL_EXPIRED_REQUIRES_REAPPROVAL",
+]);
+
+const RECEIPT_KEYS = new Set([
+  "provider",
+  "id",
+  "reference",
+  "request_id",
+  "message_id",
+  "transaction_id",
+  "operation_id",
+  "status",
+  "created_at",
+  "timestamp",
+]);
+
+const RECEIPT_STRING_LIMIT = 500;
+
+function record(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function rowFrom(data) {
+  if (Array.isArray(data)) return data.length === 1 && record(data[0]) ? data[0] : null;
+  return record(data) ? data : null;
+}
+
+function errorText(error) {
+  return typeof error?.message === "string" ? error.message : "";
+}
+
+function knownDenialCode(error) {
+  const message = errorText(error);
+  for (const code of KNOWN_DENIAL_CODES) {
+    if (message === code || message.startsWith(`${code}:`) || message.includes(`${code} `)) {
+      return code;
+    }
+  }
+  return "";
+}
+
+function nonEmpty(value) {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function sha256Hex(value) {
+  return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
+}
+
+/**
+ * Keep only provider reference fields that are useful for reconciliation.
+ * Never persist arbitrary provider payloads or credentials in the execution log.
+ */
+export function sanitiseProviderReceipt(receipt) {
+  if (!record(receipt)) return null;
+  const safe = {};
+  for (const [key, value] of Object.entries(receipt)) {
+    if (!RECEIPT_KEYS.has(key)) continue;
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      if (trimmed && trimmed.length <= RECEIPT_STRING_LIMIT) safe[key] = trimmed;
+    } else if (typeof value === "number" && Number.isFinite(value)) {
+      safe[key] = value;
+    } else if (typeof value === "boolean") {
+      safe[key] = value;
+    }
+  }
+  return Object.keys(safe).length > 0 ? safe : null;
+}
+
+function validClaim(claim, executionId) {
+  if (!claim || claim.id !== executionId || claim.status !== "RUNNING") return false;
+  if (!nonEmpty(claim.dispatch_claimed_at) || !nonEmpty(claim.lease_expires_at)) return false;
+  if (!sha256Hex(claim.dispatch_claim_authority_hash)
+      || !sha256Hex(claim.dispatch_claim_request_hash)) return false;
+  const revision = Number(claim.dispatch_claim_budget_revision);
+  if (!Number.isSafeInteger(revision) || revision < 1) return false;
+  if (!nonEmpty(claim.idempotency_key) || !record(claim.request) || !record(claim.authority_snapshot)) return false;
+  if (claim.authority_snapshot.external_side_effects !== true
+      || claim.authority_snapshot.requires_approval !== true
+      || !nonEmpty(claim.action_id)
+      || !nonEmpty(claim.approval_id)) return false;
+  if (!nonEmpty(claim.request.destination) || !nonEmpty(claim.request.audience)) return false;
+  const claimedAt = Date.parse(claim.dispatch_claimed_at);
+  const expiresAt = Date.parse(claim.lease_expires_at);
+  return Number.isFinite(claimedAt) && Number.isFinite(expiresAt) && claimedAt < expiresAt;
+}
+
+function claimEnvelope(claim) {
+  // Pass only the exact, approved request and correlation fields to the adapter.
+  return Object.freeze({
+    executionId: claim.id,
+    actionId: claim.action_id,
+    agentId: claim.agent_id,
+    approvalId: claim.approval_id,
+    idempotencyKey: claim.idempotency_key,
+    destination: claim.request.destination,
+    audience: claim.request.audience,
+    request: structuredClone(claim.request),
+    dispatchClaimedAt: claim.dispatch_claimed_at,
+    authorityHash: claim.dispatch_claim_authority_hash,
+    requestHash: claim.dispatch_claim_request_hash,
+    budgetRevision: Number(claim.dispatch_claim_budget_revision),
+  });
+}
+
+async function complete(client, executionId, status, result, evidence, errorCode, errorMessage) {
+  try {
+    const response = await client.rpc("complete_agent_execution", {
+      p_execution_id: executionId,
+      p_status: status,
+      p_result: result,
+      p_evidence: evidence,
+      p_error_code: errorCode ?? null,
+      p_error_message: errorMessage ?? null,
+    });
+    if (response?.error) return { ok: false, row: null };
+    const row = rowFrom(response?.data);
+    if (!row || row.id !== executionId) return { ok: false, row: null };
+    return { ok: true, row };
+  } catch {
+    return { ok: false, row: null };
+  }
+}
+
+function finaliseResult(status, receipt, reasonCode, claim, extraEvidence = {}) {
+  const evidence = {
+    dispatch_claimed_at: claim.dispatchClaimedAt,
+    dispatch_claim_authority_hash: claim.authorityHash,
+    dispatch_claim_request_hash: claim.requestHash,
+    dispatch_claim_budget_revision: claim.budgetRevision,
+    provider_state: status,
+    verified: false,
+    ...extraEvidence,
+  };
+  if (receipt) evidence.provider_receipt = receipt;
+  return evidence;
+}
+
+async function blockBeforeDispatch(client, executionId, reasonCode, claim = null) {
+  const evidence = {
+    provider_not_sent: true,
+    safe_to_retry: true,
+    verified: false,
+    reconciliation_required: false,
+    gateway_reason: reasonCode,
+    ...(claim ? {
+      dispatch_claimed_at: claim.dispatchClaimedAt,
+      dispatch_claim_authority_hash: claim.authorityHash,
+      dispatch_claim_request_hash: claim.requestHash,
+      dispatch_claim_budget_revision: claim.budgetRevision,
+    } : {}),
+  };
+  const settlement = await complete(
+    client,
+    executionId,
+    "BLOCKED",
+    { gateway: "persistent_w69", outcome: "NOT_SENT" },
+    evidence,
+    reasonCode,
+    "The trusted gateway blocked dispatch before calling the provider adapter.",
+  );
+  return {
+    decision: settlement.ok && settlement.row.status === "BLOCKED"
+      ? PERSISTENT_DISPATCH_DECISIONS.DENY
+      : PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED,
+    executionId,
+    reasonCode: settlement.ok ? reasonCode : "PRE_DISPATCH_BLOCK_SETTLEMENT_UNCONFIRMED",
+    dispatched: false,
+    persisted: settlement.ok,
+    status: settlement.row?.status ?? null,
+  };
+}
+
+async function recordUnknown(client, executionId, claim, reasonCode, receipt = null) {
+  const evidence = finaliseResult("UNKNOWN", receipt, reasonCode, claim, {
+    outcome: "UNKNOWN",
+    safe_to_retry: false,
+    reconciliation_required: true,
+  });
+  const settlement = await complete(
+    client,
+    executionId,
+    "UNKNOWN",
+    { gateway: "persistent_w69", outcome: "UNKNOWN" },
+    evidence,
+    reasonCode,
+    "The provider outcome is unknown. Reconcile the existing attempt; do not dispatch again.",
+  );
+  const status = settlement.row?.status ?? null;
+  return {
+    decision: PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED,
+    executionId,
+    reasonCode: settlement.ok && status === "UNKNOWN" ? reasonCode : "UNKNOWN_OUTCOME_REQUIRES_RECONCILIATION",
+    dispatched: true,
+    persisted: settlement.ok,
+    status,
+  };
+}
+
+/**
+ * Atomically claim one dispatch, then invoke the injected trusted adapter exactly
+ * once. Any uncertainty after the adapter call is UNKNOWN and is never retried
+ * here. This is a seam for a future worker, not a real-provider integration.
+ */
+export async function dispatchThroughJitClaim({ client, adapter, executionId }) {
+  if (!nonEmpty(executionId) || !client || typeof client.rpc !== "function"
+      || !adapter || typeof adapter.dispatch !== "function") {
+    return {
+      decision: PERSISTENT_DISPATCH_DECISIONS.DENY,
+      executionId: nonEmpty(executionId) ? executionId : null,
+      reasonCode: "INVALID_DISPATCH_GATEWAY_CONFIGURATION",
+      dispatched: false,
+      persisted: false,
+      status: null,
+    };
+  }
+
+  let claimResponse;
+  try {
+    claimResponse = await client.rpc("claim_agent_execution_dispatch", {
+      p_execution_id: executionId,
+    });
+  } catch {
+    return {
+      decision: PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED,
+      executionId,
+      reasonCode: "DISPATCH_CLAIM_OUTCOME_UNKNOWN",
+      dispatched: false,
+      persisted: false,
+      status: null,
+    };
+  }
+
+  if (claimResponse?.error) {
+    const denial = knownDenialCode(claimResponse.error);
+    return {
+      decision: denial ? PERSISTENT_DISPATCH_DECISIONS.DENY : PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED,
+      executionId,
+      reasonCode: denial || "DISPATCH_CLAIM_OUTCOME_UNKNOWN",
+      dispatched: false,
+      persisted: false,
+      status: null,
+    };
+  }
+
+  const claimRow = rowFrom(claimResponse?.data);
+  if (!validClaim(claimRow, executionId)) {
+    // A successful RPC may have committed the one-time claim even if its
+    // returned representation is malformed. We know this gateway did not call
+    // the adapter, so record a trusted not-sent block rather than retry blindly.
+    return blockBeforeDispatch(client, executionId, "INVALID_DISPATCH_CLAIM_RECORD");
+  }
+
+  const claim = claimEnvelope(claimRow);
+  let providerResult;
+  try {
+    // No additional RPCs/awaits between claim validation and this adapter call.
+    providerResult = await adapter.dispatch(claim);
+  } catch {
+    // An exception/timeout may occur after the provider accepted the request.
+    return recordUnknown(client, executionId, claim, "PROVIDER_OUTCOME_UNKNOWN");
+  }
+
+  if (!record(providerResult)
+      || !["SUCCEEDED", "FAILED", "ACCEPTED", "UNKNOWN"].includes(providerResult.state)) {
+    return recordUnknown(client, executionId, claim, "INVALID_PROVIDER_OUTCOME");
+  }
+
+  const receipt = sanitiseProviderReceipt(providerResult.receipt);
+  const providerNotSent = providerResult.state === "FAILED"
+    && providerResult.providerNotSent === true
+    && providerResult.safeToRetry === true;
+
+  if (providerResult.state === "SUCCEEDED" && !receipt) {
+    return recordUnknown(client, executionId, claim, "SUCCESS_WITHOUT_USABLE_PROVIDER_RECEIPT");
+  }
+
+  if (providerResult.state === "ACCEPTED" || providerResult.state === "UNKNOWN") {
+    return recordUnknown(client, executionId, claim, "PROVIDER_OUTCOME_REQUIRES_RECONCILIATION", receipt);
+  }
+
+  const requestedStatus = providerResult.state === "SUCCEEDED" ? "SUCCEEDED" : "FAILED";
+  const evidence = finaliseResult(requestedStatus, receipt, "PROVIDER_RESULT_RECORDED", claim, {
+    outcome: requestedStatus,
+    safe_to_retry: providerNotSent,
+    ...(providerNotSent ? { provider_not_sent: true } : {}),
+    reconciliation_required: !providerNotSent && requestedStatus === "FAILED",
+  });
+  const settlement = await complete(
+    client,
+    executionId,
+    requestedStatus,
+    {
+      gateway: "persistent_w69",
+      outcome: requestedStatus,
+      reference: receipt?.id ?? receipt?.reference ?? receipt?.request_id ?? null,
+    },
+    evidence,
+    providerNotSent ? "PROVIDER_CONFIRMED_NOT_SENT" : null,
+    providerNotSent ? "The trusted adapter proved the request did not cross the provider boundary." : null,
+  );
+
+  if (!settlement.ok) {
+    return {
+      decision: PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED,
+      executionId,
+      reasonCode: "COMPLETION_PERSISTENCE_UNCONFIRMED",
+      dispatched: true,
+      persisted: false,
+      status: null,
+    };
+  }
+
+  if (settlement.row.status === "SUCCEEDED") {
+    return {
+      decision: PERSISTENT_DISPATCH_DECISIONS.DISPATCHED,
+      executionId,
+      reasonCode: "PROVIDER_RECEIPT_RECORDED",
+      dispatched: true,
+      persisted: true,
+      status: "SUCCEEDED",
+      receipt,
+    };
+  }
+  if (settlement.row.status === "FAILED") {
+    return {
+      decision: PERSISTENT_DISPATCH_DECISIONS.DENY,
+      executionId,
+      reasonCode: "PROVIDER_CONFIRMED_NOT_SENT",
+      dispatched: true,
+      persisted: true,
+      status: "FAILED",
+    };
+  }
+  return {
+    decision: PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED,
+    executionId,
+    reasonCode: "EXTERNAL_OUTCOME_REQUIRES_RECONCILIATION",
+    dispatched: true,
+    persisted: true,
+    status: settlement.row.status,
+  };
+}
