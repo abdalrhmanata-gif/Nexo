@@ -60,11 +60,16 @@ begin
    where id = v_initial.agent_id
      and workspace_id = v_initial.workspace_id
    for share;
-  if not found
-     or v_agent.status <> 'ACTIVE'
-     or v_agent.authority ->> 'mode' is distinct from 'read_only'
-     or v_agent.authority -> 'external_side_effects' is distinct from 'false'::jsonb
-     or v_agent.authority is distinct from v_initial.authority_snapshot
+  if not found or v_agent.status <> 'ACTIVE' then
+    raise exception 'RESEARCH_AGENT_AUTHORITY_CHANGED' using errcode = '42501';
+  end if;
+
+  if v_agent.authority ->> 'mode' is distinct from 'read_only'
+     or v_agent.authority -> 'external_side_effects' is distinct from 'false'::jsonb then
+    raise exception 'READ_ONLY_RESEARCH_EXECUTION_REQUIRED' using errcode = '42501';
+  end if;
+
+  if v_agent.authority is distinct from v_initial.authority_snapshot
      or v_initial.authority_snapshot ->> 'mode' is distinct from 'read_only'
      or v_initial.authority_snapshot -> 'external_side_effects' is distinct from 'false'::jsonb then
     raise exception 'RESEARCH_AGENT_AUTHORITY_CHANGED' using errcode = '42501';
