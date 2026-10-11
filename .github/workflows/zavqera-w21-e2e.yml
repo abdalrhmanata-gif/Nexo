@@ -202,6 +202,11 @@ jobs:
             supabase test db supabase/tests/w66_service_role_table_privilege_hardening.sql
           )
 
+      - name: Run actual-ledger concurrent idempotency proof
+        run: |
+          set -euo pipefail
+          bash "$GITHUB_WORKSPACE/tool/w67_actual_execution_idempotency_race.sh"
+
       - name: Run full launch-gate browser E2E
         working-directory: apps/web
         run: |
