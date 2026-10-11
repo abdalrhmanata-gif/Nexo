@@ -237,6 +237,8 @@ export class InMemoryAuthorityStore {
           && approval.actionVersion === request.actionVersion
           && approval.inputHash === suppliedHash
           && approval.destination === request.destination
+          && approval.audience === request.audience
+          && approval.policyVersion === request.policyVersion
           && approval.authorityRevision === request.authorityRevision
           && approval.expiresAt
           && now < new Date(approval.expiresAt).getTime();
