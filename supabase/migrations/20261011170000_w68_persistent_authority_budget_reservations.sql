@@ -995,7 +995,8 @@ begin
        and a.status = 'APPROVED'
        and a.decided_at is not null
        and a.expires_at > clock_timestamp()
-       and a.requested_scope = v_expected_scope
+       and (a.requested_scope - 'expires_at') = v_expected_scope
+       and (a.requested_scope ->> 'expires_at')::timestamptz = a.expires_at
        and a.consumed_by_execution_id in (
          with recursive execution_chain(id, retry_of_execution_id) as (
            select e.id, e.retry_of_execution_id
