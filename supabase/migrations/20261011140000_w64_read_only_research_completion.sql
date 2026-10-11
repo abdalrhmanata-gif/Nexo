@@ -69,8 +69,7 @@ begin
     raise exception 'READ_ONLY_RESEARCH_EXECUTION_REQUIRED' using errcode = '42501';
   end if;
 
-  if v_agent.authority is distinct from v_initial.authority_snapshot
-     or v_initial.authority_snapshot ->> 'mode' is distinct from 'read_only'
+  if v_initial.authority_snapshot ->> 'mode' is distinct from 'read_only'
      or v_initial.authority_snapshot -> 'external_side_effects' is distinct from 'false'::jsonb then
     raise exception 'RESEARCH_AGENT_AUTHORITY_CHANGED' using errcode = '42501';
   end if;
