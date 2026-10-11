@@ -10,6 +10,7 @@ export const PERSISTENT_DISPATCH_DECISIONS = Object.freeze({
   DENY: "DENY",
   DISPATCHED: "DISPATCHED",
   RECONCILE_REQUIRED: "RECONCILE_REQUIRED",
+  RECONCILED: "RECONCILED",
 });
 
 const KNOWN_DENIAL_CODES = new Set([
@@ -240,6 +241,245 @@ async function recordUnknown(client, executionId, claim, reasonCode, receipt = n
     dispatched: true,
     persisted: settlement.ok,
     status,
+  };
+}
+
+const RECONCILIATION_METHODS = new Set([
+  "provider_lookup",
+  "idempotency_key_lookup",
+  "receipt_lookup",
+  "provider_webhook",
+]);
+
+function validReconciliationClaim(claim, executionId) {
+  if (!record(claim) || claim.id !== executionId) return false;
+  if (["SUCCEEDED", "FAILED"].includes(claim.status)
+      && nonEmpty(claim.reconciled_at)
+      && record(claim.evidence)
+      && record(claim.evidence.reconciliation)) return true;
+  if (claim.status !== "UNKNOWN"
+      || claim.authority_snapshot?.external_side_effects !== true
+      || !nonEmpty(claim.action_id)
+      || !nonEmpty(claim.idempotency_key)
+      || !record(claim.request)
+      || !nonEmpty(claim.request.destination)
+      || !nonEmpty(claim.request.audience)
+      || !nonEmpty(claim.reconciliation_claim_token)
+      || !nonEmpty(claim.reconciliation_claimed_at)
+      || !nonEmpty(claim.reconciliation_lease_expires_at)) return false;
+  const claimedAt = Date.parse(claim.reconciliation_claimed_at);
+  const expiresAt = Date.parse(claim.reconciliation_lease_expires_at);
+  return Number.isFinite(claimedAt)
+    && Number.isFinite(expiresAt)
+    && claimedAt < expiresAt
+    && expiresAt > Date.now();
+}
+
+function reconciliationEnvelope(claim) {
+  return Object.freeze({
+    executionId: claim.id,
+    actionId: claim.action_id,
+    agentId: claim.agent_id,
+    approvalId: claim.approval_id ?? null,
+    idempotencyKey: claim.idempotency_key,
+    destination: claim.request.destination,
+    audience: claim.request.audience,
+    request: structuredClone(claim.request),
+    dispatchClaimedAt: claim.dispatch_claimed_at ?? null,
+    dispatchAuthorityHash: claim.dispatch_claim_authority_hash ?? null,
+    dispatchRequestHash: claim.dispatch_claim_request_hash ?? null,
+    dispatchBudgetRevision: claim.dispatch_claim_budget_revision ?? null,
+    reconciliationClaimToken: claim.reconciliation_claim_token,
+    reconciliationLeaseExpiresAt: claim.reconciliation_lease_expires_at,
+  });
+}
+
+function validAuthoritativeLookup(result, expectedResult) {
+  if (!record(result) || result.authoritative !== true) return false;
+  if (!RECONCILIATION_METHODS.has(result.method)) return false;
+  if (!nonEmpty(result.providerState) || result.providerState.length > 100) return false;
+  if (result.state !== expectedResult) return false;
+  const checkedAt = Date.parse(result.checkedAt);
+  return Number.isFinite(checkedAt) && checkedAt <= Date.now() + 5 * 60 * 1000;
+}
+
+/**
+ * Reconcile an existing UNKNOWN attempt without dispatching a new provider
+ * request. The adapter must perform a provider lookup only; this function never
+ * calls adapter.dispatch and never releases a budget without explicit no-send
+ * evidence from that trusted adapter.
+ */
+export async function reconcileThroughTrustedClaim({ client, adapter, executionId }) {
+  if (!nonEmpty(executionId) || !client || typeof client.rpc !== "function"
+      || !adapter || typeof adapter.reconcile !== "function") {
+    return {
+      decision: PERSISTENT_DISPATCH_DECISIONS.DENY,
+      executionId: nonEmpty(executionId) ? executionId : null,
+      reasonCode: "INVALID_RECONCILIATION_GATEWAY_CONFIGURATION",
+      providerLookupPerformed: false,
+      persisted: false,
+      status: null,
+    };
+  }
+
+  let claimResponse;
+  try {
+    claimResponse = await client.rpc("claim_agent_execution_reconciliation", {
+      p_execution_id: executionId,
+    });
+  } catch {
+    return {
+      decision: PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED,
+      executionId,
+      reasonCode: "RECONCILIATION_CLAIM_OUTCOME_UNKNOWN",
+      providerLookupPerformed: false,
+      persisted: false,
+      status: null,
+    };
+  }
+
+  if (claimResponse?.error) {
+    const message = errorText(claimResponse.error);
+    if (message.includes("EXECUTION_RECONCILIATION_ALREADY_CLAIMED")) {
+      return {
+        decision: PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED,
+        executionId,
+        reasonCode: "RECONCILIATION_ALREADY_CLAIMED",
+        providerLookupPerformed: false,
+        persisted: false,
+        status: "UNKNOWN",
+      };
+    }
+    const denial = knownDenialCode(claimResponse.error);
+    return {
+      decision: denial ? PERSISTENT_DISPATCH_DECISIONS.DENY : PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED,
+      executionId,
+      reasonCode: denial || "RECONCILIATION_CLAIM_OUTCOME_UNKNOWN",
+      providerLookupPerformed: false,
+      persisted: false,
+      status: null,
+    };
+  }
+
+  const claimRow = rowFrom(claimResponse?.data);
+  if (!validReconciliationClaim(claimRow, executionId)) {
+    return {
+      decision: PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED,
+      executionId,
+      reasonCode: "INVALID_RECONCILIATION_CLAIM_RECORD",
+      providerLookupPerformed: false,
+      persisted: false,
+      status: "UNKNOWN",
+    };
+  }
+
+  if (["SUCCEEDED", "FAILED"].includes(claimRow.status)
+      && nonEmpty(claimRow.reconciled_at)
+      && record(claimRow.evidence?.reconciliation)) {
+    return {
+      decision: PERSISTENT_DISPATCH_DECISIONS.RECONCILED,
+      executionId,
+      reasonCode: "ALREADY_RECONCILED",
+      providerLookupPerformed: false,
+      persisted: true,
+      status: claimRow.status,
+    };
+  }
+
+  const claim = reconciliationEnvelope(claimRow);
+  let lookup;
+  try {
+    lookup = await adapter.reconcile(claim);
+  } catch {
+    return {
+      decision: PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED,
+      executionId,
+      reasonCode: "PROVIDER_RECONCILIATION_UNAVAILABLE",
+      providerLookupPerformed: true,
+      persisted: false,
+      status: "UNKNOWN",
+    };
+  }
+
+  if (!record(lookup) || !["SUCCEEDED", "NOT_SENT"].includes(lookup.state)) {
+    return {
+      decision: PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED,
+      executionId,
+      reasonCode: "PROVIDER_OUTCOME_STILL_UNKNOWN",
+      providerLookupPerformed: true,
+      persisted: false,
+      status: "UNKNOWN",
+    };
+  }
+  if (!validAuthoritativeLookup(lookup, lookup.state)) {
+    return {
+      decision: PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED,
+      executionId,
+      reasonCode: "AUTHORITATIVE_LOOKUP_EVIDENCE_REQUIRED",
+      providerLookupPerformed: true,
+      persisted: false,
+      status: "UNKNOWN",
+    };
+  }
+
+  const finalStatus = lookup.state === "SUCCEEDED" ? "SUCCEEDED" : "FAILED";
+  const receipt = lookup.state === "SUCCEEDED" ? sanitiseProviderReceipt(lookup.receipt) : null;
+  if (lookup.state === "SUCCEEDED" && !receipt) {
+    return {
+      decision: PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED,
+      executionId,
+      reasonCode: "RECONCILED_SUCCESS_WITHOUT_USABLE_RECEIPT",
+      providerLookupPerformed: true,
+      persisted: false,
+      status: "UNKNOWN",
+    };
+  }
+
+  const reconciliation = {
+    authoritative: true,
+    method: lookup.method,
+    provider_state: lookup.providerState,
+    result: finalStatus,
+    checked_at: lookup.checkedAt,
+  };
+  const evidence = {
+    reconciliation,
+    verified: false,
+    ...(receipt ? { provider_receipt: receipt } : {}),
+    ...(finalStatus === "FAILED" ? { provider_not_sent: true, safe_to_retry: true } : { safe_to_retry: false }),
+  };
+  let response;
+  try {
+    response = await client.rpc("reconcile_agent_execution_outcome", {
+      p_execution_id: executionId,
+      p_claim_token: claim.reconciliationClaimToken,
+      p_status: finalStatus,
+      p_result: { outcome: finalStatus, reconciliation_method: lookup.method },
+      p_evidence: evidence,
+    });
+  } catch {
+    response = { error: { message: "RECONCILIATION_PERSISTENCE_UNCONFIRMED" } };
+  }
+  const finalRow = rowFrom(response?.data);
+  if (response?.error || !finalRow || finalRow.id !== executionId || finalRow.status !== finalStatus) {
+    return {
+      decision: PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED,
+      executionId,
+      reasonCode: "RECONCILIATION_PERSISTENCE_UNCONFIRMED",
+      providerLookupPerformed: true,
+      persisted: false,
+      status: "UNKNOWN",
+    };
+  }
+
+  return {
+    decision: PERSISTENT_DISPATCH_DECISIONS.RECONCILED,
+    executionId,
+    reasonCode: finalStatus === "SUCCEEDED" ? "PROVIDER_SUCCESS_RECONCILED" : "PROVIDER_NO_SEND_RECONCILED",
+    providerLookupPerformed: true,
+    persisted: true,
+    status: finalStatus,
+    safeToRetry: finalStatus === "FAILED",
   };
 }
 

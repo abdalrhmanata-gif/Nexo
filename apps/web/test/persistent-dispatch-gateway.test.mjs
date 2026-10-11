@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   dispatchThroughJitClaim,
+  reconcileThroughTrustedClaim,
   PERSISTENT_DISPATCH_DECISIONS,
   sanitiseProviderReceipt,
 } from "../lib/mission-authority/persistent-dispatch-gateway.mjs";
@@ -304,6 +305,190 @@ test("invalid charge amounts and currencies are removed from persisted receipts"
   }), {
     id: "provider-payment-9",
   });
+});
+
+const RECONCILIATION_CLAIMED_AT = "2099-01-01T10:00:00.000Z";
+const RECONCILIATION_LEASE_EXPIRY = "2099-01-01T10:05:00.000Z";
+
+function validReconciliationClaim(overrides = {}) {
+  return {
+    id: EXECUTION_ID,
+    status: "UNKNOWN",
+    workspace_id: "workspace-a",
+    mission_id: "mission-a",
+    action_id: "action-a",
+    agent_id: "agent-a",
+    approval_id: "approval-a",
+    idempotency_key: "w70-unit-test-key-0001",
+    authority_snapshot: { external_side_effects: true, requires_approval: true },
+    request: {
+      destination: "https://provider.example.test/send",
+      audience: "provider.send.v1",
+      payload: { message: "approved payload" },
+    },
+    reconciliation_claimed_at: RECONCILIATION_CLAIMED_AT,
+    reconciliation_lease_expires_at: RECONCILIATION_LEASE_EXPIRY,
+    reconciliation_claim_token: "token-w70-claim-1",
+    ...overrides,
+  };
+}
+
+function fakeReconciliationClient({ claim = validReconciliationClaim(), claimError = null, finalRow = null, finalError = null } = {}) {
+  const calls = [];
+  return {
+    calls,
+    async rpc(name, args) {
+      calls.push({ name, args });
+      if (name === "claim_agent_execution_reconciliation") {
+        return { data: claimError ? null : claim, error: claimError };
+      }
+      if (name === "reconcile_agent_execution_outcome") {
+        return {
+          data: finalError ? null : (finalRow ?? {
+            id: EXECUTION_ID,
+            status: args.p_status,
+            reconciled_at: "2099-01-01T10:01:00.000Z",
+          }),
+          error: finalError,
+        };
+      }
+      throw new Error("UNEXPECTED_RECONCILIATION_RPC");
+    },
+  };
+}
+
+function fakeReconciler({ result, error } = {}) {
+  const calls = [];
+  return {
+    calls,
+    async reconcile(claim) {
+      calls.push(claim);
+      if (error) throw error;
+      return result ?? {
+        state: "SUCCEEDED",
+        authoritative: true,
+        method: "provider_lookup",
+        providerState: "succeeded",
+        checkedAt: "2099-01-01T10:01:00.000Z",
+        receipt: { id: "reconciled-provider-ref", charge_amount: 2.5, currency: "NOK" },
+      };
+    },
+  };
+}
+
+test("authoritative provider lookup reconciles UNKNOWN success without dispatching", async () => {
+  const client = fakeReconciliationClient();
+  const adapter = fakeReconciler();
+  const result = await reconcileThroughTrustedClaim({ client, adapter, executionId: EXECUTION_ID });
+
+  assert.equal(result.decision, PERSISTENT_DISPATCH_DECISIONS.RECONCILED);
+  assert.equal(result.status, "SUCCEEDED");
+  assert.equal(result.providerLookupPerformed, true);
+  assert.equal(adapter.calls.length, 1);
+  assert.equal(adapter.calls[0].idempotencyKey, "w70-unit-test-key-0001");
+  assert.equal(adapter.calls[0].reconciliationClaimToken, "token-w70-claim-1");
+  assert.equal(client.calls.map((x) => x.name).join(","), "claim_agent_execution_reconciliation,reconcile_agent_execution_outcome");
+  assert.equal(client.calls[1].args.p_status, "SUCCEEDED");
+  assert.deepEqual(client.calls[1].args.p_evidence.provider_receipt, {
+    id: "reconciled-provider-ref",
+    charge_amount: 2.5,
+    currency: "NOK",
+  });
+  assert.equal(client.calls[1].args.p_evidence.verified, false);
+});
+
+test("authoritative no-send reconciliation releases the held reservation through FAILED", async () => {
+  const client = fakeReconciliationClient();
+  const adapter = fakeReconciler({ result: {
+    state: "NOT_SENT",
+    authoritative: true,
+    method: "idempotency_key_lookup",
+    providerState: "not_found",
+    checkedAt: "2099-01-01T10:01:00.000Z",
+  } });
+  const result = await reconcileThroughTrustedClaim({ client, adapter, executionId: EXECUTION_ID });
+
+  assert.equal(result.decision, PERSISTENT_DISPATCH_DECISIONS.RECONCILED);
+  assert.equal(result.status, "FAILED");
+  assert.equal(result.safeToRetry, true);
+  assert.equal(client.calls[1].args.p_evidence.provider_not_sent, true);
+  assert.equal(client.calls[1].args.p_evidence.safe_to_retry, true);
+});
+
+test("unknown provider lookup leaves execution UNKNOWN and does not settle it", async () => {
+  const client = fakeReconciliationClient();
+  const adapter = fakeReconciler({ result: { state: "UNKNOWN" } });
+  const result = await reconcileThroughTrustedClaim({ client, adapter, executionId: EXECUTION_ID });
+
+  assert.equal(result.decision, PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED);
+  assert.equal(result.status, "UNKNOWN");
+  assert.equal(adapter.calls.length, 1);
+  assert.equal(client.calls.length, 1);
+});
+
+test("provider lookup exception does not retry or finalize", async () => {
+  const client = fakeReconciliationClient();
+  const adapter = fakeReconciler({ error: new Error("provider lookup timeout") });
+  const result = await reconcileThroughTrustedClaim({ client, adapter, executionId: EXECUTION_ID });
+
+  assert.equal(result.reasonCode, "PROVIDER_RECONCILIATION_UNAVAILABLE");
+  assert.equal(result.decision, PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED);
+  assert.equal(adapter.calls.length, 1);
+  assert.equal(client.calls.length, 1);
+});
+
+test("active reconciliation lease prevents a second worker from looking up provider state", async () => {
+  const client = fakeReconciliationClient({ claimError: { message: "EXECUTION_RECONCILIATION_ALREADY_CLAIMED" } });
+  const adapter = fakeReconciler();
+  const result = await reconcileThroughTrustedClaim({ client, adapter, executionId: EXECUTION_ID });
+
+  assert.equal(result.decision, PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED);
+  assert.equal(result.reasonCode, "RECONCILIATION_ALREADY_CLAIMED");
+  assert.equal(adapter.calls.length, 0);
+});
+
+test("terminal reconciliation replay returns stored status without another provider lookup", async () => {
+  const client = fakeReconciliationClient({ claim: validReconciliationClaim({
+    status: "SUCCEEDED",
+    reconciled_at: "2099-01-01T10:01:00.000Z",
+    evidence: { reconciliation: { method: "provider_lookup" } },
+  }) });
+  const adapter = fakeReconciler();
+  const result = await reconcileThroughTrustedClaim({ client, adapter, executionId: EXECUTION_ID });
+
+  assert.equal(result.decision, PERSISTENT_DISPATCH_DECISIONS.RECONCILED);
+  assert.equal(result.status, "SUCCEEDED");
+  assert.equal(result.providerLookupPerformed, false);
+  assert.equal(adapter.calls.length, 0);
+  assert.equal(client.calls.length, 1);
+});
+
+test("reconciliation success without a usable receipt remains UNKNOWN", async () => {
+  const client = fakeReconciliationClient();
+  const adapter = fakeReconciler({ result: {
+    state: "SUCCEEDED",
+    authoritative: true,
+    method: "receipt_lookup",
+    providerState: "succeeded",
+    checkedAt: "2099-01-01T10:01:00.000Z",
+    receipt: { token: "private", nested: { id: "not-allowlisted" } },
+  } });
+  const result = await reconcileThroughTrustedClaim({ client, adapter, executionId: EXECUTION_ID });
+
+  assert.equal(result.reasonCode, "RECONCILED_SUCCESS_WITHOUT_USABLE_RECEIPT");
+  assert.equal(result.decision, PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED);
+  assert.equal(client.calls.length, 1);
+});
+
+test("reconciliation persistence ambiguity never invokes provider lookup twice", async () => {
+  const client = fakeReconciliationClient({ finalError: { message: "response lost after commit" } });
+  const adapter = fakeReconciler();
+  const result = await reconcileThroughTrustedClaim({ client, adapter, executionId: EXECUTION_ID });
+
+  assert.equal(result.reasonCode, "RECONCILIATION_PERSISTENCE_UNCONFIRMED");
+  assert.equal(result.decision, PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED);
+  assert.equal(adapter.calls.length, 1);
+  assert.equal(client.calls.length, 2);
 });
 
 test("invalid configuration fails before making any RPC or provider call", async () => {
