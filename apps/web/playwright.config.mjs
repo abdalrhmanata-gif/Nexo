@@ -22,6 +22,7 @@ export default defineConfig({
     baseURL: process.env.ZAVQERA_E2E_BASE_URL || DEFAULT_BASE_URL,
     headless: true,
     trace: "retain-on-failure",
-    screenshot: "on",
+    // Keep useful failure screenshots without triggering Playwright 1.55 fixture-step reporter noise on successful runs.
+    screenshot: "only-on-failure",
   },
 });
