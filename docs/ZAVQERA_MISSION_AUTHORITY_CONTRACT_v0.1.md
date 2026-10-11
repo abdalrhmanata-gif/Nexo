@@ -129,7 +129,7 @@ This section deliberately distinguishes documents and static review from verifie
 - Production asymmetric signing, key rotation, replay/nonce protection, or a complete revocation service.
 - Atomic cross-attempt budget reservation and concurrency/TOCTOU guarantees at a live external execution boundary.
 - A real provider adapter with independently reconciled receipts and business outcomes.
-- Passing isolated authenticated browser E2E and cleanup evidence; the documented environment is blocked because Docker/native Supabase CLI are absent there.
+- **Isolated authenticated browser E2E and cleanup evidence now PASS in CI** on 2026-10-11 (W21 run `38127303140`): disposable PostgreSQL 17 migration replay, pgTAP, AI quota/plan/workspace security checks, full Chromium E2E, disposable-stack cleanup verification, and diagnostics/evidence uploads all succeeded. This verifies the CI harness and covered scenarios; it does not prove universal external side-effect enforcement or live provider delivery.
 
 Therefore v0.1 is a **design contract and acceptance baseline**, not a statement that the authority layer is implemented, production-secure, or universally enforced.
 
@@ -146,3 +146,21 @@ Therefore v0.1 is a **design contract and acceptance baseline**, not a statement
 ## 10. Compatibility rule
 
 This document adds no schema and defines no database migration, RPC name, cryptographic wire format, or provider-specific API. Where it appears to conflict with an existing versioned contract, do not silently change the older contract; record the discrepancy and review it before implementation.
+
+
+## Evidence addendum — 2026-10-11 — HEAD `154868ba51eea357f63af07186a511e483b83199`
+
+The following automated gates passed on this exact branch HEAD:
+
+- Web Unit: PASS — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38127303166
+- Web CI / TypeScript / production build: PASS — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38127303134
+- Flutter CI: PASS — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38127303128
+- W25 isolated PostgreSQL atomic fence: PASS — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38127303101
+- W21 Local Launch Gate: PASS — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38127303140
+- Netlify Deploy Preview workflow: PASS — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38127303092
+
+W21 evidence:
+- Browser diagnostics artifact (screenshots and E2E log): https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38127303140/artifacts/11697673827
+- Disposable-run evidence and cleanup proof: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38127303140/artifacts/11697449113
+
+This evidence does not change the authority contract's implementation status. The current controlled adapter has additional input-budget validation and exact approval audience/policy-version binding tests, but the universal provider-neutral just-in-time enforcement boundary across every external side effect remains **NOT ESTABLISHED**. Authenticated hosted Mission Research/citation/history persistence and real Resend invitation delivery remain **NOT VERIFIED**. Supabase Development still reports `auth_leaked_password_protection` **WARN / Disabled**. PR #29 remains OPEN / Draft / UNMERGED; Supabase Main/Production remains untouched.
