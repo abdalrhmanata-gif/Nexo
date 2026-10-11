@@ -13,6 +13,9 @@ function publicError(message: string, code?: string) {
   if (message.includes("AGENT_AUTHORITY_CHANGED")) return { status: 409, error: "Agent authority changed. Review the current authority before retrying." };
   if (message.includes("APPROVAL_REQUIRED")) return { status: 403, error: "Current approval is missing or no longer valid." };
   if (message.includes("EXECUTION_NOT_RUNNING")) return { status: 409, error: "This execution is no longer running." };
+  if (message.includes("EXECUTION_BUDGET_NOT_RELEASED_FOR_RETRY")) return { status: 409, error: "This attempt still holds its authority budget. Retry is allowed only after trusted evidence proves the external request was not sent." };
+  if (message.includes("AUTHORITY_BUDGET_EXHAUSTED")) return { status: 409, error: "The approved action or spend budget is exhausted. Review the mission authority before starting another external action." };
+  if (message.includes("AUTHORITY_BUDGET_BINDING_MISMATCH")) return { status: 409, error: "The mission authority budget changed. Request a fresh approval for the current budget revision." };
   if (message.includes("EXECUTION_IDEMPOTENCY_BINDING_MISMATCH")) return { status: 409, error: "The retry key is already bound to another execution." };
   if (message.includes("INVALID_EXECUTION_IDEMPOTENCY_KEY")) return { status: 400, error: "The retry request key is invalid." };
   if (message.includes("MISSION_CLOSED")) return { status: 409, error: "This mission is closed and cannot be retried." };

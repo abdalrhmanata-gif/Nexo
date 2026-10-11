@@ -122,6 +122,7 @@ jobs:
           cp "$GITHUB_WORKSPACE/supabase/tests/w64_read_only_research_completion.sql" "$workdir/supabase/tests/w64_read_only_research_completion.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w65_agent_execution_table_write_boundary.sql" "$workdir/supabase/tests/w65_agent_execution_table_write_boundary.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w66_service_role_table_privilege_hardening.sql" "$workdir/supabase/tests/w66_service_role_table_privilege_hardening.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w68_mission_authority_budget_reservations.sql" "$workdir/supabase/tests/w68_mission_authority_budget_reservations.sql"
           cat > "$workdir/supabase/migrations/20260921180005_e2e_historical_auth_compat.sql" <<'SQL'
           create schema if not exists private;
           create or replace function private.handle_new_user_profile()
@@ -200,12 +201,18 @@ jobs:
             supabase test db supabase/tests/w64_read_only_research_completion.sql
             supabase test db supabase/tests/w65_agent_execution_table_write_boundary.sql
             supabase test db supabase/tests/w66_service_role_table_privilege_hardening.sql
+            supabase test db supabase/tests/w68_mission_authority_budget_reservations.sql
           )
 
       - name: Run actual-ledger concurrent idempotency proof
         run: |
           set -euo pipefail
           bash "$GITHUB_WORKSPACE/tool/w67_actual_execution_idempotency_race.sh"
+
+      - name: Run actual-ledger atomic authority-budget race
+        run: |
+          set -euo pipefail
+          bash "$GITHUB_WORKSPACE/tool/w68_actual_authority_budget_race.sh"
 
       - name: Run full launch-gate browser E2E
         working-directory: apps/web

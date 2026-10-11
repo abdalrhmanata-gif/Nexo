@@ -119,3 +119,18 @@ W66's dedicated pgTAP test is now wired into W21 and passed on the later candida
 ## W67 evidence and remaining budget-fence design — 2026-10-11
 
 W67 is a provider-free test of the real persisted start RPC. It establishes concurrency/replay behavior for a single idempotency key in `public.agent_executions`, not action/spend consumption. This is an important narrow proof, not production authorization certification. Do not mark issue #25 complete until the actual authority-budget row/counter and dispatch fence have an independent-session proof.
+
+
+## W68 implementation candidate — persistent budget reservation (2026-10-11)
+
+W68 adds a branch-only migration for durable `mission_authority_budgets` rows and execution-linked reservation records over the actual `public.agent_executions` ledger. The guarded start RPC resolves idempotency before budget checks, binds the current authority hash/revision into the exact approval scope, locks the budget row, increments action/spend reservations, creates the execution, and inserts its reservation in one transaction. Budget configuration/revocation is restricted to workspace owners/admins; direct table access is revoked from both authenticated clients and `service_role`.
+
+Settlement is deliberately conservative:
+- A trusted successful receipt converts one reserved action to consumed and consumes only the receipt's normalized charge amount in the approved currency.
+- A failed/blocked attempt releases reservation only with trusted evidence explicitly stating both `provider_not_sent=true` and `safe_to_retry=true`.
+- Other failure/timeout ambiguity becomes `UNKNOWN`, records reconciliation-required evidence and retains the budget reservation. Retry is refused unless a prior reservation is released.
+- Retry starts a new execution attempt and re-reserves allowance under the same active budget revision.
+
+The new pgTAP test covers admin-only budget configuration, actual ledger reservation, trusted charge settlement, safe-no-send release, retry re-reservation, UNKNOWN hold, and exhaustion denial. W21 also invokes a separate two-session PostgreSQL 17 race against the actual `public.start_agent_execution` RPC and budget table; it expects exactly one winner for a one-action budget. This is a **candidate implementation** until that exact commit passes all CI gates.
+
+**Limit remains:** W68 fences budget reservation at the database start boundary. It does not establish a universal just-in-time authority recheck immediately before every real external I/O, and the web branch has no certified production side-effect provider adapter or real-provider reconciliation. Do not enable external dispatch based on W68 alone. No hosted Development or Production migration was applied.
