@@ -207,6 +207,7 @@ jobs:
           set -e
           if [ -d test-results ]; then cp -R test-results "$RUNNER_TEMP/w21-playwright/test-results"; fi
           if [ -d playwright-report ]; then cp -R playwright-report "$RUNNER_TEMP/w21-playwright/playwright-report"; fi
+          if [ -d "$RUNNER_TEMP/zavqera-e2e/playwright-results" ]; then cp -R "$RUNNER_TEMP/zavqera-e2e/playwright-results" "$RUNNER_TEMP/w21-playwright/playwright-results"; fi
           exit "$status"
 
       - name: Cleanup disposable Supabase stack
