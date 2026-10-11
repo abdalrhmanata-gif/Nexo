@@ -245,7 +245,7 @@ test("fails closed when persisted budget counters or caps are malformed", async 
     { maxActions: -1 },
     { maxActions: 0.5 },
     { maxSpend: -1 },
-    { maxSpend: Number.POSITIVE_INFINITY },
+    { maxSpend: "10" },
   ]) {
     const { adapter, external, store } = setup({ authorityOverrides });
     const result = await adapter.execute(request());
