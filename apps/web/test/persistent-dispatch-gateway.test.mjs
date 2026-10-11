@@ -369,7 +369,7 @@ function fakeReconciler({ result, error } = {}) {
         authoritative: true,
         method: "provider_lookup",
         providerState: "succeeded",
-        checkedAt: "2099-01-01T10:01:00.000Z",
+        checkedAt: new Date().toISOString(),
         receipt: { id: "reconciled-provider-ref", charge_amount: 2.5, currency: "NOK" },
       };
     },
@@ -404,7 +404,7 @@ test("authoritative no-send reconciliation releases the held reservation through
     authoritative: true,
     method: "idempotency_key_lookup",
     providerState: "not_found",
-    checkedAt: "2099-01-01T10:01:00.000Z",
+    checkedAt: new Date().toISOString(),
   } });
   const result = await reconcileThroughTrustedClaim({ client, adapter, executionId: EXECUTION_ID });
 
@@ -470,7 +470,7 @@ test("reconciliation success without a usable receipt remains UNKNOWN", async ()
     authoritative: true,
     method: "receipt_lookup",
     providerState: "succeeded",
-    checkedAt: "2099-01-01T10:01:00.000Z",
+    checkedAt: new Date().toISOString(),
     receipt: { token: "private", nested: { id: "not-allowlisted" } },
   } });
   const result = await reconcileThroughTrustedClaim({ client, adapter, executionId: EXECUTION_ID });

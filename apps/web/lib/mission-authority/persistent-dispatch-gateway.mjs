@@ -299,6 +299,7 @@ function validAuthoritativeLookup(result, expectedResult) {
   if (!RECONCILIATION_METHODS.has(result.method)) return false;
   if (!nonEmpty(result.providerState) || result.providerState.length > 100) return false;
   if (result.state !== expectedResult) return false;
+  if (!nonEmpty(result.checkedAt)) return false;
   const checkedAt = Date.parse(result.checkedAt);
   return Number.isFinite(checkedAt) && checkedAt <= Date.now() + 5 * 60 * 1000;
 }
