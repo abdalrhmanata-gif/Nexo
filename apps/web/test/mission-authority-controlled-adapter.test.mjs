@@ -87,6 +87,37 @@ test("allows one exact bound execution and records a correlated receipt", async 
   assert.ok(attempt.receipt.externalId);
 });
 
+test("a provider-reported failure returns DENY rather than ALLOW", async () => {
+  const { adapter } = setup({
+    outcome: { state: ATTEMPT_STATES.FAILED, receipt: { errorCode: "provider-rejected" } },
+  });
+  const result = await adapter.execute(request());
+  assert.equal(result.decision, DECISIONS.DENY);
+  assert.equal(result.reasonCode, "EXTERNAL_FAILED");
+  assert.equal(result.state, ATTEMPT_STATES.FAILED);
+});
+
+test("dispatch cannot self-assert RECONCILED_NOT_SENT without reconciliation evidence", async () => {
+  const { adapter, external } = setup({
+    outcome: {
+      state: ATTEMPT_STATES.RECONCILED_NOT_SENT,
+      receipt: { evidenceId: "untrusted-dispatch-claim" },
+    },
+  });
+  const result = await adapter.execute(request());
+  assert.equal(result.decision, DECISIONS.RECONCILE_REQUIRED);
+  assert.equal(result.reasonCode, "UNKNOWN_REQUIRES_RECONCILIATION");
+  assert.equal(external.calls().length, 1);
+
+  const attempt = (await adapter.reconcile(result.attemptId));
+  assert.equal(attempt.state, ATTEMPT_STATES.UNKNOWN);
+
+  const retry = await adapter.execute(request());
+  assert.equal(retry.decision, DECISIONS.RECONCILE_REQUIRED);
+  assert.equal(retry.reasonCode, "UNKNOWN_REQUIRES_RECONCILIATION");
+  assert.equal(external.calls().length, 1);
+});
+
 test("fails closed for cross-tenant, stale, revoked, expired, lease-mismatch and destination-mismatch requests", async () => {
   for (const [name, overrides] of Object.entries({
     crossTenant: { organizationId: "org-b", principalId: "user-b" },
