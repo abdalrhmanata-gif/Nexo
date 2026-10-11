@@ -54,3 +54,10 @@ does not provide durable evidence across workers or prove provider-specific
 reconciliation semantics. No migration, RPC, hosted project, or live provider
 was changed for this follow-up.
 
+## Dispatch-result classification and CI safety — 2026-10-11
+
+- The controlled adapter now treats provider-reported `FAILED` as `DENY`, and only treats `ACCEPTED` / `SUCCEEDED` as successful dispatch outcomes.
+- Missing, malformed, or unrecognized dispatch results remain `UNKNOWN` and require reconciliation. A dispatch result cannot self-assert `RECONCILED_NOT_SENT`; only the reconciliation path may accept explicit no-send evidence. Regression tests cover provider failure and a forged no-send claim.
+- The Netlify preview workflow's real OpenAI planning smoke test is now opt-in via the exact `[live-openai-planning]` marker in the same-repository PR body. Ordinary PR updates no longer make this live provider call. The separately gated authenticated Mission Research test remains controlled by `[live-openai-research]`.
+- These changes are recorded on the PR branch at `c882ba52049aeae06f88265cdb030d45d4850a5d`. CI must complete on the final updated HEAD before this follow-up is considered verified; no live OpenAI planning request was intentionally invoked by this change.
+
