@@ -17,6 +17,12 @@ export const ATTEMPT_STATES = Object.freeze({
   RECONCILED_NOT_SENT: "RECONCILED_NOT_SENT",
 });
 
+const PROVIDER_RESULT_STATES = new Set([
+  ATTEMPT_STATES.ACCEPTED,
+  ATTEMPT_STATES.SUCCEEDED,
+  ATTEMPT_STATES.FAILED,
+]);
+
 export class AuthorityViolation extends Error {
   constructor(code, message = code) {
     super(message);
@@ -326,17 +332,41 @@ export class InMemoryAuthorityStore {
       if (attempt.state !== ATTEMPT_STATES.UNKNOWN) return clone(attempt);
 
       const at = iso(nowMs(clock));
-      if (!externalRecord) {
+      if (externalRecord?.kind === "PROVEN_NOT_SENT" &&
+          typeof externalRecord.evidenceId === "string" &&
+          externalRecord.evidenceId.trim() !== "") {
         attempt.state = ATTEMPT_STATES.RECONCILED_NOT_SENT;
         attempt.updatedAt = at;
-        this.#journal.push({ type: "RECONCILIATION", attemptId, result: DECISIONS.RETRYABLE_NOT_SENT, at });
+        this.#journal.push({
+          type: "RECONCILIATION",
+          attemptId,
+          result: DECISIONS.RETRYABLE_NOT_SENT,
+          evidenceId: externalRecord.evidenceId,
+          at,
+        });
         return clone(attempt);
       }
 
-      attempt.state = externalRecord.state;
-      attempt.receipt = clone(externalRecord.receipt ?? null);
+      if (externalRecord?.kind !== "FOUND" ||
+          !PROVIDER_RESULT_STATES.has(externalRecord.record?.state)) {
+        this.#journal.push({
+          type: "RECONCILIATION",
+          attemptId,
+          result: DECISIONS.RECONCILE_REQUIRED,
+          at,
+        });
+        return clone(attempt);
+      }
+
+      attempt.state = externalRecord.record.state;
+      attempt.receipt = clone(externalRecord.record.receipt ?? null);
       attempt.updatedAt = at;
-      this.#journal.push({ type: "RECONCILIATION", attemptId, result: externalRecord.state, at });
+      this.#journal.push({
+        type: "RECONCILIATION",
+        attemptId,
+        result: externalRecord.record.state,
+        at,
+      });
       return clone(attempt);
     });
   }
@@ -350,6 +380,7 @@ export class InMemoryAuthorityStore {
 export class FakeExternalSystem {
   #calls = [];
   #records = new Map();
+  #notSentProofs = new Map();
   #script = new Map();
 
   setOutcome(idempotencyKey, outcome) {
@@ -361,7 +392,13 @@ export class FakeExternalSystem {
   }
 
   lookup(idempotencyKey) {
-    return clone(this.#records.get(idempotencyKey) ?? null);
+    const record = this.#records.get(idempotencyKey);
+    if (record) return { kind: "FOUND", record: clone(record) };
+
+    const proof = this.#notSentProofs.get(idempotencyKey);
+    if (proof) return { kind: "PROVEN_NOT_SENT", evidenceId: proof.evidenceId };
+
+    return { kind: "INCONCLUSIVE" };
   }
 
   async dispatch({ idempotencyKey, payload }) {
@@ -377,6 +414,10 @@ export class FakeExternalSystem {
       throw new UnknownExternalResult();
     }
     if (outcome.kind === "UNKNOWN_BEFORE_SEND") {
+      this.#notSentProofs.set(idempotencyKey, { evidenceId: randomUUID() });
+      throw new UnknownExternalResult("The fake provider has authoritative proof that no request was sent.");
+    }
+    if (outcome.kind === "UNKNOWN_INCONCLUSIVE") {
       throw new UnknownExternalResult("Dispatch result cannot be established.");
     }
     if (outcome.kind === "TRANSPORT_ERROR") {
@@ -444,3 +485,4 @@ export class ControlledServerAdapter {
     return this.authorityStore.reconcile(attemptId, externalRecord, this.clock);
   }
 }
+

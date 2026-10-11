@@ -291,8 +291,8 @@ test("UNKNOWN never retries blindly and reconciliation resolves a sent request",
   assert.ok(reconciled.receipt.externalId);
 });
 
-test("UNKNOWN with no external record becomes explicitly retryable only after reconciliation", async () => {
-  const { adapter, external } = setup({ outcome: { kind: "UNKNOWN_BEFORE_SEND" } });
+test("UNKNOWN becomes retryable only after explicit authoritative no-send evidence", async () => {
+  const { adapter, external, store } = setup({ outcome: { kind: "UNKNOWN_BEFORE_SEND" } });
   const first = await adapter.execute(request());
   assert.equal(first.decision, DECISIONS.RECONCILE_REQUIRED);
   assert.equal(external.calls().length, 1);
@@ -303,10 +303,29 @@ test("UNKNOWN with no external record becomes explicitly retryable only after re
 
   const reconciled = await adapter.reconcile(first.attemptId);
   assert.equal(reconciled.state, ATTEMPT_STATES.RECONCILED_NOT_SENT);
+  const reconciliation = store.getJournal().at(-1);
+  assert.equal(reconciliation.result, DECISIONS.RETRYABLE_NOT_SENT);
+  assert.ok(reconciliation.evidenceId);
 
   const retry = await adapter.execute(request({ idempotencyKey: "idem-2" }));
   assert.equal(retry.decision, DECISIONS.DENY); // budget remains consumed until a durable refund policy is designed.
   assert.equal(retry.reasonCode, "ACTION_BUDGET_EXHAUSTED");
+  assert.equal(external.calls().length, 1);
+});
+
+test("an inconclusive provider lookup leaves UNKNOWN unresolved and blocks retry", async () => {
+  const { adapter, external, store } = setup({ outcome: { kind: "UNKNOWN_INCONCLUSIVE" } });
+  const first = await adapter.execute(request());
+  assert.equal(first.decision, DECISIONS.RECONCILE_REQUIRED);
+  assert.equal(external.calls().length, 1);
+
+  const reconciled = await adapter.reconcile(first.attemptId);
+  assert.equal(reconciled.state, ATTEMPT_STATES.UNKNOWN);
+  assert.equal(store.getJournal().at(-1).result, DECISIONS.RECONCILE_REQUIRED);
+
+  const retry = await adapter.execute(request());
+  assert.equal(retry.decision, DECISIONS.RECONCILE_REQUIRED);
+  assert.equal(retry.reasonCode, "UNKNOWN_REQUIRES_RECONCILIATION");
   assert.equal(external.calls().length, 1);
 });
 
@@ -334,3 +353,4 @@ test("unexpected transport failure is fail-closed as UNKNOWN", async () => {
   assert.equal(retry.decision, DECISIONS.RECONCILE_REQUIRED);
   assert.equal(external.calls().length, 1);
 });
+

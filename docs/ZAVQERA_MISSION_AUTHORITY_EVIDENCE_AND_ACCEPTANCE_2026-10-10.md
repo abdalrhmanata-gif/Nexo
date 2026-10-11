@@ -43,3 +43,14 @@ Run these using disposable PostgreSQL and fake adapters first. Do not add migrat
 ## Current decision
 
 Automated gates are green on the reviewed head. Overall product launch remains **BLOCKED** by the unverified hosted integrations and incomplete proof of the universal external execution authority/reconciliation boundary.
+
+## Reconciliation hardening — 2026-10-11
+
+The isolated fake-adapter seam now distinguishes an authoritative provider
+receipt, explicit proof that a request was not sent, and an inconclusive lookup.
+A missing record alone leaves the attempt `UNKNOWN`; replay remains blocked until
+reconciliation produces evidence. This closes a unit-model ambiguity only. It
+does not provide durable evidence across workers or prove provider-specific
+reconciliation semantics. No migration, RPC, hosted project, or live provider
+was changed for this follow-up.
+
