@@ -202,6 +202,7 @@ jobs:
             supabase test db supabase/tests/w65_agent_execution_table_write_boundary.sql
             supabase test db supabase/tests/w66_service_role_table_privilege_hardening.sql
             supabase test db supabase/tests/w68_mission_authority_budget_reservations.sql
+            supabase test db supabase/tests/w69_agent_execution_dispatch_claim.sql
           )
 
       - name: Run actual-ledger concurrent idempotency proof
@@ -213,6 +214,11 @@ jobs:
         run: |
           set -euo pipefail
           bash "$GITHUB_WORKSPACE/tool/w68_actual_authority_budget_race.sh"
+
+      - name: Run actual-ledger one-time dispatch-claim race
+        run: |
+          set -euo pipefail
+          bash "$GITHUB_WORKSPACE/tool/w69_actual_dispatch_claim_race.sh"
 
       - name: Run full launch-gate browser E2E
         working-directory: apps/web

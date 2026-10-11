@@ -173,6 +173,7 @@ begin
   perform set_config('request.jwt.claim.role', 'service_role', true);
   perform set_config('request.jwt.claims',
     jsonb_build_object('sub', v_owner, 'role', 'service_role')::text, true);
+  select * into v_execution_a from public.claim_agent_execution_dispatch(v_execution_a.id);
   select * into v_execution_a from public.complete_agent_execution(
     v_execution_a.id, 'SUCCEEDED', '{"outcome":"confirmed"}'::jsonb,
     '{"provider_receipt":{"id":"w68-receipt-a","charge_amount":3,"currency":"USD"}}'::jsonb,
@@ -213,6 +214,7 @@ begin
   perform set_config('request.jwt.claim.role', 'service_role', true);
   perform set_config('request.jwt.claims',
     jsonb_build_object('sub', v_owner, 'role', 'service_role')::text, true);
+  select * into v_execution_b from public.claim_agent_execution_dispatch(v_execution_b.id);
   select * into v_execution_b from public.complete_agent_execution(
     v_execution_b.id, 'FAILED',
     '{"reason":"provider proved request was never sent"}'::jsonb,
@@ -248,6 +250,7 @@ begin
   perform set_config('request.jwt.claim.role', 'service_role', true);
   perform set_config('request.jwt.claims',
     jsonb_build_object('sub', v_owner, 'role', 'service_role')::text, true);
+  select * into v_retry_b from public.claim_agent_execution_dispatch(v_retry_b.id);
   select * into v_retry_b from public.complete_agent_execution(
     v_retry_b.id, 'SUCCEEDED', '{"outcome":"confirmed"}'::jsonb,
     '{"provider_receipt":{"id":"w68-receipt-b","charge_amount":2,"currency":"USD"}}'::jsonb,
@@ -276,6 +279,7 @@ begin
   perform set_config('request.jwt.claim.role', 'service_role', true);
   perform set_config('request.jwt.claims',
     jsonb_build_object('sub', v_owner, 'role', 'service_role')::text, true);
+  select * into v_execution_c from public.claim_agent_execution_dispatch(v_execution_c.id);
   select * into v_execution_c from public.complete_agent_execution(
     v_execution_c.id, 'FAILED', '{"reason":"provider failure did not prove no-send"}'::jsonb,
     '{"outcome":"FAILED","verified":false}'::jsonb, 'PROVIDER_FAILURE_UNCERTAIN', null

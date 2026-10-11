@@ -190,6 +190,17 @@ if [[ "$attempt_count" != "1" || "$reservation_count" != "1" || "$budget_state" 
   exit 1
 fi
 
+# Pass only the disposable attempt ID to the next CI step; no credentials or
+# database URL are persisted to the runner environment.
+winner_id="$(psql "$db_url" -X -qAt -v ON_ERROR_STOP=1 -c "select id::text from public.agent_executions where workspace_id='$workspace_id'::uuid and mission_id='$mission_id'::uuid and idempotency_key like 'w68-budget-race-%' order by created_at desc limit 1;")"
+if [[ ! "$winner_id" =~ ^[0-9a-f-]{36}$ ]]; then
+  echo "W68 failed: the winning execution ID could not be resolved." >&2
+  exit 1
+fi
+if [[ -n "${GITHUB_ENV:-}" ]]; then
+  printf 'ZAVQERA_W69_CLAIM_EXECUTION_ID=%s\n' "$winner_id" >> "$GITHUB_ENV"
+fi
+
 echo "W68_ACTUAL_AUTHORITY_BUDGET_RACE=PASS"
 echo "non_admin_budget_configuration_denied=PASS"
 echo "actual_ledger_one_winner_for_one_action_unit=PASS"
