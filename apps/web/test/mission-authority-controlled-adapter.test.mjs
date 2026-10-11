@@ -225,6 +225,37 @@ test("idempotency key cannot be rebound after authoritative revision changes", a
   assert.equal(external.calls().length, 1);
 });
 
+test("rejects negative, non-finite and non-numeric spend amounts without dispatch", async () => {
+  for (const amount of [-1, Number.NaN, Number.POSITIVE_INFINITY, "2"]) {
+    const { adapter, external, store } = setup();
+    const result = await adapter.execute(request({ amount }));
+    assert.equal(result.decision, DECISIONS.DENY, String(amount));
+    assert.equal(result.reasonCode, "INVALID_SPEND_AMOUNT", String(amount));
+    assert.equal(external.calls().length, 0, String(amount));
+    assert.equal(store.getJournal().some((entry) => entry.decision === DECISIONS.ALLOW), false, String(amount));
+  }
+});
+
+test("fails closed when persisted budget counters or caps are malformed", async () => {
+  for (const authorityOverrides of [
+    { spentActions: -1 },
+    { spentActions: 0.5 },
+    { spentAmount: -1 },
+    { spentAmount: Number.NaN },
+    { maxActions: -1 },
+    { maxActions: 0.5 },
+    { maxSpend: -1 },
+    { maxSpend: Number.POSITIVE_INFINITY },
+  ]) {
+    const { adapter, external, store } = setup({ authorityOverrides });
+    const result = await adapter.execute(request());
+    assert.equal(result.decision, DECISIONS.DENY);
+    assert.match(result.reasonCode, /^INVALID_(STORED_BUDGET|ACTION_BUDGET|SPEND_BUDGET)$/);
+    assert.equal(external.calls().length, 0);
+    assert.equal(store.getJournal().some((entry) => entry.decision === DECISIONS.ALLOW), false);
+  }
+});
+
 test("one remaining action budget cannot authorize two concurrent attempts", async () => {
   const { store, external } = setup();
   const requestB = request({ idempotencyKey: "idem-2" });
