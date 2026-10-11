@@ -15,10 +15,15 @@ insert into auth.users(id) values ('$owner');
 insert into public.workspaces(id,owner_id,name) values ('$workspace','$owner','W70 actual reconciliation race');
 insert into public.workspace_members(workspace_id,user_id,role) values ('$workspace','$owner','owner');
 insert into public.missions(id,workspace_id,owner_id,objective,status) values ('$mission','$workspace','$owner','Prove one reconciliation claimant','READY');
+select set_config('request.jwt.claim.sub', '$owner', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select set_config('request.jwt.claims', '{"sub":"$owner","role":"authenticated"}', true);
+set local role authenticated;
 insert into public.mission_actions(id,mission_id,title,position,status) values ('$action','$mission','W70 reconciliation action',0,'PENDING');
 insert into public.workspace_agents(id,workspace_id,name,description,status,authority,created_by)
 values ('$agent','$workspace','W70 reconciliation race agent','Disposable race test','ACTIVE',
 '{"mode":"bounded","external_side_effects":true,"requires_approval":true}'::jsonb,'$owner');
+reset role;
 insert into public.mission_authority_budgets(
  id,workspace_id,mission_id,agent_id,authority_revision,authority_hash,status,not_before,expires_at,
  action_limit,actions_reserved,actions_consumed,max_spend,max_spend_per_action,spend_reserved,spend_consumed,currency,created_by
