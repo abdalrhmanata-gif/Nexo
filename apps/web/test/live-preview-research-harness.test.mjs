@@ -65,10 +65,10 @@ test("Mission research opens the server-side agent/approval gate before calling 
 
 
 test("read-only research uses a narrow unverified completion boundary", () => {
-  assert.match(researchRoute, /supabase\\.rpc\\("complete_read_only_research_execution"/);
-  assert.doesNotMatch(researchRoute, /supabase\\.rpc\\("complete_agent_execution"/);
-  assert.match(researchRoute, /outcome: "SUCCEEDED", request_id: requestId, verified: false, sources: research\\.sources/);
-  assert.match(researchCompletionMigration, /requested_by <> auth\\.uid\\(\\)/);
+  assert.match(researchRoute, /supabase\.rpc\("complete_read_only_research_execution"/);
+  assert.doesNotMatch(researchRoute, /supabase\.rpc\("complete_agent_execution"/);
+  assert.match(researchRoute, /outcome: "SUCCEEDED", request_id: requestId, verified: false, sources: research\.sources/);
+  assert.match(researchCompletionMigration, /requested_by <> auth\.uid\(\)/);
   assert.match(researchCompletionMigration, /external_side_effects/);
   assert.match(researchCompletionMigration, /RESEARCH_RESULT_MUST_REMAIN_UNVERIFIED/);
 });
