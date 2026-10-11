@@ -454,6 +454,33 @@ export class ControlledServerAdapter {
           inputHash: decision.attemptId ? hashInput(request.input) : request.inputHash,
         },
       });
+
+      // A dispatch adapter cannot prove reconciliation merely by returning a
+      // state label. Only the reconciliation path may accept authoritative
+      // provider lookup evidence for RECONCILED_NOT_SENT.
+      if (!result || !PROVIDER_RESULT_STATES.has(result.state)) {
+        const attempt = await this.authorityStore.markResult(
+          decision.attemptId,
+          { state: ATTEMPT_STATES.UNKNOWN },
+          this.clock,
+        );
+        return {
+          decision: DECISIONS.RECONCILE_REQUIRED,
+          attemptId: attempt.attemptId,
+          reasonCode: "UNKNOWN_REQUIRES_RECONCILIATION",
+        };
+      }
+
+      if (result.state === ATTEMPT_STATES.FAILED) {
+        const attempt = await this.authorityStore.markResult(decision.attemptId, result, this.clock);
+        return {
+          decision: DECISIONS.DENY,
+          attemptId: attempt.attemptId,
+          reasonCode: "EXTERNAL_FAILED",
+          state: attempt.state,
+        };
+      }
+
       const attempt = await this.authorityStore.markResult(decision.attemptId, result, this.clock);
       return { decision: DECISIONS.ALLOW, attemptId: decision.attemptId, state: attempt.state, receipt: attempt.receipt };
     } catch (error) {
