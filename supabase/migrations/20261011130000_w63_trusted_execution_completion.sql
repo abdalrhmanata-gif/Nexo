@@ -50,6 +50,7 @@ $function$;
 
 revoke all on function private.agent_execution_has_meaningful_value(jsonb, integer)
   from public, anon, authenticated;
+grant usage on schema private to service_role;
 
 create or replace function private.complete_agent_execution(
   p_execution_id uuid,
