@@ -43,6 +43,8 @@ const RECEIPT_KEYS = new Set([
   "status",
   "created_at",
   "timestamp",
+  "charge_amount",
+  "currency",
 ]);
 
 const RECEIPT_STRING_LIMIT = 500;
@@ -87,6 +89,18 @@ export function sanitiseProviderReceipt(receipt) {
   const safe = {};
   for (const [key, value] of Object.entries(receipt)) {
     if (!RECEIPT_KEYS.has(key)) continue;
+    if (key === "charge_amount") {
+      // The database settles reserved spend only from a non-negative JSON number.
+      if (typeof value === "number" && Number.isFinite(value) && value >= 0) {
+        safe[key] = value;
+      }
+      continue;
+    }
+    if (key === "currency") {
+      // Match the budget ledger's ISO-style three-letter currency constraint.
+      if (typeof value === "string" && /^[A-Z]{3}$/.test(value)) safe[key] = value;
+      continue;
+    }
     if (typeof value === "string") {
       const trimmed = value.trim();
       if (trimmed && trimmed.length <= RECEIPT_STRING_LIMIT) safe[key] = trimmed;

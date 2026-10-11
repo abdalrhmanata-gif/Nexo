@@ -259,6 +259,53 @@ test("provider receipts are allowlisted and contain only bounded scalar referenc
   assert.equal(sanitiseProviderReceipt({ token: "secret", unknown: { id: "nested" } }), null);
 });
 
+test("paid-action receipt keeps bounded charge and currency for atomic budget settlement", async () => {
+  assert.deepEqual(sanitiseProviderReceipt({
+    id: "provider-payment-7",
+    charge_amount: 12.5,
+    currency: "NOK",
+    secret: "never-persist",
+  }), {
+    id: "provider-payment-7",
+    charge_amount: 12.5,
+    currency: "NOK",
+  });
+
+  const client = fakeClient();
+  const adapter = fakeAdapter({ result: {
+    state: "SUCCEEDED",
+    receipt: {
+      id: "provider-payment-7",
+      charge_amount: 12.5,
+      currency: "NOK",
+      secret: "never-persist",
+    },
+  } });
+  await dispatchThroughJitClaim({ client, adapter, executionId: EXECUTION_ID });
+  assert.deepEqual(client.calls[1].args.p_evidence.provider_receipt, {
+    id: "provider-payment-7",
+    charge_amount: 12.5,
+    currency: "NOK",
+  });
+});
+
+test("invalid charge amounts and currencies are removed from persisted receipts", () => {
+  assert.deepEqual(sanitiseProviderReceipt({
+    id: "provider-payment-8",
+    charge_amount: -1,
+    currency: "Nok",
+  }), {
+    id: "provider-payment-8",
+  });
+  assert.deepEqual(sanitiseProviderReceipt({
+    id: "provider-payment-9",
+    charge_amount: "12.5",
+    currency: "NO",
+  }), {
+    id: "provider-payment-9",
+  });
+});
+
 test("invalid configuration fails before making any RPC or provider call", async () => {
   const adapter = fakeAdapter();
   const result = await dispatchThroughJitClaim({ client: null, adapter, executionId: EXECUTION_ID });
