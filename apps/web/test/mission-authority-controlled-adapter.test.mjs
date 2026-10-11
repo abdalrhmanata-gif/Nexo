@@ -97,6 +97,24 @@ test("a provider-reported failure returns DENY rather than ALLOW", async () => {
   assert.equal(result.state, ATTEMPT_STATES.FAILED);
 });
 
+test("a success state without a usable provider receipt stays UNKNOWN", async () => {
+  const { adapter, external } = setup({
+    outcome: { state: ATTEMPT_STATES.SUCCEEDED, receipt: {} },
+  });
+  const first = await adapter.execute(request());
+  assert.equal(first.decision, DECISIONS.RECONCILE_REQUIRED);
+  assert.equal(first.reasonCode, "UNKNOWN_REQUIRES_RECONCILIATION");
+  assert.equal(external.calls().length, 1);
+
+  const reconciled = await adapter.reconcile(first.attemptId);
+  assert.equal(reconciled.state, ATTEMPT_STATES.UNKNOWN);
+
+  const retry = await adapter.execute(request());
+  assert.equal(retry.decision, DECISIONS.RECONCILE_REQUIRED);
+  assert.equal(retry.reasonCode, "UNKNOWN_REQUIRES_RECONCILIATION");
+  assert.equal(external.calls().length, 1);
+});
+
 test("dispatch cannot self-assert RECONCILED_NOT_SENT without reconciliation evidence", async () => {
   const { adapter, external } = setup({
     outcome: {
