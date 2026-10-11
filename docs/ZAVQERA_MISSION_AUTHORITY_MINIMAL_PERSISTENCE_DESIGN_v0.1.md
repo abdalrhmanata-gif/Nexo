@@ -89,7 +89,7 @@ This remains a **design-only** proposal. Read-only catalog inspection was repeat
 
 The feature branch and current Development schema now include a durable `public.agent_executions` ledger; workspace-scoped idempotency uniqueness; execution lease/recovery fields; W56/W60 replay/request binding; W57–W60 expiring exact approval scopes and consumption tombstones; W61/W62 bounded and redacted payload previews; W63 trusted-only generic completion with receipt/lease guards; W64 a narrow explicitly unverified read-only research completion path; and W65 direct-write revocation for client roles.
 
-W66 further removes direct table privileges from `service_role` so a leaked service key cannot bypass W63 solely through direct DML. **W66 is currently only in the PR branch, not the hosted Development migration registry**; it passed the disposable W21 pgTAP migration replay on HEAD `95fcbb5ee64548e2e5b4117284474c9ff0e34b01`. The read-only hosted privilege catalog still shows direct service_role table grants. No remote change was made.
+W66 further removes direct table privileges from `service_role` so a leaked service key cannot bypass W63 solely through direct DML. **W66 is currently only in the PR branch, not the hosted Development migration registry**. The W21 run on HEAD `95fcbb5ee64548e2e5b4117284474c9ff0e34b01` replayed the repository migrations, but the workflow did not yet copy or invoke the dedicated W66 pgTAP file. Thus no W66-specific test pass is claimed from that run. The read-only hosted privilege catalog still shows direct service_role table grants. No remote change was made.
 
 ### Evidence boundary for W25
 
