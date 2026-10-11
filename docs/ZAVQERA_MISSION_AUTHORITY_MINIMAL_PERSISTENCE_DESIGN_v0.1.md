@@ -79,3 +79,32 @@ This is a separate proof from the Web unit tests.
 Existing mission/action/history tables remain authoritative for their current responsibilities. New security state should reference them rather than overload their existing columns. Existing append-only history and auth.users -> private.handle_new_user_profile binding must remain intact.
 
 No production schema object is proposed by this document.
+
+
+## Evidence update — 2026-10-11 (W43–W66)
+
+This remains a **design-only** proposal. Read-only catalog inspection was repeated against hosted ZAVQERA Development on 2026-10-11; no hosted schema or grants were changed.
+
+### Existing primitives now available (W43–W66)
+
+The feature branch and current Development schema now include a durable `public.agent_executions` ledger; workspace-scoped idempotency uniqueness; execution lease/recovery fields; W56/W60 replay/request binding; W57–W60 expiring exact approval scopes and consumption tombstones; W61/W62 bounded and redacted payload previews; W63 trusted-only generic completion with receipt/lease guards; W64 a narrow explicitly unverified read-only research completion path; and W65 direct-write revocation for client roles.
+
+W66 further removes direct table privileges from `service_role` so a leaked service key cannot bypass W63 solely through direct DML. **W66 is currently only in the PR branch, not the hosted Development migration registry**; it passed the disposable W21 pgTAP migration replay on HEAD `95fcbb5ee64548e2e5b4117284474c9ff0e34b01`. The read-only hosted privilege catalog still shows direct service_role table grants. No remote change was made.
+
+### Evidence boundary for W25
+
+W25 runs a two-session test over dedicated disposable harness objects named `authority_state` and `execution_attempts`, using a test-only `authorize_attempt()` function. It successfully demonstrates one ALLOW for one remaining budget unit, unique idempotency, changed-binding refusal, UNKNOWN replay hold, revocation, expiry, destination and input-hash mismatch **inside that harness**.
+
+It does **not** yet prove that the app's current `public.start_agent_execution` RPC and `public.agent_executions` table atomically reserve Mission Authority action/spend budgets, or that the reservation is held across the external dispatch/receipt crash window. The current persistent ledger lacks dedicated normalized budget-counter/reservation fields for the full provider-neutral contract. JSON request and approval-scope bindings are useful protections but should not be presented as a universal JIT gate.
+
+### Next proof, still before any schema migration
+
+1. In disposable PostgreSQL 17 (never hosted Development), invoke the **actual** migration-replayed `public.start_agent_execution` RPC from two independently connected sessions. Verify same-key and different-key races create at most one execution per idempotency key and no replay is returned as dispatch permission.
+2. Test stale action/mission/agent authority and lease state against the same actual lock boundary, including revocation/expiry competing with a start.
+3. Demonstrate whether action/spend budget can be reserved atomically with start using the current schema. If not, record the smallest missing invariant and only then propose a separate minimal migration/RPC.
+4. Keep real external I/O behind a disabled/fake adapter in the test. A successful SQL start transaction is not proof that an external request was sent, nor that an UNKNOWN result can be reconciled with a real provider.
+5. Include evidence for grant checks and teardown; do not test against hosted Development/Main or attach any secrets to artifacts.
+
+The current six CI gates passed on HEAD `95fcbb5ee64548e2e5b4117284474c9ff0e34b01`, including Web Unit, Web CI/build, Flutter, W25, Netlify Preview verification and W21. W21 proved the current branch migrates and passes its pgTAP/E2E suite in a disposable local stack. This is not the missing actual-ledger budget/dispatch proof above.
+
+**No new schema/RPC is approved by this design update.** Keep issue #25 open until actual-ledger concurrency evidence is attached. PR #29 stays OPEN / Draft / UNMERGED; Supabase Main/Production and hosted Development remain unmodified.

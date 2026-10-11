@@ -35,3 +35,33 @@ The design must preserve current append-only history semantics and the actual au
 GitHub Actions is not exposing a workflow run for the new Web test workflow from this branch. The existing Flutter workflow has been extended to run the same Web controlled-adapter tests, but no run is yet visible. Therefore no CI PASS is claimed.
 
 No migration, RPC, RLS, grant, deployment, billing or Supabase Main change was made by this step.
+
+
+## Read-only Development schema follow-up — 2026-10-11 (W43–W66)
+
+This follow-up supersedes the historical 2026-10-01 schema snapshot where it conflicts with the present feature branch. It is based on a read-only catalog check of the connected **ZAVQERA Development** project on 2026-10-11. No table rows were read; no schema, grants, data, deployment, or billing were changed.
+
+### Current state observed
+
+- The live migration registry ends at **W65** (`20261011150000_w65_agent_execution_table_write_boundary`). W66 (`20261011160000_w66_service_role_table_privilege_hardening.sql`) exists on this feature branch and passed the disposable W21 pgTAP replay, but **has not been applied to hosted Development**.
+- Development contains `public.agent_executions` with attempt status, authority snapshot, request/result/evidence, idempotency key, lease/heartbeat, retry lineage and reconciliation timestamp. Workspace-scoped idempotency uniqueness and the W56/W60 duplicate and request-binding guards are present.
+- `public.mission_approvals` has explicit expiry and one-use consumption fields from W57–W60; the SQL scope binds the exact request/authority and destination/audience where execution approval is required. W61/W62 store a bounded payload-shape preview and redact secret/PII-like field names.
+- W63 restricts generic execution completion to the trusted service role, requires meaningful `provider_receipt` evidence for `SUCCEEDED`, and refuses completion after the execution lease expires. W64 provides a narrow authenticated completion route for the requesting user's read-only research, with explicit `verified=false`, source-shape checks and an active lease. W65 removes direct table write grants from public/anon/authenticated.
+- A separate read-only privilege query still showed direct table privileges for `service_role` in hosted Development. That is consistent with the fact W66 is branch-only. No live SQL was applied to address it.
+
+### What this does not prove
+
+1. The current ledger does not have dedicated, normalized columns/counters for all Mission Authority bindings and action/spend budget reservation. Some exact approval data is represented inside JSON scope, but that does not establish a common enforcement boundary for every dispatch.
+2. W25's two-session race proof creates its own `authority_state`, `execution_attempts` and `authorize_attempt()` test objects. It proves those test objects' concurrency semantics; **it does not call the current `public.start_agent_execution` RPC or prove that `public.agent_executions` atomically reserves Mission Authority action/spend budget at real provider dispatch**.
+3. There is no verified end-to-end path that couples an authoritative JIT decision, durable budget reservation, attempt creation, external I/O and provider-specific UNKNOWN reconciliation across independent workers.
+4. Hosted OpenAI Research/citations/history and real Resend inbox delivery remain unverified; automated tests use a disposable stack/mock where applicable.
+
+### Exact-head test evidence
+
+On candidate HEAD `95fcbb5ee64548e2e5b4117284474c9ff0e34b01`, all six automated gates passed: [Web Unit](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38169191379), [Web CI/build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38169191459), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38169191360), [W25 disposable PostgreSQL fence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38169191369), [Netlify Preview verification](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38169191404), and [W21 local launch gate](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38169191446). W21 completed PostgreSQL 17 migration replay/pgTAP, AI quota/plan/workspace security tests, browser E2E (2/2), disposable-stack cleanup verification and artifact uploads.
+
+### Decision
+
+Keep issue #25 open. Do not apply W66 to hosted Development from this session and do not add another table/RPC yet. The next proof should execute the actual existing `start_agent_execution` and `agent_executions` contract in an isolated disposable PostgreSQL 17 environment under two independent sessions, including idempotency/replay and stale/expired/revoked bindings. Then document the exact missing atomic budget invariant. Only propose new persistence if those tests isolate a gap the existing ledger cannot enforce. Production JIT dispatch and real-provider reconciliation remain **NOT ESTABLISHED**.
+
+PR #29 remains OPEN / Draft / UNMERGED. Supabase Main/Production remains untouched.
