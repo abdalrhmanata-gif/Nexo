@@ -201,3 +201,22 @@ The test verified one durable execution row and one `AGENT_EXECUTION_STARTED` ev
 - Browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38170577786/artifacts/11713514214
 
 **Scope limit:** W67 proves concurrent same-key idempotency against the actual ledger and RPC; it does **not** prove atomic action/spend budget reservation. The script explicitly emits `W67_BUDGET_RESERVATION=NOT_TESTED`. Production JIT dispatch and real-provider UNKNOWN reconciliation remain unverified. PR #29 remains OPEN / Draft / UNMERGED; production, hosted Development, DNS and billing were untouched.
+
+
+## Exact-head verification — W70 durable reconciliation — 2026-10-12
+
+Verified candidate HEAD: `cb0d4fbffad55695d8b4f1b9282f4d19757e4112`. All six automated gates passed on this exact commit:
+
+- Web Unit — **PASS, 294/294**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38185205841
+- Web CI / typecheck / production build — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38185205821
+- Flutter CI — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38185205874
+- W25 isolated PostgreSQL atomic fence — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38185205882
+- Netlify Deploy Preview verification — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38185205818
+- W21 Local Launch Gate — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38185205827
+
+W21 passed PostgreSQL 17 migration replay and pgTAP, AI quota/plan/workspace security tests, and all three actual-ledger races: W68 atomic authority-budget reservation, W69 one-time dispatch claim, and W70 one-time reconciliation claim. Browser E2E passed **2/2**. Cleanup was verified with `remaining_containers=none`, `remaining_volumes=none`, and `cleanup_verified=true`.
+
+- W21 evidence: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38185205827/artifacts/11718779733
+- W21 browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38185205827/artifacts/11719148549
+
+**Release boundary:** the SQL reconciliation contract and provider-neutral gateway seam are now present, but no production server route is wired to a real provider adapter. Hosted Research/citations/history, real Resend inbox delivery, human visual QA, and Development leaked-password protection remain open. PR #29 is OPEN / Draft / UNMERGED; no production deployment, Supabase Main change, DNS/billing change, or real provider side effect was performed.

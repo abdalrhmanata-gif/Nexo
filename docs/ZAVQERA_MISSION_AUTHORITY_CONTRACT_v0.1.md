@@ -199,3 +199,19 @@ Hosted authenticated Mission Research, real Resend invitation delivery, human vi
 - **Still missing:** the runtime schema has not established an atomic action/spend budget reservation at that same boundary. W67 explicitly says the budget check was not tested. Universal provider-neutral JIT enforcement, real-provider reconciliation, hosted Research/citations/history, real Resend inbox delivery, and human visual QA remain separate release acceptance items.
 
 The candidate HEAD `c1ce23840f442edcf7a84149f34e7b8b3ba460f4` passed Web Unit, Web CI/build, Flutter CI, W25, Netlify Preview verification and W21. This is automated candidate evidence, not production launch approval.
+
+
+## W68–W70 follow-up evidence — 2026-10-12
+
+Verified candidate HEAD: `cb0d4fbffad55695d8b4f1b9282f4d19757e4112`. This section supersedes earlier status notes about the missing persistent UNKNOWN-outcome reconciliation contract; it does not certify a real provider integration.
+
+- **W68 — persistent action/spend reservation:** the actual PostgreSQL ledger was raced from independent sessions. The test verified that action and spend reservations are atomic and cannot oversubscribe the same budget.
+- **W69 — one-time JIT dispatch claim:** the actual ledger race produced exactly one dispatch claim and rejected the concurrent claimant.
+- **W70 — durable UNKNOWN-outcome reconciliation:** a service-role-only RPC issues a five-minute reconciliation lease/token for an UNKNOWN external execution with a HELD_UNKNOWN reservation. A second concurrent worker is rejected. Finalization requires the matching unexpired token and authoritative lookup evidence; success requires a meaningful provider receipt and settles the held budget once, while failure releases it only when the trusted adapter proves the request was not sent and retry is safe. Over-cap charges leave the execution UNKNOWN and the reservation held. Exact success and no-send replay are idempotent.
+- **Provider-neutral gateway:** `reconcileThroughTrustedClaim` performs a lookup-only adapter call; it never calls `dispatch`. The gateway preserves `charge_amount` and `currency` through receipt sanitization, while rejecting negative amounts and malformed currencies.
+
+### Updated acceptance boundary
+
+The SQL contracts and provider-neutral gateway seam are now implemented and tested, including actual-ledger concurrency. The overall production JIT boundary remains **PARTIAL**, because neither `dispatchThroughJitClaim` nor `reconcileThroughTrustedClaim` is wired into a single production server worker that owns a real provider adapter. No live provider call was enabled.
+
+Hosted authenticated Mission Research, real Resend inbox delivery, human visual QA, and Development leaked-password protection remain separate release gates. Keep PR #29 OPEN / Draft / UNMERGED and keep Supabase Main/Production and production deployment untouched.
