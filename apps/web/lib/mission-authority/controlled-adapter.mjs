@@ -246,18 +246,35 @@ export class InMemoryAuthorityStore {
         }
       }
 
+      const requestedAmount = request.amount ?? 0;
+      if (typeof requestedAmount !== "number" || !Number.isFinite(requestedAmount) || requestedAmount < 0) {
+        return this.#deny("INVALID_SPEND_AMOUNT");
+      }
+      if (!Number.isSafeInteger(mission.spentActions) || mission.spentActions < 0 ||
+          !Number.isFinite(mission.spentAmount) || mission.spentAmount < 0) {
+        return this.#deny("INVALID_STORED_BUDGET");
+      }
+      if (mission.maxActions !== null && mission.maxActions !== undefined &&
+          (!Number.isSafeInteger(mission.maxActions) || mission.maxActions < 0)) {
+        return this.#deny("INVALID_ACTION_BUDGET");
+      }
+      if (mission.maxSpend !== null && mission.maxSpend !== undefined &&
+          (!Number.isFinite(mission.maxSpend) || mission.maxSpend < 0)) {
+        return this.#deny("INVALID_SPEND_BUDGET");
+      }
+
       if (mission.maxActions !== null && mission.maxActions !== undefined &&
           mission.spentActions >= mission.maxActions) {
         return this.#deny("ACTION_BUDGET_EXHAUSTED");
       }
 
       if (mission.maxSpend !== null && mission.maxSpend !== undefined &&
-          mission.spentAmount + (request.amount ?? 0) > mission.maxSpend) {
+          mission.spentAmount + requestedAmount > mission.maxSpend) {
         return this.#deny("SPEND_BUDGET_EXHAUSTED");
       }
 
       mission.spentActions += 1;
-      mission.spentAmount += request.amount ?? 0;
+      mission.spentAmount += requestedAmount;
 
       const attempt = {
         attemptId: randomUUID(),
