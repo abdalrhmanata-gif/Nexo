@@ -23,12 +23,21 @@ const PROVIDER_RESULT_STATES = new Set([
   ATTEMPT_STATES.FAILED,
 ]);
 
+function hasMeaningfulReceiptValue(value, depth = 0) {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "string") return value.trim() !== "";
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value === "boolean") return true;
+  if (typeof value !== "object" || depth >= 8) return false;
+
+  const values = Array.isArray(value) ? value : Object.values(value);
+  return values.some((entry) => hasMeaningfulReceiptValue(entry, depth + 1));
+}
+
 function hasProviderReceipt(result) {
   const receipt = result?.receipt;
   if (!receipt || typeof receipt !== "object" || Array.isArray(receipt)) return false;
-  return Object.values(receipt).some((value) => value !== null
-    && value !== undefined
-    && (typeof value !== "string" || value.trim() !== ""));
+  return hasMeaningfulReceiptValue(receipt);
 }
 
 function isReconciledProviderResult(result) {
