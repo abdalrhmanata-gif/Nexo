@@ -280,8 +280,12 @@ test("bounded research agent is explicitly read-only", () => {
 test("bounded research runs through the agent execution runtime", () => {
   const route = read("app/api/missions/[id]/research/route.ts");
   const migration = readFileSync(join(webRoot, "../../supabase/migrations/20261008152500_w43_bounded_agent_execution_runtime.sql"), "utf8");
+  const researchCompletion = readFileSync(join(webRoot, "../../supabase/migrations/20261011140000_w64_read_only_research_completion.sql"), "utf8");
   assert.ok(route.includes("start_agent_execution"));
-  assert.ok(route.includes("complete_agent_execution"));
+  assert.ok(route.includes("complete_read_only_research_execution"));
+  assert.ok(!route.includes("complete_agent_execution"));
+  assert.ok(researchCompletion.includes("RESEARCH_RESULT_MUST_REMAIN_UNVERIFIED"));
+  assert.ok(researchCompletion.includes("requested_by <> auth.uid()"));
   assert.ok(route.includes("ZAVQERA Research Agent"));
   assert.ok(migration.includes("agent_executions"));
   assert.ok(migration.includes("authority_snapshot"));
