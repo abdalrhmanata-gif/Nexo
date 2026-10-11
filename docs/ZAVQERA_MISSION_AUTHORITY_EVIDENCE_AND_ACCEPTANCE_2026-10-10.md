@@ -119,3 +119,12 @@ W21 details: both browser scenarios passed (`2 passed`); W63 and W64 pgTAP tests
 The real OpenAI planning and authenticated live OpenAI research checks remained skipped because the explicit opt-in markers were not present. Vercel status contexts still report the account's build-rate limit; Vercel was not used or modified. Netlify is the active preview path and its deploy-preview status is successful.
 
 **Launch decision remains BLOCKED.** These results prove the tested isolated harness and bounded routes, not production readiness, real provider provenance, hosted authenticated research persistence, invitation-email delivery, or a universal external-side-effect authority gateway. Supabase Main/Production was not changed, and PR #29 was not merged or marked ready.
+
+
+### Follow-up security fix — W65 — 2026-10-11
+
+A source audit found that W63's trusted-only completion RPC did not alone prevent forged execution state: the original W43 migration also granted `INSERT` and `UPDATE` on `public.agent_executions` to `authenticated`, with a broad workspace-editor update policy. That direct-table path could bypass the RPC boundary.
+
+W65 closes that bypass by revoking all direct table privileges from `PUBLIC`, `anon`, and `authenticated`, then granting authenticated users `SELECT` only (still subject to RLS). It removes the old editor insert/update policies. Creation, completion, cancellation, retry, and reconciliation must use their guarded RPCs. The dedicated pgTAP test asserts the privilege boundary and that the guarded start RPC remains callable while generic completion remains unavailable to authenticated clients.
+
+The W65 migration is included in W21's disposable PostgreSQL 17 migration replay and its pgTAP suite. This is a Development/PR candidate change only; no hosted Supabase project was migrated. The provider-neutral universal JIT dispatch boundary and real-provider reconciliation remain separate incomplete release gates.
