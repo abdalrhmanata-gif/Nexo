@@ -1,7 +1,7 @@
 /**
  * Server-side dispatch orchestration for the persistent W69 JIT gate.
  *
- * The caller MUST inject a service-role Supabase client and a trusted adapter.
+ * The caller MUST inject a privileged server-only Supabase client and a trusted adapter.
  * This module performs no network/provider work except the adapter.dispatch call.
  * No route currently wires a real provider to this module; tests use fake adapters.
  */
