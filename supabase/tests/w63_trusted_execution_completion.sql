@@ -34,7 +34,7 @@ select ok(lower(pg_get_functiondef('private.complete_agent_execution(uuid,text,j
   'completion implementation explicitly requires the trusted executor role');
 select ok(lower(pg_get_functiondef('private.complete_agent_execution(uuid,text,jsonb,jsonb,text,text)'::regprocedure))
   like '%provider_receipt_required%'
-  and lower(pg_get_functiondef('private.complete_agent_execution(uuid,text,jsonb,jsonb,text,jsonb,text)'::regprocedure))
+  and lower(pg_get_functiondef('private.complete_agent_execution(uuid,text,jsonb,jsonb,text,text)'::regprocedure))
     like '%execution_lease_expired_requires_reconciliation%',
   'completion requires receipt evidence and rejects expired leases');
 
