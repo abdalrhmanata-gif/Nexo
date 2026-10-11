@@ -84,17 +84,20 @@ begin
   values (v_workspace, v_owner, 'owner');
   insert into public.missions(id, workspace_id, owner_id, objective, status)
   values (v_mission, v_workspace, v_owner, 'Prove one-time JIT dispatch claim', 'READY');
+
+  -- The action guard intentionally requires an authenticated workspace editor.
+  -- Establish the disposable test identity before inserting the actions.
+  perform set_config('request.jwt.claim.sub', v_owner::text, true);
+  perform set_config('request.jwt.claim.role', 'authenticated', true);
+  perform set_config('request.jwt.claims',
+    jsonb_build_object('sub', v_owner, 'role', 'authenticated')::text, true);
+
   insert into public.mission_actions(id, mission_id, title, position, status)
   select v_actions[seq.idx], v_mission, 'W69 action ' || seq.idx, seq.idx - 1, 'PENDING'
     from generate_subscripts(v_actions, 1) as seq(idx);
   insert into public.workspace_agents(id, workspace_id, name, description, status, authority, created_by)
   values (v_agent, v_workspace, 'W69 bounded side-effect agent', 'Disposable JIT claim test', 'ACTIVE',
     '{"mode":"bounded","external_side_effects":true,"requires_approval":true}'::jsonb, v_owner);
-
-  perform set_config('request.jwt.claim.sub', v_owner::text, true);
-  perform set_config('request.jwt.claim.role', 'authenticated', true);
-  perform set_config('request.jwt.claims',
-    jsonb_build_object('sub', v_owner, 'role', 'authenticated')::text, true);
 
   v_budget := public.configure_mission_authority_budget(
     v_workspace, v_mission, v_agent, 4, 40, 10, 'USD',
