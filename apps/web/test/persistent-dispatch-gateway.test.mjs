@@ -8,8 +8,9 @@ import {
 } from "../lib/mission-authority/persistent-dispatch-gateway.mjs";
 
 const EXECUTION_ID = "d3d61c35-1f9d-4c97-9310-e125f9e7f1c1";
-const LEASE_EXPIRY = "2026-10-12T10:05:00.000Z";
-const CLAIM_TIME = "2026-10-12T10:00:00.000Z";
+// Keep ordinary success fixtures valid on reruns, regardless of wall-clock date.
+const CLAIM_TIME = new Date(Date.now() - 30_000).toISOString();
+const LEASE_EXPIRY = new Date(Date.now() + 5 * 60_000).toISOString();
 
 function validClaim(overrides = {}) {
   return {
@@ -145,6 +146,23 @@ test("malformed claimed row records a not-sent block without invoking the adapte
   assert.equal(client.calls[1].args.p_status, "BLOCKED");
   assert.equal(client.calls[1].args.p_evidence.provider_not_sent, true);
   assert.equal(client.calls[1].args.p_evidence.safe_to_retry, true);
+});
+
+test("expired dispatch claim never reaches the provider adapter", async () => {
+  const client = fakeClient({
+    claim: validClaim({ lease_expires_at: new Date(Date.now() - 1_000).toISOString() }),
+    completionError: { message: "EXECUTION_LEASE_EXPIRED_REQUIRES_RECONCILIATION" },
+  });
+  const adapter = fakeAdapter();
+  const result = await dispatchThroughJitClaim({ client, adapter, executionId: EXECUTION_ID });
+
+  assert.equal(result.decision, PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED);
+  assert.equal(result.reasonCode, "PRE_DISPATCH_BLOCK_SETTLEMENT_UNCONFIRMED");
+  assert.equal(result.blockReasonCode, "DISPATCH_CLAIM_LEASE_EXPIRED_BEFORE_PROVIDER_IO");
+  assert.equal(result.dispatched, false);
+  assert.equal(result.persisted, false);
+  assert.equal(adapter.calls.length, 0);
+  assert.equal(client.calls[1].args.p_status, "BLOCKED");
 });
 
 test("provider audience mismatch blocks after claim but before provider I/O", async () => {

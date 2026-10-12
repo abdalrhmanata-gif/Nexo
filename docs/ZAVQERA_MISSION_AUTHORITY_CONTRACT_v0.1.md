@@ -261,3 +261,12 @@ The following checks completed successfully on the code HEAD named above, before
 W21 included PostgreSQL 17 migration replay, the core pgTAP launch gate, the newly wired W63/W64/W65/W66/W68/W69/W70 Mission Authority SQL regressions, AI quota/plan/workspace security tests, four actual-ledger concurrency/race proofs, and 2/2 browser E2E scenarios. Cleanup was verified; evidence: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38209185284/artifacts/11728242645 and browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38209185284/artifacts/11728332228.
 
 This is automated candidate validation, not production approval. The provider registry remains empty. Hosted authenticated Research, real Resend delivery, human visual QA, Development leaked-password protection, and a reviewed real-provider adapter/reconciliation contract remain release gates. PR #29 remains OPEN / Draft / UNMERGED; Supabase Main/Production and production deployment remain untouched.
+
+
+## W71 stale external-execution recovery — 2026-10-12
+
+- Fixed a recovery handoff defect between W49 and W70: an expired `RUNNING` execution with `external_side_effects=true` is now changed to `UNKNOWN` only after its existing `RESERVED` budget reservation is locked and moved to `HELD_UNKNOWN`. Reserved/consumed action and spend counters do not change. Mission-history evidence records the hold.
+- If the reservation is absent, closed, or inconsistent with budget counters, recovery fails closed without changing the execution to `UNKNOWN`; it must not create the appearance that the budget can safely be retried.
+- Added a PostgreSQL 17/pgTAP regression that recovers an expired external attempt, verifies counters stay held, and proves the W70 trusted reconciliation claim can then be acquired. A negative case proves missing reservation remains `RUNNING` rather than silently dropping the budget fence.
+- The web gateway now validates the execution lease expiry against the current wall clock before invoking the provider adapter. An expired claim never reaches provider I/O; if its BLOCKED settlement cannot be confirmed because the lease has expired, the gateway returns reconciliation-required rather than retrying.
+- The provider registry remains intentionally empty. These controls improve the future adapter boundary but do not certify any real provider or authorize production dispatch.

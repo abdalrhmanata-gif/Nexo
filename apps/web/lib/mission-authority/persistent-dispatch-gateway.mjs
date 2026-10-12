@@ -129,7 +129,10 @@ function validClaim(claim, executionId) {
   if (!nonEmpty(claim.request.destination) || !nonEmpty(claim.request.audience)) return false;
   const claimedAt = Date.parse(claim.dispatch_claimed_at);
   const expiresAt = Date.parse(claim.lease_expires_at);
-  return Number.isFinite(claimedAt) && Number.isFinite(expiresAt) && claimedAt < expiresAt;
+  return Number.isFinite(claimedAt)
+    && Number.isFinite(expiresAt)
+    && claimedAt < expiresAt
+    && expiresAt > Date.now();
 }
 
 function claimEnvelope(claim) {
@@ -212,6 +215,7 @@ async function blockBeforeDispatch(client, executionId, reasonCode, claim = null
       : PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED,
     executionId,
     reasonCode: settlement.ok ? reasonCode : "PRE_DISPATCH_BLOCK_SETTLEMENT_UNCONFIRMED",
+    blockReasonCode: reasonCode,
     dispatched: false,
     persisted: settlement.ok,
     status: settlement.row?.status ?? null,
@@ -551,7 +555,11 @@ export async function dispatchThroughJitClaim({ client, adapter, executionId }) 
     // A successful RPC may have committed the one-time claim even if its
     // returned representation is malformed. We know this gateway did not call
     // the adapter, so record a trusted not-sent block rather than retry blindly.
-    return blockBeforeDispatch(client, executionId, "INVALID_DISPATCH_CLAIM_RECORD");
+    const leaseExpiry = Date.parse(claimRow?.lease_expires_at ?? "");
+    const reasonCode = Number.isFinite(leaseExpiry) && leaseExpiry <= Date.now()
+      ? "DISPATCH_CLAIM_LEASE_EXPIRED_BEFORE_PROVIDER_IO"
+      : "INVALID_DISPATCH_CLAIM_RECORD";
+    return blockBeforeDispatch(client, executionId, reasonCode);
   }
 
   if (adapter.audience !== claimRow.request.audience) {
