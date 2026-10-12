@@ -54,7 +54,17 @@ const success = await dispatchThroughJitClaim({
   adapter: successAdapter,
   executionId: successExecutionId,
 });
-assert.equal(success.decision, PERSISTENT_DISPATCH_DECISIONS.DISPATCHED);
+assert.equal(
+  success.decision,
+  PERSISTENT_DISPATCH_DECISIONS.DISPATCHED,
+  `W72 success path failed: ${JSON.stringify({
+    decision: success.decision,
+    reasonCode: success.reasonCode,
+    status: success.status,
+    persisted: success.persisted,
+    dispatched: success.dispatched,
+  })}`,
+);
 assert.equal(success.status, "SUCCEEDED");
 assert.equal(success.persisted, true);
 assert.equal(successDispatchCalls, 1);
