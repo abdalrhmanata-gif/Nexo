@@ -1,8 +1,6 @@
 -- W77: cap and allowlist the authenticated read-only research completion payload.
 -- A research result remains user-owned and unverified; it is not provider-side execution evidence.
 
--- W77: bound and allowlist authenticated read-only research completion payloads.
--- This remains a user-owned, unverified result path and cannot finalize external effects.
 create or replace function private.complete_read_only_research_execution(
   p_execution_id uuid,
   p_status text,
@@ -36,8 +34,6 @@ begin
      or p_evidence is null or jsonb_typeof(p_evidence) is distinct from 'object' then
     raise exception 'INVALID_RESEARCH_EXECUTION_PAYLOAD' using errcode = '22023';
   end if;
-  -- Bound persisted JSON and operator-facing error fields before any row locks or writes.
-  -- 50 KB permits a 12,000-character UTF-8 summary; 96 KB permits 12 bounded citations.
   if octet_length(p_result::text) > 50000
      or octet_length(p_evidence::text) > 98304
      or coalesce(char_length(v_error_code), 0) > 128
@@ -167,6 +163,7 @@ begin
        or jsonb_typeof(p_evidence -> 'sources') is distinct from 'array' then
       raise exception 'INVALID_RESEARCH_RESULT_SHAPE' using errcode = '22023';
     end if;
+
     v_source_count := (p_result ->> 'source_count')::integer;
     if v_source_count < 0 or v_source_count > 12
        or jsonb_array_length(p_evidence -> 'sources') <> v_source_count then
@@ -189,195 +186,6 @@ begin
          or (v_source ->> 'url') ~ '[[:space:]]'
          or char_length(v_source ->> 'url') > 4096
          or jsonb_typeof(v_source -> 'title') is distinct from 'string'
-         or nullif(btrim(v_source ->> 'title'), '') is null
-         or char_length(v_source ->> 'title') > 500 then
-        raise exception 'INVALID_RESEARCH_SOURCE' using errcode = '22023';
-      end if;
-    end loop;
-  end if;
-
-  if v_execution.status <> 'RUNNING' then
-    if v_execution.status = p_status
-       and v_execution.result is not distinct from p_result
-       and v_execution.evidence is not distinct from p_evidence
-       and v_execution.error_code is not distinct from v_error_code
-       and v_execution.error_message is not distinct from v_error_message then
-      return v_execution;
-    end if;
-    raise exception 'EXECUTION_ALREADY_FINALIZED' using errcode = '22023';
-  end if;
-
-  v_now := clock_timestamp();
-  if v_execution.lease_expires_at <= v_now then
-    raise exception 'EXECUTION_LEASE_EXPIRED_REQUIRES_RECONCILIATION' using errcode = '22023';
-  end if;
-
-  update public.agent_executions
-     set status = p_status,
-         result = p_result,
-         evidence = p_evidence,
-         error_code = v_error_code,
-         error_message = v_error_message,
-         completed_at = v_now
-   where id = v_execution.id
-   returning * into v_execution;
-
-  perform public.record_mission_event(
-    v_execution.mission_id,
-    'AGENT_EXECUTION_COMPLETED',
-    jsonb_build_object(
-      'execution_id', v_execution.id,
-      'agent_id', v_execution.agent_id,
-      'status', v_execution.status,
-      'verified', false,
-      'read_only_research', true,
-      'request_id', v_execution.request ->> 'request_id'
-    )
-  );
-
-  return v_execution;
-end;
-$function$;
-
-
-       or jsonb_typeof(p_evidence -> 'sources') is distinct from 'array' then
-      raise exception 'INVALID_RESEARCH_RESULT_SHAPE' using errcode = '22023';
-    end if;
-
-    v_source_count := (p_result ->> 'source_count')::integer;
-    if v_source_count < 0 or v_source_count > 12
-       or jsonb_array_length(p_evidence -> 'sources') <> v_source_count then
-      raise exception 'INVALID_RESEARCH_SOURCE_COUNT' using errcode = '22023';
-    end if;
-
-    for v_source in
-      select value from jsonb_array_elements(p_evidence -> 'sources') as source(value)
-    loop
-      if jsonb_typeof(v_source) is distinct from 'object'
-         or jsonb_typeof(v_source -> 'url') is distinct from 'string'
-         or (v_source ->> 'url') !~ '^https?://'
-         or char_length(v_source ->> 'url') > 4096
-         or nullif(btrim(v_source ->> 'title'), '') is null
-         or char_length(v_source ->> 'title') > 500 then
-        raise exception 'INVALID_RESEARCH_SOURCE' using errcode = '22023';
-      end if;
-    end loop;
-  end if;
-
-  if v_execution.status <> 'RUNNING' then
-    if v_execution.status = p_status
-       and v_execution.result is not distinct from p_result
-       and v_execution.evidence is not distinct from p_evidence
-       and v_execution.error_code is not distinct from v_error_code
-       and v_execution.error_message is not distinct from v_error_message then
-      return v_execution;
-    end if;
-    raise exception 'EXECUTION_ALREADY_FINALIZED' using errcode = '22023';
-  end if;
-
-  v_now := clock_timestamp();
-  if v_execution.lease_expires_at <= v_now then
-    raise exception 'EXECUTION_LEASE_EXPIRED_REQUIRES_RECONCILIATION' using errcode = '22023';
-  end if;
-
-  update public.agent_executions
-     set status = p_status,
-         result = p_result,
-         evidence = p_evidence,
-         error_code = v_error_code,
-         error_message = v_error_message,
-         completed_at = v_now
-   where id = v_execution.id
-   returning * into v_execution;
-
-  perform public.record_mission_event(
-    v_execution.mission_id,
-    'AGENT_EXECUTION_COMPLETED',
-    jsonb_build_object(
-      'execution_id', v_execution.id,
-      'agent_id', v_execution.agent_id,
-      'status', v_execution.status,
-      'verified', false,
-      'read_only_research', true,
-      'request_id', v_execution.request ->> 'request_id'
-    )
-  );
-
-  return v_execution;
-end;
-$function$;
-
-
-         or char_length(v_source ->> 'url') > 4096
-         or jsonb_typeof(v_source -> 'title') is distinct from 'string'
-         or nullif(btrim(v_source ->> 'title'), '') is null
-         or char_length(v_source ->> 'title') > 500 then
-        raise exception 'INVALID_RESEARCH_SOURCE' using errcode = '22023';
-      end if;
-    end loop;
-  end if;
-
-  if v_execution.status <> 'RUNNING' then
-    if v_execution.status = p_status
-       and v_execution.result is not distinct from p_result
-       and v_execution.evidence is not distinct from p_evidence
-       and v_execution.error_code is not distinct from v_error_code
-       and v_execution.error_message is not distinct from v_error_message then
-      return v_execution;
-    end if;
-    raise exception 'EXECUTION_ALREADY_FINALIZED' using errcode = '22023';
-  end if;
-
-  v_now := clock_timestamp();
-  if v_execution.lease_expires_at <= v_now then
-    raise exception 'EXECUTION_LEASE_EXPIRED_REQUIRES_RECONCILIATION' using errcode = '22023';
-  end if;
-
-  update public.agent_executions
-     set status = p_status,
-         result = p_result,
-         evidence = p_evidence,
-         error_code = v_error_code,
-         error_message = v_error_message,
-         completed_at = v_now
-   where id = v_execution.id
-   returning * into v_execution;
-
-  perform public.record_mission_event(
-    v_execution.mission_id,
-    'AGENT_EXECUTION_COMPLETED',
-    jsonb_build_object(
-      'execution_id', v_execution.id,
-      'agent_id', v_execution.agent_id,
-      'status', v_execution.status,
-      'verified', false,
-      'read_only_research', true,
-      'request_id', v_execution.request ->> 'request_id'
-    )
-  );
-
-  return v_execution;
-end;
-$function$;
-
-
-       or jsonb_typeof(p_evidence -> 'sources') is distinct from 'array' then
-      raise exception 'INVALID_RESEARCH_RESULT_SHAPE' using errcode = '22023';
-    end if;
-
-    v_source_count := (p_result ->> 'source_count')::integer;
-    if v_source_count < 0 or v_source_count > 12
-       or jsonb_array_length(p_evidence -> 'sources') <> v_source_count then
-      raise exception 'INVALID_RESEARCH_SOURCE_COUNT' using errcode = '22023';
-    end if;
-
-    for v_source in
-      select value from jsonb_array_elements(p_evidence -> 'sources') as source(value)
-    loop
-      if jsonb_typeof(v_source) is distinct from 'object'
-         or jsonb_typeof(v_source -> 'url') is distinct from 'string'
-         or (v_source ->> 'url') !~ '^https?://'
-         or char_length(v_source ->> 'url') > 4096
          or nullif(btrim(v_source ->> 'title'), '') is null
          or char_length(v_source ->> 'title') > 500 then
         raise exception 'INVALID_RESEARCH_SOURCE' using errcode = '22023';
