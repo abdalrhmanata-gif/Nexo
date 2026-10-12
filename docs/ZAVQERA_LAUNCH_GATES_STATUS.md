@@ -363,3 +363,27 @@ The persistent W68–W74 SQL fence and trusted gateway seam are covered by integ
 Still **NOT VERIFIED**: hosted authenticated Mission Research with citations and persisted history; actual Resend invitation delivery; hosted password-reset email/callback; manual desktop/mobile visual QA; Supabase Development leaked-password protection (WARN / Disabled). Independent business verification is not implied by a receipt or reconciliation record.
 
 **Release decision unchanged:** automated candidate gates are green; full production launch is not approved. PR #29 remains OPEN / Draft / UNMERGED. No Supabase Main/Production changes, production deployment, DNS/billing changes or real provider side effects were made.
+
+
+---
+
+## W75 exact-head validation — 2026-10-12 — `179e9812fb1b787bd162b17a454cb4fdc1f57724`
+
+All six automated PR gates passed on this exact code HEAD. The code change adds **W75 correlatable-provider-receipt enforcement**.
+
+- Web Unit — **PASS, 308/308 tests**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38231207800
+- Web CI / typecheck / production build — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38231207763
+- Flutter CI — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38231208031
+- W25 isolated PostgreSQL atomic fence — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38231207779
+- Netlify Deploy Preview verification — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38231207927
+- W21 disposable PostgreSQL 17 launch gate — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38231207835
+
+W75 (`supabase/migrations/20261012140000_w75_correlatable_provider_receipt.sql`) adds a database BEFORE UPDATE guard for external-side-effect executions transitioning to `SUCCEEDED`. It requires a bounded top-level scalar provider reference under `id`, `reference`, `request_id`, `message_id`, `transaction_id` or `operation_id`. Status-only/provider-name-only/cost-only receipts and nested identifiers do not qualify. The read-only research path (`external_side_effects=false`) remains exempt from provider-side-effect receipt correlation.
+
+The persistent application gateway applies the same requirement before settling a provider dispatch or authoritative reconciliation result as `SUCCEEDED`; otherwise it preserves `UNKNOWN` and requires reconciliation. Unit tests cover three non-correlatable receipt shapes on both dispatch and reconciliation. The W75 pgTAP test also proves valid string/numeric references are accepted and read-only research remains unaffected.
+
+W21 replayed W75 in disposable PostgreSQL 17; the W75 regression returned **PASS**. W72 integration with fake providers passed, as did independent-session W67/W68/W69/W70 ledger race checks. Browser E2E passed **2/2** and teardown was verified: `remaining_containers=none`, `remaining_volumes=none`, `cleanup_verified=true`.
+
+Evidence: [W21 run](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38231207835) · [evidence/cleanup proof](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38231207835/artifacts/11738837467) · [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38231207835/artifacts/11738512759).
+
+**Release decision unchanged:** the tests use fake adapters and disposable PostgreSQL only. The provider registry is still intentionally empty. Hosted authenticated live Research/history, real Resend delivery and password-reset email, human desktop/mobile visual QA, and Supabase Development leaked-password protection remain open. Production launch is not approved. PR #29 stays OPEN / Draft / UNMERGED; Supabase Main/Production and production deployment remain untouched.

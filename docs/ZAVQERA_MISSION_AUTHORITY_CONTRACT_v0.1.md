@@ -329,3 +329,14 @@ The dispatch and reconciliation adapter envelopes are deeply frozen, including n
 ### Provider registration contract — candidate follow-up
 
 The static adapter registry remains empty. Registry resolution now fails closed unless a registered entry's audience exactly matches the requested audience and the entry implements both `dispatch` and `reconcile`. Dispatch-only registrations are rejected because an ambiguous external result could otherwise remain unreconcilable. The TypeScript adapter contract marks both methods as mandatory and exposes the claimed request as deeply readonly. This shape validation is only a guardrail: it does not constitute security review of a provider or authorize any real side effect.
+
+
+## W75 correlatable provider receipt — candidate verified on 2026-10-12
+
+**Implementation:** `supabase/migrations/20261012140000_w75_correlatable_provider_receipt.sql` adds a private SECURITY DEFINER trigger function on updates to `public.agent_executions`. If an execution with `authority_snapshot.external_side_effects=true` is marked `SUCCEEDED`, its `evidence.provider_receipt` must be an object containing a non-empty top-level scalar reference in one of the allowlisted fields: `id`, `reference`, `request_id`, `message_id`, `transaction_id`, or `operation_id`. String identifiers are limited to 500 characters; numeric identifiers are bounded. Status-only/provider-name-only/cost-only fields and nested IDs are not sufficient.
+
+The persistent application gateway checks this same invariant for both immediate dispatch results and authoritative reconciliation results. An uncorrelatable success stays `UNKNOWN` and cannot be committed as final success; it requires further authoritative reconciliation. The trigger is limited to UPDATEs because authenticated/service worker table writes are already revoked and all supported starts create RUNNING attempts through guarded RPCs; existing immutable fixture/history inserts are not rewritten by this guard. The read-only W64 research path remains exempt because `external_side_effects=false`.
+
+**Evidence:** `supabase/tests/w75_correlatable_provider_receipt.sql` passed in the disposable PostgreSQL 17 W21 gate. The test rejects status-only, provider-only and nested references, accepts a stable top-level string or numeric reference, and confirms read-only research is unaffected. Application regression tests cover three uncorrelatable receipt shapes in dispatch and reconciliation. Exact-head Web Unit passed 308/308 and all six PR gates passed at `179e9812fb1b787bd162b17a454cb4fdc1f57724`; run links are in the launch-gates status document.
+
+This verifies the **fake-adapter candidate path**, not a real provider. The registered adapter set intentionally remains empty. No hosted migration was applied. Production readiness and external-provider authority remain blocked on the previously listed live Research/history, email delivery, visual QA and Development account-protection gates.

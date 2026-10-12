@@ -139,3 +139,20 @@ W21 applied the full migration history to a disposable PostgreSQL 17 stack and p
 The W74 freshness behavior is exercised in the current W70 regression: evidence must post-date both dispatch and the active reconciliation claim. Evidence predating the active claim is rejected without finalizing the UNKNOWN execution or releasing its HELD_UNKNOWN budget reservation.
 
 The provider registry remains intentionally empty and the internal worker route remains fail-closed until an adapter implementing both dispatch and authoritative reconciliation has undergone a separate review. Do not register or enable a real provider as part of this verification. The hosted authenticated Research, real Resend delivery, hosted password-reset flow, human visual QA, and Development leaked-password-protection gates remain open. PR #29 stays OPEN / Draft / UNMERGED; Supabase Main/Production and production deployment remain untouched.
+
+
+## W75 exact-head evidence — 2026-10-12 — `179e9812fb1b787bd162b17a454cb4fdc1f57724`
+
+W75 adds a durable database guard requiring a stable top-level provider reference before an external-side-effect execution can be updated to `SUCCEEDED`. The accepted keys are `id`, `reference`, `request_id`, `message_id`, `transaction_id`, and `operation_id`; values must be bounded, non-empty top-level strings or finite numeric identifiers. Generic status/provider fields, costs/currency alone and nested objects are rejected. Read-only research with `external_side_effects=false` is unaffected.
+
+The application gateway now enforces the same correlation requirement on both immediate provider success and authoritative reconciliation success. A non-correlatable success response remains UNKNOWN; dispatch is never repeated automatically.
+
+Exact-head automated evidence:
+- Web Unit **308/308 PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38231207800
+- Web CI **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38231207763
+- Flutter CI **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38231208031
+- W25 **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38231207779
+- Netlify Deploy Preview **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38231207927
+- W21 **PASS**, W75 pgTAP **PASS**, W72 fake-provider persistent gateway integration **PASS**, browser E2E **2/2 PASS**, cleanup proof **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38231207835
+
+The adapter registry remains empty; no real provider was invoked or enabled. The hosted authenticated Research/history, actual Resend and password-reset email delivery, human visual QA, and Development leaked-password-protection gates remain open. PR #29 remains OPEN / Draft / UNMERGED, and Supabase Main/Production remains untouched.
