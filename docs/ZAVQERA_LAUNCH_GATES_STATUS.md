@@ -558,3 +558,43 @@ There is no approved blind `down` migration for this chain. W68 can create durab
 The last verified candidate HEAD before this docs-only update was `b083d3fe2d5ba0298645f77d63a0612b0d7c6389`. The six core gates passed on that exact SHA: Web Unit **315/315**, Web CI/build, Flutter CI, W25 isolated PostgreSQL, W21 local launch gate, and Netlify Deploy Preview verification. These are isolated/repository checks, not hosted-schema validation.
 
 The latest W79 code also includes a fail-closed hosted Research preflight ahead of quota/provider I/O. That preflight is a safety barrier; it does not repair the hosted schema. Until the above rollout is separately authorized and post-verified, hosted Research/citations/history remain **NOT VERIFIED**, no real provider adapter should be registered, and PR #29 must remain **OPEN / Draft / UNMERGED**. Supabase Main/Production, Git `main`, production deployment, DNS, billing, and real external side effects remain untouched.
+
+---
+
+## Exact-head acceptance — nested approval route hardening — 2026-10-12
+
+**Validated runtime candidate:** `df355ef5670b2bc11455be7329347a7b3faf3271`  
+**PR #29:** OPEN / Draft / UNMERGED. This validation does not authorize merge or production release.
+
+### Candidate changes covered
+
+- The Research W79 schema preflight is token-protected through the internal worker route, only recognizes the deliberately invalid UUID cast error as evidence that the expected completion signature resolved, and remains before quota reservation / provider I/O.
+- Added a regression test asserting the schema probe has no direct table mutation, dispatch, or reconciliation path.
+- Fixed the legacy nested approval route `/api/missions/[id]/approval/[approvalId]`: uses the actual `approvalId`, checks that it belongs to the mission in the URL, validates both UUIDs, requires a rejection reason, caps the note at 4,000 characters, and maps expired/already-decided approvals safely.
+- Added a regression test for nested mission/approval binding and input validation.
+
+### All six CI/preview gates passed on this exact runtime SHA
+
+- Web Unit — **PASS, 317/317**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38260968155
+- Web CI / TypeScript / production build — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38260968187
+- Flutter CI — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38260968073
+- W25 isolated PostgreSQL atomic fence — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38260968217
+- W21 Local Launch Gate — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38260968046
+- Netlify Deploy Preview verification — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38260968192
+
+W21 evidence on this exact SHA:
+- Full Chromium browser E2E: **2 passed (2.7m)**.
+- PostgreSQL 17 migration replay and pgTAP including the W63–W79 regressions passed.
+- Actual-ledger idempotency, atomic budget reservation, one-time dispatch claim, and reconciliation-claim race tests passed.
+- W72 persistent gateway integration with **fake providers only** passed; UNKNOWN outcome was held until authoritative lookup and reconciliation did not redispatch.
+- Disposable Supabase cleanup verified: `cleanup_verified=true`.
+- [W21 evidence artifact](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38260968046/artifacts/11751974902)
+- [Browser diagnostics artifact](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38260968046/artifacts/11752164272)
+
+### Hosted / release acceptance remains separate
+
+A fresh read-only inventory of ZAVQERA Development (`mrwmmbytcymqgwvcoywd`) still ends at W65. W66, W68–W71 and W73–W79 remain absent from its migration ledger, including the authority budget tables, dispatch/reconciliation fields/RPCs, and the W79 seven-argument Research-completion signature. The hosted Research schema preflight must therefore remain fail-closed. No hosted migration was applied.
+
+Still **NOT VERIFIED / NOT AUTHORIZED**: hosted authenticated Mission Research with citations and persisted history; actual Resend inbox delivery; hosted password-reset email/callback; manual desktop/mobile visual QA; leaked-password protection (Security Advisor WARN / Disabled); and any real external-provider adapter/side effects. The registry intentionally remains empty. The successful local/fake-provider gates do not imply hosted schema parity or production readiness.
+
+The Netlify check above is Deploy Preview verification; the workflow's actual deployment step was skipped for this validation run. No Supabase Development/Main/Production schema writes, Production deployment, real provider calls, DNS change, or billing change occurred. Keep PR #29 OPEN / Draft / UNMERGED pending separately authorized migration planning and the remaining acceptance gates.
