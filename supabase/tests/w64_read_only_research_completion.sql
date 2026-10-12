@@ -1,44 +1,40 @@
--- W64: authenticated users can only record their own, explicitly unverified,
--- read-only research result; generic execution completion stays trusted-only.
+-- W64 historical scenarios run against W79's stricter trusted completion boundary.
 begin;
 create extension if not exists pgtap;
-select plan(17);
+select plan(18);
 
-select ok(to_regprocedure('public.complete_read_only_research_execution(uuid,text,jsonb,jsonb,text,text)') is not null,
-  'narrow read-only research completion wrapper exists');
-select ok(has_function_privilege('authenticated',
-  'public.complete_read_only_research_execution(uuid,text,jsonb,jsonb,text,text)', 'EXECUTE'),
-  'authenticated research callers can use the narrow wrapper');
-select ok(not has_function_privilege('anon',
-  'public.complete_read_only_research_execution(uuid,text,jsonb,jsonb,text,text)', 'EXECUTE'),
-  'anonymous callers cannot complete research executions');
-select ok(has_function_privilege('authenticated',
-  'private.complete_read_only_research_execution(uuid,text,jsonb,jsonb,text,text)', 'EXECUTE'),
-  'authenticated callers can reach the guarded private implementation');
-select ok(not has_function_privilege('anon',
-  'private.complete_read_only_research_execution(uuid,text,jsonb,jsonb,text,text)', 'EXECUTE'),
-  'anonymous callers cannot reach the private implementation');
-select ok(lower(pg_get_functiondef('private.complete_read_only_research_execution(uuid,text,jsonb,jsonb,text,text)'::regprocedure))
-  like '%requested_by <> auth.uid()%',
-  'only the user who started the execution can complete it');
-select ok(lower(pg_get_functiondef('private.complete_read_only_research_execution(uuid,text,jsonb,jsonb,text,text)'::regprocedure))
-  like '%read_only_research%'
-  and lower(pg_get_functiondef('private.complete_read_only_research_execution(uuid,text,jsonb,jsonb,text,text)'::regprocedure))
-    like '%external_side_effects%',
-  'completion is restricted to agents explicitly bound to read-only, no-side-effect authority');
-select ok(lower(pg_get_functiondef('private.complete_read_only_research_execution(uuid,text,jsonb,jsonb,text,text)'::regprocedure))
-  like '%research_result_must_remain_unverified%'
-  and lower(pg_get_functiondef('private.complete_read_only_research_execution(uuid,text,jsonb,jsonb,text,text)'::regprocedure))
-    like '%request_id%',
-  'research evidence is bound to the request and must remain unverified');
-select ok(lower(pg_get_functiondef('private.complete_read_only_research_execution(uuid,text,jsonb,jsonb,text,text)'::regprocedure))
-  like '%execution_lease_expired_requires_reconciliation%'
-  and lower(pg_get_functiondef('private.complete_read_only_research_execution(uuid,text,jsonb,jsonb,text,text)'::regprocedure))
-    like '%execution_already_finalized%',
-  'expired leases cannot be finalized and exact replays are idempotent');
+select ok(to_regprocedure('public.complete_read_only_research_execution(uuid,text,jsonb,jsonb,text,text)') is null,
+  'the old public completion signature is removed');
+select ok(to_regprocedure('private.complete_read_only_research_execution(uuid,text,jsonb,jsonb,text,text)') is null,
+  'the old private completion signature is removed');
+select ok(to_regprocedure('public.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)') is not null,
+  'the requester-bound public completion wrapper exists');
+select ok(to_regprocedure('private.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)') is not null,
+  'the requester-bound private completion implementation exists');
 select ok(not has_function_privilege('authenticated',
-  'public.complete_agent_execution(uuid,text,jsonb,jsonb,text,text)', 'EXECUTE'),
-  'generic execution completion remains unavailable to authenticated clients');
+  'public.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)', 'EXECUTE'),
+  'authenticated users cannot forge research completion');
+select ok(not has_function_privilege('anon',
+  'public.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)', 'EXECUTE'),
+  'anonymous users cannot complete research executions');
+select ok(has_function_privilege('service_role',
+  'public.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)', 'EXECUTE'),
+  'trusted server role can call the public completion wrapper');
+select ok(not has_function_privilege('service_role',
+  'private.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)', 'EXECUTE'),
+  'private completion implementation is not directly executable by service_role');
+select ok(lower(pg_get_functiondef('private.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)'::regprocedure))
+  like '%trusted_executor_required%',
+  'completion implementation explicitly requires the trusted executor role');
+select ok(lower(pg_get_functiondef('private.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)'::regprocedure))
+  like '%requested_by <> p_requested_by%'
+  and lower(pg_get_functiondef('private.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)'::regprocedure))
+    like '%external_side_effects%'
+  and lower(pg_get_functiondef('private.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)'::regprocedure))
+    like '%research_result_must_remain_unverified%'
+  and lower(pg_get_functiondef('private.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)'::regprocedure))
+    like '%execution_lease_expired_requires_reconciliation%',
+  'requester, read-only authority, unverified result and lease invariants remain enforced');
 
 create temporary table w64_behavior_results (
   name text primary key,
@@ -113,14 +109,28 @@ begin
   perform set_config('request.jwt.claims',
     jsonb_build_object('sub', v_owner, 'role', 'authenticated')::text, true);
 
+  v_caught := false;
+  begin
+    perform public.complete_read_only_research_execution(
+      v_owner, v_good.id, 'SUCCEEDED', v_result, v_evidence, null, null
+    );
+  exception when insufficient_privilege then
+    v_caught := true;
+  end;
+  insert into w64_behavior_results values ('authenticated_completion_denied', v_caught);
+
+  perform set_config('request.jwt.claim.role', 'service_role', true);
+  perform set_config('request.jwt.claims',
+    jsonb_build_object('sub', v_owner, 'role', 'service_role')::text, true);
+
   select * into v_done from public.complete_read_only_research_execution(
-    v_good.id, 'SUCCEEDED', v_result, v_evidence, null, null
+    v_owner, v_good.id, 'SUCCEEDED', v_result, v_evidence, null, null
   );
   insert into w64_behavior_results values ('valid_unverified_research',
     v_done.status = 'SUCCEEDED' and v_done.evidence -> 'verified' = 'false'::jsonb);
 
   select * into v_done from public.complete_read_only_research_execution(
-    v_good.id, 'SUCCEEDED', v_result, v_evidence, null, null
+    v_owner, v_good.id, 'SUCCEEDED', v_result, v_evidence, null, null
   );
   insert into w64_behavior_results values ('exact_replay_idempotent',
     v_done.status = 'SUCCEEDED' and v_done.id = v_good.id);
@@ -128,7 +138,7 @@ begin
   v_caught := false;
   begin
     perform public.complete_read_only_research_execution(
-      v_generic.id, 'SUCCEEDED', v_result, v_evidence, null, null
+      v_owner, v_generic.id, 'SUCCEEDED', v_result, v_evidence, null, null
     );
   exception when sqlstate '42501' then
     if sqlerrm = 'READ_ONLY_RESEARCH_EXECUTION_REQUIRED' then v_caught := true; else raise; end if;
@@ -138,7 +148,7 @@ begin
   v_caught := false;
   begin
     perform public.complete_read_only_research_execution(
-      v_other_user.id, 'SUCCEEDED', v_result,
+      v_owner, v_other_user.id, 'SUCCEEDED', v_result,
       '{"outcome":"SUCCEEDED","verified":false,"request_id":"w64-request-id-0002","sources":[{"title":"Example source","url":"https://example.com/"}]}'::jsonb,
       null, null
     );
@@ -150,7 +160,7 @@ begin
   v_caught := false;
   begin
     perform public.complete_read_only_research_execution(
-      v_bad_verified.id, 'SUCCEEDED', v_result,
+      v_owner, v_bad_verified.id, 'SUCCEEDED', v_result,
       '{"outcome":"SUCCEEDED","verified":true,"request_id":"w64-request-id-verified","sources":[{"title":"Example source","url":"https://example.com/"}]}'::jsonb,
       null, null
     );
@@ -162,7 +172,7 @@ begin
   v_caught := false;
   begin
     perform public.complete_read_only_research_execution(
-      v_bad_request.id, 'SUCCEEDED', v_result,
+      v_owner, v_bad_request.id, 'SUCCEEDED', v_result,
       '{"outcome":"SUCCEEDED","verified":false,"request_id":"different-request-id","sources":[{"title":"Example source","url":"https://example.com/"}]}'::jsonb,
       null, null
     );
@@ -174,7 +184,7 @@ begin
   v_caught := false;
   begin
     perform public.complete_read_only_research_execution(
-      v_expired.id, 'SUCCEEDED', v_result,
+      v_owner, v_expired.id, 'SUCCEEDED', v_result,
       '{"outcome":"SUCCEEDED","verified":false,"request_id":"w64-request-id-expired","sources":[{"title":"Example source","url":"https://example.com/"}]}'::jsonb,
       null, null
     );
@@ -185,8 +195,10 @@ begin
 end;
 $behavior$;
 
+select ok((select passed from w64_behavior_results where name='authenticated_completion_denied'),
+  'an authenticated client cannot write research completion directly');
 select ok((select passed from w64_behavior_results where name='valid_unverified_research'),
-  'the requesting user can record a bounded research result without claiming verification');
+  'the trusted server can record a bounded research result without claiming verification');
 select ok((select passed from w64_behavior_results where name='exact_replay_idempotent'),
   'an exact completion replay returns the existing result without a second event');
 select ok((select passed from w64_behavior_results where name='generic_agent_denied'),

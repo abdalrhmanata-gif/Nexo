@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { isTrustedExecutionWorkerRequest } from "../lib/mission-authority/worker-auth.mjs";
+import { resolveTrustedWorkerOrigin } from "../lib/mission-authority/trusted-worker-origin.mjs";
 import {
   hasTrustedProviderAdapterContractShape,
   resolveTrustedDispatchAdapter,
@@ -64,4 +65,55 @@ test("privileged worker route uses server-only credentials and cannot dispatch w
   assert.match(route, /dispatchThroughJitClaim/);
   assert.match(route, /reconcileThroughTrustedClaim/);
   assert.match(route, /Only a valid operation and provider audience are accepted/);
+});
+
+
+test("trusted worker origin uses loopback locally and fixed HTTPS deployment URLs", () => {
+  assert.equal(resolveTrustedWorkerOrigin({
+    nodeEnv: "test",
+    e2eRuntimeBaseUrl: "http://127.0.0.1:3100/",
+    deployPrimeUrl: "https://preview.example.net",
+    requestUrl: "http://127.0.0.1:3000/api/research",
+  }), "http://127.0.0.1:3100");
+  assert.equal(resolveTrustedWorkerOrigin({
+    nodeEnv: "development",
+    deployPrimeUrl: "https://unrelated.example.net",
+    requestUrl: "http://localhost:3000/api/research",
+  }), "http://localhost:3000");
+  assert.equal(resolveTrustedWorkerOrigin({
+    nodeEnv: "production",
+    deployPrimeUrl: "https://deploy-preview-29--unique-kringle-3ce321.netlify.app/",
+    requestUrl: "https://attacker.example/api/research",
+  }), "https://deploy-preview-29--unique-kringle-3ce321.netlify.app");
+});
+
+test("trusted worker origin rejects attacker request URLs, insecure external targets and credentials", () => {
+  assert.equal(resolveTrustedWorkerOrigin({
+    nodeEnv: "production",
+    e2eRuntimeBaseUrl: "http://127.0.0.1:3000",
+    requestUrl: "https://attacker.example/api/research",
+  }), null);
+  assert.equal(resolveTrustedWorkerOrigin({
+    nodeEnv: "production",
+    deployPrimeUrl: "http://public.example.net",
+    deployUrl: "https://user:password@trusted.example.net",
+    requestUrl: "https://attacker.example.net",
+  }), null);
+  assert.equal(resolveTrustedWorkerOrigin({
+    nodeEnv: "production",
+    deployPrimeUrl: "https://trusted.example.net/arbitrary/path",
+    publicSiteUrl: "https://trusted.example.net/?redirect=attacker",
+  }), null);
+});
+
+test("trusted research completion is a narrow worker operation behind the authenticated route", async () => {
+  const route = await readFile(join(webRoot, "app", "api", "internal", "agent-executions", "[executionId]", "route.ts"), "utf8");
+  assert.match(route, /isTrustedExecutionWorkerRequest/);
+  assert.match(route, /workerBody\.operation === "complete_read_only_research"/);
+  assert.match(route, /permittedKeys = new Set\(\["operation", "requestedBy", "status", "result", "evidence"\]\)/);
+  assert.match(route, /!UUID_PATTERN\.test\(workerBody\.requestedBy\)/);
+  assert.match(route, /MAX_INTERNAL_BODY_BYTES/);
+  assert.match(route, /p_requested_by: workerBody\.requestedBy/);
+  assert.match(route, /completion\.data\.id !== executionId/);
+  assert.match(route, /completion\.data\.status !== workerBody\.status/);
 });

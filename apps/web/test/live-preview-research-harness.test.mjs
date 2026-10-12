@@ -11,6 +11,8 @@ const readme = readFileSync(join(root, "README.md"), "utf8");
 const researchRoute = readFileSync(join(root, "app/api/missions/[id]/research/route.ts"), "utf8");
 const executionGuardMigration = readFileSync(join(root, "../../supabase/migrations/20261010125620_w56_agent_execution_duplicate_dispatch_guard.sql"), "utf8");
 const researchCompletionMigration = readFileSync(join(root, "../../supabase/migrations/20261012180000_w79_trusted_research_completion.sql"), "utf8");
+const trustedWorkerRoute = readFileSync(join(root, "app/api/internal/agent-executions/[executionId]/route.ts"), "utf8");
+const trustedWorkerOrigin = readFileSync(join(root, "lib/mission-authority/trusted-worker-origin.mjs"), "utf8");
 
 test("live research prefers paired pre-provisioned Dev credentials and keeps values out of logs", () => {
   assert.match(script, /SUPABASE_DEV_TEST_EMAIL/);
@@ -59,19 +61,25 @@ test("Mission research opens the server-side agent/approval gate before calling 
   assert.ok(generate > startExecution, "provider generation must follow authorization");
   assert.ok(providerRequest > generate, "OpenAI research request must happen after the execution gate");
   assert.match(researchRoute, /throw new Error\("AGENT_APPROVAL_REQUIRED"\)/);
-  assert.match(researchRoute, /p_status: executionStatus/);
+  assert.match(researchRoute, /status: executionStatus/);
   assert.match(researchRoute, /result\.disposition === "hold" \? "UNKNOWN" : "FAILED"/);
 });
 
 
-test("read-only research completion is server-trusted and bound to the authenticated requester", () => {
-  assert.match(researchRoute, /createSupabaseAdminClient/);
-  assert.match(researchRoute, /completeReadOnlyResearchExecution\(/);
+test("read-only research completion uses the token-protected internal worker route", () => {
+  assert.doesNotMatch(researchRoute, /createSupabaseAdminClient/);
+  assert.match(researchRoute, /completeReadOnlyResearchExecution\(request,/);
   assert.doesNotMatch(researchRoute, /supabase\.rpc\("complete_read_only_research_execution"/);
   assert.doesNotMatch(researchRoute, /supabase\.rpc\("complete_agent_execution"/);
-  assert.match(researchRoute, /p_requested_by: input\.requestedBy/);
-  assert.match(researchRoute, /requestedBy: user\.id/);
-  assert.match(researchRoute, /outcome: "SUCCEEDED", request_id: requestId, verified: false, sources: research\.sources/);
+  assert.match(researchRoute, /ZAVQERA_EXECUTION_WORKER_TOKEN/);
+  assert.match(researchRoute, /operation: "complete_read_only_research"/);
+  assert.match(trustedWorkerRoute, /isTrustedExecutionWorkerRequest/);
+  assert.match(trustedWorkerRoute, /workerBody\.operation === "complete_read_only_research"/);
+  assert.match(trustedWorkerRoute, /p_requested_by: workerBody\.requestedBy/);
+  assert.match(trustedWorkerRoute, /p_execution_id: executionId/);
+  assert.match(trustedWorkerRoute, /createSupabaseAdminClient/);
+  assert.match(trustedWorkerOrigin, /deployPrimeUrl/);
+  assert.match(trustedWorkerOrigin, /localhost/);
   assert.match(researchCompletionMigration, /auth\.role\(\), ''\) <> 'service_role'/);
   assert.match(researchCompletionMigration, /v_initial\.requested_by <> p_requested_by/);
   assert.match(researchCompletionMigration, /private\.can_edit_workspace\(v_initial\.workspace_id, p_requested_by\)/);

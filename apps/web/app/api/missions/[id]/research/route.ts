@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser, createSupabaseServerClient } from "../../../../../lib/supabase/server";
-import { createSupabaseAdminClient } from "../../../../../lib/supabase/admin";
+import { resolveTrustedWorkerOrigin } from "../../../../../lib/mission-authority/trusted-worker-origin.mjs";
 import { createSupabaseMissionRepository } from "../../../../../lib/supabase/mission-repository";
 import { buildMockMissionResearch, requestMissionResearch, type MissionResearch } from "../../../../../lib/ai-research";
 import { runAiGeneration, AI_GENERATION_OUTCOMES } from "../../../../../lib/ai-generation-service";
@@ -15,24 +15,66 @@ function isTerminalLifecycle(status: string) {
 
 type ResearchCompletionStatus = "SUCCEEDED" | "FAILED" | "UNKNOWN";
 
-async function completeReadOnlyResearchExecution(input: {
+async function completeReadOnlyResearchExecution(request: Request, input: {
   requestedBy: string;
   executionId: string;
   status: ResearchCompletionStatus;
   result: Record<string, unknown>;
   evidence: Record<string, unknown>;
 }) {
-  // Completion is a server attestation boundary, not a user-writable ledger RPC.
-  // The trusted requester ID is rebound to the execution by the database.
-  return createSupabaseAdminClient().rpc("complete_read_only_research_execution", {
-    p_requested_by: input.requestedBy,
-    p_execution_id: input.executionId,
-    p_status: input.status,
-    p_result: input.result,
-    p_evidence: input.evidence,
-    p_error_code: null,
-    p_error_message: null,
+  const workerToken = process.env.ZAVQERA_EXECUTION_WORKER_TOKEN;
+  if (!workerToken || !/^[A-Za-z0-9._~-]{32,512}$/.test(workerToken)) {
+    return { data: null, error: { message: "TRUSTED_EXECUTION_NOT_CONFIGURED" } };
+  }
+
+  const origin = resolveTrustedWorkerOrigin({
+    nodeEnv: process.env.NODE_ENV,
+    e2eRuntimeBaseUrl: process.env.ZAVQERA_E2E_RUNTIME_BASE_URL,
+    deployPrimeUrl: process.env.DEPLOY_PRIME_URL,
+    deployUrl: process.env.DEPLOY_URL,
+    siteUrl: process.env.URL,
+    publicSiteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+    requestUrl: request.url,
   });
+  if (!origin) return { data: null, error: { message: "TRUSTED_EXECUTION_ORIGIN_NOT_CONFIGURED" } };
+
+  try {
+    const response = await fetch(new URL(
+      `/api/internal/agent-executions/${encodeURIComponent(input.executionId)}`,
+      origin,
+    ), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${workerToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        operation: "complete_read_only_research",
+        requestedBy: input.requestedBy,
+        status: input.status,
+        result: input.result,
+        evidence: input.evidence,
+      }),
+      cache: "no-store",
+      redirect: "error",
+      signal: AbortSignal.timeout(20_000),
+    });
+    const payload: unknown = await response.json().catch(() => null);
+    if (!response.ok || !payload || typeof payload !== "object" || Array.isArray(payload)) {
+      return { data: null, error: { message: "TRUSTED_RESEARCH_COMPLETION_UNCONFIRMED" } };
+    }
+    const execution = (payload as { execution?: unknown }).execution;
+    if (!execution || typeof execution !== "object" || Array.isArray(execution)) {
+      return { data: null, error: { message: "TRUSTED_RESEARCH_COMPLETION_UNCONFIRMED" } };
+    }
+    const row = execution as Record<string, unknown>;
+    if (row.id !== input.executionId || row.status !== input.status) {
+      return { data: null, error: { message: "TRUSTED_RESEARCH_COMPLETION_UNCONFIRMED" } };
+    }
+    return { data: row, error: null };
+  } catch {
+    return { data: null, error: { message: "TRUSTED_RESEARCH_COMPLETION_UNCONFIRMED" } };
+  }
 }
 
 function normaliseRequestId(request: Request) {
@@ -134,7 +176,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const startedExecutionId = executionId;
     if (result.kind === AI_GENERATION_OUTCOMES.SETTLEMENT_FAILED) {
       if (startedExecutionId) {
-        const completion = await completeReadOnlyResearchExecution({
+        const completion = await completeReadOnlyResearchExecution(request, {
           requestedBy: user.id,
           executionId: startedExecutionId,
           status: "UNKNOWN",
