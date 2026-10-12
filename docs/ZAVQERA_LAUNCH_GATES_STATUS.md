@@ -256,3 +256,34 @@ Browser E2E passed **2/2**. Disposable Supabase cleanup was verified: `remaining
 - Independent verification and final business outcome commit are not implied by a provider receipt or reconciliation record.
 
 **Release decision:** automated candidate gates are green; full production launch is not approved. PR #29 stays **OPEN / Draft / UNMERGED**. No production deployment, DNS/billing change, or Supabase Main/Production modification was performed. Real provider side effects remain disabled.
+
+
+---
+
+## Exact-head validation snapshot — W71 / 2026-10-12 — code HEAD `53db9027f56ec7bc12eb835803b83922292b7591`
+
+All six automated gates passed on the same code HEAD. This snapshot records **automated candidate validation**, not production approval.
+
+- Web Unit — **PASS, 302/302 tests**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38218200593
+- Web CI / typecheck / production build — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38218200583
+- Flutter CI — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38218200620
+- W25 isolated PostgreSQL atomic fence — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38218200591
+- Netlify Deploy Preview verification — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38218200577
+- W21 disposable local launch gate — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38218200611
+
+W21 replayed the migrations in disposable PostgreSQL 17 and passed the Mission Authority SQL regressions for W63, W64, W65, W66, W68, W69, W70 and W71, along with the existing AI quota/plan/workspace security tests. All four independent-session ledger proofs passed:
+
+- W67 idempotency race: one execution row and one start event; duplicates and changed requests are refused.
+- W68 persistent authority-budget race: reservation is atomic with execution start.
+- W69 one-time JIT dispatch claim: concurrent duplicate claim is refused.
+- W70 durable UNKNOWN reconciliation claim: concurrent duplicate claim is refused.
+
+Browser E2E passed **2/2**. Disposable Supabase teardown was verified, including `cleanup_verified=true`; no hosted Development or Production database was targeted. Artifacts: [W21 evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38218200611/artifacts/11732607891) and [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38218200611/artifacts/11732907783).
+
+The W67 helper log now states explicitly that budget-race testing is handled by the separate W68 gate; the old message claiming no atomic budget reservation existed was stale after W68.
+
+### Release boundary remains unchanged
+
+The trusted worker endpoint, persistent budget/start fence, one-time dispatch claim, and durable UNKNOWN reconciliation contracts are implemented and tested in the candidate branch. The provider adapter registry is intentionally empty, so the route fails closed before privileged client creation or provider I/O. These tests do not certify a live provider integration.
+
+Hosted authenticated Mission Research/citations/history, real Resend inbox delivery, human desktop/mobile visual QA, and Supabase Development leaked-password protection remain open release gates. Independent business verification is still required after any future provider receipt. PR #29 remains **OPEN / Draft / UNMERGED**; Supabase Main/Production, production deployment, DNS and billing remain untouched.
