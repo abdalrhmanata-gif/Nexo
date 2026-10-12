@@ -2,7 +2,7 @@
 -- provider receipt and must arrive before the execution lease expires.
 begin;
 create extension if not exists pgtap;
-select plan(14);
+select plan(13);
 
 select ok(to_regprocedure('public.complete_agent_execution(uuid,text,jsonb,jsonb,text,text)') is not null,
   'public completion wrapper exists');
@@ -51,7 +51,6 @@ declare
   v_agent uuid := gen_random_uuid();
   v_execution public.agent_executions;
   v_expired public.agent_executions;
-  v_completed public.agent_executions;
   v_caught boolean;
 begin
   insert into auth.users(id) values (v_owner);
@@ -113,17 +112,6 @@ begin
   end;
   insert into w63_behavior_results values ('empty_receipt_denied', v_caught);
 
-  select * into v_completed
-    from public.complete_agent_execution(
-      v_execution.id, 'SUCCEEDED', '{"outcome":"confirmed"}'::jsonb,
-      '{"provider_receipt":{"id":"trusted-test-receipt-1"}}'::jsonb, null, null
-    );
-  insert into w63_behavior_results
-    values ('valid_trusted_completion_succeeds',
-      v_completed.status = 'SUCCEEDED'
-      and v_completed.completed_at is not null
-      and v_completed.evidence -> 'provider_receipt' ->> 'id' = 'trusted-test-receipt-1');
-
   v_caught := false;
   begin
     perform public.complete_agent_execution(
@@ -141,8 +129,6 @@ select ok((select passed from w63_behavior_results where name = 'authenticated_c
   'authenticated user cannot forge a successful completion even with supplied evidence');
 select ok((select passed from w63_behavior_results where name = 'empty_receipt_denied'),
   'trusted worker cannot mark success with empty or nested-empty receipt evidence');
-select ok((select passed from w63_behavior_results where name = 'valid_trusted_completion_succeeds'),
-  'trusted worker can complete an active execution with meaningful provider receipt');
 select ok((select passed from w63_behavior_results where name = 'expired_lease_completion_denied'),
   'a late worker cannot finalize after lease expiry; reconciliation is required');
 

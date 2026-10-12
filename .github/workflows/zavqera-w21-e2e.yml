@@ -178,6 +178,23 @@ jobs:
             timeout 30m supabase test db supabase/tests/w30_launch_gate_pgtap.sql
           )
 
+      - name: Run Mission Authority execution security regressions
+        run: |
+          set -euo pipefail
+          cd "$ZAVQERA_E2E_SUPABASE_WORKDIR"
+          for test_file in \
+            supabase/tests/w63_trusted_execution_completion.sql \
+            supabase/tests/w64_read_only_research_completion.sql \
+            supabase/tests/w65_agent_execution_table_write_boundary.sql \
+            supabase/tests/w66_service_role_table_privilege_hardening.sql \
+            supabase/tests/w68_mission_authority_budget_reservations.sql \
+            supabase/tests/w69_agent_execution_dispatch_claim.sql \
+            supabase/tests/w70_durable_unknown_outcome_reconciliation.sql
+          do
+            echo "Running Mission Authority regression: $test_file"
+            timeout 10m supabase test db "$test_file"
+          done
+
       - name: Run AI quota, plan and workspace security tests
         run: |
           set -euo pipefail
