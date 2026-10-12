@@ -45,22 +45,35 @@ test("workflow gate is explicitly marked, same-repository only, and passes test 
   assert.match(readme, /Do not run this marked workflow repeatedly/);
 });
 
-test("hosted Research is fail-closed until trusted completion schema parity is explicitly enabled", () => {
+test("hosted Research is fail-closed until schema, trusted-worker token, and preview context are ready", () => {
   const providerMode = researchRoute.indexOf("const providerMode =");
-  const trustedSchemaGate = researchRoute.indexOf(
-    'process.env.ZAVQERA_TRUSTED_RESEARCH_COMPLETION_ENABLED !== "true"',
-  );
+  const workerTokenCheck = researchRoute.indexOf("const workerToken = process.env.ZAVQERA_EXECUTION_WORKER_TOKEN", providerMode);
+  const workerOriginCheck = researchRoute.indexOf("const trustedWorkerOrigin = resolveTrustedWorkerOrigin", providerMode);
+  const trustedGate = researchRoute.indexOf("const trustedResearchCompletionConfigured =");
+  const flagCheck = researchRoute.indexOf('process.env.ZAVQERA_TRUSTED_RESEARCH_COMPLETION_ENABLED === "true"', trustedGate);
+  const contextCheck = researchRoute.indexOf('process.env.CONTEXT === "deploy-preview"', trustedGate);
+  const finalGate = researchRoute.indexOf('if (providerMode !== "mock" && !trustedResearchCompletionConfigured)');
   const apiKeyCheck = researchRoute.indexOf('if (providerMode !== "mock" && !apiKey)');
   const quotaAndProviderFlow = researchRoute.indexOf("const result = await runAiGeneration({");
 
   assert.ok(providerMode >= 0, "provider mode must be resolved explicitly");
-  assert.ok(trustedSchemaGate > providerMode, "schema gate must follow provider-mode resolution");
-  assert.ok(trustedSchemaGate < apiKeyCheck, "schema gate must run before API-key handling");
-  assert.ok(trustedSchemaGate < quotaAndProviderFlow, "schema gate must run before quota reservation/provider execution");
+  assert.ok(workerTokenCheck > providerMode, "worker token must be checked after provider-mode resolution");
+  assert.ok(workerOriginCheck > providerMode, "trusted worker origin must be resolved before live Research can start");
+  assert.ok(flagCheck > trustedGate && contextCheck > trustedGate, "the feature flag and deploy-preview context must both be enforced");
+  assert.ok(routeIncludesTokenPattern(), "worker token must satisfy the bounded bearer-token pattern");
+  assert.ok(researchRoute.includes("&& trustedWorkerOrigin !== null"), "live Research must require a resolvable trusted worker origin");
+  assert.ok(finalGate > flagCheck && finalGate > contextCheck, "live Research requires all trusted-completion prerequisites");
+  assert.ok(finalGate < apiKeyCheck, "trusted-completion preflight must run before API-key handling");
+  assert.ok(finalGate < quotaAndProviderFlow, "trusted-completion preflight must run before quota reservation/provider execution");
   assert.match(researchRoute, /Mission Research is temporarily unavailable on this environment/);
   assert.match(envExample, /^ZAVQERA_TRUSTED_RESEARCH_COMPLETION_ENABLED=false$/m);
   assert.match(readme, /Keep this flag false until hosted Development has an authorized migration plan/);
+  assert.match(readme, /CONTEXT=deploy-preview/);
 });
+
+function routeIncludesTokenPattern() {
+  return researchRoute.includes("&& /^[A-Za-z0-9._~-]{32,512}$/.test(workerToken)");
+}
 
 test("Mission research refuses agents whose authoritative settings are not explicitly read-only", () => {
   assert.match(researchRoute, /agent\.authority\?\.mode === "read_only"/);

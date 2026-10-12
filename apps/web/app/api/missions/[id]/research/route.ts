@@ -129,10 +129,27 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const isProductionRuntime = process.env.NODE_ENV === "production";
     const providerMode = configuredProviderMode === "mock" && !isProductionRuntime ? "mock" : "openai";
 
-    // Hosted Research stays fail-closed until the active Development schema
-    // has been separately approved and verified against W79's trusted RPC.
-    // This check runs before quota reservation and before any OpenAI request.
-    if (providerMode !== "mock" && process.env.ZAVQERA_TRUSTED_RESEARCH_COMPLETION_ENABLED !== "true") {
+    // Validate all trusted-completion prerequisites before quota reservation
+    // or an external AI call. The enable flag alone must never permit a live
+    // provider request if the protected worker channel/origin is unavailable.
+    const workerToken = process.env.ZAVQERA_EXECUTION_WORKER_TOKEN;
+    const trustedWorkerOrigin = resolveTrustedWorkerOrigin({
+      nodeEnv: process.env.NODE_ENV,
+      e2eRuntimeBaseUrl: process.env.ZAVQERA_E2E_RUNTIME_BASE_URL,
+      deployPrimeUrl: process.env.DEPLOY_PRIME_URL,
+      deployUrl: process.env.DEPLOY_URL,
+      siteUrl: process.env.URL,
+      publicSiteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+      requestUrl: request.url,
+    });
+    const trustedResearchCompletionConfigured =
+      process.env.ZAVQERA_TRUSTED_RESEARCH_COMPLETION_ENABLED === "true"
+      && process.env.CONTEXT === "deploy-preview"
+      && typeof workerToken === "string"
+      && /^[A-Za-z0-9._~-]{32,512}$/.test(workerToken)
+      && trustedWorkerOrigin !== null;
+
+    if (providerMode !== "mock" && !trustedResearchCompletionConfigured) {
       return NextResponse.json(
         { error: "Mission Research is temporarily unavailable on this environment." },
         { status: 503 },
