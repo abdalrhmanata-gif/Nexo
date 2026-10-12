@@ -69,3 +69,50 @@ This closes the **actual-ledger idempotency race** subtask only. It does not pro
 Next: design and independently test the smallest durable action/spend reservation invariant in disposable PostgreSQL 17; only then propose a schema/RPC migration. Production JIT dispatch and real-provider UNKNOWN reconciliation remain **NOT ESTABLISHED**.
 
 PR #29 remains OPEN / Draft / UNMERGED. Supabase Main/Production and hosted Development remain untouched.
+
+
+---
+
+## Exact W79 RPC parity verification — 2026-10-12 — `aa57552bf28e35693106ccb04a808b97c5bfa9a7`
+
+This read-only comparison supersedes earlier notes that described W64/W65 parity as the last known state. Current hosted project: **ZAVQERA Development** (`mrwmmbytcymqgwvcoywd`), PostgreSQL 17.6.1, region `eu-west-1`. No rows were exported or changed and no schema write was executed.
+
+### Exact migration-history drift
+
+The hosted migration registry ends at `20261011150000_w65_agent_execution_table_write_boundary`. The active PR branch contains but the hosted migration registry does not contain:
+
+- W66 `20261011160000_w66_service_role_table_privilege_hardening.sql`
+- W68 `20261011170000_w68_persistent_authority_budget_reservations.sql`
+- W69 `20261011180000_w69_one_time_jit_dispatch_claim.sql`
+- W70 `20261011190000_w70_durable_unknown_outcome_reconciliation.sql`
+- W71 `20261012070000_w71_expired_external_execution_budget_recovery.sql`
+- W73 `20261012120000_w73_trusted_system_mission_events.sql`
+- W74 `20261012130000_w74_reconciliation_claim_freshness.sql`
+- W75 `20261012140000_w75_correlatable_provider_receipt.sql`
+- W76 `20261012150000_w76_guard_external_success_on_insert.sql`
+- W77 `20261012160000_w77_read_only_research_payload_bounds.sql`
+- W78 `20261012170000_w78_bind_research_history_to_execution.sql`
+- W79 `20261012180000_w79_trusted_research_completion.sql`
+
+The direct read-only catalog check returned no hosted functions for `claim_agent_execution_dispatch`, `claim_agent_execution_reconciliation`, or `reconcile_agent_execution_outcome`. Hosted `public.agent_executions` lacks the W69/W70 dispatch/reconciliation claim columns; the table inventory also did not contain `public.mission_authority_budgets` or `public.mission_authority_budget_reservations`.
+
+### W79 callable-signature mismatch
+
+Hosted Development still has the old W64 six-argument signatures:
+
+- `public.complete_read_only_research_execution(uuid,text,jsonb,jsonb,text,text)`
+- `private.complete_read_only_research_execution(uuid,text,jsonb,jsonb,text,text)`
+
+The active W79 branch intentionally drops those signatures and replaces the public/private entry points with a trusted seven-argument signature starting with `p_requested_by uuid`. Thus W79 route-to-RPC compatibility **is not present on hosted Development yet**. Do not treat local E2E PASS as a hosted Research E2E result.
+
+### Gate result versus hosted result
+
+On branch HEAD `aa57552bf28e35693106ccb04a808b97c5bfa9a7`, all six CI/preview gates passed:
+- Web Unit 312/312: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38248625542
+- Web CI/build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38248625311
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38248625550
+- W25: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38248625229
+- Netlify preview verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38248625472
+- W21 (PG17 replay, W63–W79 regressions, W72 fake-provider integration, browser E2E 2/2 and clean teardown): https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38248625444
+
+**Status:** isolated PostgreSQL schema/migrations and gateway test **PASS**; hosted Development schema parity **BLOCKED / NOT VERIFIED**. Issue #23 explicitly prohibits hosted Development schema modifications in this workflow; no migration was applied. An authorized migration plan/review and separate hosted validation are required before claiming hosted Research compatibility. Supabase Main/Production and production deployment remain untouched. PR #29 stays OPEN / Draft / UNMERGED.
