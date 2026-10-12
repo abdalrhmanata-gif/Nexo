@@ -128,13 +128,14 @@ begin
 
   insert into public.agent_executions(
     id, workspace_id, mission_id, agent_id, requested_by, idempotency_key,
-    status, authority_snapshot, request, dispatch_claimed_at,
+    status, authority_snapshot, request, evidence, dispatch_claimed_at,
     dispatch_claim_authority_hash, dispatch_claim_request_hash,
     dispatch_claim_budget_revision, completed_at
   ) values (
     v_completed_execution, v_workspace, v_mission, v_side_agent, v_owner,
     'w73-completed-execution-key-0001', 'SUCCEEDED', v_side_authority,
     '{"destination":"https://example.invalid/w73/completed","audience":"w73-test.v1"}'::jsonb,
+    '{"provider_receipt":{"id":"w73-correlated-provider-receipt-0001"}}'::jsonb,
     v_claimed_at, repeat('a',64), repeat('b',64), 7, v_completed_at
   );
 
