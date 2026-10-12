@@ -1,3 +1,13 @@
+## Mission Authority invariant audit — 2026-10-12
+
+A source-level acceptance matrix has been added at [`docs/ZAVQERA_MISSION_AUTHORITY_INVARIANT_MATRIX_2026-10-12.md`](ZAVQERA_MISSION_AUTHORITY_INVARIANT_MATRIX_2026-10-12.md).
+
+**Decision: Issue #23 remains OPEN; universal production enforcement is NOT PROVEN.** The isolated candidate gate is green, but `apps/web/lib/mission-authority/persistent-dispatch-gateway.mjs` explicitly describes the gateway as a seam with no real provider route wired, and `apps/web/lib/mission-authority/provider-adapter-registry.mjs` intentionally exports an empty registry. The internal worker route fails closed when no reviewed adapter is registered. This is the correct safe default; do not add a provider or claim production-grade enforcement without a separate adapter review and entry-point bypass audit.
+
+Evidence: W21 passed on code/test SHA `7a2e559d3f6c3a91b69bce387f2adf98c17ee3d7` ([run](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38289544742)); `17eef72d98be6f44f6998dc0080067e1313995f3` was the documented branch/PR head at the time of the source audit. The new audit and following status/handoff edits are documentation-only successors; they do not change the tested application/SQL code.
+
+Next acceptance work: enumerate every reachable external side-effect entry point; map each to the enforcing gateway or prove it has no external effect; add named regression coverage for changed action/input/destination, stale/revoked authority, missing approval, provider/model replacement, and cross-tenant denial. Keep W66–W79 unapplied on hosted Development until a separate explicit authorization and ordered rollout preflight.
+
 ## Latest verified status — 2026-10-12 — W21 run 38289544742 / candidate SHA `7a2e559d3f6c3a91b69bce387f2adf98c17ee3d7`
 
 - **Exact tested branch HEAD:** `7a2e559d3f6c3a91b69bce387f2adf98c17ee3d7` (`test: cover future-dated reconciliation evidence`).
