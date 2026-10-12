@@ -270,3 +270,15 @@ This is automated candidate validation, not production approval. The provider re
 - Added a PostgreSQL 17/pgTAP regression that recovers an expired external attempt, verifies counters stay held, and proves the W70 trusted reconciliation claim can then be acquired. A negative case proves missing reservation remains `RUNNING` rather than silently dropping the budget fence.
 - The web gateway now validates the execution lease expiry against the current wall clock before invoking the provider adapter. An expired claim never reaches provider I/O; if its BLOCKED settlement cannot be confirmed because the lease has expired, the gateway returns reconciliation-required rather than retrying.
 - The provider registry remains intentionally empty. These controls improve the future adapter boundary but do not certify any real provider or authorize production dispatch.
+
+
+## W73 trusted system mission-event boundary — 2026-10-12
+
+The W72 disposable PostgreSQL integration exposed a role/identity mismatch: the trusted service worker correctly calls JIT claim/completion/reconciliation RPCs using `service_role`, which has no end-user `auth.uid()`. The legacy mission-event writer required a user identity and therefore rejected an otherwise valid trusted claim while appending its audit event.
+
+W73 updates only the private mission-event implementation; it does not change hosted schemas or enable a provider. The writer now has two distinct audit paths:
+
+- **Trusted system events:** a small explicit allowlist; execution ID must resolve to an execution in the exact mission; dispatch events must match persisted claim time, authority/request hashes and budget revision; completion/reconciliation events must match persisted state. These events use `actor_type='SYSTEM'` and `actor_id=NULL`, with the owner resolved from the mission.
+- **User events:** authenticated actor attribution is retained. Owners and authorized workspace editors can append ordinary user events. Generic completion events are allowed only for the W64 unverified read-only research path, and W71 stale-recovery events remain bound to the exact UNKNOWN execution, owner/admin role, and held budget reservation. Users cannot forge trusted dispatch/reconciliation event types.
+
+The W73 pgTAP test is wired into the disposable PostgreSQL 17 W21 regression sequence before the W72 fake-provider integration. The implementation is not considered verified until W21 and the other gates complete on the resulting exact commit.

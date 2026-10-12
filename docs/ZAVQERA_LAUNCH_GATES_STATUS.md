@@ -287,3 +287,14 @@ The W67 helper log now states explicitly that budget-race testing is handled by 
 The trusted worker endpoint, persistent budget/start fence, one-time dispatch claim, and durable UNKNOWN reconciliation contracts are implemented and tested in the candidate branch. The provider adapter registry is intentionally empty, so the route fails closed before privileged client creation or provider I/O. These tests do not certify a live provider integration.
 
 Hosted authenticated Mission Research/citations/history, real Resend inbox delivery, human desktop/mobile visual QA, and Supabase Development leaked-password protection remain open release gates. Independent business verification is still required after any future provider receipt. PR #29 remains **OPEN / Draft / UNMERGED**; Supabase Main/Production, production deployment, DNS and billing remain untouched.
+
+
+---
+
+## W72 integration failure diagnosed; W73 audit-writer fix added — 2026-10-12
+
+On candidate HEAD `253646897424fd9f52f7189c5b3dbec0ce9fd157`, Web Unit, Web CI, Flutter CI, W25 and Netlify Preview passed, but W21 failed at the W72 fake-provider integration. The failure was `claim_agent_execution_dispatch` returning `AUTHENTICATION_REQUIRED` while the service-role worker appended the dispatch audit event. The claim had passed its trusted-role guard; the legacy private mission-event writer was the incompatible user-identity boundary.
+
+W73 adds a strict service-role SYSTEM-event path and regression coverage for valid persisted claims/completions, mismatched or unclaimed rows, forbidden event types, user attribution, workspace denial, and compatibility with W64/W71. W21 is updated to replay the new migration and run the new pgTAP test before W72.
+
+**State:** fix and tests are committed as a single candidate change, but W73/W72 remain **PENDING CI verification** until all gates complete on its exact HEAD. Do not promote production based on earlier green gates while W72 is red.
