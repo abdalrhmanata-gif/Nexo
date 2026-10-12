@@ -21,9 +21,36 @@ assert.ok(
 );
 assert.notEqual(successExecutionId, unknownExecutionId);
 
-const client = createClient(url, serviceRoleKey, {
+const rawClient = createClient(url, serviceRoleKey, {
   auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
 });
+
+// Keep only bounded RPC names and error text/code for disposable CI diagnosis.
+// Never include URL, authorization headers, the service key, or request bodies.
+const rpcDiagnostics = [];
+const client = {
+  async rpc(functionName, args) {
+    try {
+      const result = await rawClient.rpc(functionName, args);
+      if (result?.error) {
+        rpcDiagnostics.push({
+          functionName,
+          code: typeof result.error.code === "string" ? result.error.code.slice(0, 40) : null,
+          message: typeof result.error.message === "string" ? result.error.message.slice(0, 240) : null,
+        });
+      }
+      return result;
+    } catch (error) {
+      rpcDiagnostics.push({
+        functionName,
+        thrown: true,
+        errorName: typeof error?.name === "string" ? error.name.slice(0, 80) : "Error",
+        message: String(error?.message ?? error).slice(0, 240),
+      });
+      throw error;
+    }
+  },
+};
 
 let successDispatchCalls = 0;
 const successAdapter = {
@@ -63,6 +90,7 @@ assert.equal(
     status: success.status,
     persisted: success.persisted,
     dispatched: success.dispatched,
+    rpcDiagnostics,
   })}`,
 );
 assert.equal(success.status, "SUCCEEDED");
