@@ -238,3 +238,10 @@ The service-role client is isolated in `apps/web/lib/supabase/admin.ts` with the
 A trusted reconciliation worker must not settle an UNKNOWN attempt using provider evidence whose `checked_at` predates the durable dispatch claim (or execution creation time for legacy attempts without a W69 claim). W70 enforces this in PostgreSQL, and the provider-neutral gateway independently rejects stale lookup timestamps before finalization. Regression coverage verifies stale evidence leaves the execution UNKNOWN and its `HELD_UNKNOWN` budget reservation unchanged.
 
 This is a freshness/replay defense, not proof that a provider timestamp is truthful. Production adapters must query the authoritative provider using the exact idempotency key or receipt and return a trustworthy lookup timestamp. No real provider adapter is wired or enabled by this change.
+
+
+## Unified trusted worker operation — 2026-10-12
+
+The internal worker ingress is now a single endpoint at `POST /api/internal/agent-executions/[executionId]` with a minimal body containing only `operation` (`dispatch` or `reconcile`) and the provider `audience`. It routes to the existing JIT dispatch or durable reconciliation gateway, rejects extra body fields, validates the execution UUID, and fails closed before creating a privileged client when no reviewed adapter is registered or when reconciliation is unsupported.
+
+The old dispatch-only route was removed so dispatch and reconciliation share the same worker authentication and server-only service-role boundary. The registry remains empty by design; this change does not enable live provider calls.

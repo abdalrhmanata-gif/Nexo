@@ -30,7 +30,7 @@ test("dispatch adapter registry remains fail-closed until a provider is reviewed
 
 test("privileged worker route uses server-only credentials and cannot dispatch without a reviewed adapter", async () => {
   const admin = await readFile(join(webRoot, "lib", "supabase", "admin.ts"), "utf8");
-  const route = await readFile(join(webRoot, "app", "api", "internal", "agent-executions", "[executionId]", "dispatch", "route.ts"), "utf8");
+  const route = await readFile(join(webRoot, "app", "api", "internal", "agent-executions", "[executionId]", "route.ts"), "utf8");
   assert.match(admin, /import ["']server-only["']/);
   assert.match(admin, /SUPABASE_SERVICE_ROLE_KEY/);
   assert.match(route, /ZAVQERA_EXECUTION_WORKER_TOKEN/);
@@ -38,4 +38,6 @@ test("privileged worker route uses server-only credentials and cannot dispatch w
   assert.match(route, /resolveTrustedDispatchAdapter/);
   assert.match(route, /No reviewed provider adapter is registered\. No dispatch occurred\./);
   assert.match(route, /dispatchThroughJitClaim/);
+  assert.match(route, /reconcileThroughTrustedClaim/);
+  assert.match(route, /Only a valid operation and provider audience are accepted/);
 });

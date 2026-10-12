@@ -131,7 +131,7 @@ if not WEB_REPOSITORY.is_file():
 # A privileged service-role client is permitted only in this exact server-only
 # module and only when consumed by the dedicated internal worker route.
 TRUSTED_ADMIN_CLIENT = WEB_ROOT / 'lib' / 'supabase' / 'admin.ts'
-TRUSTED_WORKER_ROUTE = WEB_ROOT / 'app' / 'api' / 'internal' / 'agent-executions' / '[executionId]' / 'dispatch' / 'route.ts'
+TRUSTED_WORKER_ROUTE = WEB_ROOT / 'app' / 'api' / 'internal' / 'agent-executions' / '[executionId]' / 'route.ts'
 if TRUSTED_ADMIN_CLIENT.is_file():
     admin_source = TRUSTED_ADMIN_CLIENT.read_text(encoding='utf-8')
     if not re.search(r'^\s*import\s+["\']server-only["\']', admin_source, re.M):

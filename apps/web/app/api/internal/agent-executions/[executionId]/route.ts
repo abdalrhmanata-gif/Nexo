@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseAdminClient } from "../../../../../../lib/supabase/admin";
 import {
   dispatchThroughJitClaim,
+  reconcileThroughTrustedClaim,
   PERSISTENT_DISPATCH_DECISIONS,
 } from "../../../../../../lib/mission-authority/persistent-dispatch-gateway.mjs";
 import { resolveTrustedDispatchAdapter } from "../../../../../../lib/mission-authority/provider-adapter-registry.mjs";
@@ -32,17 +33,17 @@ export async function POST(
   } catch {
     return NextResponse.json({ error: "A provider audience is required." }, { status: 400, headers: NO_STORE });
   }
-  if (!body || typeof body !== "object" || Array.isArray(body)
-      || typeof (body as { audience?: unknown }).audience !== "string"
-      || !(body as { audience: string }).audience.trim()
-      || (body as { audience: string }).audience.length > 128) {
-    return NextResponse.json({ error: "A valid provider audience is required." }, { status: 400, headers: NO_STORE });
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return NextResponse.json({ error: "A worker operation and provider audience are required." }, { status: 400, headers: NO_STORE });
   }
-
-  const adapter = resolveTrustedDispatchAdapter((body as { audience: string }).audience);
-  if (!adapter) {
-    // Fail closed before constructing a privileged client or claiming an execution.
-    return NextResponse.json({ error: "No reviewed provider adapter is registered. No dispatch occurred." }, { status: 503, headers: NO_STORE });
+  const workerBody = body as { operation?: unknown; audience?: unknown };
+  const bodyKeys = Object.keys(body);
+  if (bodyKeys.some((key) => key !== "operation" && key !== "audience")
+      || (workerBody.operation !== "dispatch" && workerBody.operation !== "reconcile")
+      || typeof workerBody.audience !== "string"
+      || !workerBody.audience.trim()
+      || workerBody.audience.length > 128) {
+    return NextResponse.json({ error: "Only a valid operation and provider audience are accepted." }, { status: 400, headers: NO_STORE });
   }
 
   const { executionId } = await params;
@@ -50,14 +51,26 @@ export async function POST(
     return NextResponse.json({ error: "A valid execution id is required." }, { status: 400, headers: NO_STORE });
   }
 
+  const adapter = resolveTrustedDispatchAdapter(workerBody.audience);
+  if (!adapter) {
+    // Fail closed before constructing a privileged client or claiming an execution.
+    return NextResponse.json({ error: "No reviewed provider adapter is registered. No provider call occurred." }, { status: 503, headers: NO_STORE });
+  }
+  if (workerBody.operation === "reconcile" && typeof adapter.reconcile !== "function") {
+    return NextResponse.json({ error: "The registered provider adapter has no reviewed reconciliation implementation." }, { status: 503, headers: NO_STORE });
+  }
+
   try {
     const client = createSupabaseAdminClient();
-    const result = await dispatchThroughJitClaim({ client, adapter, executionId });
+    const result = workerBody.operation === "dispatch"
+      ? await dispatchThroughJitClaim({ client, adapter, executionId })
+      : await reconcileThroughTrustedClaim({ client, adapter, executionId });
     const status = result.decision === PERSISTENT_DISPATCH_DECISIONS.DISPATCHED
+      || result.decision === PERSISTENT_DISPATCH_DECISIONS.RECONCILED
       ? 200
       : result.decision === PERSISTENT_DISPATCH_DECISIONS.DENY ? 409 : 202;
     return NextResponse.json(result, { status, headers: NO_STORE });
   } catch {
-    return NextResponse.json({ error: "Trusted dispatch could not be completed. Inspect the execution record before any retry." }, { status: 503, headers: NO_STORE });
+    return NextResponse.json({ error: "Trusted worker operation could not be completed. Inspect the execution record before retrying." }, { status: 503, headers: NO_STORE });
   }
 }

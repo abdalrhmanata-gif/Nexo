@@ -34,3 +34,9 @@ export function dispatchThroughJitClaim(input: {
   adapter: TrustedProviderAdapter;
   executionId: string;
 }): Promise<PersistentDispatchResult>;
+
+export function reconcileThroughTrustedClaim(input: {
+  client: TrustedRpcClient;
+  adapter: TrustedProviderAdapter;
+  executionId: string;
+}): Promise<PersistentDispatchResult>;
