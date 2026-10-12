@@ -37,3 +37,14 @@
 ## Safety
 
 No hosted database was changed, no hosted Research or real mission provider call was executed, and no production deployment, DNS/billing change, Git `main` change, or PR merge occurred. Issue #23 remains OPEN and production readiness remains NOT APPROVED.
+
+
+## Follow-up verification — documentation HEAD `a9df2e0c99ca9166bde8b82ba8ef7d34365c1ff0`
+
+- W21 run `38292605062` completed **SUCCESS** on this documentation HEAD. All 21 job steps completed successfully, including browser E2E, disposable stack cleanup and cleanup verification, evidence creation, and both artifact uploads.
+- Evidence artifact: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38292605062/artifacts/11766433934
+- Browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38292605062/artifacts/11766673146
+- Other current-HEAD workflows also completed successfully: Web CI `38292605015`, Web Unit `38292605099`, Flutter CI `38292605130`, W25 `38292605098`; Netlify preview route verification `38292605008` passed with deployment skipped.
+- Review of W57/W68/W69/W70 SQL tests confirms strong exact-scope, budget, one-time claim, reconciliation, stale-evidence and same-workspace member/admin assertions. However, the reviewed W57, W68, W69 and W70 fixtures each create a single workspace; these files do not currently provide an explicit different-workspace/cross-tenant negative assertion. This is an evidence gap, not proof that the underlying SQL authorization is broken. A regression must use the correct authenticated role and test fixture context before it can count as evidence.
+- The internal mission-action route still rejects an absent adapter before privileged client construction and JIT claim. The existing route-ordering test statically inspects source order; it is not a runtime proof of zero I/O. A dynamic route-level proof remains outstanding.
+- No code changes were made during this audit pass. Code/test HEAD remains `706f7801c92f54feb9a55b77103c00c2e54f2d10`; this follow-up is documentation only. Do not conflate the passing current-head CI with hosted Development migration parity or real-provider certification.
