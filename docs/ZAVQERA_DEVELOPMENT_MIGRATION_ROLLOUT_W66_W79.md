@@ -34,7 +34,7 @@ Apply only after a separate review/approval for hosted Development schema change
 12. `20261012170000_w78_bind_research_history_to_execution.sql` — bind user-attributed Research history to the exact completed execution.
 13. `20261012180000_w79_trusted_research_completion.sql` — remove the old user-callable completion signature and expose the requester-bound completion wrapper only to `service_role`.
 
-There are no W67 or W72 SQL migration files in this candidate migration list; W72 is covered by the persistent gateway integration code/test, not by inventing a missing migration. Preserve timestamp order and use the repository's actual migration list as the source of truth.
+W67 is an actual SQL migration in this candidate and must run immediately after W66 to revoke EXECUTE on the legacy public and private six-argument Research completion functions. W72 is covered by persistent gateway integration code/test, not by a SQL migration; do not invent a W72 migration-ledger row. Preserve timestamp order and use the repository's actual migration list as the source of truth.
 
 ## 3. Preconditions — all required before any hosted write
 
