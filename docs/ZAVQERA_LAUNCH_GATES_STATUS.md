@@ -420,3 +420,44 @@ W79 closes that provenance gap in the source contract: the old authenticated-cal
 The corresponding W77 PostgreSQL payload tests now exercise the new trusted signature. A new W79 pgTAP regression suite covers removal of the old signatures, ACLs, client denial, requester-binding mismatch, and successful trusted completion. A route-level source test ensures completion does not use the session-bound Supabase client.
 
 This change requires `SUPABASE_SERVICE_ROLE_KEY` in the Netlify runtime to be configured privately, as already required by the internal trusted-worker endpoint. It does not deploy the migration to hosted Development or Production by this commit: the new migration must first pass isolated PostgreSQL CI. Hosted OpenAI research remains an explicit, separately gated preview test. Production release remains blocked pending all previously documented external and human QA gates.
+
+
+---
+
+## Exact-head hosted schema drift audit — 2026-10-12 — `e96d79a246e23c80051687592a9cb53cd5759ba1`
+
+### Candidate CI/preview results
+
+All six automated candidate gates passed on this exact HEAD:
+
+- Web Unit — **PASS, 312/312**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38247173904
+- Web CI / typecheck / production build — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38247173887
+- Flutter CI — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38247173908
+- W25 isolated PostgreSQL atomic fence — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38247173963
+- Netlify Deploy Preview verification — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38247173950
+- W21 Local Launch Gate — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38247173973
+
+W21 completed repository migration replay on a disposable PostgreSQL 17 stack, core pgTAP, W63–W79 Mission Authority regression tests, workspace/AI quota tests, actual-ledger idempotency/budget/dispatch-claim/reconciliation-claim race proofs, W72 persistent gateway integration with fake providers, browser E2E **2/2**, and verified teardown. Evidence: [W21 run](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38247173973), [gate evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38247173973/artifacts/11745579372), [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38247173973/artifacts/11745419436).
+
+### Separate blocker: hosted Development migration parity
+
+A **read-only** inventory of Supabase **ZAVQERA Development** (`mrwmmbytcymqgwvcoywd`, PostgreSQL 17.6.1) found the hosted migration history ends at `20261011150000 / W65`. The PR branch contains these later migration files that do not appear in hosted migration history:
+
+- `20261011160000_w66_service_role_table_privilege_hardening.sql`
+- `20261011170000_w68_persistent_authority_budget_reservations.sql`
+- `20261011180000_w69_one_time_jit_dispatch_claim.sql`
+- `20261011190000_w70_durable_unknown_outcome_reconciliation.sql`
+- `20261012070000_w71_expired_external_execution_budget_recovery.sql`
+- `20261012120000_w73_trusted_system_mission_events.sql`
+- `20261012130000_w74_reconciliation_claim_freshness.sql`
+- `20261012140000_w75_correlatable_provider_receipt.sql`
+- `20261012150000_w76_guard_external_success_on_insert.sql`
+- `20261012160000_w77_read_only_research_payload_bounds.sql`
+- `20261012170000_w78_bind_research_history_to_execution.sql`
+- `20261012180000_w79_trusted_research_completion.sql`
+
+The hosted `public.agent_executions` table lacks `dispatch_claimed_at`, `dispatch_claim_authority_hash`, `dispatch_claim_request_hash`, `dispatch_claim_budget_revision`, `reconciliation_claimed_at`, `reconciliation_lease_expires_at`, and `reconciliation_claim_token`. The read-only table listing did not contain `public.mission_authority_budgets` or `public.mission_authority_budget_reservations`.
+
+Therefore **local candidate CI is green, but hosted Development schema parity is NOT verified and is currently a blocker**. The local W21 success must not be interpreted as proving that hosted Preview Research or provider execution can work against that older schema.
+
+No migration was applied to hosted Development or Production. Issue #23 explicitly prohibits hosted Development schema changes; keep the hosted-schema and real-provider gates open pending authorized migration planning. The provider registry remains intentionally empty, so no real provider-backed external side effects are enabled. PR #29 remains OPEN / Draft / UNMERGED; Supabase Main/Production, production deployment, DNS and billing remain untouched.
