@@ -1,3 +1,14 @@
+## Current superseding status — 2026-10-12 (read-only hosted privilege check)
+
+- **Branch HEAD at this documentation update:** `ed56a397d6cd04479e762cfe881a4b44614d42f8` (documentation-only; PR #29 remains OPEN / Draft / Unmerged).
+- **Critical hosted Development Research-integrity gap:** read-only catalog/privilege inspection shows the migration ledger remains at W65 (`20261011150000`). The legacy six-argument public and private completion RPCs both exist. `authenticated` has EXECUTE on **both**; `anon` has EXECUTE on neither. The private legacy function is `SECURITY DEFINER`, so the direct authenticated grant on it is especially important. The seven-argument requester-bound W79 signatures are absent.
+- The current application preflight fails closed when the seven-argument RPC cannot be resolved, before Research quota reservation/provider I/O. However, that route guard **does not revoke the legacy RPC grants**. Do not run authenticated hosted Research or claim Development Research is safe/ready until this is remediated through a separately reviewed and explicitly authorized Development-only migration/mitigation, followed by catalog and grant verification.
+- **No hosted privilege/schema changes were made** in this check. Supabase Main/Production, Git `main`, Production deployment, DNS, billing, and real provider side effects remain out of scope. Issue #23's review/authorization guardrail remains in force.
+- The W21 Local Launch Gate on the preceding commit was still in progress at the last status poll; do not mark W21 complete until the run reports success, its browser E2E and disposable-stack cleanup complete, and evidence artifacts are available. Documentation-only commit CI was then triggered; see current [GitHub Actions runs](https://github.com/abdalrhmanata-gif/Nexo/actions).
+- Supporting detail and ordered W66–W79 runbook: [Development migration rollout plan](./ZAVQERA_DEVELOPMENT_MIGRATION_ROLLOUT_W66_W79.md).
+
+---
+
 # ZAVQERA launch gates — verified engineering status
 
 Updated: 2026-10-12 10:16 UTC  
