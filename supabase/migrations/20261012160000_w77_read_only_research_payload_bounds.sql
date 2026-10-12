@@ -161,7 +161,12 @@ begin
        or nullif(btrim(p_result ->> 'summary'), '') is null
        or char_length(p_result ->> 'summary') > 12000
        or jsonb_typeof(p_result -> 'source_count') is distinct from 'number'
-       or (p_result ->> 'source_count') !~ '^(0|[1-9][0-9]*)
+       or (p_result ->> 'source_count')::numeric < 0
+       or (p_result ->> 'source_count')::numeric > 12
+       or trunc((p_result ->> 'source_count')::numeric) <> (p_result ->> 'source_count')::numeric
+       or jsonb_typeof(p_evidence -> 'sources') is distinct from 'array' then
+      raise exception 'INVALID_RESEARCH_RESULT_SHAPE' using errcode = '22023';
+    end if;
     v_source_count := (p_result ->> 'source_count')::integer;
     if v_source_count < 0 or v_source_count > 12
        or jsonb_array_length(p_evidence -> 'sources') <> v_source_count then
