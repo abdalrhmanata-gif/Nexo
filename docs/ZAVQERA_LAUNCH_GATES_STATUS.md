@@ -598,3 +598,55 @@ A fresh read-only inventory of ZAVQERA Development (`mrwmmbytcymqgwvcoywd`) stil
 Still **NOT VERIFIED / NOT AUTHORIZED**: hosted authenticated Mission Research with citations and persisted history; actual Resend inbox delivery; hosted password-reset email/callback; manual desktop/mobile visual QA; leaked-password protection (Security Advisor WARN / Disabled); and any real external-provider adapter/side effects. The registry intentionally remains empty. The successful local/fake-provider gates do not imply hosted schema parity or production readiness.
 
 The Netlify check above is Deploy Preview verification; the workflow's actual deployment step was skipped for this validation run. No Supabase Development/Main/Production schema writes, Production deployment, real provider calls, DNS change, or billing change occurred. Keep PR #29 OPEN / Draft / UNMERGED pending separately authorized migration planning and the remaining acceptance gates.
+
+
+---
+
+## Superseding verification update — 2026-10-12 14:55 UTC
+
+This section supersedes older HEAD, workflow, and hosted Development parity statements above. Historical entries are retained as historical evidence.
+
+- **Verified branch HEAD:** `e75de4332a1483b581133d07bb1927784698d1cf` (`docs: audit hosted Development migration parity W66-W79`).
+- **PR #29:** OPEN / Draft / UNMERGED. No merge or Ready conversion.
+- **Hosted Development:** read-only checks only; no migration was applied.
+
+### Automated gates on the exact HEAD above
+
+- [W21 Local Launch Gate](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38265451848) — **PASS**. Disposable PostgreSQL 17 migration replay and pgTAP, Mission Authority security regressions, quota/plan/workspace tests, actual-ledger idempotency/budget/dispatch/reconciliation concurrency proofs, W72 persistent gateway integration using fake providers, browser E2E, cleanup verification and evidence upload completed successfully.
+- [W25 isolated PostgreSQL atomic fence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38265451933) — **PASS**.
+- [Web Unit](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38265451902) — **PASS**.
+- [Web CI / TypeScript / production build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38265451884) — **PASS**.
+- [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38265451873) — **PASS**.
+- [Netlify workflow](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38265451849) — **PASS**. Treat this only as the workflow's recorded success; it is not evidence of a production promotion or authenticated live Research/provider verification.
+
+W21 artifacts for this exact HEAD:
+- [Evidence and cleanup proof](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38265451848/artifacts/11754841928)
+- [Browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38265451848/artifacts/11754119181)
+
+### Hosted Supabase Development parity — BLOCKED, directly verified
+
+Project: `mrwmmbytcymqgwvcoywd`, region `eu-west-1`.
+
+Read-only catalog and migration-ledger queries returned:
+- Latest applied migration: `20261011150000` (W65).
+- `public.mission_authority_budgets` and `public.mission_authority_budget_reservations`: absent.
+- Required W69/W70 execution columns (dispatch claim and reconciliation claim/lease fields): absent.
+- `public.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)`: absent in both public and private schemas.
+- Legacy public completion signature `public.complete_read_only_research_execution(uuid,text,jsonb,jsonb,text,text)`: still present.
+
+Therefore the current branch's W66, W68-W71 and W73-W79 migration state is not reflected in hosted Development. The branch includes the W79 trusted, requester-bound completion contract; the live schema does not. The application preflight is expected to fail closed rather than treating this mismatch as readiness.
+
+**No hosted migrations were applied.** This respects Issue #23's explicit guardrail requiring the schema/contract comparison and a separately reviewed schema/RPC change. Do not enable authenticated hosted Research, and do not bypass the preflight, until an authorized, reviewed migration rollout and post-migration read-only verification are completed.
+
+### Remaining release gates
+
+- Hosted Development migration parity and post-migration verification: **BLOCKED / NOT APPLIED**.
+- Authenticated hosted live Mission Research with persistent history/citations: **NOT VERIFIED**; it writes persistent Development records and needs the approved schema plus privately configured, non-production credentials.
+- Real invitation email delivery and password-reset email/callback end-to-end: **NOT VERIFIED**.
+- Manual visual QA on desktop/mobile: **NOT VERIFIED**.
+- Security Advisor `auth_leaked_password_protection`: **WARN / Disabled**, intentionally deferred; no plan or billing change.
+- Universal provider-neutral JIT enforcement and complete Mission Authority acceptance matrix: **NOT PRODUCTION-CERTIFIED** despite green isolated tests.
+
+### Safety and release decision
+
+Automated isolated gates are green; **full launch is not approved**. Keep PR #29 OPEN / Draft / Unmerged. Do not modify Git `main`, Supabase Main/Production, Production deployment, DNS or billing. Do not call the fake-provider integration proof a real provider test.
