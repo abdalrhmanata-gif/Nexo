@@ -104,3 +104,19 @@ test("browser and request boundaries do not authorize authoritative reads", asyn
     assert.doesNotMatch(text, restrictedCredentialPattern);
   }
 });
+
+test("nested approval decisions bind the exact approval to the parent mission", async () => {
+  const route = await source(join(
+    webRoot, "app", "api", "missions", "[id]", "approval", "[approvalId]", "route.ts",
+  ));
+
+  assert.match(route, /params: Promise<\{ id: string; approvalId: string \}>/);
+  assert.match(route, /const \{ id, approvalId \} = await params;/);
+  assert.match(route, /\.eq\("id", approvalId\)/);
+  assert.match(route, /\.eq\("mission_id", id\)/);
+  assert.match(route, /p_approval_id: approvalId/);
+  assert.doesNotMatch(route, /p_approval_id: id\b/);
+  assert.match(route, /decision === "REJECTED" && !note/);
+  assert.match(route, /note.length > MAX_DECISION_NOTE/);
+  assert.match(route, /if \(authError \|\| !user\)/);
+});
