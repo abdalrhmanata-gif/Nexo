@@ -1,12 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { createSupabaseAdminClient } from "../../../../../../lib/supabase/admin";
+import { createSupabaseAdminClient } from "../../../../../lib/supabase/admin";
 import {
   dispatchThroughJitClaim,
   reconcileThroughTrustedClaim,
   PERSISTENT_DISPATCH_DECISIONS,
-} from "../../../../../../lib/mission-authority/persistent-dispatch-gateway.mjs";
-import { resolveTrustedDispatchAdapter } from "../../../../../../lib/mission-authority/provider-adapter-registry.mjs";
-import { isTrustedExecutionWorkerRequest } from "../../../../../../lib/mission-authority/worker-auth.mjs";
+} from "../../../../../lib/mission-authority/persistent-dispatch-gateway.mjs";
+import { resolveTrustedDispatchAdapter } from "../../../../../lib/mission-authority/provider-adapter-registry.mjs";
+import { isTrustedExecutionWorkerRequest } from "../../../../../lib/mission-authority/worker-auth.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
