@@ -52,5 +52,5 @@ revoke all on function private.guard_external_execution_success_receipt()
 
 drop trigger if exists agent_execution_success_receipt_guard on public.agent_executions;
 create trigger agent_execution_success_receipt_guard
-before insert or update on public.agent_executions
+before update on public.agent_executions
 for each row execute function private.guard_external_execution_success_receipt();
