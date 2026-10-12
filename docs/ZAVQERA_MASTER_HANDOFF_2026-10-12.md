@@ -221,3 +221,21 @@ anon_can_execute_legacy_private = false
 No changes were made by this query.
 
 **Final handoff decision:** automated local gates PASS; hosted Research is BLOCKED by known Development schema/grant drift; full launch is NOT APPROVED. Continue from the current repo evidence, not from assumptions, and never infer deployment permission from the request to “continue.”
+
+
+## Verified W21 completion — 2026-10-12 18:11 UTC — tested branch HEAD `1ae4bd54aa37d0a50d5406f1bd25e3ab0d216313`
+
+A fresh GitHub Actions inspection confirms **W21 Local Launch Gate PASS** on this exact feature-branch SHA:
+- Run: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38288556192
+- All workflow steps completed successfully, including disposable PostgreSQL 17 migration replay/pgTAP, Mission Authority security regressions, quota/workspace tests, idempotency/budget/dispatch/reconciliation concurrency proofs, W72 gateway integration with fake providers, full browser E2E, disposable stack cleanup, cleanup verification, evidence writing, and both artifact uploads.
+- Evidence artifact: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38288556192/artifacts/11764687037
+- Browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38288556192/artifacts/11764403340
+- Supporting checks on the same SHA: Web Unit PASS (https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38288556126), Web CI PASS (https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38288556115), Flutter CI PASS (https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38288556127), W25 isolated PostgreSQL atomic fence PASS (https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38288556148), and Netlify deployment workflow SUCCESS (https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38288556116).
+- W21's disposable environment cleanup and cleanup verification both have successful step conclusions; both expected artifacts were uploaded and are not expired.
+- PR #29 remains OPEN / Draft / Unmerged; its head is still `1ae4bd54aa37d0a50d5406f1bd25e3ab0d216313` at the time of this verification.
+
+### W74 test-coverage clarification
+The initial observation that no separate `supabase/tests/w74_reconciliation_claim_freshness.sql` exists is accurate, but it is **not evidence that the W74 behavior lacks regression coverage**. The existing `supabase/tests/w70_durable_unknown_outcome_reconciliation.sql` asserts that the reconciliation function checks both `RECONCILIATION_EVIDENCE_PRECEDES_EXECUTION` and `RECONCILIATION_EVIDENCE_PRECEDES_CLAIM`; its behavioral test exercises stale evidence for both dispatch and the active claim, verifies rejection, and verifies that the execution remains `UNKNOWN`, the reservation remains `HELD_UNKNOWN`, and the claim token remains intact. W21 ran this W70 test after replaying the W74 migration and the whole gate passed. Do not create a duplicate W74 test solely to mirror the migration number; a separate test may still be useful later if it adds distinct assertions (for example, future-dated evidence boundary behavior) and is wired into the workflow.
+
+### Status boundary
+This PASS is isolated CI evidence, not hosted Development schema parity, live Research/citation/history proof, real email inbox delivery, manual visual QA, or Production certification. Hosted Development remains on W65 per the last read-only audit; legacy six-argument Research completion functions remain executable by `authenticated`. Do not apply hosted migrations or run hosted Research without separate review and explicit authorization. No hosted schema/grants, Supabase Main/Production, Git `main`, production deployment, DNS, billing, or real provider side effects were changed.
