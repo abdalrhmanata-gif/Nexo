@@ -685,3 +685,22 @@ Therefore the current branch's W66, W68-W71 and W73-W79 migration state is not r
 ### Safety and release decision
 
 Automated isolated gates are green; **full launch is not approved**. Keep PR #29 OPEN / Draft / Unmerged. Do not modify Git `main`, Supabase Main/Production, Production deployment, DNS or billing. Do not call the fake-provider integration proof a real provider test.
+
+
+## W21 final result — 2026-10-12 — tested branch SHA `1ae4bd54aa37d0a50d5406f1bd25e3ab0d216313`
+
+**W21 Local Launch Gate: PASS.** GitHub Actions run https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38288556192 completed successfully. The run finished every step, including disposable PostgreSQL 17 migration replay and pgTAP, Mission Authority SQL security regressions, AI quota/plan/workspace tests, actual-ledger idempotency and budget/dispatch/reconciliation race proofs, W72 persistent gateway integration using fake providers, full browser E2E, disposable stack cleanup, cleanup verification, evidence writing and artifact uploads.
+
+- Evidence artifact: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38288556192/artifacts/11764687037
+- Browser diagnostics artifact: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38288556192/artifacts/11764403340
+- Web Unit PASS: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38288556126
+- Web CI PASS: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38288556115
+- Flutter CI PASS: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38288556127
+- W25 isolated PostgreSQL atomic fence PASS: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38288556148
+- Netlify deployment workflow SUCCESS: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38288556116
+
+### W74 coverage note
+There is no separate `w74_reconciliation_claim_freshness.sql` test file. The existing W70 pgTAP test covers the relevant W74 behavior: it checks both stale-evidence error guards and exercises evidence older than dispatch and older than the active reconciliation claim, confirming the execution stays UNKNOWN and the budget reservation remains HELD_UNKNOWN when evidence is rejected. The W21 gate executes this test against the migration-replayed disposable database and passed. A new W74-specific test should be added only if it contributes distinct assertions, rather than duplicating the existing behavioral coverage.
+
+### Release decision unchanged
+This green result is isolated CI evidence. Hosted Supabase Development parity remains BLOCKED / NOT APPLIED; the last read-only audit found hosted Development at W65 with legacy six-argument Research completion functions still executable by `authenticated`. Do not run hosted Research or apply hosted migrations without separate review and explicit authorization. Live authenticated Research/history/citations, real invitation inbox delivery, password-reset email/callback verification, manual desktop/mobile visual QA, leaked-password protection, and production-grade universal JIT enforcement remain unresolved gates. PR #29 remains OPEN / Draft / Unmerged. Supabase Main/Production, Git `main`, production deployment, DNS, billing and real provider side effects remain untouched.
