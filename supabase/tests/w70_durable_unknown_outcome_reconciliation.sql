@@ -1,7 +1,7 @@
 -- W70: only a trusted leased worker can settle UNKNOWN external outcomes.
 begin;
 create extension if not exists pgtap;
-select plan(20);
+select plan(21);
 
 select ok(to_regprocedure('public.claim_agent_execution_reconciliation(uuid)') is not null,
   'trusted reconciliation-claim RPC exists');
@@ -214,6 +214,24 @@ begin
     and v_reservation.status = 'RELEASED');
 
   select * into v_claim from public.claim_agent_execution_reconciliation(v_exec_ids[3]);
+  v_overcap_evidence := jsonb_set(v_overcap_evidence, '{reconciliation,checked_at}',
+    to_jsonb(clock_timestamp() + interval '6 minutes'), false);
+  v_caught := false;
+  begin
+    perform public.reconcile_agent_execution_outcome(
+      v_exec_ids[3], v_claim.reconciliation_claim_token, 'SUCCEEDED',
+      '{"summary":"Future-dated evidence must not settle the execution."}'::jsonb, v_overcap_evidence);
+  exception when sqlstate '22023' then
+    if sqlerrm = 'RECONCILIATION_CHECKED_AT_IN_FUTURE' then v_caught := true; else raise; end if;
+  end;
+  select * into v_reservation from public.mission_authority_budget_reservations where execution_id = v_exec_ids[3];
+  select * into v_execution from public.agent_executions where id = v_exec_ids[3];
+  insert into w70_behavior_results values ('future_evidence_rejected_keeps_unknown_held',
+    v_caught and v_execution.status = 'UNKNOWN'
+    and v_reservation.status = 'HELD_UNKNOWN'
+    and v_execution.reconciliation_claim_token = v_claim.reconciliation_claim_token);
+
+  -- Return to fresh evidence so the existing over-cap receipt assertion tests its own invariant.
   v_overcap_evidence := jsonb_set(v_overcap_evidence, '{reconciliation,checked_at}', to_jsonb(clock_timestamp()), false);
   v_caught := false;
   begin
@@ -258,6 +276,8 @@ select ok((select passed from w70_behavior_results where name = 'confirmed_no_se
   'authoritative no-send evidence releases held budget for explicit safe retry');
 select ok((select passed from w70_behavior_results where name = 'failed_no_send_replay_is_idempotent'),
   'failed no-send replay preserves a prior provider reference without settling twice');
+select ok((select passed from w70_behavior_results where name = 'future_evidence_rejected_keeps_unknown_held'),
+  'future-dated provider evidence cannot settle an UNKNOWN execution or release its held reservation');
 select ok((select passed from w70_behavior_results where name = 'overcap_receipt_keeps_unknown_held'),
   'over-cap provider charges leave the execution UNKNOWN and reservation held');
 select ok((select passed from w70_behavior_results where name = 'valid_retry_after_rejected_settlement_succeeds'),
