@@ -344,8 +344,8 @@ test("invalid charge amounts and currencies are removed from persisted receipts"
 
 const RECONCILIATION_DISPATCHED_AT = new Date(Date.now() - 60_000).toISOString();
 const RECONCILIATION_CREATED_AT = new Date(Date.now() - 120_000).toISOString();
-const RECONCILIATION_CLAIMED_AT = "2099-01-01T10:00:00.000Z";
-const RECONCILIATION_LEASE_EXPIRY = "2099-01-01T10:05:00.000Z";
+const RECONCILIATION_CLAIMED_AT = new Date(Date.now() - 20_000).toISOString();
+const RECONCILIATION_LEASE_EXPIRY = new Date(Date.now() + 5 * 60_000).toISOString();
 
 function validReconciliationClaim(overrides = {}) {
   return {
@@ -441,6 +441,7 @@ test("authoritative provider lookup reconciles UNKNOWN success without dispatchi
   assert.equal(adapter.calls.length, 1);
   assert.equal(adapter.calls[0].idempotencyKey, "w70-unit-test-key-0001");
   assert.equal(adapter.calls[0].reconciliationClaimToken, "token-w70-claim-1");
+  assert.equal(adapter.calls[0].reconciliationClaimedAt, RECONCILIATION_CLAIMED_AT);
   assert.equal(client.calls.map((x) => x.name).join(","), "claim_agent_execution_reconciliation,reconcile_agent_execution_outcome");
   assert.equal(client.calls[1].args.p_status, "SUCCEEDED");
   assert.deepEqual(client.calls[1].args.p_evidence.provider_receipt, {
@@ -467,6 +468,26 @@ test("stale provider lookup cannot finalize or release an UNKNOWN execution", as
   assert.equal(result.providerLookupPerformed, true);
   assert.equal(adapter.calls.length, 1);
   assert.equal(client.calls.length, 1);
+});
+
+test("lookup timestamp must be newer than the current reconciliation claim", async () => {
+  const claim = validReconciliationClaim();
+  const checkedAt = new Date(Date.parse(claim.reconciliation_claimed_at) - 1_000).toISOString();
+  const client = fakeReconciliationClient({ claim });
+  const adapter = fakeReconciler({ result: {
+    state: "NOT_SENT",
+    authoritative: true,
+    method: "idempotency_key_lookup",
+    providerState: "not_found",
+    checkedAt,
+  } });
+  const result = await reconcileThroughTrustedClaim({ client, adapter, executionId: EXECUTION_ID });
+
+  assert.equal(result.decision, PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED);
+  assert.equal(result.reasonCode, "AUTHORITATIVE_LOOKUP_EVIDENCE_REQUIRED");
+  assert.equal(result.providerLookupPerformed, true);
+  assert.equal(adapter.calls.length, 1);
+  assert.equal(client.calls.length, 1, "stale evidence must not be persisted as a final outcome");
 });
 
 test("authoritative no-send reconciliation releases the held reservation through FAILED", async () => {

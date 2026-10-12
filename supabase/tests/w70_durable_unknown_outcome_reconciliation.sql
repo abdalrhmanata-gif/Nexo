@@ -29,8 +29,10 @@ select ok((select count(*) = 3 from information_schema.columns
     and column_name in ('reconciliation_claimed_at','reconciliation_lease_expires_at','reconciliation_claim_token')),
   'the execution ledger stores a short-lived reconciliation claim');
 select ok(lower(pg_get_functiondef('private.reconcile_agent_execution_outcome(uuid,uuid,text,jsonb,jsonb)'::regprocedure))
-  like '%reconciliation_evidence_precedes_execution%',
-  'stale provider evidence predating the dispatch attempt cannot settle UNKNOWN');
+  like '%reconciliation_evidence_precedes_execution%'
+  and lower(pg_get_functiondef('private.reconcile_agent_execution_outcome(uuid,uuid,text,jsonb,jsonb)'::regprocedure))
+    like '%reconciliation_evidence_precedes_claim%',
+  'provider evidence must post-date both dispatch and the active reconciliation claim');
 
 create temporary table w70_behavior_results(name text primary key, passed boolean not null) on commit drop;
 
@@ -50,6 +52,7 @@ declare
   v_done public.agent_executions;
   v_wrong_token uuid := gen_random_uuid();
   v_caught boolean;
+  v_caught_claim boolean;
   v_i integer;
   v_success_result jsonb := '{"summary":"Provider lookup confirmed the operation."}'::jsonb;
   v_success_evidence jsonb := '{"provider_receipt":{"id":"reconcile-receipt-1","charge_amount":3.5,"currency":"NOK"},"reconciliation":{"authoritative":true,"method":"provider_lookup","provider_state":"succeeded","result":"SUCCEEDED","checked_at":"2026-10-11T23:00:00Z"}}'::jsonb;
@@ -155,8 +158,20 @@ begin
   end;
   select * into v_execution from public.agent_executions where id = v_exec_ids[1];
   select * into v_reservation from public.mission_authority_budget_reservations where execution_id = v_exec_ids[1];
+  -- Evidence can be newer than dispatch but still predate this reconciliation claim.
+  v_success_evidence := jsonb_set(v_success_evidence, '{reconciliation,checked_at}',
+    to_jsonb(v_claim.reconciliation_claimed_at - interval '1 second'), false);
+  v_caught_claim := false;
+  begin
+    perform public.reconcile_agent_execution_outcome(
+      v_exec_ids[1], v_claim.reconciliation_claim_token, 'SUCCEEDED', v_success_result, v_success_evidence);
+  exception when sqlstate '22023' then
+    if sqlerrm = 'RECONCILIATION_EVIDENCE_PRECEDES_CLAIM' then v_caught_claim := true; else raise; end if;
+  end;
+  select * into v_execution from public.agent_executions where id = v_exec_ids[1];
+  select * into v_reservation from public.mission_authority_budget_reservations where execution_id = v_exec_ids[1];
   insert into w70_behavior_results values ('stale_lookup_rejected',
-    v_caught and v_execution.status = 'UNKNOWN'
+    v_caught and v_caught_claim and v_execution.status = 'UNKNOWN'
     and v_reservation.status = 'HELD_UNKNOWN'
     and v_execution.reconciliation_claim_token = v_claim.reconciliation_claim_token);
 
@@ -179,6 +194,7 @@ begin
     v_done.status = 'SUCCEEDED' and v_done.evidence -> 'provider_receipt' ->> 'id' = 'reconcile-receipt-1');
 
   select * into v_claim from public.claim_agent_execution_reconciliation(v_exec_ids[2]);
+  v_failed_evidence := jsonb_set(v_failed_evidence, '{reconciliation,checked_at}', to_jsonb(clock_timestamp()), false);
   select * into v_done from public.reconcile_agent_execution_outcome(
     v_exec_ids[2], v_claim.reconciliation_claim_token, 'FAILED', v_failed_result, v_failed_evidence);
   select * into v_reservation from public.mission_authority_budget_reservations where execution_id = v_exec_ids[2];
@@ -198,6 +214,7 @@ begin
     and v_reservation.status = 'RELEASED');
 
   select * into v_claim from public.claim_agent_execution_reconciliation(v_exec_ids[3]);
+  v_overcap_evidence := jsonb_set(v_overcap_evidence, '{reconciliation,checked_at}', to_jsonb(clock_timestamp()), false);
   v_caught := false;
   begin
     perform public.reconcile_agent_execution_outcome(

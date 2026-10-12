@@ -294,6 +294,7 @@ function reconciliationEnvelope(claim) {
     dispatchRequestHash: claim.dispatch_claim_request_hash ?? null,
     dispatchBudgetRevision: claim.dispatch_claim_budget_revision ?? null,
     reconciliationClaimToken: claim.reconciliation_claim_token,
+    reconciliationClaimedAt: claim.reconciliation_claimed_at,
     reconciliationLeaseExpiresAt: claim.reconciliation_lease_expires_at,
     createdAt: claim.created_at ?? null,
   });
@@ -306,10 +307,15 @@ function validAuthoritativeLookup(result, expectedResult, claim) {
   if (result.state !== expectedResult) return false;
   if (!nonEmpty(result.checkedAt)) return false;
   const checkedAt = Date.parse(result.checkedAt);
-  const lowerBound = Date.parse(claim.dispatchClaimedAt ?? claim.createdAt ?? "");
+  const dispatchBound = Date.parse(claim.dispatchClaimedAt ?? claim.createdAt ?? "");
+  const reconciliationClaimedAt = Date.parse(claim.reconciliationClaimedAt ?? "");
+  // Evidence must be produced by the current reconciliation attempt, not a
+  // cached lookup from an earlier worker or an earlier failed attempt.
   return Number.isFinite(checkedAt)
-    && Number.isFinite(lowerBound)
-    && checkedAt > lowerBound
+    && Number.isFinite(dispatchBound)
+    && Number.isFinite(reconciliationClaimedAt)
+    && checkedAt > dispatchBound
+    && checkedAt > reconciliationClaimedAt
     && checkedAt <= Date.now() + 5 * 60 * 1000;
 }
 

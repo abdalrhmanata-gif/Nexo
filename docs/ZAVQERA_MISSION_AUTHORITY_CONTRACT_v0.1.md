@@ -307,3 +307,15 @@ Artifacts: [W21 evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs
 W73 resolves the specific W72 failure where a service-role worker could pass the JIT decision yet fail to append the mission audit event because the legacy writer required `auth.uid()`. System events now use a bounded allowlist and are checked against persisted execution state; regular user events preserve user attribution. The pgTAP test plan was corrected from 27 to 26 assertions before the final passing run.
 
 This snapshot certifies the tested candidate code path with **fake providers only**. The provider registry remains intentionally empty. Hosted authenticated live Research/citations/history, real Resend inbox delivery and password-reset email, human desktop/mobile visual QA, and Supabase Development leaked-password protection remain open release gates. Production launch is **not approved**. PR #29 remains OPEN / Draft / UNMERGED; Supabase Main/Production, production deployment, DNS, billing, and real provider side effects remain untouched.
+
+
+## W70 reconciliation evidence freshness hardening — candidate change
+
+A persisted reconciliation claim is not enough on its own: the provider lookup's `checked_at` must be later than both the original dispatch attempt and the currently held reconciliation claim. This prevents a lookup captured before a worker claimed reconciliation from being reused as fresh evidence merely because it post-dates the original dispatch.
+
+- The server-side gateway envelope carries the persisted `reconciliation_claimed_at` timestamp.
+- The gateway fails closed before the outcome-settlement RPC if the lookup timestamp does not post-date this claim.
+- W70 SQL repeats the freshness check after locking the execution and validating the active claim token/lease, so a caller cannot bypass the application-layer check.
+- The W70 pgTAP regression keeps the execution `UNKNOWN`, reservation `HELD_UNKNOWN`, and claim token intact when evidence predates the active reconciliation claim. The gateway unit suite separately checks evidence which is newer than dispatch but older than reconciliation claim.
+
+This is a candidate code hardening. The exact new commit must pass all CI gates before the release evidence is updated. It does not enable a real provider or modify hosted Supabase.

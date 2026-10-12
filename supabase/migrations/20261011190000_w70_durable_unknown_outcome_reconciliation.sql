@@ -222,6 +222,13 @@ begin
      or v_execution.reconciliation_lease_expires_at <= v_now then
     raise exception 'RECONCILIATION_CLAIM_TOKEN_INVALID_OR_EXPIRED' using errcode = '42501';
   end if;
+  -- An authoritative response must belong to this claim attempt. Evidence can
+  -- be newer than dispatch yet still be stale if captured before this worker
+  -- acquired its reconciliation lease.
+  if v_execution.reconciliation_claimed_at is null
+     or v_checked_at <= v_execution.reconciliation_claimed_at then
+    raise exception 'RECONCILIATION_EVIDENCE_PRECEDES_CLAIM' using errcode = '22023';
+  end if;
   if v_checked_at > v_now + interval '5 minutes' then
     raise exception 'RECONCILIATION_CHECKED_AT_IN_FUTURE' using errcode = '22023';
   end if;
