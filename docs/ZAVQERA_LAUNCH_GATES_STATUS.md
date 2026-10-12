@@ -1,3 +1,15 @@
+## Latest verified status — 2026-10-12 17:50 UTC
+
+- **Candidate branch HEAD before this documentation-only update:** `c6779da7ba9cc6c2855be36db865e5dd75fcf563`.
+- **W21 Local Launch Gate: PASS** on that candidate HEAD: [run 38285709683](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38285709683). All steps completed successfully, including disposable PostgreSQL 17 migration replay and pgTAP, Mission Authority SQL regressions (including W67), quota/workspace security tests, actual-ledger concurrency races, W72 persistent gateway integration with fake providers, browser E2E (**2/2 passed**), disposable-stack cleanup, cleanup verification, and evidence uploads.
+- **Evidence:** [W21 evidence and cleanup proof](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38285709683/artifacts/11763372772) · [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38285709683/artifacts/11764235260). Evidence reports `cleanup_verified=true`, `remaining_containers=none`, and `remaining_volumes=none`.
+- **SHA interpretation:** the evidence file's `git_sha=a4a5ee115bcc736c080ec0cd5141b59d9a5f9582` is the GitHub pull-request merge ref (`GITHUB_SHA`); the run's `head_sha=c6779da7ba9cc6c2855be36db865e5dd75fcf563` is the PR branch HEAD. The GitHub PR API confirms `merge_commit_sha=a4a5ee115bcc736c080ec0cd5141b59d9a5f9582`. This is expected for a `pull_request` workflow and is not evidence that a different candidate branch was tested.
+- On the same candidate HEAD: [Web Unit](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38285709626), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38285709677), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38285709617), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38285709684), and [Netlify workflow](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38285709588) all completed successfully.
+- **Hosted Development is still NOT at parity:** the last direct read-only catalog check showed migration ledger W65, absent W68 budget tables and W69/W70 claim fields, and the legacy six-argument public/private Research completion functions still executable by `authenticated`. The new W67 hardening migration is tested in the disposable database but has **not** been applied to hosted Development.
+- **Decision:** isolated engineering gates PASS; hosted Research remains blocked pending separate review and explicit authorization for Development-only remediation, followed by read-only grant/catalog verification. No Supabase Main/Production, Git `main`, production deployment, DNS, billing, or real-provider side effects were changed. PR #29 remains **OPEN / Draft / Unmerged**.
+
+---
+
 ## Superseding verification — 2026-10-12 17:05 UTC
 
 - **Latest verified code-bearing commit:** `d4da141580b027752fff3830594d35b562aca7df` (`ci: execute W67 legacy Research privilege regression`). The subsequent commits `e5549668ceac19c200113c0c1c7ec238e89990ca` and `0aa8ec418d43efd31b381438b4f9ad4de6172973` are documentation-only corrections/evidence updates.
