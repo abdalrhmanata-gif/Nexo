@@ -189,7 +189,7 @@ jobs:
             supabase/tests/w66_service_role_table_privilege_hardening.sql \
             supabase/tests/w68_mission_authority_budget_reservations.sql \
             supabase/tests/w69_agent_execution_dispatch_claim.sql \
-            supabase/tests/w70_durable_unknown_outcome_reconciliation.sql
+            supabase/tests/w70_durable_unknown_outcome_reconciliation.sql \
             supabase/tests/w71_expired_external_execution_budget_recovery.sql
           do
             echo "Running Mission Authority regression: $test_file"
