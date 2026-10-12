@@ -177,17 +177,17 @@ This is a source-and-test evidence review of the current PR candidate, not a pro
 | Approval consumption cannot be restored by deleting an execution | **IMPLEMENTED for the current SQL contract** | `supabase/migrations/20261010180000_w58_retry_replay_and_consumption_tombstone.sql` | Does not by itself reconcile a real provider's outcome. |
 | Exact request binding and duplicate-dispatch refusal | **IMPLEMENTED for the current SQL contract** | W56 and `supabase/migrations/20261010183000_w60_start_idempotency_request_binding.sql` | Existing attempts must be reconciled; the RPC intentionally does not authorize a resend. |
 | Bounded, value-free approval payload preview with sensitive field-name redaction | **IMPLEMENTED for the current SQL preview** | W61/W62; `supabase/tests/w57_exact_agent_approval_binding.sql` | Field-name redaction is defense in depth, not a guarantee that arbitrary business context is non-sensitive. |
-| One provider-neutral JIT decision immediately before every delegated external side effect | **MISSING** | `apps/web/lib/mission-authority/controlled-adapter.mjs` is an in-memory prototype; `docs/ZAVQERA_WEB_MUTATION_AND_SIDE_EFFECT_INVENTORY_2026-10-01.md` describes the current seam | The prototype is not wired as the universal production dispatch boundary. |
-| Atomic action/spend budget across independent workers at the actual dispatch boundary | **MISSING / NOT PROVEN** | The in-memory adapter has a mutex; W25 validates a separate PostgreSQL atomic fence | No evidence yet that Mission Authority action/spend budgets and dispatch are atomically fenced together across independent workers. |
-| Durable attempt journal and UNKNOWN state | **PARTIAL** | `public.agent_executions`; W49 recovery migration; W56 replay guard | Durable records exist, but provider-specific reconciliation and authoritative no-send evidence are not implemented for a real provider. |
-| Unknown provider outcome blocks blind retry | **IMPLEMENTED in current guarded execution paths; provider reconciliation PARTIAL** | W49/W56–W60; controlled-adapter regression suite | No real provider lookup/receipt contract has been certified. |
+| One provider-neutral JIT decision immediately before every delegated external side effect | **PARTIAL — guarded dispatch path exists; real provider remains disabled** | W69 `claim_agent_execution_dispatch`; `apps/web/lib/mission-authority/persistent-dispatch-gateway.mjs`; `apps/web/app/api/internal/agent-executions/[executionId]/route.ts`; W21/W69 tests | The provider registry is intentionally empty, so no reviewed provider adapter is callable and no real external side effect is enabled. Universal coverage must be preserved for every future adapter. |
+| Atomic action/spend budget across independent workers at the actual dispatch boundary | **PARTIAL / real-provider coupling NOT PROVEN** | W68 atomic reservation/settlement; W69 one-time dispatch claim; W25 independent PostgreSQL fence; W21 actual-ledger race tests | Budget and JIT checks are atomic inside their SQL boundaries, but no real provider network send is currently wired to prove end-to-end crash/race behavior across the external dispatch boundary. |
+| Durable attempt journal and UNKNOWN state | **PARTIAL — durable reconciliation contract exists** | `public.agent_executions`; W49/W56 recovery and replay guards; W70 reconciliation claims and authoritative settlement | The database has leased reconciliation and held-budget settlement, but a real provider lookup/receipt contract has not been certified end-to-end. |
+| Unknown provider outcome blocks blind retry | **IMPLEMENTED for guarded SQL paths; provider lookup remains unverified** | W56–W60 and W70; controlled-adapter regression tests; W21 disposable PG17 suite | The state machine blocks blind retries and supports durable reconciliation, but no real provider lookup adapter is registered. |
 | Verification before business outcome commit | **PARTIAL** | Existing verification/outcome RPCs and lifecycle tests | No real external-effect integration has been proven end-to-end through dispatch, receipt, independent verification and outcome. |
 | Provider/model substitution cannot expand authority | **PARTIAL** | Controlled-adapter tests bind action/input/destination and fail closed | Tests exercise the isolated prototype, not every production adapter entry point. |
 | Cross-tenant denial and no client-supplied authority | **IMPLEMENTED for covered SQL/web boundaries** | W21 disposable PostgreSQL/security suite; W57 pgTAP; Web authorization tests | Continue to require the same checks in every new endpoint and adapter. |
 
 ### Next implementation gate
 
-Do not add another table or RPC merely to complete the matrix. First design the minimal provider-neutral dispatch contract and identify the first real delegated side effect to control. Then test the existing PostgreSQL contract against that exact request and the independent-worker race cases. Only propose persistence changes if those tests demonstrate a missing invariant. Keep real provider dispatch disabled until durable reconciliation can prove whether a timed-out request was sent.
+Do not add more schema or RPCs merely to complete the matrix. The next gate is to review and register one provider adapter only after its exact receipt, idempotency and authoritative-reconciliation contract is defined and tested. Exercise timeout-after-send, definite-no-send, duplicate delivery, late worker completion and concurrent budget/claim races. Keep the registry empty and external dispatch disabled until these cases are proven for that provider.
 
 Hosted authenticated Mission Research, real Resend invitation delivery, human visual QA, and Development leaked-password protection remain separate release gates. PR #29 stays OPEN / Draft / UNMERGED; Supabase Main/Production and production deployment remain untouched.
 
@@ -245,3 +245,19 @@ This is a freshness/replay defense, not proof that a provider timestamp is truth
 The internal worker ingress is now a single endpoint at `POST /api/internal/agent-executions/[executionId]` with a minimal body containing only `operation` (`dispatch` or `reconcile`) and the provider `audience`. It routes to the existing JIT dispatch or durable reconciliation gateway, rejects extra body fields, validates the execution UUID, and fails closed before creating a privileged client when no reviewed adapter is registered or when reconciliation is unsupported.
 
 The old dispatch-only route was removed so dispatch and reconciliation share the same worker authentication and server-only service-role boundary. The registry remains empty by design; this change does not enable live provider calls.
+
+
+## Exact-head validation snapshot — 2026-10-12 — code HEAD `990f48b714d60cf97d3288aba5ab6cfe7b66578d`
+
+The following checks completed successfully on the code HEAD named above, before this documentation-only update:
+
+- Web Unit: PASS — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38209185306
+- Web CI / TypeScript / production build: PASS — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38209185291
+- Flutter CI: PASS — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38209185285
+- W25 isolated PostgreSQL atomic fence: PASS — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38209185293
+- Netlify Deploy Preview verification: PASS — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38209185319
+- W21 Local Launch Gate: PASS — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38209185284
+
+W21 included PostgreSQL 17 migration replay, the core pgTAP launch gate, the newly wired W63/W64/W65/W66/W68/W69/W70 Mission Authority SQL regressions, AI quota/plan/workspace security tests, four actual-ledger concurrency/race proofs, and 2/2 browser E2E scenarios. Cleanup was verified; evidence: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38209185284/artifacts/11728242645 and browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38209185284/artifacts/11728332228.
+
+This is automated candidate validation, not production approval. The provider registry remains empty. Hosted authenticated Research, real Resend delivery, human visual QA, Development leaked-password protection, and a reviewed real-provider adapter/reconciliation contract remain release gates. PR #29 remains OPEN / Draft / UNMERGED; Supabase Main/Production and production deployment remain untouched.
