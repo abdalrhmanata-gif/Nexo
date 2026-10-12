@@ -319,3 +319,8 @@ A persisted reconciliation claim is not enough on its own: the provider lookup's
 - The W70 pgTAP regression suite verifies that the W74 guard keeps the execution `UNKNOWN`, reservation `HELD_UNKNOWN`, and claim token intact when evidence predates the active reconciliation claim. The gateway unit suite separately checks evidence which is newer than dispatch but older than reconciliation claim.
 
 This is a candidate code hardening. The exact new commit must pass all CI gates before the release evidence is updated. It does not enable a real provider or modify hosted Supabase.
+
+
+### Approved request immutability — candidate follow-up
+
+The dispatch and reconciliation adapter envelopes are deeply frozen, including nested objects and arrays in the approved request. This prevents an adapter from accidentally or deliberately mutating the in-memory payload after the durable JIT claim has bound its hash. Regression tests assert nested mutation throws on both dispatch and reconciliation paths. This is a defence-in-depth control; the durable database hashes and provider request binding remain authoritative, and a provider registry stays empty until an adapter passes review.

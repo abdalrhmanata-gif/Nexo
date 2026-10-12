@@ -104,6 +104,32 @@ test("a valid claim is validated before exactly one adapter call and trusted com
   assert.equal("secret" in client.calls[1].args.p_evidence.provider_receipt, false);
 });
 
+test("dispatch adapter receives a deeply immutable approved request", async () => {
+  const request = {
+    ...validClaim().request,
+    payload: { message: "approved", metadata: { recipients: ["one", "two"] } },
+  };
+  const client = fakeClient({ claim: validClaim({ request }) });
+  const adapter = fakeAdapter();
+  adapter.dispatch = async (claim) => {
+    adapter.calls.push(claim);
+    assert.equal(Object.isFrozen(claim), true);
+    assert.equal(Object.isFrozen(claim.request), true);
+    assert.equal(Object.isFrozen(claim.request.payload), true);
+    assert.equal(Object.isFrozen(claim.request.payload.metadata), true);
+    assert.equal(Object.isFrozen(claim.request.payload.metadata.recipients), true);
+    assert.throws(() => { claim.request.payload.metadata.recipients.push("unapproved"); }, TypeError);
+    assert.throws(() => { claim.request.payload.message = "tampered"; }, TypeError);
+    assert.deepEqual(claim.request.payload.metadata.recipients, ["one", "two"]);
+    return { state: "SUCCEEDED", receipt: { id: "immutable-request-receipt" } };
+  };
+
+  const result = await dispatchThroughJitClaim({ client, adapter, executionId: EXECUTION_ID });
+  assert.equal(result.decision, PERSISTENT_DISPATCH_DECISIONS.DISPATCHED);
+  assert.equal(adapter.calls.length, 1);
+  assert.equal(client.calls[1].args.p_evidence.provider_receipt.id, "immutable-request-receipt");
+});
+
 test("known JIT denial blocks before adapter dispatch", async () => {
   const client = fakeClient({ claimError: { message: "APPROVAL_REQUIRED_OR_SCOPE_CHANGED" } });
   const adapter = fakeAdapter();
@@ -428,6 +454,35 @@ test("reconciliation audience mismatch never calls the wrong provider adapter", 
   assert.equal(result.providerLookupPerformed, false);
   assert.equal(adapter.calls.length, 0);
   assert.equal(client.calls.length, 1);
+});
+
+test("reconciliation adapter receives a deeply immutable approved request", async () => {
+  const originalClaim = validReconciliationClaim({
+    request: {
+      ...validReconciliationClaim().request,
+      payload: { message: "approved", metadata: { recipients: ["one", "two"] } },
+    },
+  });
+  const client = fakeReconciliationClient({ claim: originalClaim });
+  const adapter = fakeReconciler();
+  adapter.reconcile = async (claim) => {
+    adapter.calls.push(claim);
+    assert.equal(Object.isFrozen(claim), true);
+    assert.equal(Object.isFrozen(claim.request), true);
+    assert.equal(Object.isFrozen(claim.request.payload), true);
+    assert.equal(Object.isFrozen(claim.request.payload.metadata), true);
+    assert.equal(Object.isFrozen(claim.request.payload.metadata.recipients), true);
+    assert.throws(() => { claim.request.payload.metadata.recipients.reverse(); }, TypeError);
+    assert.throws(() => { claim.request.payload.message = "tampered"; }, TypeError);
+    assert.deepEqual(claim.request.payload.metadata.recipients, ["one", "two"]);
+    return { state: "UNKNOWN" };
+  };
+
+  const result = await reconcileThroughTrustedClaim({ client, adapter, executionId: EXECUTION_ID });
+  assert.equal(result.decision, PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED);
+  assert.equal(result.reasonCode, "PROVIDER_OUTCOME_STILL_UNKNOWN");
+  assert.equal(adapter.calls.length, 1);
+  assert.equal(client.calls.length, 1, "an unknown lookup must not be persisted as a terminal state");
 });
 
 test("authoritative provider lookup reconciles UNKNOWN success without dispatching", async () => {

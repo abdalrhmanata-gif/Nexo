@@ -135,9 +135,17 @@ function validClaim(claim, executionId) {
     && expiresAt > Date.now();
 }
 
+function deepFreeze(value, seen = new WeakSet()) {
+  if (value === null || typeof value !== "object") return value;
+  if (seen.has(value)) return value;
+  seen.add(value);
+  for (const child of Object.values(value)) deepFreeze(child, seen);
+  return Object.freeze(value);
+}
+
 function claimEnvelope(claim) {
-  // Pass only the exact, approved request and correlation fields to the adapter.
-  return Object.freeze({
+  // The adapter must not mutate nested approved input after the JIT decision.
+  return deepFreeze({
     executionId: claim.id,
     actionId: claim.action_id,
     agentId: claim.agent_id,
@@ -280,7 +288,8 @@ function validReconciliationClaim(claim, executionId) {
 }
 
 function reconciliationEnvelope(claim) {
-  return Object.freeze({
+  // Reconciliation lookups must use the exact persisted destination and request.
+  return deepFreeze({
     executionId: claim.id,
     actionId: claim.action_id,
     agentId: claim.agent_id,
