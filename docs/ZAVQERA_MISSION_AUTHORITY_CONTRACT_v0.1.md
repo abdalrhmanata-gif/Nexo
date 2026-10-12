@@ -340,3 +340,10 @@ The persistent application gateway checks this same invariant for both immediate
 **Evidence:** `supabase/tests/w75_correlatable_provider_receipt.sql` passed in the disposable PostgreSQL 17 W21 gate. The test rejects status-only, provider-only and nested references, accepts a stable top-level string or numeric reference, and confirms read-only research is unaffected. Application regression tests cover three uncorrelatable receipt shapes in dispatch and reconciliation. Exact-head Web Unit passed 308/308 and all six PR gates passed at `179e9812fb1b787bd162b17a454cb4fdc1f57724`; run links are in the launch-gates status document.
 
 This verifies the **fake-adapter candidate path**, not a real provider. The registered adapter set intentionally remains empty. No hosted migration was applied. Production readiness and external-provider authority remain blocked on the previously listed live Research/history, email delivery, visual QA and Development account-protection gates.
+
+
+## W79 research-completion trust boundary — 2026-10-12
+
+Read-only research output is unverified user-facing AI content, but its durable audit row must not be user-forgeable. The trusted API route now submits completion through the server-only Supabase admin client and includes the authenticated requester ID. W79 removes the old six-argument completion RPC signatures and replaces them with a service-role-only signature. The database still verifies that the supplied requester owns the exact running read-only execution and retains current workspace edit permission, lease validity, bounded payload shape, and `verified: false` semantics.
+
+This is a source/migration/test change only. It does not deploy the migration to hosted Development or Production. Isolated PostgreSQL replay and W21 are required before considering the candidate accepted; the live provider and production-readiness gates remain separate.

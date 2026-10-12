@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser, createSupabaseServerClient } from "../../../../../lib/supabase/server";
+import { createSupabaseAdminClient } from "../../../../../lib/supabase/admin";
 import { createSupabaseMissionRepository } from "../../../../../lib/supabase/mission-repository";
 import { buildMockMissionResearch, requestMissionResearch, type MissionResearch } from "../../../../../lib/ai-research";
 import { runAiGeneration, AI_GENERATION_OUTCOMES } from "../../../../../lib/ai-generation-service";
@@ -10,6 +11,28 @@ export const maxDuration = 35;
 
 function isTerminalLifecycle(status: string) {
   return status === "COMPLETED" || status === "CANCELLED";
+}
+
+type ResearchCompletionStatus = "SUCCEEDED" | "FAILED" | "UNKNOWN";
+
+async function completeReadOnlyResearchExecution(input: {
+  requestedBy: string;
+  executionId: string;
+  status: ResearchCompletionStatus;
+  result: Record<string, unknown>;
+  evidence: Record<string, unknown>;
+}) {
+  // Completion is a server attestation boundary, not a user-writable ledger RPC.
+  // The trusted requester ID is rebound to the execution by the database.
+  return createSupabaseAdminClient().rpc("complete_read_only_research_execution", {
+    p_requested_by: input.requestedBy,
+    p_execution_id: input.executionId,
+    p_status: input.status,
+    p_result: input.result,
+    p_evidence: input.evidence,
+    p_error_code: null,
+    p_error_message: null,
+  });
 }
 
 function normaliseRequestId(request: Request) {
@@ -24,7 +47,7 @@ async function authenticatedMission(missionId: string) {
   const supabase = await createSupabaseServerClient();
   const mission = await repository.getMission(missionId);
   if (!mission) return { error: NextResponse.json({ error: "Mission not found." }, { status: 404 }) } as const;
-  return { repository, supabase, mission } as const;
+  return { user, repository, supabase, mission } as const;
 }
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -42,7 +65,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   try {
     const auth = await authenticatedMission((await params).id);
     if ("error" in auth) return auth.error;
-    const { repository, supabase, mission } = auth;
+    const { user, repository, supabase, mission } = auth;
 
     if (isTerminalLifecycle(mission.lifecycleStatus)) {
       return NextResponse.json({ error: "This mission is closed. Create a new mission for additional research." }, { status: 422 });
@@ -111,11 +134,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const startedExecutionId = executionId;
     if (result.kind === AI_GENERATION_OUTCOMES.SETTLEMENT_FAILED) {
       if (startedExecutionId) {
-        const completion = await supabase.rpc("complete_read_only_research_execution", {
-          p_execution_id: startedExecutionId,
-          p_status: "UNKNOWN",
-          p_result: { reason: "AI_USAGE_SETTLEMENT_FAILED" },
-          p_evidence: { outcome: "UNKNOWN", verified: false, request_id: requestId },
+        const completion = await completeReadOnlyResearchExecution({
+          requestedBy: user.id,
+          executionId: startedExecutionId,
+          status: "UNKNOWN",
+          result: { reason: "AI_USAGE_SETTLEMENT_FAILED" },
+          evidence: { outcome: "UNKNOWN", verified: false, request_id: requestId },
         });
         if (completion.error) {
           return NextResponse.json({ error: "Research may have completed, but execution recovery evidence could not be recorded." }, { status: 503 });
@@ -127,11 +151,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (result.kind === AI_GENERATION_OUTCOMES.PROVIDER_ERROR) {
       if (startedExecutionId) {
         const executionStatus = result.disposition === "hold" ? "UNKNOWN" : "FAILED";
-        const completion = await supabase.rpc("complete_read_only_research_execution", {
-          p_execution_id: startedExecutionId,
-          p_status: executionStatus,
-          p_result: { reason: result.code },
-          p_evidence: { outcome: executionStatus, verified: false, request_id: requestId },
+        const completion = await completeReadOnlyResearchExecution({
+          requestedBy: user.id,
+          executionId: startedExecutionId,
+          status: executionStatus,
+          result: { reason: result.code },
+          evidence: { outcome: executionStatus, verified: false, request_id: requestId },
         });
         if (completion.error) {
           return NextResponse.json({ error: "The research attempt could not be safely reconciled. Inspect execution history before retrying." }, { status: 503 });
@@ -155,11 +180,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (!startedExecutionId) {
       return NextResponse.json({ error: "The research execution boundary was not recorded." }, { status: 503 });
     }
-    const completion = await supabase.rpc("complete_read_only_research_execution", {
-      p_execution_id: startedExecutionId,
-      p_status: "SUCCEEDED",
-      p_result: { summary: research.summary, source_count: research.sources.length },
-      p_evidence: { outcome: "SUCCEEDED", request_id: requestId, verified: false, sources: research.sources },
+    const completion = await completeReadOnlyResearchExecution({
+      requestedBy: user.id,
+      executionId: startedExecutionId,
+      status: "SUCCEEDED",
+      result: { summary: research.summary, source_count: research.sources.length },
+      evidence: { outcome: "SUCCEEDED", request_id: requestId, verified: false, sources: research.sources },
     });
     if (completion.error) return NextResponse.json({ error: "Research completed but execution evidence could not be recorded." }, { status: 503 });
 

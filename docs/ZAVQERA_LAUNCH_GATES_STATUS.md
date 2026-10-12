@@ -409,3 +409,14 @@ The W21 run initially exposed a stale fixture in W73: it inserted a successful e
 W21 browser E2E passed **2/2** (2.7 minutes). Disposable cleanup was confirmed: `remaining_containers=none`, `remaining_volumes=none`, `cleanup_verified=true`. W72 persistent-gateway integration and the actual independent-session idempotency, authority-budget, dispatch-claim, and reconciliation-claim race checks passed.
 
 **Release boundary remains unchanged:** the provider adapter registry is intentionally empty until a real adapter has passed review. The trusted gateway fails closed before provider I/O with no reviewed adapter. Tests use fake adapters and disposable PostgreSQL; they do not prove live external-provider integration. Hosted authenticated live Research/citations/history, real Resend delivery, hosted password-reset email/callback, human visual QA, and Supabase Development leaked-password protection (WARN / Disabled) remain open. PR #29 remains OPEN / Draft / UNMERGED; Supabase Main/Production and production deployment remain untouched.
+
+
+## W79 — trusted read-only research completion — 2026-10-12
+
+A source-level review found that authenticated users could call the bounded read-only research completion RPC directly and submit their own result/citation payload for an execution they owned. W78 tied the history event to that ledger row, but did not independently prove that the server-side provider flow had produced the content.
+
+W79 closes that provenance gap in the source contract: the old authenticated-callable RPC signatures are removed, the replacement completion RPC is callable only by `service_role`, and the API route passes the authenticated requester ID through the trusted server-only client. The database matches that requester to the durable execution and current workspace authority before writing the result. Returned research remains explicitly `verified: false`; this is not independent fact verification.
+
+The corresponding W77 PostgreSQL payload tests now exercise the new trusted signature. A new W79 pgTAP regression suite covers removal of the old signatures, ACLs, client denial, requester-binding mismatch, and successful trusted completion. A route-level source test ensures completion does not use the session-bound Supabase client.
+
+This change requires `SUPABASE_SERVICE_ROLE_KEY` in the Netlify runtime to be configured privately, as already required by the internal trusted-worker endpoint. It does not deploy the migration to hosted Development or Production by this commit: the new migration must first pass isolated PostgreSQL CI. Hosted OpenAI research remains an explicit, separately gated preview test. Production release remains blocked pending all previously documented external and human QA gates.
