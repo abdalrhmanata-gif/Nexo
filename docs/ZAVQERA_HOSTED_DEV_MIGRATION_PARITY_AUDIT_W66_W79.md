@@ -2,7 +2,8 @@
 
 **Audit date:** 2026-10-12  
 **Branch:** `zavqera/ai-planner-integration`  
-**Audited branch HEAD before this document:** `65e96a8c1dba8150b023ac0581f5db1543ba750e`  
+**Original audit snapshot HEAD:** `65e96a8c1dba8150b023ac0581f5db1543ba750e`  
+**Superseding verified candidate HEAD:** see the latest status section in `docs/ZAVQERA_LAUNCH_GATES_STATUS.md`.  
 **Hosted project:** ZAVQERA Development, `mrwmmbytcymqgwvcoywd`, PostgreSQL 17  
 **Scope:** Read-only comparison of repository migrations and hosted Development catalog/ledger.  
 **Explicitly not authorized by this document:** applying migrations, changing Supabase Main/Production, enabling a live Research call, registering a real provider, or promoting/merging the release candidate.
@@ -102,3 +103,11 @@ Stop and leave Research blocked if any migration fails, the ledger/catalog does 
 This audit is a plan and evidence record, not deployment authorization. It does not close Issue #23's full Mission Authority acceptance matrix and does not certify a universal provider-neutral JIT boundary. PR #29 must remain OPEN / Draft / Unmerged; no production promotion is approved.
 
 **Current result: HOSTED PARITY FAIL / ROLLOUT NOT AUTHORIZED.**
+
+## 7. Superseding CI and W67 regression update — 2026-10-12
+
+- Candidate commit `d4da141580b027752fff3830594d35b562aca7df` added `supabase/tests/w67_legacy_research_rpc_privilege_hardening.sql` to the W21 isolated PostgreSQL 17 replay. The test checks that neither `anon`, `authenticated`, nor `service_role` can execute either legacy six-argument function in the intermediate W67 state.
+- W21 Local Launch Gate completed **SUCCESS** on that candidate commit, including the migration replay, security/concurrency steps, browser E2E, disposable-stack cleanup, and uploaded evidence artifacts: [W21 run](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38280173757), [evidence and cleanup proof](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38280173757/artifacts/11760488823), [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38280173757/artifacts/11760593533).
+- Web Unit, Web CI, Flutter CI, W25, and the Netlify workflow also completed successfully on that commit. These are candidate/isolated-environment results, not proof of hosted Development parity or live Research success.
+- The hosted Development catalog remains unchanged at W65 as of the latest read-only check. W67 has **not** been applied to the hosted project; the legacy function grants remain a live integrity concern until separately authorized remediation and post-change catalog verification.
+- Current status remains **HOSTED PARITY FAIL / ROLLOUT NOT AUTHORIZED**. PR #29 remains OPEN / Draft / Unmerged.
