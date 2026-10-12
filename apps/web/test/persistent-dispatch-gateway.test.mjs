@@ -324,6 +324,8 @@ test("invalid charge amounts and currencies are removed from persisted receipts"
   });
 });
 
+const RECONCILIATION_DISPATCHED_AT = new Date(Date.now() - 60_000).toISOString();
+const RECONCILIATION_CREATED_AT = new Date(Date.now() - 120_000).toISOString();
 const RECONCILIATION_CLAIMED_AT = "2099-01-01T10:00:00.000Z";
 const RECONCILIATION_LEASE_EXPIRY = "2099-01-01T10:05:00.000Z";
 
@@ -337,6 +339,8 @@ function validReconciliationClaim(overrides = {}) {
     agent_id: "agent-a",
     approval_id: "approval-a",
     idempotency_key: "w70-unit-test-key-0001",
+    created_at: RECONCILIATION_CREATED_AT,
+    dispatch_claimed_at: RECONCILIATION_DISPATCHED_AT,
     authority_snapshot: { external_side_effects: true, requires_approval: true },
     request: {
       destination: "https://provider.example.test/send",
@@ -427,6 +431,24 @@ test("authoritative provider lookup reconciles UNKNOWN success without dispatchi
     currency: "NOK",
   });
   assert.equal(client.calls[1].args.p_evidence.verified, false);
+});
+
+test("stale provider lookup cannot finalize or release an UNKNOWN execution", async () => {
+  const client = fakeReconciliationClient();
+  const adapter = fakeReconciler({ result: {
+    state: "NOT_SENT",
+    authoritative: true,
+    method: "idempotency_key_lookup",
+    providerState: "not_found",
+    checkedAt: new Date(Date.now() - 120_000).toISOString(),
+  } });
+  const result = await reconcileThroughTrustedClaim({ client, adapter, executionId: EXECUTION_ID });
+
+  assert.equal(result.decision, PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED);
+  assert.equal(result.reasonCode, "AUTHORITATIVE_LOOKUP_EVIDENCE_REQUIRED");
+  assert.equal(result.providerLookupPerformed, true);
+  assert.equal(adapter.calls.length, 1);
+  assert.equal(client.calls.length, 1);
 });
 
 test("authoritative no-send reconciliation releases the held reservation through FAILED", async () => {

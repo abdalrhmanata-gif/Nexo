@@ -291,17 +291,22 @@ function reconciliationEnvelope(claim) {
     dispatchBudgetRevision: claim.dispatch_claim_budget_revision ?? null,
     reconciliationClaimToken: claim.reconciliation_claim_token,
     reconciliationLeaseExpiresAt: claim.reconciliation_lease_expires_at,
+    createdAt: claim.created_at ?? null,
   });
 }
 
-function validAuthoritativeLookup(result, expectedResult) {
+function validAuthoritativeLookup(result, expectedResult, claim) {
   if (!record(result) || result.authoritative !== true) return false;
   if (!RECONCILIATION_METHODS.has(result.method)) return false;
   if (!nonEmpty(result.providerState) || result.providerState.length > 100) return false;
   if (result.state !== expectedResult) return false;
   if (!nonEmpty(result.checkedAt)) return false;
   const checkedAt = Date.parse(result.checkedAt);
-  return Number.isFinite(checkedAt) && checkedAt <= Date.now() + 5 * 60 * 1000;
+  const lowerBound = Date.parse(claim.dispatchClaimedAt ?? claim.createdAt ?? "");
+  return Number.isFinite(checkedAt)
+    && Number.isFinite(lowerBound)
+    && checkedAt > lowerBound
+    && checkedAt <= Date.now() + 5 * 60 * 1000;
 }
 
 /**
@@ -423,7 +428,7 @@ export async function reconcileThroughTrustedClaim({ client, adapter, executionI
       status: "UNKNOWN",
     };
   }
-  if (!validAuthoritativeLookup(lookup, lookup.state)) {
+  if (!validAuthoritativeLookup(lookup, lookup.state, claim)) {
     return {
       decision: PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED,
       executionId,

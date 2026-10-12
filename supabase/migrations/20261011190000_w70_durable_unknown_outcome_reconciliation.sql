@@ -210,6 +210,12 @@ begin
     raise exception 'EXECUTION_ALREADY_RECONCILED' using errcode = '22023';
   end if;
 
+  -- Reject cached or delayed evidence that predates the actual dispatch attempt.
+  -- Legacy attempts without a W69 claim must still be newer than the execution row.
+  if v_checked_at <= coalesce(v_execution.dispatch_claimed_at, v_execution.created_at) then
+    raise exception 'RECONCILIATION_EVIDENCE_PRECEDES_EXECUTION' using errcode = '22023';
+  end if;
+
   v_now := clock_timestamp();
   if p_claim_token is null or v_execution.reconciliation_claim_token is distinct from p_claim_token
      or v_execution.reconciliation_lease_expires_at is null

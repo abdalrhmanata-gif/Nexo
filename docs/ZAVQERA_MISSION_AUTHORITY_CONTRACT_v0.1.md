@@ -231,3 +231,10 @@ Added `POST /api/internal/agent-executions/[executionId]/dispatch` as a server-o
 **Intentionally fail-closed:** `provider-adapter-registry.mjs` is empty until a real provider adapter has passed review. With no registered adapter, the endpoint returns HTTP 503 before constructing the privileged database client or claiming an execution. No provider call is enabled by this scaffold. When an adapter is eventually registered, the existing persistent gateway must still validate the database JIT claim and exact audience before its single dispatch call.
 
 The service-role client is isolated in `apps/web/lib/supabase/admin.ts` with the Next.js `server-only` guard. The worker token validator and empty registry have dedicated tests. This is a protected worker ingress, **not** proof of a live provider integration or autonomous queue/scheduler. Production dispatch remains disabled until a reviewed adapter, privately configured secrets, and exact-head CI/E2E evidence exist.
+
+
+## Reconciliation freshness fence — 2026-10-12
+
+A trusted reconciliation worker must not settle an UNKNOWN attempt using provider evidence whose `checked_at` predates the durable dispatch claim (or execution creation time for legacy attempts without a W69 claim). W70 enforces this in PostgreSQL, and the provider-neutral gateway independently rejects stale lookup timestamps before finalization. Regression coverage verifies stale evidence leaves the execution UNKNOWN and its `HELD_UNKNOWN` budget reservation unchanged.
+
+This is a freshness/replay defense, not proof that a provider timestamp is truthful. Production adapters must query the authoritative provider using the exact idempotency key or receipt and return a trustworthy lookup timestamp. No real provider adapter is wired or enabled by this change.

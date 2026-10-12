@@ -1,7 +1,7 @@
 -- W70: only a trusted leased worker can settle UNKNOWN external outcomes.
 begin;
 create extension if not exists pgtap;
-select plan(18);
+select plan(20);
 
 select ok(to_regprocedure('public.claim_agent_execution_reconciliation(uuid)') is not null,
   'trusted reconciliation-claim RPC exists');
@@ -28,6 +28,9 @@ select ok((select count(*) = 3 from information_schema.columns
   where table_schema = 'public' and table_name = 'agent_executions'
     and column_name in ('reconciliation_claimed_at','reconciliation_lease_expires_at','reconciliation_claim_token')),
   'the execution ledger stores a short-lived reconciliation claim');
+select ok(lower(pg_get_functiondef('private.reconcile_agent_execution_outcome(uuid,uuid,text,jsonb,jsonb)'::regprocedure))
+  like '%reconciliation_evidence_precedes_execution%',
+  'stale provider evidence predating the dispatch attempt cannot settle UNKNOWN');
 
 create temporary table w70_behavior_results(name text primary key, passed boolean not null) on commit drop;
 
@@ -104,6 +107,11 @@ begin
     ) values (v_budget_id, v_exec_ids[v_i], 1, 10, 'NOK', 'HELD_UNKNOWN');
   end loop;
 
+  -- Successful fixtures use timestamps after row creation/dispatch; stale evidence is tested below.
+  v_success_evidence := jsonb_set(v_success_evidence, '{reconciliation,checked_at}', to_jsonb(clock_timestamp()), false);
+  v_failed_evidence := jsonb_set(v_failed_evidence, '{reconciliation,checked_at}', to_jsonb(clock_timestamp()), false);
+  v_overcap_evidence := jsonb_set(v_overcap_evidence, '{reconciliation,checked_at}', to_jsonb(clock_timestamp()), false);
+
   v_caught := false;
   begin
     perform public.claim_agent_execution_reconciliation(v_exec_ids[1]);
@@ -136,6 +144,23 @@ begin
   end;
   insert into w70_behavior_results values ('wrong_token_denied', v_caught);
 
+  v_success_evidence := jsonb_set(v_success_evidence, '{reconciliation,checked_at}',
+    to_jsonb(v_claim.dispatch_claimed_at - interval '1 second'), false);
+  v_caught := false;
+  begin
+    perform public.reconcile_agent_execution_outcome(
+      v_exec_ids[1], v_claim.reconciliation_claim_token, 'SUCCEEDED', v_success_result, v_success_evidence);
+  exception when sqlstate '22023' then
+    if sqlerrm = 'RECONCILIATION_EVIDENCE_PRECEDES_EXECUTION' then v_caught := true; else raise; end if;
+  end;
+  select * into v_execution from public.agent_executions where id = v_exec_ids[1];
+  select * into v_reservation from public.mission_authority_budget_reservations where execution_id = v_exec_ids[1];
+  insert into w70_behavior_results values ('stale_lookup_rejected',
+    v_caught and v_execution.status = 'UNKNOWN'
+    and v_reservation.status = 'HELD_UNKNOWN'
+    and v_execution.reconciliation_claim_token = v_claim.reconciliation_claim_token);
+
+  v_success_evidence := jsonb_set(v_success_evidence, '{reconciliation,checked_at}', to_jsonb(clock_timestamp()), false);
   select * into v_done from public.reconcile_agent_execution_outcome(
     v_exec_ids[1], v_claim.reconciliation_claim_token, 'SUCCEEDED', v_success_result, v_success_evidence);
   select * into v_reservation from public.mission_authority_budget_reservations where execution_id = v_exec_ids[1];
@@ -206,6 +231,8 @@ select ok((select passed from w70_behavior_results where name = 'second_concurre
   'a second worker cannot claim while the reconciliation lease is active');
 select ok((select passed from w70_behavior_results where name = 'wrong_token_denied'),
   'a different worker token cannot settle the claimed execution');
+select ok((select passed from w70_behavior_results where name = 'stale_lookup_rejected'),
+  'a stale provider lookup cannot settle or release an UNKNOWN reservation');
 select ok((select passed from w70_behavior_results where name = 'success_consumes_held_reservation'),
   'authoritative provider success consumes held action/spend reservation exactly once');
 select ok((select passed from w70_behavior_results where name = 'exact_success_replay_is_idempotent'),
