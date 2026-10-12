@@ -246,6 +246,27 @@ test("a successful provider state without a safe receipt stays UNKNOWN", async (
   assert.equal(client.calls[1].args.p_status, "UNKNOWN");
 });
 
+test("nominal success without a stable provider reference remains UNKNOWN", async () => {
+  const uncorrelatableReceipts = [
+    { status: "ok" },
+    { provider: "resend" },
+    { charge_amount: 2, currency: "USD" },
+  ];
+
+  for (const receipt of uncorrelatableReceipts) {
+    const client = fakeClient({ completion: { id: EXECUTION_ID, status: "UNKNOWN" } });
+    const adapter = fakeAdapter({ result: { state: "SUCCEEDED", receipt } });
+    const result = await dispatchThroughJitClaim({ client, adapter, executionId: EXECUTION_ID });
+    assert.equal(result.decision, PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED);
+    assert.equal(result.reasonCode, "SUCCESS_WITHOUT_CORRELATABLE_PROVIDER_RECEIPT");
+    assert.equal(result.status, "UNKNOWN");
+    assert.equal(adapter.calls.length, 1);
+    assert.equal(client.calls[1].args.p_status, "UNKNOWN");
+    assert.equal(client.calls[1].args.p_evidence.safe_to_retry, false);
+    assert.equal(client.calls[1].args.p_evidence.reconciliation_required, true);
+  }
+});
+
 test("accepted provider result is reconciled rather than reported as success", async () => {
   const client = fakeClient({ completion: { id: EXECUTION_ID, status: "UNKNOWN" } });
   const adapter = fakeAdapter({ result: {
@@ -626,6 +647,32 @@ test("reconciliation success without a usable receipt remains UNKNOWN", async ()
   assert.equal(result.reasonCode, "RECONCILED_SUCCESS_WITHOUT_USABLE_RECEIPT");
   assert.equal(result.decision, PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED);
   assert.equal(client.calls.length, 1);
+});
+
+test("reconciled success without a stable provider reference remains UNKNOWN", async () => {
+  const uncorrelatableReceipts = [
+    { status: "ok" },
+    { provider: "resend" },
+    { charge_amount: 2, currency: "USD" },
+  ];
+  for (const receipt of uncorrelatableReceipts) {
+    const client = fakeReconciliationClient();
+    const adapter = fakeReconciler({ result: {
+      state: "SUCCEEDED",
+      authoritative: true,
+      method: "receipt_lookup",
+      providerState: "succeeded",
+      checkedAt: new Date().toISOString(),
+      receipt,
+    } });
+    const result = await reconcileThroughTrustedClaim({ client, adapter, executionId: EXECUTION_ID });
+    assert.equal(result.decision, PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED);
+    assert.equal(result.reasonCode, "RECONCILED_SUCCESS_WITHOUT_CORRELATABLE_RECEIPT");
+    assert.equal(result.status, "UNKNOWN");
+    assert.equal(adapter.calls.length, 1);
+    assert.equal(client.calls.length, 1, "must not persist an uncorrelatable success");
+    assert.equal(client.calls[0].name, "claim_agent_execution_reconciliation");
+  }
 });
 
 test("reconciliation persistence ambiguity never invokes provider lookup twice", async () => {

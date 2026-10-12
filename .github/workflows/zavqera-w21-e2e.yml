@@ -127,6 +127,7 @@ jobs:
           cp "$GITHUB_WORKSPACE/supabase/tests/w70_durable_unknown_outcome_reconciliation.sql" "$workdir/supabase/tests/w70_durable_unknown_outcome_reconciliation.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w71_expired_external_execution_budget_recovery.sql" "$workdir/supabase/tests/w71_expired_external_execution_budget_recovery.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w73_trusted_system_mission_events.sql" "$workdir/supabase/tests/w73_trusted_system_mission_events.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w75_correlatable_provider_receipt.sql" "$workdir/supabase/tests/w75_correlatable_provider_receipt.sql"
           cat > "$workdir/supabase/migrations/20260921180005_e2e_historical_auth_compat.sql" <<'SQL'
           create schema if not exists private;
           create or replace function private.handle_new_user_profile()
@@ -193,7 +194,8 @@ jobs:
             supabase/tests/w69_agent_execution_dispatch_claim.sql \
             supabase/tests/w70_durable_unknown_outcome_reconciliation.sql \
             supabase/tests/w71_expired_external_execution_budget_recovery.sql \
-            supabase/tests/w73_trusted_system_mission_events.sql
+            supabase/tests/w73_trusted_system_mission_events.sql \
+            supabase/tests/w75_correlatable_provider_receipt.sql
           do
             echo "Running Mission Authority regression: $test_file"
             timeout 10m supabase test db "$test_file"

@@ -48,6 +48,8 @@ const RECEIPT_KEYS = new Set([
   "currency",
 ]);
 
+const RECEIPT_REFERENCE_KEYS = new Set(["id", "reference", "request_id", "message_id", "transaction_id", "operation_id"]);
+
 const RECEIPT_STRING_LIMIT = 500;
 
 function record(value) {
@@ -75,6 +77,14 @@ function knownDenialCode(error) {
 
 function nonEmpty(value) {
   return typeof value === "string" && value.trim().length > 0;
+}
+
+function hasProviderReceiptReference(receipt) {
+  if (!record(receipt)) return false;
+  return [...RECEIPT_REFERENCE_KEYS].some((key) => {
+    const value = receipt[key];
+    return nonEmpty(value) || (typeof value === "number" && Number.isFinite(value));
+  });
 }
 
 function sha256Hex(value) {
@@ -470,6 +480,16 @@ export async function reconcileThroughTrustedClaim({ client, adapter, executionI
       status: "UNKNOWN",
     };
   }
+  if (lookup.state === "SUCCEEDED" && !hasProviderReceiptReference(receipt)) {
+    return {
+      decision: PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED,
+      executionId,
+      reasonCode: "RECONCILED_SUCCESS_WITHOUT_CORRELATABLE_RECEIPT",
+      providerLookupPerformed: true,
+      persisted: false,
+      status: "UNKNOWN",
+    };
+  }
 
   const reconciliation = {
     authoritative: true,
@@ -603,6 +623,9 @@ export async function dispatchThroughJitClaim({ client, adapter, executionId }) 
 
   if (providerResult.state === "SUCCEEDED" && !receipt) {
     return recordUnknown(client, executionId, claim, "SUCCESS_WITHOUT_USABLE_PROVIDER_RECEIPT");
+  }
+  if (providerResult.state === "SUCCEEDED" && !hasProviderReceiptReference(receipt)) {
+    return recordUnknown(client, executionId, claim, "SUCCESS_WITHOUT_CORRELATABLE_PROVIDER_RECEIPT", receipt);
   }
 
   if (providerResult.state === "ACCEPTED" || providerResult.state === "UNKNOWN") {
