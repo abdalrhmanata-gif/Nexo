@@ -226,7 +226,7 @@ Regression coverage: `apps/web/test/persistent-dispatch-gateway.test.mjs` now te
 
 ## Trusted worker ingress scaffold — 2026-10-12
 
-Added `POST /api/internal/agent-executions/[executionId]/dispatch` as a server-only worker ingress. It requires a timing-safe, exact Bearer token from `ZAVQERA_EXECUTION_WORKER_TOKEN`, accepts only a bounded provider audience selector, and uses a server-only Supabase service-role RPC client. The route never accepts a provider adapter or execution payload from the request body.
+Added a server-only worker ingress at `POST /api/internal/agent-executions/[executionId]`. It requires a timing-safe, exact Bearer token from `ZAVQERA_EXECUTION_WORKER_TOKEN`, accepts only a bounded provider audience selector, and uses a server-only Supabase service-role RPC client. The route never accepts a provider adapter or execution payload from the request body.
 
 **Intentionally fail-closed:** `provider-adapter-registry.mjs` is empty until a real provider adapter has passed review. With no registered adapter, the endpoint returns HTTP 503 before constructing the privileged database client or claiming an execution. No provider call is enabled by this scaffold. When an adapter is eventually registered, the existing persistent gateway must still validate the database JIT claim and exact audience before its single dispatch call.
 

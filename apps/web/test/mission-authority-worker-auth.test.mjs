@@ -36,7 +36,7 @@ test("privileged worker route uses server-only credentials and cannot dispatch w
   assert.match(route, /ZAVQERA_EXECUTION_WORKER_TOKEN/);
   assert.match(route, /isTrustedExecutionWorkerRequest/);
   assert.match(route, /resolveTrustedDispatchAdapter/);
-  assert.match(route, /No reviewed provider adapter is registered\. No dispatch occurred\./);
+  assert.match(route, /No reviewed provider adapter is registered\. No provider call occurred\./);
   assert.match(route, /dispatchThroughJitClaim/);
   assert.match(route, /reconcileThroughTrustedClaim/);
   assert.match(route, /Only a valid operation and provider audience are accepted/);
