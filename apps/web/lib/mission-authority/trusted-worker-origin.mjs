@@ -1,6 +1,6 @@
 const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
 
-function parseOrigin(value, nodeEnv, loopbackOnly = false) {
+function parseOrigin(value, nodeEnv, loopbackOnly = false, requireRootPath = true) {
   if (typeof value !== "string" || value.trim() === "") return null;
   let url;
   try {
@@ -8,7 +8,7 @@ function parseOrigin(value, nodeEnv, loopbackOnly = false) {
   } catch {
     return null;
   }
-  if (url.username || url.password || url.search || url.hash || (url.pathname !== "/" && url.pathname !== "")) {
+  if (url.username || url.password || url.search || url.hash || (requireRootPath && url.pathname !== "/" && url.pathname !== "")) {
     return null;
   }
   const loopback = LOOPBACK_HOSTS.has(url.hostname);
@@ -36,7 +36,7 @@ export function resolveTrustedWorkerOrigin({
     const e2eOrigin = parseOrigin(e2eRuntimeBaseUrl, nodeEnv, true);
     if (e2eOrigin) return e2eOrigin;
 
-    const requestOrigin = parseOrigin(requestUrl, nodeEnv, true);
+    const requestOrigin = parseOrigin(requestUrl, nodeEnv, true, false);
     if (requestOrigin) return requestOrigin;
   }
 
