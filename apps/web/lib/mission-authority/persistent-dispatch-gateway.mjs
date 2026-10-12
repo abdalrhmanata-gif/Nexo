@@ -312,7 +312,7 @@ function validAuthoritativeLookup(result, expectedResult) {
  */
 export async function reconcileThroughTrustedClaim({ client, adapter, executionId }) {
   if (!nonEmpty(executionId) || !client || typeof client.rpc !== "function"
-      || !adapter || typeof adapter.reconcile !== "function") {
+      || !adapter || typeof adapter.reconcile !== "function" || !nonEmpty(adapter.audience)) {
     return {
       decision: PERSISTENT_DISPATCH_DECISIONS.DENY,
       executionId: nonEmpty(executionId) ? executionId : null,
@@ -384,6 +384,17 @@ export async function reconcileThroughTrustedClaim({ client, adapter, executionI
       providerLookupPerformed: false,
       persisted: true,
       status: claimRow.status,
+    };
+  }
+
+  if (adapter.audience !== claimRow.request.audience) {
+    return {
+      decision: PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED,
+      executionId,
+      reasonCode: "PROVIDER_AUDIENCE_MISMATCH",
+      providerLookupPerformed: false,
+      persisted: false,
+      status: "UNKNOWN",
     };
   }
 
@@ -491,7 +502,7 @@ export async function reconcileThroughTrustedClaim({ client, adapter, executionI
  */
 export async function dispatchThroughJitClaim({ client, adapter, executionId }) {
   if (!nonEmpty(executionId) || !client || typeof client.rpc !== "function"
-      || !adapter || typeof adapter.dispatch !== "function") {
+      || !adapter || typeof adapter.dispatch !== "function" || !nonEmpty(adapter.audience)) {
     return {
       decision: PERSISTENT_DISPATCH_DECISIONS.DENY,
       executionId: nonEmpty(executionId) ? executionId : null,
@@ -536,6 +547,10 @@ export async function dispatchThroughJitClaim({ client, adapter, executionId }) 
     // returned representation is malformed. We know this gateway did not call
     // the adapter, so record a trusted not-sent block rather than retry blindly.
     return blockBeforeDispatch(client, executionId, "INVALID_DISPATCH_CLAIM_RECORD");
+  }
+
+  if (adapter.audience !== claimRow.request.audience) {
+    return blockBeforeDispatch(client, executionId, "PROVIDER_AUDIENCE_MISMATCH", claimEnvelope(claimRow));
   }
 
   const claim = claimEnvelope(claimRow);

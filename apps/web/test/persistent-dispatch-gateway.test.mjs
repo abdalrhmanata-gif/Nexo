@@ -68,6 +68,7 @@ function fakeAdapter({ result, error } = {}) {
   const calls = [];
   return {
     calls,
+    audience: "provider.send.v1",
     async dispatch(claim) {
       calls.push(claim);
       if (error) throw error;
@@ -144,6 +145,22 @@ test("malformed claimed row records a not-sent block without invoking the adapte
   assert.equal(client.calls[1].args.p_status, "BLOCKED");
   assert.equal(client.calls[1].args.p_evidence.provider_not_sent, true);
   assert.equal(client.calls[1].args.p_evidence.safe_to_retry, true);
+});
+
+test("provider audience mismatch blocks after claim but before provider I/O", async () => {
+  const client = fakeClient({
+    claim: validClaim({ request: { ...validClaim().request, audience: "provider.other.v1" } }),
+    completion: { id: EXECUTION_ID, status: "BLOCKED" },
+  });
+  const adapter = fakeAdapter();
+  const result = await dispatchThroughJitClaim({ client, adapter, executionId: EXECUTION_ID });
+
+  assert.equal(result.decision, PERSISTENT_DISPATCH_DECISIONS.DENY);
+  assert.equal(result.reasonCode, "PROVIDER_AUDIENCE_MISMATCH");
+  assert.equal(result.dispatched, false);
+  assert.equal(adapter.calls.length, 0);
+  assert.equal(client.calls[1].args.p_status, "BLOCKED");
+  assert.equal(client.calls[1].args.p_evidence.provider_not_sent, true);
 });
 
 test("adapter timeout becomes UNKNOWN and there is no second provider call", async () => {
@@ -361,6 +378,7 @@ function fakeReconciler({ result, error } = {}) {
   const calls = [];
   return {
     calls,
+    audience: "provider.send.v1",
     async reconcile(claim) {
       calls.push(claim);
       if (error) throw error;
@@ -375,6 +393,20 @@ function fakeReconciler({ result, error } = {}) {
     },
   };
 }
+
+test("reconciliation audience mismatch never calls the wrong provider adapter", async () => {
+  const client = fakeReconciliationClient({
+    claim: validReconciliationClaim({ request: { ...validReconciliationClaim().request, audience: "provider.other.v1" } }),
+  });
+  const adapter = fakeReconciler();
+  const result = await reconcileThroughTrustedClaim({ client, adapter, executionId: EXECUTION_ID });
+
+  assert.equal(result.decision, PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED);
+  assert.equal(result.reasonCode, "PROVIDER_AUDIENCE_MISMATCH");
+  assert.equal(result.providerLookupPerformed, false);
+  assert.equal(adapter.calls.length, 0);
+  assert.equal(client.calls.length, 1);
+});
 
 test("authoritative provider lookup reconciles UNKNOWN success without dispatching", async () => {
   const client = fakeReconciliationClient();

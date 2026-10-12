@@ -215,3 +215,10 @@ Verified candidate HEAD: `cb0d4fbffad55695d8b4f1b9282f4d19757e4112`. This sectio
 The SQL contracts and provider-neutral gateway seam are now implemented and tested, including actual-ledger concurrency. The overall production JIT boundary remains **PARTIAL**, because neither `dispatchThroughJitClaim` nor `reconcileThroughTrustedClaim` is wired into a single production server worker that owns a real provider adapter. No live provider call was enabled.
 
 Hosted authenticated Mission Research, real Resend inbox delivery, human visual QA, and Development leaked-password protection remain separate release gates. Keep PR #29 OPEN / Draft / UNMERGED and keep Supabase Main/Production and production deployment untouched.
+
+
+## Provider adapter audience binding — 2026-10-12
+
+The persistent W69/W70 gateway now requires each trusted provider adapter to declare its stable `audience` identifier. Before dispatch or provider lookup, the gateway compares that identifier with the audience bound into the claimed execution request. A mismatch is fail-closed: dispatch is recorded as not sent and settled as BLOCKED, or reconciliation remains UNKNOWN without a provider lookup. This prevents a queue/event hint or adapter selection error from sending an approved request to a different provider integration.
+
+Regression coverage: `apps/web/test/persistent-dispatch-gateway.test.mjs` now tests both dispatch and reconciliation audience mismatch. The gateway remains a tested server-side seam only: no production worker or real side-effect provider is wired, and no live external dispatch is enabled. W21 on the prior exact HEAD `a3fc4e96edc810c829e0d71fc4c1f3666bcac3b7` passed all database, concurrency, browser, and cleanup gates; this change must pass its own new CI run before it is accepted.
