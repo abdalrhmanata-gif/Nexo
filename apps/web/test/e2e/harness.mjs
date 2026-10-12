@@ -478,13 +478,36 @@ export function isPortFree(port, host = "127.0.0.1") {
   });
 }
 
-export function buildAppEnv(baseEnv, target) {
+const TRUSTED_WORKER_TOKEN_PATTERN = /^[A-Za-z0-9._~-]{32,512}$/;
+
+export function buildAppEnv(baseEnv, target, { workerToken, baseURL = DEFAULT_BASE_URL } = {}) {
   const env = { ...baseEnv };
   for (const name of [...FORBIDDEN_ENV, ...LEGACY_ENV]) delete env[name];
-  // A CI-provided test-only admin credential must never reach the Next.js process.
+  // Never inherit caller-supplied privileged values. Only inject credentials
+  // returned by the freshly started, verified disposable loopback stack.
   delete env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY;
+  delete env.ZAVQERA_EXECUTION_WORKER_TOKEN;
+
+  if (!target || !isLoopbackUrl(target.apiUrl)
+      || !target.serviceRoleKey
+      || target.serviceRoleKey === target.publishableKey
+      || decodeJwtRole(target.serviceRoleKey) !== "service_role") {
+    throw new HarnessBlockedError(["The application server requires a validated service-role JWT from the disposable loopback stack."]);
+  }
+  if (!isLoopbackUrl(baseURL)) {
+    throw new HarnessBlockedError(["The internal worker origin must remain on a loopback URL."]);
+  }
+  if (typeof workerToken !== "string" || !TRUSTED_WORKER_TOKEN_PATTERN.test(workerToken)) {
+    throw new HarnessBlockedError(["The internal worker needs a fresh high-entropy bearer token."]);
+  }
+
   env.NEXT_PUBLIC_SUPABASE_URL = target.apiUrl;
   env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = target.publishableKey;
+  // These values are scoped to the local Next.js server process only. They
+  // are not NEXT_PUBLIC variables and are never passed to the browser context.
+  env.SUPABASE_SERVICE_ROLE_KEY = target.serviceRoleKey;
+  env.ZAVQERA_EXECUTION_WORKER_TOKEN = workerToken;
+  env.ZAVQERA_E2E_RUNTIME_BASE_URL = normaliseUrl(baseURL);
   env.NEXT_TELEMETRY_DISABLED = "1";
   return env;
 }

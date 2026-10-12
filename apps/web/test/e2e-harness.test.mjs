@@ -262,9 +262,57 @@ test("command runner only runs supabase/docker without a shell and strips privil
   assert.deepEqual(missing, { status: -1, stdout: "", stderr: "", missing: true });
 });
 
-test("app env points only at the disposable stack", () => {
-  const env = buildAppEnv({ PATH: "p", SUPABASE_SECRET_KEY: "s", ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY: "test-only-admin-jwt", ZAVQERA_E2E_USER_A_EMAIL: "a", NEXT_PUBLIC_SUPABASE_URL: "https://x.supabase.co" }, { apiUrl: "http://127.0.0.1:54321", publishableKey: "pk" });
-  assert.deepEqual(env, { PATH: "p", NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321", NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "pk", NEXT_TELEMETRY_DISABLED: "1" });
+test("app env scopes trusted completion credentials to the disposable server process", () => {
+  const localServiceRoleKey = anonJwt("service_role");
+  const workerToken = "a".repeat(43);
+  const env = buildAppEnv({
+    PATH: "p",
+    SUPABASE_SECRET_KEY: "must-not-inherit",
+    SUPABASE_SERVICE_ROLE_KEY: "must-not-inherit",
+    ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY: "test-only-admin-jwt",
+    ZAVQERA_EXECUTION_WORKER_TOKEN: "must-not-inherit",
+    ZAVQERA_E2E_USER_A_EMAIL: "a",
+    NEXT_PUBLIC_SUPABASE_URL: "https://x.supabase.co",
+  }, {
+    apiUrl: "http://127.0.0.1:54321",
+    publishableKey: "pk",
+    serviceRoleKey: localServiceRoleKey,
+  }, { workerToken, baseURL: "http://127.0.0.1:3210" });
+
+  assert.deepEqual(env, {
+    PATH: "p",
+    NEXT_PUBLIC_SUPABASE_URL: "http://127.0.0.1:54321",
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "pk",
+    SUPABASE_SERVICE_ROLE_KEY: localServiceRoleKey,
+    ZAVQERA_EXECUTION_WORKER_TOKEN: workerToken,
+    ZAVQERA_E2E_RUNTIME_BASE_URL: "http://127.0.0.1:3210",
+    NEXT_TELEMETRY_DISABLED: "1",
+  });
+});
+
+test("app rejects trusted worker credentials for remote or invalid targets", () => {
+  const workerToken = "b".repeat(43);
+  const safeTarget = {
+    apiUrl: "http://127.0.0.1:54321",
+    publishableKey: "pk",
+    serviceRoleKey: anonJwt("service_role"),
+  };
+  assert.throws(() => buildAppEnv({}, {
+    ...safeTarget,
+    apiUrl: "https://mrwmmbytcymqgwvcoywd.supabase.co",
+  }, { workerToken, baseURL: "http://127.0.0.1:3210" }), HarnessBlockedError);
+  assert.throws(() => buildAppEnv({}, {
+    ...safeTarget,
+    serviceRoleKey: anonJwt("anon"),
+  }, { workerToken, baseURL: "http://127.0.0.1:3210" }), HarnessBlockedError);
+  assert.throws(() => buildAppEnv({}, safeTarget, {
+    workerToken: "short",
+    baseURL: "http://127.0.0.1:3210",
+  }), HarnessBlockedError);
+  assert.throws(() => buildAppEnv({}, safeTarget, {
+    workerToken,
+    baseURL: "https://production.example.com",
+  }), HarnessBlockedError);
 });
 
 test("the started app must report a configured, non-Development backend", async () => {

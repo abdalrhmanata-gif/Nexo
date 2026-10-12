@@ -64,7 +64,14 @@ export default async function globalSetup() {
 
   try {
     const target = startFreshStack(plan, run, process.env);
-    app = startAppServer({ webRoot, plan, env: buildAppEnv(process.env, target) });
+    // A unique token is scoped to the disposable server process. It is never
+    // copied into the Playwright process or the browser.
+    const workerToken = randomBytes(32).toString("base64url");
+    app = startAppServer({
+      webRoot,
+      plan,
+      env: buildAppEnv(process.env, target, { workerToken, baseURL: plan.baseURL }),
+    });
     await waitForApp(plan.baseURL);
     await assertAppTargetsDisposableStack(plan.baseURL);
 
