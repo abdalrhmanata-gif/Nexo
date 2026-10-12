@@ -144,7 +144,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     });
     const trustedResearchCompletionConfigured =
       process.env.ZAVQERA_TRUSTED_RESEARCH_COMPLETION_ENABLED === "true"
-      && process.env.CONTEXT === "deploy-preview"
+      && process.env.ZAVQERA_TRUSTED_RESEARCH_DEPLOY_CONTEXT === "deploy-preview"
       && typeof workerToken === "string"
       && /^[A-Za-z0-9._~-]{32,512}$/.test(workerToken)
       && trustedWorkerOrigin !== null;

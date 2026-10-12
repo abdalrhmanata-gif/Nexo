@@ -51,7 +51,7 @@ test("hosted Research is fail-closed until schema, trusted-worker token, and pre
   const workerOriginCheck = researchRoute.indexOf("const trustedWorkerOrigin = resolveTrustedWorkerOrigin", providerMode);
   const trustedGate = researchRoute.indexOf("const trustedResearchCompletionConfigured =");
   const flagCheck = researchRoute.indexOf('process.env.ZAVQERA_TRUSTED_RESEARCH_COMPLETION_ENABLED === "true"', trustedGate);
-  const contextCheck = researchRoute.indexOf('process.env.CONTEXT === "deploy-preview"', trustedGate);
+  const contextCheck = researchRoute.indexOf('process.env.ZAVQERA_TRUSTED_RESEARCH_DEPLOY_CONTEXT === "deploy-preview"', trustedGate);
   const finalGate = researchRoute.indexOf('if (providerMode !== "mock" && !trustedResearchCompletionConfigured)');
   const apiKeyCheck = researchRoute.indexOf('if (providerMode !== "mock" && !apiKey)');
   const quotaAndProviderFlow = researchRoute.indexOf("const result = await runAiGeneration({");
@@ -67,8 +67,10 @@ test("hosted Research is fail-closed until schema, trusted-worker token, and pre
   assert.ok(finalGate < quotaAndProviderFlow, "trusted-completion preflight must run before quota reservation/provider execution");
   assert.match(researchRoute, /Mission Research is temporarily unavailable on this environment/);
   assert.match(envExample, /^ZAVQERA_TRUSTED_RESEARCH_COMPLETION_ENABLED=false$/m);
+  assert.match(envExample, /^ZAVQERA_TRUSTED_RESEARCH_DEPLOY_CONTEXT=$/m);
   assert.match(readme, /Keep this flag false until hosted Development has an authorized migration plan/);
-  assert.match(readme, /CONTEXT=deploy-preview/);
+  assert.match(readme, /ZAVQERA_TRUSTED_RESEARCH_DEPLOY_CONTEXT=deploy-preview/);
+  assert.match(readme, /Functions runtime scope/);
 });
 
 function routeIncludesTokenPattern() {
