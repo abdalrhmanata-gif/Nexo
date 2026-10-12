@@ -220,3 +220,39 @@ W21 passed PostgreSQL 17 migration replay and pgTAP, AI quota/plan/workspace sec
 - W21 browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38185205827/artifacts/11719148549
 
 **Release boundary:** the SQL reconciliation contract and provider-neutral gateway seam are now present, but no production server route is wired to a real provider adapter. Hosted Research/citations/history, real Resend inbox delivery, human visual QA, and Development leaked-password protection remain open. PR #29 is OPEN / Draft / UNMERGED; no production deployment, Supabase Main change, DNS/billing change, or real provider side effect was performed.
+
+
+---
+
+## Exact-head verification — current W70 candidate — 2026-10-12
+
+Verified code-bearing HEAD: `c85a46bb31aa559989df3672d3a1e774bad4c51a`. This head includes W63 trusted execution completion, W64 narrowly scoped read-only research completion, W65/W66 direct-table-write hardening, W68 persistent action/spend reservations, W69 one-time JIT dispatch claims, and W70 durable UNKNOWN-outcome reconciliation. No migration from this branch was applied to hosted Development during this verification.
+
+All six automated gates passed on this exact HEAD:
+
+- Web Unit — **PASS, 294/294 tests**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38185610604
+- Web CI / typecheck / production build — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38185610691
+- Flutter CI — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38185610679
+- W25 isolated PostgreSQL atomic fence — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38185610662
+- Netlify Deploy Preview verification — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38185610685
+- W21 disposable local launch gate — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38185610708
+
+W21 replayed all branch migrations in disposable PostgreSQL 17 and passed pgTAP files W63/W64/W65/W66/W68/W69/W70. It also passed the actual-ledger concurrency proofs:
+
+- W67 same-key idempotency: one durable execution row/event; competing request refused.
+- W68 action/spend budget reservation: one winner for one action unit; reservation atomic with start.
+- W69 one-time JIT dispatch claim: exactly one claim under concurrency, second claim refused.
+- W70 durable reconciliation claim: exactly one leased claim under concurrency, second claim refused.
+
+Browser E2E passed **2/2**. Disposable Supabase cleanup was verified: `remaining_containers=none`, `remaining_volumes=none`, `cleanup_verified=true`. Evidence and diagnostics are attached to [W21 run 38185610708](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38185610708).
+
+### Remaining release gates — unchanged
+
+- **No real provider adapter is wired to the persistent dispatch gateway.** The JIT/budget/reconciliation SQL contracts and gateway seam are tested, but this is not proof of a live provider integration or production external-side-effect enforcement.
+- Hosted authenticated Mission Research, citations and persisted history remain **NOT VERIFIED** unless the intentionally gated Development-only live test runs with privately configured dedicated test credentials.
+- Actual Resend invitation delivery and hosted password-reset email/callback remain **NOT VERIFIED**.
+- Human desktop/mobile visual QA remains **NOT VERIFIED**.
+- Supabase Development leaked-password protection remains **WARN / Disabled**; no billing or plan change was made.
+- Independent verification and final business outcome commit are not implied by a provider receipt or reconciliation record.
+
+**Release decision:** automated candidate gates are green; full production launch is not approved. PR #29 stays **OPEN / Draft / UNMERGED**. No production deployment, DNS/billing change, or Supabase Main/Production modification was performed. Real provider side effects remain disabled.
