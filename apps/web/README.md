@@ -118,3 +118,8 @@ The previous `SUPABASE_DEV_SERVICE_ROLE_KEY` path remains a fallback, but modern
 
 The test proves live OpenAI research, actual public citations, persisted research history and source links after reload. It performs no external side effects. A successful plan-generation smoke test alone is not proof that live Mission research works.
 
+
+
+### Hosted Research schema preflight
+
+Before live Mission Research reserves AI quota or calls the provider, the server uses the token-protected internal worker route to verify that the exact trusted-completion RPC signature is available. The probe deliberately sends an invalid UUID argument and only interprets PostgreSQL SQLSTATE `22P02` for that UUID coercion as proof that PostgREST resolved the expected signature; it cannot select or mutate an execution row. Missing-function/schema-cache/permission/network errors fail closed, so hosted schema drift stops Research before provider spend. This does not apply or migrate hosted Development and does not replace the separately authorized migration-parity review.

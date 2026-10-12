@@ -15,6 +15,50 @@ function isTerminalLifecycle(status: string) {
 
 type ResearchCompletionStatus = "SUCCEEDED" | "FAILED" | "UNKNOWN";
 
+async function preflightReadOnlyResearchCompletion(request: Request, requestedBy: string) {
+  const workerToken = process.env.ZAVQERA_EXECUTION_WORKER_TOKEN;
+  if (!workerToken || !/^[A-Za-z0-9._~-]{32,512}$/.test(workerToken)) return false;
+
+  const origin = resolveTrustedWorkerOrigin({
+    nodeEnv: process.env.NODE_ENV,
+    e2eRuntimeBaseUrl: process.env.ZAVQERA_E2E_RUNTIME_BASE_URL,
+    deployPrimeUrl: process.env.DEPLOY_PRIME_URL,
+    deployUrl: process.env.DEPLOY_URL,
+    siteUrl: process.env.URL,
+    publicSiteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+    requestUrl: request.url,
+  });
+  if (!origin) return false;
+
+  try {
+    const response = await fetch(new URL(
+      `/api/internal/agent-executions/${crypto.randomUUID()}`,
+      origin,
+    ), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${workerToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        operation: "preflight_read_only_research",
+        requestedBy,
+      }),
+      cache: "no-store",
+      redirect: "error",
+      signal: AbortSignal.timeout(10_000),
+    });
+    const payload: unknown = await response.json().catch(() => null);
+    return response.ok
+      && payload !== null
+      && typeof payload === "object"
+      && !Array.isArray(payload)
+      && (payload as { ready?: unknown }).ready === true;
+  } catch {
+    return false;
+  }
+}
+
 async function completeReadOnlyResearchExecution(request: Request, input: {
   requestedBy: string;
   executionId: string;
@@ -159,6 +203,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const apiKey = process.env.OPENAI_API_KEY;
     if (providerMode !== "mock" && !apiKey) {
       return NextResponse.json({ error: "AI execution is not configured yet." }, { status: 503 });
+    }
+
+    // Confirm the exact trusted completion RPC signature exists before reserving
+    // quota or sending mission data to the AI provider. Hosted schema drift must
+    // fail closed before an external request can incur cost.
+    if (providerMode !== "mock"
+        && !(await preflightReadOnlyResearchCompletion(request, user.id))) {
+      return NextResponse.json(
+        { error: "Mission Research is temporarily unavailable on this environment." },
+        { status: 503 },
+      );
     }
 
     let executionId: string | null = null;

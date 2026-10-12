@@ -7,6 +7,10 @@ import {
 } from "../../../../../lib/mission-authority/persistent-dispatch-gateway.mjs";
 import { resolveTrustedDispatchAdapter } from "../../../../../lib/mission-authority/provider-adapter-registry.mjs";
 import { isTrustedExecutionWorkerRequest } from "../../../../../lib/mission-authority/worker-auth.mjs";
+import {
+  isResearchCompletionSchemaProbeError,
+  RESEARCH_COMPLETION_SCHEMA_PROBE_UUID,
+} from "../../../../../lib/mission-authority/research-completion-schema-preflight.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,6 +57,48 @@ export async function POST(
   }
   const workerBody = body as Record<string, unknown>;
   const bodyKeys = Object.keys(workerBody);
+
+  if (workerBody.operation === "preflight_read_only_research") {
+    const permittedKeys = new Set(["operation", "requestedBy"]);
+    if (bodyKeys.length !== permittedKeys.size
+        || bodyKeys.some((key) => !permittedKeys.has(key))
+        || typeof workerBody.requestedBy !== "string"
+        || !UUID_PATTERN.test(workerBody.requestedBy)) {
+      return NextResponse.json({ error: "A requester-bound schema preflight is required." }, { status: 400, headers: NO_STORE });
+    }
+
+    try {
+      const client = createSupabaseAdminClient();
+      // This deliberately malformed UUID can only produce 22P02 if PostgREST
+      // resolved the expected RPC signature and attempted UUID coercion. It
+      // cannot select or mutate an execution row.
+      const probe = await client.rpc("complete_read_only_research_execution", {
+        p_requested_by: workerBody.requestedBy,
+        p_execution_id: RESEARCH_COMPLETION_SCHEMA_PROBE_UUID,
+        p_status: "FAILED",
+        p_result: { reason: "SCHEMA_PREFLIGHT" },
+        p_evidence: {
+          outcome: "FAILED",
+          verified: false,
+          request_id: "schema-preflight",
+        },
+        p_error_code: null,
+        p_error_message: null,
+      });
+      if (isResearchCompletionSchemaProbeError(probe.error)) {
+        return NextResponse.json({ ready: true }, { headers: NO_STORE });
+      }
+      return NextResponse.json(
+        { ready: false, error: "Trusted research completion schema is unavailable or unverified." },
+        { status: 503, headers: NO_STORE },
+      );
+    } catch {
+      return NextResponse.json(
+        { ready: false, error: "Trusted research completion schema could not be confirmed." },
+        { status: 503, headers: NO_STORE },
+      );
+    }
+  }
 
   if (workerBody.operation === "complete_read_only_research") {
     const permittedKeys = new Set(["operation", "requestedBy", "status", "result", "evidence"]);

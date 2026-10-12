@@ -54,6 +54,7 @@ test("hosted Research is fail-closed until schema, trusted-worker token, and pre
   const contextCheck = researchRoute.indexOf('process.env.ZAVQERA_TRUSTED_RESEARCH_DEPLOY_CONTEXT === "deploy-preview"', trustedGate);
   const finalGate = researchRoute.indexOf('if (providerMode !== "mock" && !trustedResearchCompletionConfigured)');
   const apiKeyCheck = researchRoute.indexOf('if (providerMode !== "mock" && !apiKey)');
+  const schemaPreflight = researchRoute.indexOf("await preflightReadOnlyResearchCompletion(request, user.id);");
   const quotaAndProviderFlow = researchRoute.indexOf("const result = await runAiGeneration({");
 
   assert.ok(providerMode >= 0, "provider mode must be resolved explicitly");
@@ -64,7 +65,10 @@ test("hosted Research is fail-closed until schema, trusted-worker token, and pre
   assert.ok(researchRoute.includes("&& trustedWorkerOrigin !== null"), "live Research must require a resolvable trusted worker origin");
   assert.ok(finalGate > flagCheck && finalGate > contextCheck, "live Research requires all trusted-completion prerequisites");
   assert.ok(finalGate < apiKeyCheck, "trusted-completion preflight must run before API-key handling");
-  assert.ok(finalGate < quotaAndProviderFlow, "trusted-completion preflight must run before quota reservation/provider execution");
+  assert.ok(finalGate < quotaAndProviderFlow, "trusted-completion configuration gate must run before quota reservation/provider execution");
+  assert.ok(schemaPreflight > apiKeyCheck && schemaPreflight < quotaAndProviderFlow,
+    "the exact hosted completion RPC signature must be probed after key checks and before quota/provider execution");
+  assert.match(researchRoute, /operation: "preflight_read_only_research"/);
   assert.match(researchRoute, /Mission Research is temporarily unavailable on this environment/);
   assert.match(envExample, /^ZAVQERA_TRUSTED_RESEARCH_COMPLETION_ENABLED=false$/m);
   assert.match(envExample, /^ZAVQERA_TRUSTED_RESEARCH_DEPLOY_CONTEXT=$/m);

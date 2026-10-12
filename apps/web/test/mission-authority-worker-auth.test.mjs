@@ -109,6 +109,10 @@ test("trusted worker origin rejects attacker request URLs, insecure external tar
 test("trusted research completion is a narrow worker operation behind the authenticated route", async () => {
   const route = await readFile(join(webRoot, "app", "api", "internal", "agent-executions", "[executionId]", "route.ts"), "utf8");
   assert.match(route, /isTrustedExecutionWorkerRequest/);
+  assert.match(route, /workerBody\.operation === "preflight_read_only_research"/);
+  assert.match(route, /isResearchCompletionSchemaProbeError\(probe\.error\)/);
+  assert.match(route, /p_execution_id: RESEARCH_COMPLETION_SCHEMA_PROBE_UUID/);
+  assert.match(route, /ready: true/);
   assert.match(route, /workerBody\.operation === "complete_read_only_research"/);
   assert.match(route, /permittedKeys = new Set\(\["operation", "requestedBy", "status", "result", "evidence"\]\)/);
   assert.match(route, /!UUID_PATTERN\.test\(workerBody\.requestedBy\)/);
