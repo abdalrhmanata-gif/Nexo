@@ -10,7 +10,7 @@ Target project (Development only): `mrwmmbytcymqgwvcoywd` — `eu-west-1`
 
 ## 1. Why this runbook exists
 
-A read-only catalog check on hosted Development found that its migration ledger ends at `20261011150000` (W65), while the candidate branch expects the W66/W68-W71/W73-W79 contract. The following required objects were absent: the two persistent authority-budget tables, the dispatch/reconciliation claim columns, and the requester-bound seven-argument Research completion RPC. The old six-argument public Research completion RPC remains.
+A read-only catalog check on hosted Development found that its migration ledger ends at `20261011150000` (W65), while the candidate branch expects the W66/W68-W71/W73-W79 contract. The following required objects were absent: the two persistent authority-budget tables, the dispatch/reconciliation claim columns, and the requester-bound seven-argument Research completion RPC. The old six-argument public and private Research completion RPCs remain and currently grant EXECUTE to `authenticated`. W67 is added to revoke API-role access early in an authorized rollout; W79 later removes both old signatures.
 
 The current application preflight deliberately fails closed when the new RPC signature is unavailable. Do not bypass this guard, send Research data to the provider, or describe hosted Research as ready while parity is unresolved.
 
@@ -21,17 +21,18 @@ This document is a review/runbook only. It does **not** authorize a migration, a
 Apply only after a separate review/approval for hosted Development schema changes. Use the repository migration runner so the ledger and ordering remain authoritative; do not copy SQL fragments into the dashboard manually.
 
 1. `20261011160000_w66_service_role_table_privilege_hardening.sql` — revoke direct `service_role` writes to the execution ledger; trusted RPCs remain the intended mutation boundary.
-2. `20261011170000_w68_persistent_authority_budget_reservations.sql` — add persistent budget/reservation tables, RLS, guarded budget configuration and atomic execution-start reservation.
-3. `20261011180000_w69_one_time_jit_dispatch_claim.sql` — add single-use dispatch-claim fields and the JIT claim function.
-4. `20261011190000_w70_durable_unknown_outcome_reconciliation.sql` — add reconciliation claim/lease state and trusted reconciliation RPCs.
-5. `20261012070000_w71_expired_external_execution_budget_recovery.sql` — preserve/hold external budget reservations when expired executions become UNKNOWN.
-6. `20261012120000_w73_trusted_system_mission_events.sql` — allow only bounded, state-correlated trusted SYSTEM mission events.
-7. `20261012130000_w74_reconciliation_claim_freshness.sql` — require reconciliation evidence to post-date the active claim.
-8. `20261012140000_w75_correlatable_provider_receipt.sql` — require a stable correlatable provider reference on external success updates.
-9. `20261012150000_w76_guard_external_success_on_insert.sql` — enforce the receipt invariant on both inserts and updates.
-10. `20261012160000_w77_read_only_research_payload_bounds.sql` — bound and allowlist Research completion result/evidence payloads.
-11. `20261012170000_w78_bind_research_history_to_execution.sql` — bind user-attributed Research history to the exact completed execution.
-12. `20261012180000_w79_trusted_research_completion.sql` — remove the old user-callable completion signature and expose the requester-bound completion wrapper only to `service_role`.
+2. `20261011165000_w67_legacy_research_rpc_privilege_hardening.sql` — revoke API-role EXECUTE on both legacy six-argument Research completion functions immediately after W66, intentionally keeping Research unavailable until W79.
+3. `20261011170000_w68_persistent_authority_budget_reservations.sql` — add persistent budget/reservation tables, RLS, guarded budget configuration and atomic execution-start reservation.
+4. `20261011180000_w69_one_time_jit_dispatch_claim.sql` — add single-use dispatch-claim fields and the JIT claim function.
+5. `20261011190000_w70_durable_unknown_outcome_reconciliation.sql` — add reconciliation claim/lease state and trusted reconciliation RPCs.
+6. `20261012070000_w71_expired_external_execution_budget_recovery.sql` — preserve/hold external budget reservations when expired executions become UNKNOWN.
+7. `20261012120000_w73_trusted_system_mission_events.sql` — allow only bounded, state-correlated trusted SYSTEM mission events.
+8. `20261012130000_w74_reconciliation_claim_freshness.sql` — require reconciliation evidence to post-date the active claim.
+9. `20261012140000_w75_correlatable_provider_receipt.sql` — require a stable correlatable provider reference on external success updates.
+10. `20261012150000_w76_guard_external_success_on_insert.sql` — enforce the receipt invariant on both inserts and updates.
+11. `20261012160000_w77_read_only_research_payload_bounds.sql` — bound and allowlist Research completion result/evidence payloads.
+12. `20261012170000_w78_bind_research_history_to_execution.sql` — bind user-attributed Research history to the exact completed execution.
+13. `20261012180000_w79_trusted_research_completion.sql` — remove the old user-callable completion signature and expose the requester-bound completion wrapper only to `service_role`.
 
 There are no W67 or W72 SQL migration files in this candidate migration list; W72 is covered by the persistent gateway integration code/test, not by inventing a missing migration. Preserve timestamp order and use the repository's actual migration list as the source of truth.
 
@@ -55,6 +56,7 @@ After an explicitly approved migration rollout, verify all of the following from
 - [ ] Latest ledger version equals the latest migration actually included by the approved rollout (expected W79 for this plan).
 - [ ] `public.mission_authority_budgets` and `public.mission_authority_budget_reservations` exist, have RLS enabled, and are not directly writable by `anon`, `authenticated`, or `service_role`.
 - [ ] `public.agent_executions` has the W69 dispatch claim fields and W70 reconciliation claim/lease/token fields.
+- [ ] W67 has revoked API-role EXECUTE on the legacy public and private six-argument functions before the later rollout steps; Research remains intentionally unavailable until W79.
 - [ ] The old signatures `public.complete_read_only_research_execution(uuid,text,jsonb,jsonb,text,text)` and `private.complete_read_only_research_execution(uuid,text,jsonb,jsonb,text,text)` are absent.
 - [ ] The seven-argument signatures `public.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)` and `private.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)` exist.
 - [ ] Only `service_role` can execute the public trusted wrapper; `anon` and `authenticated` cannot execute either completion implementation.

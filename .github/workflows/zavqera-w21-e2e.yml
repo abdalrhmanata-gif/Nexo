@@ -122,6 +122,7 @@ jobs:
           cp "$GITHUB_WORKSPACE/supabase/tests/w64_read_only_research_completion.sql" "$workdir/supabase/tests/w64_read_only_research_completion.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w65_agent_execution_table_write_boundary.sql" "$workdir/supabase/tests/w65_agent_execution_table_write_boundary.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w66_service_role_table_privilege_hardening.sql" "$workdir/supabase/tests/w66_service_role_table_privilege_hardening.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w67_legacy_research_rpc_privilege_hardening.sql" "$workdir/supabase/tests/w67_legacy_research_rpc_privilege_hardening.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w68_mission_authority_budget_reservations.sql" "$workdir/supabase/tests/w68_mission_authority_budget_reservations.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w69_agent_execution_dispatch_claim.sql" "$workdir/supabase/tests/w69_agent_execution_dispatch_claim.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w70_durable_unknown_outcome_reconciliation.sql" "$workdir/supabase/tests/w70_durable_unknown_outcome_reconciliation.sql"

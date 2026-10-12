@@ -18,6 +18,7 @@ The repository branch contains these later database migrations that are absent f
 | Version | Migration | Main responsibility | Dependency / acceptance focus |
 |---|---|---|---|
 | 20261011160000 | W66 service-role table privilege hardening | Revokes direct table privileges from `service_role` on `agent_executions` | Must be followed by proof that intended guarded RPCs still work and direct writes are denied |
+| 20261011165000 | W67 legacy Research RPC privilege hardening | Revokes API-role EXECUTE on both legacy six-argument Research completion functions before the remaining rollout | Must prove `anon`, `authenticated`, and `service_role` cannot invoke either legacy overload during a partial rollout; Research stays intentionally unavailable until W79 |
 | 20261011170000 | W68 persistent authority budget reservations | Adds persistent authority budgets/reservations and atomic budget-aware execution start | Depends on workspace/mission/agent/execution/approval contracts; verify counters, constraints, RLS and atomic race tests |
 | 20261011180000 | W69 one-time JIT dispatch claim | Adds dispatch-claim fields and the one-time just-in-time claim RPC | Depends on W68 reservation state; validate authority/approval/version/lease/hash binding and replay denial |
 | 20261011190000 | W70 durable unknown-outcome reconciliation | Adds durable reconciliation claim/lease/token and settlement RPC | Depends on W68 reservation ledger and W69 execution fields; unknown outcomes must not redispatch |
@@ -30,7 +31,7 @@ The repository branch contains these later database migrations that are absent f
 | 20261012170000 | W78 bind research history to execution | Binds Research history event to the exact completed execution and matching summary/source metadata | Depends on W73 SYSTEM event handling and W77 Research result shape; cross-execution or altered history must fail |
 | 20261012180000 | W79 trusted research completion | Removes older public/private completion signatures and installs a requester-bound trusted completion function | Depends on W77/W78 and worker route contract; verify exact 7-argument signature, grants, requester/execution binding, and fail-closed preflight |
 
-W67 and W72 are not missing database migration versions in this sequence: W67/W72 refer to test/integration work in the launch workflow, not ledger entries that should be fabricated. Do not create placeholder migration-ledger rows.
+W67 is now an explicit fail-closed SQL migration in this candidate branch. W72 remains persistent-gateway integration code/test, not a SQL migration; do not invent a W72 migration-ledger row.
 
 ## 2. Read-only hosted catalog evidence
 
@@ -51,17 +52,18 @@ Do not run this rollout until the repository owner has explicitly authorized the
 Apply using the repository's reviewed migration runner in strict timestamp order:
 
 1. W66
-2. W68
-3. W69
-4. W70
-5. W71
-6. W73
-7. W74
-8. W75
-9. W76
-10. W77
-11. W78
-12. W79
+2. W67
+3. W68
+4. W69
+5. W70
+6. W71
+7. W73
+8. W74
+9. W75
+10. W76
+11. W77
+12. W78
+13. W79
 
 Do not run ad hoc SQL to imitate migrations and do not manually insert rows into the migration ledger. W79 deliberately drops older completion-function signatures; this is an API-contract change and must be verified against the exact deployed worker route. Never skip directly to W79.
 
@@ -80,6 +82,7 @@ After every migration reports success, perform read-only catalog verification an
 
 - **Ledger:** every expected version through W79 appears exactly once; no skipped or hand-written rows.
 - **W66:** direct `service_role` table mutation is denied while intended guarded functions remain callable.
+- **W67:** the legacy public/private six-argument completion functions are either absent (after W79) or non-executable by `anon`, `authenticated`, and `service_role`; a partial rollout must fail closed.
 - **W68:** tables, constraints, privileges, and reservation relationships match source; concurrent starts cannot exceed action/spend budgets.
 - **W69:** one execution can acquire at most one valid dispatch claim; altered authority/action hashes, stale approvals, expired leases and replays fail closed.
 - **W70–W71:** reconciliation claim leases/tokens are enforced; unknown outcomes remain held and are never blindly redispatched; stale recovery preserves budget accounting.
