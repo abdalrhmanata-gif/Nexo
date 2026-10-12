@@ -74,3 +74,10 @@ Catalog parity alone is not live Research verification. A separate opt-in authen
 ## 6. Current decision
 
 **NOT APPLIED / AWAITING SEPARATE REVIEW AND AUTHORIZATION.** Hosted Development remains on W65 per the last read-only query. Supabase Main/Production, Git `main`, Production deployment, DNS, billing, and real provider side effects are out of scope. PR #29 remains OPEN / Draft / Unmerged.
+
+
+## Additional finding from live privilege/function inspection — 2026-10-12
+
+A further read-only check confirmed that the hosted legacy public six-argument RPC is executable by `authenticated` (not by `anon`), and delegates to the old private `SECURITY DEFINER` implementation. That implementation binds completion to the caller's own editable workspace and a read-only research execution, but it has weaker payload allowlisting than W77 and permits the authenticated completion path that W79 removes. Therefore the current hosted mismatch is also a **research-integrity gap**, not just a route-availability issue: a signed-in user with a suitable RUNNING research execution could submit fabricated unverified completion content through the legacy RPC, subject to the older checks.
+
+The current branch's new route preflight fails closed before quota reservation and provider I/O when the seven-argument RPC is missing; this does not revoke the old hosted RPC's direct privilege. Do not try to remediate this by making an unreviewed hosted privilege change. Treat hosted Research as blocked until the separately reviewed W66-W79 rollout (or another explicitly reviewed mitigation) is authorized and its grants/function signatures are verified. No live privilege was changed during this check.
