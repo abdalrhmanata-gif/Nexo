@@ -3,7 +3,7 @@
 begin;
 create extension if not exists pgtap;
 
-select plan(37);
+select plan(38);
 
 select ok(to_regclass('public.missions') is not null, 'missions exists');
 select ok(to_regclass('public.mission_actions') is not null, 'mission_actions exists');
@@ -50,9 +50,22 @@ select ok(not exists(
     and p.proname not in (
       'guard_mission_action_insert','handle_new_user_profile',
       'prevent_mission_action_delete_with_history','prevent_action_delete_with_history',
-      'prevent_mission_action_reparent'
+      'prevent_mission_action_reparent','complete_read_only_research_execution'
     )
 ), 'public application SECURITY DEFINER runtime functions bind to auth.uid');
+
+select ok(
+  to_regprocedure('public.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)') is not null
+  and (select prosecdef from pg_proc where oid = 'public.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)'::regprocedure)
+  and coalesce(array_to_string((select proconfig from pg_proc where oid = 'public.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)'::regprocedure), '|'), '')
+    like '%search_path=pg_catalog, public%'
+  and not has_function_privilege('anon', 'public.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)', 'EXECUTE')
+  and not has_function_privilege('authenticated', 'public.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)', 'EXECUTE')
+  and has_function_privilege('service_role', 'public.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)', 'EXECUTE')
+  and lower(pg_get_functiondef('private.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)'::regprocedure)) like '%trusted_executor_required%'
+  and lower(pg_get_functiondef('private.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)'::regprocedure)) like '%requested_by <> p_requested_by%',
+  'W79 completion wrapper is pinned and restricted to the trusted executor with requester binding'
+);
 
 select ok(not exists(
   select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace

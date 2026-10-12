@@ -193,7 +193,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (result.kind === AI_GENERATION_OUTCOMES.PROVIDER_ERROR) {
       if (startedExecutionId) {
         const executionStatus = result.disposition === "hold" ? "UNKNOWN" : "FAILED";
-        const completion = await completeReadOnlyResearchExecution({
+        const completion = await completeReadOnlyResearchExecution(request, {
           requestedBy: user.id,
           executionId: startedExecutionId,
           status: executionStatus,
@@ -222,7 +222,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (!startedExecutionId) {
       return NextResponse.json({ error: "The research execution boundary was not recorded." }, { status: 503 });
     }
-    const completion = await completeReadOnlyResearchExecution({
+    const completion = await completeReadOnlyResearchExecution(request, {
       requestedBy: user.id,
       executionId: startedExecutionId,
       status: "SUCCEEDED",
