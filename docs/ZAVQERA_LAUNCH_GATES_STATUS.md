@@ -298,3 +298,28 @@ On candidate HEAD `253646897424fd9f52f7189c5b3dbec0ce9fd157`, Web Unit, Web CI, 
 W73 adds a strict service-role SYSTEM-event path and regression coverage for valid persisted claims/completions, mismatched or unclaimed rows, forbidden event types, user attribution, workspace denial, and compatibility with W64/W71. W21 is updated to replay the new migration and run the new pgTAP test before W72.
 
 **State:** fix and tests are committed as a single candidate change, but W73/W72 remain **PENDING CI verification** until all gates complete on its exact HEAD. Do not promote production based on earlier green gates while W72 is red.
+
+
+## W73 / W72 exact-head validation — 2026-10-12 — `43cb98715948e41a4a7c1cb96ef68f034a2ff191`
+
+All six automated candidate gates passed on the same code HEAD:
+
+- Web Unit — **PASS, 302/302 tests**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38224308948
+- Web CI / TypeScript / production build — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38224308864
+- Flutter CI — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38224308907
+- W25 isolated PostgreSQL atomic fence — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38224308866
+- Netlify Deploy Preview verification — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38224308838
+- W21 disposable PostgreSQL 17 launch gate — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38224308835
+
+W21 replayed migration history, passed the W63/W64/W65/W66/W68/W69/W70/W71/W73 Mission Authority pgTAP regressions and AI quota/plan/workspace authorization tests, and passed four independent-session actual-ledger concurrency proofs (idempotency, atomic budget reservation, one-time dispatch claim, and reconciliation claim). The W72 persistent gateway integration with fake providers passed:
+`W72_PERSISTENT_GATEWAY_POSTGRES_INTEGRATION=PASS`,
+`actual_postgres_success_and_budget_settlement=PASS`,
+`unknown_to_no_send_reconciliation_without_redispatch=PASS`,
+`durable_dispatch_and_reconciliation_audit=PASS`.
+Browser E2E passed **2/2**. Disposable Supabase cleanup was verified with `supabase_stop_exit_code=0` and `cleanup_verified=true`.
+
+Artifacts: [W21 evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38224308835/artifacts/11736140236) · [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38224308835/artifacts/11736220113).
+
+W73 resolves the specific W72 failure where a service-role worker could pass the JIT decision yet fail to append the mission audit event because the legacy writer required `auth.uid()`. System events now use a bounded allowlist and are checked against persisted execution state; regular user events preserve user attribution. The pgTAP test plan was corrected from 27 to 26 assertions before the final passing run.
+
+This snapshot certifies the tested candidate code path with **fake providers only**. The provider registry remains intentionally empty. Hosted authenticated live Research/citations/history, real Resend inbox delivery and password-reset email, human desktop/mobile visual QA, and Supabase Development leaked-password protection remain open release gates. Production launch is **not approved**. PR #29 remains OPEN / Draft / UNMERGED; Supabase Main/Production, production deployment, DNS, billing, and real provider side effects remain untouched.
