@@ -198,7 +198,7 @@ jobs:
             supabase/tests/w71_expired_external_execution_budget_recovery.sql \
             supabase/tests/w73_trusted_system_mission_events.sql \
             supabase/tests/w75_correlatable_provider_receipt.sql \
-            supabase/tests/w76_external_success_insert_guard.sql
+            supabase/tests/w76_external_success_insert_guard.sql \
             supabase/tests/w77_read_only_research_payload_bounds.sql
           do
             echo "Running Mission Authority regression: $test_file"
