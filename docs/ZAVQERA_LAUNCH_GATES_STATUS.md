@@ -323,3 +323,43 @@ Artifacts: [W21 evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs
 W73 resolves the specific W72 failure where a service-role worker could pass the JIT decision yet fail to append the mission audit event because the legacy writer required `auth.uid()`. System events now use a bounded allowlist and are checked against persisted execution state; regular user events preserve user attribution. The pgTAP test plan was corrected from 27 to 26 assertions before the final passing run.
 
 This snapshot certifies the tested candidate code path with **fake providers only**. The provider registry remains intentionally empty. Hosted authenticated live Research/citations/history, real Resend inbox delivery and password-reset email, human desktop/mobile visual QA, and Supabase Development leaked-password protection remain open release gates. Production launch is **not approved**. PR #29 remains OPEN / Draft / UNMERGED; Supabase Main/Production, production deployment, DNS, billing, and real provider side effects remain untouched.
+
+
+---
+
+## Exact-head verification snapshot — 2026-10-12 — code HEAD `c82e33423b66a959690442c2ca40dcf702a822f5`
+
+All six core automated gates passed on this exact code HEAD. This records isolated candidate validation only; it is not production-release approval.
+
+- Web Unit — **PASS, 306/306 tests**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38228393364
+- Web CI / TypeScript / production build — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38228393298
+- Flutter CI — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38228393233
+- W25 isolated PostgreSQL atomic fence — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38228393215
+- W21 disposable PostgreSQL 17 launch gate — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38228393294
+- Netlify Deploy Preview verification — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38228393286
+
+### Exact W21 evidence
+
+W21 replayed the repository migrations into disposable PostgreSQL 17 and passed the Mission Authority pgTAP regressions for W63, W64, W65, W66, W68, W69, W70, W71 and W73; it also passed the AI quota/plan/workspace security tests. The W70 test exercised the W74 freshness guard: reconciliation evidence newer than dispatch but older than the active reconciliation claim is rejected, leaving the attempt UNKNOWN, the reservation HELD_UNKNOWN, and the claim token intact.
+
+Independent-session proofs all passed:
+- W67: unique idempotency claim and refusal of duplicate/changed requests.
+- W68: atomic authority-budget reservation with execution start.
+- W69: exactly one JIT dispatch claim.
+- W70: exactly one reconciliation claim.
+
+W72 persistent-gateway PostgreSQL integration passed with fake provider adapters only:
+`actual_postgres_success_and_budget_settlement=PASS`,
+`unknown_to_no_send_reconciliation_without_redispatch=PASS`,
+`durable_dispatch_and_reconciliation_audit=PASS`.
+Browser E2E passed **2/2**. Disposable-stack cleanup was verified: `remaining_containers=none`, `remaining_volumes=none`, `cleanup_verified=true`.
+
+Artifacts: [W21 evidence and cleanup proof](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38228393294/artifacts/11738335696) · [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38228393294/artifacts/11737936321).
+
+### Release boundary
+
+The persistent W68–W74 SQL fence and trusted gateway seam are covered by integration tests, but the provider adapter registry intentionally remains empty. The gateway therefore fails closed before privileged client creation or provider I/O when no reviewed adapter is registered. These tests use disposable PostgreSQL and fake adapters; they do not prove any live provider integration.
+
+Still **NOT VERIFIED**: hosted authenticated Mission Research with citations and persisted history; actual Resend invitation delivery; hosted password-reset email/callback; manual desktop/mobile visual QA; Supabase Development leaked-password protection (WARN / Disabled). Independent business verification is not implied by a receipt or reconciliation record.
+
+**Release decision unchanged:** automated candidate gates are green; full production launch is not approved. PR #29 remains OPEN / Draft / UNMERGED. No Supabase Main/Production changes, production deployment, DNS/billing changes or real provider side effects were made.

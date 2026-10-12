@@ -128,3 +128,14 @@ A source audit found that W63's trusted-only completion RPC did not alone preven
 W65 closes that bypass by revoking all direct table privileges from `PUBLIC`, `anon`, and `authenticated`, then granting authenticated users `SELECT` only (still subject to RLS). It removes the old editor insert/update policies. Creation, completion, cancellation, retry, and reconciliation must use their guarded RPCs. The dedicated pgTAP test asserts the privilege boundary and that the guarded start RPC remains callable while generic completion remains unavailable to authenticated clients.
 
 The W65 migration is included in W21's disposable PostgreSQL 17 migration replay and its pgTAP suite. This is a Development/PR candidate change only; no hosted Supabase project was migrated. The provider-neutral universal JIT dispatch boundary and real-provider reconciliation remain separate incomplete release gates.
+
+
+## W74 exact-head verification — 2026-10-12 — `c82e33423b66a959690442c2ca40dcf702a822f5`
+
+All six automated PR gates passed on this code HEAD (Web Unit 306/306; Web CI/typecheck/build; Flutter CI; W25; W21; Netlify Deploy Preview). Exact run links are recorded in `docs/ZAVQERA_LAUNCH_GATES_STATUS.md`.
+
+W21 applied the full migration history to a disposable PostgreSQL 17 stack and passed W63/W64/W65/W66/W68/W69/W70/W71/W73 pgTAP, the existing AI quota/plan/workspace tests, and W72 persistent gateway integration with fake provider adapters. Four independent-session races passed: idempotency, atomic budget reservation, one-time dispatch claim, and one-time reconciliation claim. Browser E2E passed 2/2 and disposal cleanup was verified.
+
+The W74 freshness behavior is exercised in the current W70 regression: evidence must post-date both dispatch and the active reconciliation claim. Evidence predating the active claim is rejected without finalizing the UNKNOWN execution or releasing its HELD_UNKNOWN budget reservation.
+
+The provider registry remains intentionally empty and the internal worker route remains fail-closed until an adapter implementing both dispatch and authoritative reconciliation has undergone a separate review. Do not register or enable a real provider as part of this verification. The hosted authenticated Research, real Resend delivery, hosted password-reset flow, human visual QA, and Development leaked-password-protection gates remain open. PR #29 stays OPEN / Draft / UNMERGED; Supabase Main/Production and production deployment remain untouched.
