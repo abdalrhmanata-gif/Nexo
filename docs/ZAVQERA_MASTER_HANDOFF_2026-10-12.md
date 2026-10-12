@@ -9,7 +9,7 @@
 
 ZAVQERA is an AI Mission Delegation Layer, not a generic chatbot. A Mission specifies the goal, permitted and forbidden actions, budget, and expiry. Personal and Business experiences should share one core. The platform is intended to be provider/model/storage/backend neutral, API-first, modular, multi-tenant ready, and suitable for web, Flutter, SDKs, workers, and APIs.
 
-**Current release status:**
+**Current release status (rechecked 2026-10-12):**
 - Automated isolated engineering gates are green on the exact candidate HEAD recorded below.
 - The W21 launch gate includes disposable PostgreSQL 17 migration replay + pgTAP, Mission Authority SQL regressions, AI quota/workspace tests, real-ledger concurrency tests, persistent gateway integration using **fake providers**, browser E2E (2/2), disposable-stack cleanup, and evidence artifacts.
 - This does **not** equal production security certification, hosted Research readiness, successful real provider side effects, full UI visual QA, or launch approval.
@@ -21,8 +21,8 @@ ZAVQERA is an AI Mission Delegation Layer, not a generic chatbot. A Mission spec
 
 - Repository: https://github.com/abdalrhmanata-gif/Nexo
 - Active branch: `zavqera/ai-planner-integration`
-- Candidate branch HEAD at snapshot: `883d16c4667e0c2f29c01686c48c568e674c9f16`
-- HEAD commit: `docs: record latest W21 evidence and SHA mapping`
+- Candidate branch HEAD at this verification: `7a2e559d3f6c3a91b69bce387f2adf98c17ee3d7`
+- HEAD commit: `test: cover future-dated reconciliation evidence`
 - PR #29: https://github.com/abdalrhmanata-gif/Nexo/pull/29 — OPEN / Draft / Unmerged
 - PR base: `zavqera/alternative-web-deployment`
 - The latest full set of successful checks was on the exact SHA above:
@@ -223,16 +223,18 @@ No changes were made by this query.
 **Final handoff decision:** automated local gates PASS; hosted Research is BLOCKED by known Development schema/grant drift; full launch is NOT APPROVED. Continue from the current repo evidence, not from assumptions, and never infer deployment permission from the request to “continue.”
 
 
-## Verified W21 completion — 2026-10-12 18:11 UTC — tested branch HEAD `1ae4bd54aa37d0a50d5406f1bd25e3ab0d216313`
+## Superseding W21 verification — 2026-10-12 — tested branch HEAD `7a2e559d3f6c3a91b69bce387f2adf98c17ee3d7`
 
-A fresh GitHub Actions inspection confirms **W21 Local Launch Gate PASS** on this exact feature-branch SHA:
-- Run: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38288556192
-- All workflow steps completed successfully, including disposable PostgreSQL 17 migration replay/pgTAP, Mission Authority security regressions, quota/workspace tests, idempotency/budget/dispatch/reconciliation concurrency proofs, W72 gateway integration with fake providers, full browser E2E, disposable stack cleanup, cleanup verification, evidence writing, and both artifact uploads.
-- Evidence artifact: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38288556192/artifacts/11764687037
-- Browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38288556192/artifacts/11764403340
-- Supporting checks on the same SHA: Web Unit PASS (https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38288556126), Web CI PASS (https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38288556115), Flutter CI PASS (https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38288556127), W25 isolated PostgreSQL atomic fence PASS (https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38288556148), and Netlify deployment workflow SUCCESS (https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38288556116).
-- W21's disposable environment cleanup and cleanup verification both have successful step conclusions; both expected artifacts were uploaded and are not expired.
-- PR #29 remains OPEN / Draft / Unmerged; its head is still `1ae4bd54aa37d0a50d5406f1bd25e3ab0d216313` at the time of this verification.
+Live Actions inspection on the exact feature-branch SHA confirms **W21 Local Launch Gate PASS**:
+- Run 38289544742 (run number 957): https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38289544742
+- The `w21-e2e` job and every listed step completed successfully: disposable PostgreSQL 17 migration replay/pgTAP; Mission Authority security regressions; AI quota/plan/workspace tests; actual-ledger idempotency, budget, dispatch-claim and reconciliation-claim concurrency proofs; W72 persistent gateway integration with fake providers; full launch-gate browser E2E; disposable Supabase cleanup; cleanup verification; evidence writing; and both artifact uploads.
+- Evidence artifact `zavqera-w21-evidence` (11764643205; SHA-256 `923a2dc095d8074816f6276eed71dc998f3f5dc11cb7ec9514b9b43f678e7b44`, not expired): https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38289544742/artifacts/11764643205
+- Browser diagnostics artifact `zavqera-w21-browser-diagnostics` (11764364237; SHA-256 `8ffbb839c63a2b38a01d04f19f3c021c22a9ebd75057d6fc34c55daf3b04c49f`, not expired): https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38289544742/artifacts/11764364237
+- Supporting runs tied to this SHA by the commit workflow-runs API: Web Unit 38289544756 PASS; Web CI 38289544739 PASS; Flutter CI 38289544914 PASS; W25 isolated PostgreSQL atomic fence 38289544646 PASS; Netlify workflow 38289544695 SUCCESS. The Netlify job verified preview routes, while deployment and real-provider/live-research steps were skipped; this is not production deployment or live provider evidence.
+- The exact-SHA combined-status API reports the `netlify/unique-kringle-3ce321/deploy-preview` status SUCCESS.
+- PR #29 remains OPEN / Draft / Unmerged. The current Actions runs identify branch `zavqera/ai-planner-integration` at this SHA; the PR search confirms #29 remains open. No merge or Ready conversion was made.
+
+The successful cleanup step and its separate cleanup-verification step are directly shown in the W21 job result. The evidence artifact is present and available; the archive itself was not unpacked in this verification, so no additional claim about its internal JSON contents is made.
 
 ### W74 test-coverage clarification
 The initial observation that no separate `supabase/tests/w74_reconciliation_claim_freshness.sql` exists is accurate, but it is **not evidence that the W74 behavior lacks regression coverage**. The existing `supabase/tests/w70_durable_unknown_outcome_reconciliation.sql` asserts that the reconciliation function checks both `RECONCILIATION_EVIDENCE_PRECEDES_EXECUTION` and `RECONCILIATION_EVIDENCE_PRECEDES_CLAIM`; its behavioral test exercises stale evidence for both dispatch and the active claim, verifies rejection, and verifies that the execution remains `UNKNOWN`, the reservation remains `HELD_UNKNOWN`, and the claim token remains intact. W21 ran this W70 test after replaying the W74 migration and the whole gate passed. Do not create a duplicate W74 test solely to mirror the migration number; a separate test may still be useful later if it adds distinct assertions (for example, future-dated evidence boundary behavior) and is wired into the workflow.

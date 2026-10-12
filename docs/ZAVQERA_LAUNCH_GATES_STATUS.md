@@ -1,4 +1,15 @@
-## Latest verified status — 2026-10-12 17:50 UTC
+## Latest verified status — 2026-10-12 — W21 run 38289544742 / candidate SHA `7a2e559d3f6c3a91b69bce387f2adf98c17ee3d7`
+
+- **Exact tested branch HEAD:** `7a2e559d3f6c3a91b69bce387f2adf98c17ee3d7` (`test: cover future-dated reconciliation evidence`).
+- **W21 Local Launch Gate: PASS:** [run 38289544742](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38289544742). Job `w21-e2e` and all its steps completed successfully: disposable PG17 migration replay/pgTAP, Mission Authority SQL regressions, quota/plan/workspace tests, actual-ledger idempotency/budget/dispatch/reconciliation races, W72 gateway integration with fake providers, browser E2E, disposable stack cleanup, cleanup verification, evidence generation, and both artifact uploads.
+- **Artifacts:** [evidence and cleanup artifact](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38289544742/artifacts/11764643205) (SHA-256 `923a2dc095d8074816f6276eed71dc998f3f5dc11cb7ec9514b9b43f678e7b44`, available/not expired) · [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38289544742/artifacts/11764364237) (SHA-256 `8ffbb839c63a2b38a01d04f19f3c021c22a9ebd75057d6fc34c55daf3b04c49f`, available/not expired). Cleanup and cleanup verification are successful workflow steps; artifact archives were not unpacked here.
+- **Supporting workflows associated with this exact SHA:** Web Unit [38289544756](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38289544756) PASS; Web CI [38289544739](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38289544739) PASS; Flutter CI [38289544914](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38289544914) PASS; W25 [38289544646](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38289544646) PASS; Netlify workflow [38289544695](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38289544695) SUCCESS. The Netlify workflow verified preview routes; deployment and real-provider/live-research steps were skipped. The commit's combined status also reports the Netlify Deploy Preview context as SUCCESS.
+- **Pull request:** PR #29 remains OPEN / Draft / Unmerged. No merge or Ready conversion was made.
+- **Hosted and production boundaries:** hosted Development's last read-only result remains W65 with the documented Research RPC privilege gap; no hosted migration, schema/grant edit, hosted Research, Git `main`, Supabase Main/Production, production promotion, DNS, billing, or real-provider side effect was performed. Full launch remains NOT APPROVED.
+
+---
+
+## Historical verification — 2026-10-12 17:50 UTC
 
 - **Candidate branch HEAD before this documentation-only update:** `c6779da7ba9cc6c2855be36db865e5dd75fcf563`.
 - **W21 Local Launch Gate: PASS** on that candidate HEAD: [run 38285709683](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38285709683). All steps completed successfully, including disposable PostgreSQL 17 migration replay and pgTAP, Mission Authority SQL regressions (including W67), quota/workspace security tests, actual-ledger concurrency races, W72 persistent gateway integration with fake providers, browser E2E (**2/2 passed**), disposable-stack cleanup, cleanup verification, and evidence uploads.
