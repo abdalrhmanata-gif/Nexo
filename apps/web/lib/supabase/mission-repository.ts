@@ -50,9 +50,21 @@ type ResearchEventRow = {
   created_at: string;
 };
 
+type ResearchExecutionRow = {
+  id: string;
+  status: string;
+  action_id: string | null;
+  request: Record<string, unknown>;
+  authority_snapshot: Record<string, unknown>;
+  result: Record<string, unknown> | null;
+  evidence: Record<string, unknown> | null;
+  completed_at: string | null;
+};
+
 function toResearchRun(row: ResearchEventRow): MissionResearchRun | null {
   const runId = typeof row.payload.run_id === "string" ? row.payload.run_id : "";
   const requestId = typeof row.payload.request_id === "string" ? row.payload.request_id : "";
+  const executionId = typeof row.payload.execution_id === "string" ? row.payload.execution_id : "";
   const summary = typeof row.payload.summary === "string" ? row.payload.summary : "";
   const verified = row.payload.verified === false;
   const sourceRows = Array.isArray(row.payload.sources) ? row.payload.sources : [];
@@ -69,7 +81,7 @@ function toResearchRun(row: ResearchEventRow): MissionResearchRun | null {
     })
     .filter((source): source is { title: string; url: string } => Boolean(source))
     .slice(0, 12);
-  if (!runId || !requestId || !summary || !verified) return null;
+  if (!runId || !requestId || !executionId || !summary || !verified) return null;
   return {
     runId,
     requestId,
@@ -79,6 +91,51 @@ function toResearchRun(row: ResearchEventRow): MissionResearchRun | null {
     createdAt: row.created_at,
     verified: false,
   };
+}
+
+
+function canonicalJson(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "undefined";
+  if (Array.isArray(value)) return "[" + value.map(canonicalJson).join(",") + "]";
+  const object = value as Record<string, unknown>;
+  return "{" + Object.keys(object).sort().map((key) => JSON.stringify(key) + ":" + canonicalJson(object[key])).join(",") + "}";
+}
+
+function researchEventMatchesExecution(row: ResearchEventRow, execution: ResearchExecutionRow): boolean {
+  const payload = row.payload;
+  const requestId = typeof payload.request_id === "string" ? payload.request_id : "";
+  const payloadSources = Array.isArray(payload.sources) ? payload.sources : null;
+  const request = execution.request ?? {};
+  const authority = execution.authority_snapshot ?? {};
+  const result = execution.result ?? {};
+  const evidence = execution.evidence ?? {};
+  const evidenceSources = Array.isArray(evidence.sources) ? evidence.sources : null;
+
+  return Boolean(
+    payloadSources
+    && evidenceSources
+    && payload.execution_id === execution.id
+    && payload.status === "COMPLETED"
+    && payload.execution === "read_only_research"
+    && payload.verified === false
+    && typeof payload.run_id === "string"
+    && payload.run_id.length > 0
+    && typeof payload.source_count === "number"
+    && payload.source_count === payloadSources.length
+    && execution.status === "SUCCEEDED"
+    && execution.completed_at !== null
+    && execution.action_id === null
+    && request.type === "read_only_research"
+    && request.request_id === requestId
+    && authority.mode === "read_only"
+    && authority.external_side_effects === false
+    && result.summary === payload.summary
+    && result.source_count === payload.source_count
+    && evidence.outcome === "SUCCEEDED"
+    && evidence.verified === false
+    && evidence.request_id === requestId
+    && canonicalJson(evidenceSources) === canonicalJson(payloadSources)
+  );
 }
 
 function toVerification(row: VerificationRow): MissionVerification {
@@ -373,6 +430,7 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
         p_event_type: "RESEARCH_RUN_COMPLETED",
         p_payload: {
           schema_version: 1,
+          execution_id: input.executionId,
           title: "Read-only research completed",
           execution: "read_only_research",
           status: "COMPLETED",
@@ -607,11 +665,35 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
         .eq("mission_id", id)
         .eq("event_type", "RESEARCH_RUN_COMPLETED")
         .order("created_at", { ascending: false })
-        .limit(5);
+        .limit(20);
       if (result.error) throw result.error;
-      return (result.data as ResearchEventRow[])
+
+      const rows = result.data as ResearchEventRow[];
+      const executionIds = [...new Set(rows
+        .map((row) => typeof row.payload.execution_id === "string" ? row.payload.execution_id : "")
+        .filter(Boolean))];
+      if (executionIds.length === 0) return [];
+
+      // Legacy history may predate the W78 write guard. Do not display it
+      // unless the event still matches a real completed read-only ledger row.
+      const executionResult = await supabase
+        .from("agent_executions")
+        .select("id, status, action_id, request, authority_snapshot, result, evidence, completed_at")
+        .eq("mission_id", id)
+        .in("id", executionIds);
+      if (executionResult.error) throw executionResult.error;
+
+      const executions = executionResult.data as ResearchExecutionRow[];
+      const executionsById = new Map(executions.map((execution) => [execution.id, execution]));
+      return rows
+        .filter((row) => {
+          const executionId = typeof row.payload.execution_id === "string" ? row.payload.execution_id : "";
+          const execution = executionsById.get(executionId);
+          return execution ? researchEventMatchesExecution(row, execution) : false;
+        })
         .map(toResearchRun)
-        .filter((run): run is MissionResearchRun => Boolean(run));
+        .filter((run): run is MissionResearchRun => Boolean(run))
+        .slice(0, 5);
     },
   };
 }

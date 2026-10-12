@@ -88,6 +88,7 @@ export type MissionResearchRun = {
 };
 export type NewResearchRun = {
   missionId: string;
+  executionId: string;
   runId: string;
   requestId: string;
   summary: string;

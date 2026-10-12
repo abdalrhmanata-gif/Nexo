@@ -169,6 +169,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       try {
         await repository.recordResearchRun({
           missionId: mission.id,
+          executionId: startedExecutionId,
           runId,
           requestId,
           summary: research.summary,
