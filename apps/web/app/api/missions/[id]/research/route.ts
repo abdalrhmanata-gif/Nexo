@@ -128,6 +128,17 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const configuredProviderMode = process.env.ZAVQERA_AI_PROVIDER_MODE || "openai";
     const isProductionRuntime = process.env.NODE_ENV === "production";
     const providerMode = configuredProviderMode === "mock" && !isProductionRuntime ? "mock" : "openai";
+
+    // Hosted Research stays fail-closed until the active Development schema
+    // has been separately approved and verified against W79's trusted RPC.
+    // This check runs before quota reservation and before any OpenAI request.
+    if (providerMode !== "mock" && process.env.ZAVQERA_TRUSTED_RESEARCH_COMPLETION_ENABLED !== "true") {
+      return NextResponse.json(
+        { error: "Mission Research is temporarily unavailable on this environment." },
+        { status: 503 },
+      );
+    }
+
     const apiKey = process.env.OPENAI_API_KEY;
     if (providerMode !== "mock" && !apiKey) {
       return NextResponse.json({ error: "AI execution is not configured yet." }, { status: 503 });

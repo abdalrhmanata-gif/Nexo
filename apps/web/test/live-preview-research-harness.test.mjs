@@ -13,6 +13,7 @@ const executionGuardMigration = readFileSync(join(root, "../../supabase/migratio
 const researchCompletionMigration = readFileSync(join(root, "../../supabase/migrations/20261012180000_w79_trusted_research_completion.sql"), "utf8");
 const trustedWorkerRoute = readFileSync(join(root, "app/api/internal/agent-executions/[executionId]/route.ts"), "utf8");
 const trustedWorkerOrigin = readFileSync(join(root, "lib/mission-authority/trusted-worker-origin.mjs"), "utf8");
+const envExample = readFileSync(join(root, ".env.example"), "utf8");
 
 test("live research prefers paired pre-provisioned Dev credentials and keeps values out of logs", () => {
   assert.match(script, /SUPABASE_DEV_TEST_EMAIL/);
@@ -42,6 +43,23 @@ test("workflow gate is explicitly marked, same-repository only, and passes test 
   assert.match(workflow, /secrets\.SUPABASE_DEV_SERVICE_ROLE_KEY/);
   assert.match(readme, /SUPABASE_DEV_TEST_EMAIL/);
   assert.match(readme, /Do not run this marked workflow repeatedly/);
+});
+
+test("hosted Research is fail-closed until trusted completion schema parity is explicitly enabled", () => {
+  const providerMode = researchRoute.indexOf("const providerMode =");
+  const trustedSchemaGate = researchRoute.indexOf(
+    'process.env.ZAVQERA_TRUSTED_RESEARCH_COMPLETION_ENABLED !== "true"',
+  );
+  const apiKeyCheck = researchRoute.indexOf('if (providerMode !== "mock" && !apiKey)');
+  const quotaAndProviderFlow = researchRoute.indexOf("const result = await runAiGeneration({");
+
+  assert.ok(providerMode >= 0, "provider mode must be resolved explicitly");
+  assert.ok(trustedSchemaGate > providerMode, "schema gate must follow provider-mode resolution");
+  assert.ok(trustedSchemaGate < apiKeyCheck, "schema gate must run before API-key handling");
+  assert.ok(trustedSchemaGate < quotaAndProviderFlow, "schema gate must run before quota reservation/provider execution");
+  assert.match(researchRoute, /Mission Research is temporarily unavailable on this environment/);
+  assert.match(envExample, /^ZAVQERA_TRUSTED_RESEARCH_COMPLETION_ENABLED=false$/m);
+  assert.match(readme, /Keep this flag false until hosted Development has an authorized migration plan/);
 });
 
 test("Mission research refuses agents whose authoritative settings are not explicitly read-only", () => {
