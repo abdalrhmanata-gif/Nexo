@@ -195,6 +195,7 @@ jobs:
             supabase/tests/w64_read_only_research_completion.sql \
             supabase/tests/w65_agent_execution_table_write_boundary.sql \
             supabase/tests/w66_service_role_table_privilege_hardening.sql \
+            supabase/tests/w67_legacy_research_rpc_privilege_hardening.sql \
             supabase/tests/w68_mission_authority_budget_reservations.sql \
             supabase/tests/w69_agent_execution_dispatch_claim.sql \
             supabase/tests/w70_durable_unknown_outcome_reconciliation.sql \
@@ -235,6 +236,7 @@ jobs:
             supabase test db supabase/tests/w64_read_only_research_completion.sql
             supabase test db supabase/tests/w65_agent_execution_table_write_boundary.sql
             supabase test db supabase/tests/w66_service_role_table_privilege_hardening.sql
+            supabase test db supabase/tests/w67_legacy_research_rpc_privilege_hardening.sql
             supabase test db supabase/tests/w68_mission_authority_budget_reservations.sql
             supabase test db supabase/tests/w69_agent_execution_dispatch_claim.sql
             supabase test db supabase/tests/w70_durable_unknown_outcome_reconciliation.sql
