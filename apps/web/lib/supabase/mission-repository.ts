@@ -669,9 +669,9 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       if (result.error) throw result.error;
 
       const rows = result.data as ResearchEventRow[];
-      const executionIds = [...new Set(rows
+      const executionIds = Array.from(new Set(rows
         .map((row) => typeof row.payload.execution_id === "string" ? row.payload.execution_id : "")
-        .filter(Boolean))];
+        .filter(Boolean)));
       if (executionIds.length === 0) return [];
 
       // Legacy history may predate the W78 write guard. Do not display it
