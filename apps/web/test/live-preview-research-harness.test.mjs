@@ -54,7 +54,7 @@ test("hosted Research is fail-closed until schema, trusted-worker token, and pre
   const contextCheck = researchRoute.indexOf('process.env.ZAVQERA_TRUSTED_RESEARCH_DEPLOY_CONTEXT === "deploy-preview"', trustedGate);
   const finalGate = researchRoute.indexOf('if (providerMode !== "mock" && !trustedResearchCompletionConfigured)');
   const apiKeyCheck = researchRoute.indexOf('if (providerMode !== "mock" && !apiKey)');
-  const schemaPreflight = researchRoute.indexOf("await preflightReadOnlyResearchCompletion(request, user.id);");
+  const schemaPreflight = researchRoute.indexOf("preflightReadOnlyResearchCompletion(request, user.id)");
   const quotaAndProviderFlow = researchRoute.indexOf("const result = await runAiGeneration({");
 
   assert.ok(providerMode >= 0, "provider mode must be resolved explicitly");
