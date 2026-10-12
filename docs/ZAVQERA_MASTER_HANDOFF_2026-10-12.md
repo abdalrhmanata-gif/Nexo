@@ -253,3 +253,11 @@ This PASS is isolated CI evidence, not hosted Development schema parity, live Re
 - **Other release gates remain:** authenticated live Research/citations/history; real Resend inbox delivery; password-reset flow; manual desktop/mobile QA; leaked-password protection WARN/Disabled. Production readiness remains NOT APPROVED.
 - **Safety preserved:** no hosted DB changes, no real provider side effects, no Git `main`, no production promotion/DNS/billing, and no PR merge/Ready conversion.
 - **Next safe task:** source-level inventory every external side-effect entry point and identify whether it is routed through the internal JIT gateway or has no external effect. Add exact acceptance tests for any unproven Issue #23 invariants, then run checks on the resulting exact code SHA. Keep migrations and live-provider tests separate and gated.
+
+
+### Outbound-effect inventory follow-up — 2026-10-12
+
+- Added `docs/ZAVQERA_OUTBOUND_EFFECT_ENTRYPOINT_INVENTORY_2026-10-12.md` to classify the source-visible OpenAI planning/research calls, Resend invitations, Supabase Auth email flows, and the fail-closed mission execution worker.
+- The inventory distinguishes provider-cost / identity / workspace-email operations from Mission Action dispatch. It records that the actual mission-action route is blocked because the trusted provider registry is empty, and that the persistent gateway remains a fake-adapter candidate seam rather than universal production enforcement.
+- The inventory is source-based, not a complete runtime network trace; the next technical task is to search all reachable modules/dependencies for unclassified outbound SDK/HTTP paths and add a route-level zero-provider-call regression for the no-adapter case.
+- Current hosted Development state remains last verified at W65; W66–W79 are not applied. Issue #23 stays open; production launch remains not approved.
