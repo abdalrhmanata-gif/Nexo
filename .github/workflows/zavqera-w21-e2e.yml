@@ -130,8 +130,7 @@ jobs:
           cp "$GITHUB_WORKSPACE/supabase/tests/w75_correlatable_provider_receipt.sql" "$workdir/supabase/tests/w75_correlatable_provider_receipt.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w76_external_success_insert_guard.sql" "$workdir/supabase/tests/w76_external_success_insert_guard.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w77_read_only_research_payload_bounds.sql" "$workdir/supabase/tests/w77_read_only_research_payload_bounds.sql"
-          cp "$GITHUB_WORKSPACE/supabase/tests/w78_research_history_event_binding.sql \
-            supabase/tests/w79_trusted_research_completion.sql" "$workdir/supabase/tests/w78_research_history_event_binding.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w78_research_history_event_binding.sql" "$workdir/supabase/tests/w78_research_history_event_binding.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w79_trusted_research_completion.sql" "$workdir/supabase/tests/w79_trusted_research_completion.sql"
           cat > "$workdir/supabase/migrations/20260921180005_e2e_historical_auth_compat.sql" <<'SQL'
           create schema if not exists private;
@@ -203,7 +202,8 @@ jobs:
             supabase/tests/w75_correlatable_provider_receipt.sql \
             supabase/tests/w76_external_success_insert_guard.sql \
             supabase/tests/w77_read_only_research_payload_bounds.sql \
-            supabase/tests/w78_research_history_event_binding.sql
+            supabase/tests/w78_research_history_event_binding.sql \
+            supabase/tests/w79_trusted_research_completion.sql
           do
             echo "Running Mission Authority regression: $test_file"
             timeout 10m supabase test db "$test_file"
