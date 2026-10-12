@@ -461,3 +461,100 @@ The hosted `public.agent_executions` table lacks `dispatch_claimed_at`, `dispatc
 Therefore **local candidate CI is green, but hosted Development schema parity is NOT verified and is currently a blocker**. The local W21 success must not be interpreted as proving that hosted Preview Research or provider execution can work against that older schema.
 
 No migration was applied to hosted Development or Production. Issue #23 explicitly prohibits hosted Development schema changes; keep the hosted-schema and real-provider gates open pending authorized migration planning. The provider registry remains intentionally empty, so no real provider-backed external side effects are enabled. PR #29 remains OPEN / Draft / UNMERGED; Supabase Main/Production, production deployment, DNS and billing remain untouched.
+
+---
+
+## W79 follow-up — Development migration parity and owner-run rollout plan — 2026-10-12
+
+**Code HEAD verified immediately before this documentation update:** `b083d3fe2d5ba0298645f77d63a0612b0d7c6389`  
+**Scope of this commit:** documentation only. This plan does not grant permission to change hosted Development, register a real provider, run live Research, or release Production.
+
+### Current evidence — read-only hosted audit
+
+The connected Supabase project inspected was **ZAVQERA Development** (`mrwmmbytcymqgwvcoywd`, `eu-west-1`, PostgreSQL 17.6.1). A fresh migration-ledger read ends at:
+
+- `20261011150000_w65_agent_execution_table_write_boundary` (W65).
+
+The branch contains, but the hosted migration ledger does not contain, the following migration files:
+
+1. `20261011160000_w66_service_role_table_privilege_hardening.sql`
+2. `20261011170000_w68_persistent_authority_budget_reservations.sql`
+3. `20261011180000_w69_one_time_jit_dispatch_claim.sql`
+4. `20261011190000_w70_durable_unknown_outcome_reconciliation.sql`
+5. `20261012070000_w71_expired_external_execution_budget_recovery.sql`
+6. `20261012120000_w73_trusted_system_mission_events.sql`
+7. `20261012130000_w74_reconciliation_claim_freshness.sql`
+8. `20261012140000_w75_correlatable_provider_receipt.sql`
+9. `20261012150000_w76_guard_external_success_on_insert.sql`
+10. `20261012160000_w77_read_only_research_payload_bounds.sql`
+11. `20261012170000_w78_bind_research_history_to_execution.sql`
+12. `20261012180000_w79_trusted_research_completion.sql`
+
+W67 and W72 are test/integration milestones, not missing numbered SQL migration files.
+
+The fresh catalog comparison reconfirmed:
+- `public.mission_authority_budgets` and `public.mission_authority_budget_reservations` are absent.
+- `public.agent_executions` lacks W69 dispatch-claim fields (`dispatch_claimed_at`, authority/request hashes and budget revision) and W70 reconciliation-claim fields (`reconciliation_claimed_at`, `reconciliation_lease_expires_at`, `reconciliation_claim_token`).
+- The hosted public/private `complete_read_only_research_execution` functions still have the old six-argument W64 signatures. The W79 branch requires the trusted seven-argument signature beginning with `p_requested_by uuid`.
+- Hosted catalog inventory did not return `claim_agent_execution_dispatch`, `claim_agent_execution_reconciliation`, or `reconcile_agent_execution_outcome`.
+- Security Advisor still reports `auth_leaked_password_protection` as **WARN / Disabled**; it is a separate owner-controlled Auth setting, not part of this migration chain.
+
+No table rows were exported or changed. No schema, grants, migration history, deployment settings, secrets, DNS, billing, or Production resources were modified during this audit.
+
+### Authorization boundary — must be satisfied first
+
+Issue #23 explicitly says not to change the hosted Development schema in the current workstream. **This plan is not authorization to apply these migrations.** Before any owner-run application, the repository owner must separately approve a Development-only change and explicitly supersede the current restriction in Issue #23. Supabase Main/Production, Git `main`, and Production deployment remain out of scope.
+
+### Migration dependency order
+
+Apply the pending files through the approved, source-controlled migration workflow in their exact timestamp order; do not hand-run fragments of SQL or skip a failed migration.
+
+- **W66:** remove direct `service_role` table privileges on the execution ledger while retaining the guarded RPC boundary.
+- **W68:** add persistent authority budgets/reservations and make start, completion, retry and UNKNOWN budget handling use the actual execution ledger.
+- **W69:** add the dispatch-claim fields/index and one-time JIT dispatch claim; it depends on W68's durable reservation.
+- **W70:** add reconciliation-claim/lease fields and trusted reconciliation RPCs; it depends on W68-W69's ledger and reservation model.
+- **W71:** recover expired external executions without releasing the reservation before reconciliation; it depends on W68-W70.
+- **W73:** harden trusted SYSTEM mission-event recording and bind event payloads to actual dispatch/reconciliation ledger state.
+- **W74:** tighten reconciliation evidence freshness so it post-dates the active reconciliation claim.
+- **W75-W76:** require a stable, correlatable provider reference for external-side-effect success; W76 enforces the rule on both INSERT and UPDATE. Read-only Research remains explicitly exempt from external-side-effect receipt checks.
+- **W77:** bound and allowlist the read-only Research completion payload.
+- **W78:** bind Research-history completion events to the exact durable, read-only execution and its result/evidence.
+- **W79:** remove the old authenticated-callable six-argument completion functions and replace them with the trusted seven-argument completion path executable only by `service_role`.
+
+W68 precedes W69/W70 because those procedures use durable budget reservations. W71 relies on the persistent UNKNOWN/reservation model. W73-W74 depend on dispatch and reconciliation claim state. W75-W76 strengthen success invariants after the execution ledger is in place. W77-W79 must finish together for the current Research route/RPC contract to match. Do not leave the hosted schema in a partially upgraded state while claiming candidate runtime compatibility.
+
+### Owner-run change procedure (only after separate approval)
+
+**Before the window**
+1. Confirm the exact branch/reviewed migration file hashes and that PR #29 is still OPEN / Draft / UNMERGED. Re-read the pending migration list because the branch may have advanced.
+2. Take a current Development database recovery point and verify the restore procedure and recovery owner. Preserve existing development data; do not assume rollback by dropping new objects is safe.
+3. Re-run a read-only preflight confirming the ledger ends at W65 and the documented missing tables/columns/functions match the current host.
+4. Review every pending SQL diff and its corresponding pgTAP test, with special attention to W68 budget settlement/UNKNOWN behavior, W66 grants, W73 event validation, W75/W76 success receipt checks, and W79 function ACL/signature replacement.
+
+**During the window**
+1. Apply W66, W68, W69, W70, W71, W73, W74, W75, W76, W77, W78 and W79 strictly in order using the approved migration runner; allow it to record migration history normally.
+2. On the first error, stop. Do not skip forward, mark a migration as applied manually, retry with edited SQL, or continue with a guessed repair. Capture the failing migration/error and reconcile on a reviewed change.
+3. Keep Research fail-closed and do not enable/register a real external provider during schema migration. Do not run the gated live Research test as an implicit side effect of schema rollout.
+
+**After the window — read-only verification**
+1. Confirm the migration ledger contains the exact twelve pending versions through `20261012180000` (W79), with no gaps or duplicate/manual entries.
+2. Confirm both budget tables exist; verify the W69/W70 columns and constraints; verify the dispatch/reconciliation functions exist with the exact intended signatures.
+3. Confirm the old six-argument public/private Research completion functions are absent and the seven-argument W79 signatures exist. Inspect effective function EXECUTE privileges and ensure authenticated/anon cannot finalize Research; trusted server code must use the service-role wrapper.
+4. Verify the W75/W76 receipt guard is installed for INSERT and UPDATE and that the Research path remains explicitly read-only/unverified rather than representing sources as independently verified facts.
+5. Re-run Security Advisor and capture the Auth leaked-password warning separately. Do not change Auth billing/plan settings as part of this migration.
+6. Keep the application preflight enabled until all signature and schema checks pass. Only then may a separately authorized, Development-only live Research/citations/history test be considered, using dedicated test credentials and privately configured non-Production secrets. This test creates persisted records and must remain intentionally gated.
+7. Preserve the six candidate CI/preview gates on the exact code HEAD and conduct manual desktop/mobile review as a separate release gate. Green local CI alone is not proof of hosted Research compatibility, real invitation delivery, or Production readiness.
+
+### Rollback and failure strategy
+
+There is no approved blind `down` migration for this chain. W68 can create durable budget/reservation state, later functions depend on that state, and W79 deliberately removes a less-restricted RPC signature. Do not restore the old six-argument callable Research API as a routine rollback.
+
+- If a failure occurs before changes are committed by the migration runner, stop and capture the exact error.
+- If one or more migrations have committed but the chain is incomplete, keep the application preflight fail-closed and stop hosted Research/execution tests. The owner and database reviewer must choose between a verified restore point (accepting that post-snapshot Development writes may be lost) and a reviewed forward-fix. Never delete tables or rewrite migration-ledger rows ad hoc.
+- After full application, prefer a reviewed forward fix for defects unless the owner explicitly approves a restore and its data-loss impact. Verify the restore/forward fix read-only before reopening gated tests.
+
+### Evidence boundary after this plan
+
+The last verified candidate HEAD before this docs-only update was `b083d3fe2d5ba0298645f77d63a0612b0d7c6389`. The six core gates passed on that exact SHA: Web Unit **315/315**, Web CI/build, Flutter CI, W25 isolated PostgreSQL, W21 local launch gate, and Netlify Deploy Preview verification. These are isolated/repository checks, not hosted-schema validation.
+
+The latest W79 code also includes a fail-closed hosted Research preflight ahead of quota/provider I/O. That preflight is a safety barrier; it does not repair the hosted schema. Until the above rollout is separately authorized and post-verified, hosted Research/citations/history remain **NOT VERIFIED**, no real provider adapter should be registered, and PR #29 must remain **OPEN / Draft / UNMERGED**. Supabase Main/Production, Git `main`, production deployment, DNS, billing, and real external side effects remain untouched.
