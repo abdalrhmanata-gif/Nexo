@@ -19,8 +19,11 @@ select ok(lower(pg_get_functiondef('private.complete_read_only_research_executio
 select ok(lower(pg_get_functiondef('private.complete_read_only_research_execution(uuid,text,jsonb,jsonb,text,text)'::regprocedure))
   like '%source_key.key not in (''title'', ''url'')%',
   'source entries accept only title and URL');
-select ok(lower(pg_get_functiondef('private.complete_read_only_research_execution(uuid,text,jsonb,jsonb,text,text)'::regprocedure))
-  like '%https?://[^[:space:]/?#]+([/?#][^[:space:]]*)?$%',
+select ok(
+  lower(pg_get_functiondef('private.complete_read_only_research_execution(uuid,text,jsonb,jsonb,text,text)'::regprocedure))
+    like '%https?://[^[:space:]/?#]+%'
+  and lower(pg_get_functiondef('private.complete_read_only_research_execution(uuid,text,jsonb,jsonb,text,text)'::regprocedure))
+    like '%~ ''[[:space:]]''%',
   'source URLs must contain an HTTP(S) authority and no whitespace');
 select ok(lower(pg_get_functiondef('private.complete_read_only_research_execution(uuid,text,jsonb,jsonb,text,text)'::regprocedure))
   like '%char_length(v_error_code), 0) > 128%'

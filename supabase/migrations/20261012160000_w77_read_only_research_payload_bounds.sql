@@ -185,7 +185,15 @@ begin
             where source_key.key not in ('title', 'url')
          )
          or jsonb_typeof(v_source -> 'url') is distinct from 'string'
-         or (v_source ->> 'url') !~ '^https?://[^[:space:]/?#]+([/?#][^[:space:]]*)?    end loop;
+         or (v_source ->> 'url') !~ '^https?://[^[:space:]/?#]+'
+         or (v_source ->> 'url') ~ '[[:space:]]'
+         or char_length(v_source ->> 'url') > 4096
+         or jsonb_typeof(v_source -> 'title') is distinct from 'string'
+         or nullif(btrim(v_source ->> 'title'), '') is null
+         or char_length(v_source ->> 'title') > 500 then
+        raise exception 'INVALID_RESEARCH_SOURCE' using errcode = '22023';
+      end if;
+    end loop;
   end if;
 
   if v_execution.status <> 'RUNNING' then
