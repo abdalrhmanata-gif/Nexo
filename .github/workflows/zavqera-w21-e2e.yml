@@ -247,6 +247,11 @@ jobs:
           set -euo pipefail
           bash "$GITHUB_WORKSPACE/tool/w70_actual_reconciliation_claim_race.sh"
 
+      - name: Run W72 persistent gateway PostgreSQL integration with fake providers
+        run: |
+          set -euo pipefail
+          bash "$GITHUB_WORKSPACE/tool/w72_persistent_gateway_integration.sh"
+
       - name: Run full launch-gate browser E2E
         working-directory: apps/web
         run: |
