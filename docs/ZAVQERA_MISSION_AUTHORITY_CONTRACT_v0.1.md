@@ -324,3 +324,8 @@ This is a candidate code hardening. The exact new commit must pass all CI gates 
 ### Approved request immutability — candidate follow-up
 
 The dispatch and reconciliation adapter envelopes are deeply frozen, including nested objects and arrays in the approved request. This prevents an adapter from accidentally or deliberately mutating the in-memory payload after the durable JIT claim has bound its hash. Regression tests assert nested mutation throws on both dispatch and reconciliation paths. This is a defence-in-depth control; the durable database hashes and provider request binding remain authoritative, and a provider registry stays empty until an adapter passes review.
+
+
+### Provider registration contract — candidate follow-up
+
+The static adapter registry remains empty. Registry resolution now fails closed unless a registered entry's audience exactly matches the requested audience and the entry implements both `dispatch` and `reconcile`. Dispatch-only registrations are rejected because an ambiguous external result could otherwise remain unreconcilable. The TypeScript adapter contract marks both methods as mandatory and exposes the claimed request as deeply readonly. This shape validation is only a guardrail: it does not constitute security review of a provider or authorize any real side effect.

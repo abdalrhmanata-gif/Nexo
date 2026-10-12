@@ -12,10 +12,18 @@ export interface PersistentDispatchResult {
   receipt?: Record<string, unknown>;
 }
 
+type DeepReadonly<T> = T extends (...args: any[]) => unknown
+  ? T
+  : T extends readonly (infer U)[]
+    ? readonly DeepReadonly<U>[]
+    : T extends object
+      ? { readonly [K in keyof T]: DeepReadonly<T[K]> }
+      : T;
+
 export interface TrustedProviderAdapter {
-  audience: string;
-  dispatch(claim: Readonly<Record<string, unknown>>): Promise<unknown>;
-  reconcile?(claim: Readonly<Record<string, unknown>>): Promise<unknown>;
+  readonly audience: string;
+  dispatch(claim: DeepReadonly<Record<string, unknown>>): Promise<unknown>;
+  reconcile(claim: DeepReadonly<Record<string, unknown>>): Promise<unknown>;
 }
 
 export interface TrustedRpcClient {

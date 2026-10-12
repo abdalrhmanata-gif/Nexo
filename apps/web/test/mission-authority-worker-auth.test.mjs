@@ -4,7 +4,10 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { isTrustedExecutionWorkerRequest } from "../lib/mission-authority/worker-auth.mjs";
-import { resolveTrustedDispatchAdapter } from "../lib/mission-authority/provider-adapter-registry.mjs";
+import {
+  hasTrustedProviderAdapterContractShape,
+  resolveTrustedDispatchAdapter,
+} from "../lib/mission-authority/provider-adapter-registry.mjs";
 
 const TOKEN = "worker-token-abcdefghijklmnopqrstuvwxyz-123456";
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -20,6 +23,27 @@ test("rejects missing, query-style, malformed and wrong tokens", () => {
   assert.equal(isTrustedExecutionWorkerRequest(`Bearer ${TOKEN}x`, TOKEN), false);
   assert.equal(isTrustedExecutionWorkerRequest(`Bearer ${TOKEN}`, "short"), false);
   assert.equal(isTrustedExecutionWorkerRequest(`Bearer ${TOKEN}`, undefined), false);
+});
+
+test("provider adapter contract requires exact audience, dispatch and reconciliation", () => {
+  const valid = {
+    audience: "provider.send.v1",
+    dispatch: async () => ({ state: "UNKNOWN" }),
+    reconcile: async () => ({ state: "UNKNOWN" }),
+  };
+  assert.equal(hasTrustedProviderAdapterContractShape("provider.send.v1", valid), true);
+  assert.equal(hasTrustedProviderAdapterContractShape("provider.other.v1", valid), false);
+  assert.equal(hasTrustedProviderAdapterContractShape("provider.send.v1", {
+    audience: "provider.send.v1",
+    dispatch: async () => ({ state: "UNKNOWN" }),
+  }), false, "dispatch-only adapters must not pass registration validation");
+  assert.equal(hasTrustedProviderAdapterContractShape("provider.send.v1", {
+    audience: "provider.send.v1",
+    reconcile: async () => ({ state: "UNKNOWN" }),
+  }), false, "reconciliation-only adapters cannot dispatch");
+  assert.equal(hasTrustedProviderAdapterContractShape("provider.send.v1", []), false);
+  assert.equal(hasTrustedProviderAdapterContractShape("", valid), false);
+  assert.equal(hasTrustedProviderAdapterContractShape("x".repeat(129), valid), false);
 });
 
 test("dispatch adapter registry remains fail-closed until a provider is reviewed", () => {
