@@ -1,24 +1,26 @@
 # ZAVQERA launch gates — verified engineering status
 
-Updated: 2026-10-10 13:10 UTC  
+Updated: 2026-10-12 10:16 UTC  
 Branch: `zavqera/ai-planner-integration`  
 PR: [#29](https://github.com/abdalrhmanata-gif/Nexo/pull/29) — **OPEN / Draft / Unmerged**  
-Current verified HEAD before this documentation-only update: `6ff11869e5ab8cfa384df8b9d7b25acdd8f5be7c`
+Code HEAD fully verified before this documentation-only update: `f986e8ef1d3ce7b40845893e7b0ad3518897366a`
 
-## Automated CI — PASS on the verified HEAD
+## Automated CI — PASS on the verified code HEAD
 
-- [Web Unit](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38054150228) — PASS.
-- [Web CI, authorization tests, TypeScript and production build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38054150218) — PASS.
-- [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38054150282) — PASS.
-- [W25 isolated PostgreSQL atomic fence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38054150226) — PASS.
-- [W21 Local Launch Gate](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38054150195) — PASS. PostgreSQL 17 disposable migration replay, pgTAP launch gate, AI quota/plan/workspace security suite, full Chromium browser E2E, disposable-stack cleanup and evidence uploads all succeeded.
-- [Netlify Deploy Preview checks](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38054150199) — PASS for preview routes and real OpenAI mission planning. The authenticated live Mission Research steps were **SKIPPED**, not passed.
+All six core automated gates completed successfully on `f986e8ef1d3ce7b40845893e7b0ad3518897366a`:
+
+- [Web Unit](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38234586800) — **PASS, 308/308 tests**.
+- [Web CI, authorization tests, TypeScript and production build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38234586776) — **PASS**.
+- [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38234586804) — **PASS**.
+- [W25 isolated PostgreSQL atomic fence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38234586783) — **PASS**.
+- [W21 Local Launch Gate](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38234586774) — **PASS**. Disposable PostgreSQL 17 migration replay and pgTAP passed; Mission Authority SQL regressions W63–W76 that are included by the launch workflow passed; independent-session W67/W68/W69/W70 race tests and W72 persistent-gateway integration with fake adapters passed; Chromium browser E2E passed **2/2**; disposable-stack cleanup verified.
+- [Netlify Deploy Preview verification](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38234586785) — **PASS** for the preview verification workflow. This is not a production deployment or proof of a live provider integration.
 
 W21 artifacts:
-- [Evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38054150195/artifacts/11670209183)
-- [Browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38054150195/artifacts/11670873002)
+- [Evidence and cleanup proof](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38234586774/artifacts/11740407722)
+- [Browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38234586774/artifacts/11740333105)
 
-Automated browser E2E is not the same as a manual visual review of the live UI on desktop and mobile. Manual visual QA remains **NOT VERIFIED** in this release pass.
+Automated browser E2E is not the same as manual visual review of the live UI on desktop and mobile. Manual visual QA remains **NOT VERIFIED** in this release pass. The opt-in live OpenAI planning/authenticated Research tests and real invitation delivery are also **NOT VERIFIED** unless separately run with their required non-production credentials.
 
 ## Supabase Development — verified, Development only
 
@@ -387,3 +389,23 @@ W21 replayed W75 in disposable PostgreSQL 17; the W75 regression returned **PASS
 Evidence: [W21 run](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38231207835) · [evidence/cleanup proof](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38231207835/artifacts/11738837467) · [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38231207835/artifacts/11738512759).
 
 **Release decision unchanged:** the tests use fake adapters and disposable PostgreSQL only. The provider registry is still intentionally empty. Hosted authenticated live Research/history, real Resend delivery and password-reset email, human desktop/mobile visual QA, and Supabase Development leaked-password protection remain open. Production launch is not approved. PR #29 stays OPEN / Draft / UNMERGED; Supabase Main/Production and production deployment remain untouched.
+
+
+---
+
+## W76 exact-head validation — 2026-10-12 — `f986e8ef1d3ce7b40845893e7b0ad3518897366a`
+
+W76 adds a database guard on **both INSERT and UPDATE** for external-side-effect execution rows transitioning to `SUCCEEDED`. A correlatable provider receipt must contain a stable top-level scalar reference; status-only metadata or nested IDs do not qualify. The read-only research path remains exempt because it explicitly has `external_side_effects=false`.
+
+The W21 run initially exposed a stale fixture in W73: it inserted a successful external execution without the receipt now required by W75/W76. The fixture was corrected to include a valid test-only provider reference; the database guard was not weakened. The corrected exact-head run then passed W73, W75 and W76 regressions.
+
+- Web Unit — **PASS, 308/308**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38234586800
+- Web CI — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38234586776
+- Flutter CI — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38234586804
+- W25 isolated PostgreSQL atomic fence — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38234586783
+- Netlify Deploy Preview verification — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38234586785
+- W21 Local Launch Gate — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38234586774
+
+W21 browser E2E passed **2/2** (2.7 minutes). Disposable cleanup was confirmed: `remaining_containers=none`, `remaining_volumes=none`, `cleanup_verified=true`. W72 persistent-gateway integration and the actual independent-session idempotency, authority-budget, dispatch-claim, and reconciliation-claim race checks passed.
+
+**Release boundary remains unchanged:** the provider adapter registry is intentionally empty until a real adapter has passed review. The trusted gateway fails closed before provider I/O with no reviewed adapter. Tests use fake adapters and disposable PostgreSQL; they do not prove live external-provider integration. Hosted authenticated live Research/citations/history, real Resend delivery, hosted password-reset email/callback, human visual QA, and Supabase Development leaked-password protection (WARN / Disabled) remain open. PR #29 remains OPEN / Draft / UNMERGED; Supabase Main/Production and production deployment remain untouched.
