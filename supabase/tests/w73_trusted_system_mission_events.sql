@@ -2,7 +2,7 @@
 -- the legacy user path still records real users, not a null authenticated actor.
 begin;
 create extension if not exists pgtap;
-select plan(27);
+select plan(26);
 
 select ok(to_regprocedure('private.record_mission_event(uuid,text,jsonb)') is not null,
   'private mission-event writer exists');
