@@ -241,3 +241,15 @@ The initial observation that no separate `supabase/tests/w74_reconciliation_clai
 
 ### Status boundary
 This PASS is isolated CI evidence, not hosted Development schema parity, live Research/citation/history proof, real email inbox delivery, manual visual QA, or Production certification. Hosted Development remains on W65 per the last read-only audit; legacy six-argument Research completion functions remain executable by `authenticated`. Do not apply hosted migrations or run hosted Research without separate review and explicit authorization. No hosted schema/grants, Supabase Main/Production, Git `main`, production deployment, DNS, billing, or real provider side effects were changed.
+
+
+## Checkpoint — 2026-10-12 — Mission Authority invariant audit
+
+- **Current working branch:** `zavqera/ai-planner-integration`.
+- **PR #29:** OPEN / Draft / UNMERGED. At audit start, PR head was `17eef72d98be6f44f6998dc0080067e1313995f3`; subsequent commits in this checkpoint are documentation-only.
+- **Last verified application/SQL test SHA:** `7a2e559d3f6c3a91b69bce387f2adf98c17ee3d7`. W21 passed with cleanup verification and evidence uploads; Web Unit, Web CI, Flutter, W25 and Netlify preview checks passed. Actual deployment and live-provider checks were skipped. Evidence: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38289544742.
+- **New audit artifact:** `docs/ZAVQERA_MISSION_AUTHORITY_INVARIANT_MATRIX_2026-10-12.md`. It maps key invariants to source/tests and classifies remaining proof gaps. The decision is **Issue #23 stays open**: the provider registry is intentionally empty and the gateway module states no real provider route is wired. Therefore universal production-grade external-side-effect enforcement is not proven. Do not register a real provider as part of routine repo work.
+- **Hosted Development:** last read-only inventory remains W65; W66–W79 are not applied. Do not apply migrations, execute hosted Research, or change privileges without separate explicit authorization.
+- **Other release gates remain:** authenticated live Research/citations/history; real Resend inbox delivery; password-reset flow; manual desktop/mobile QA; leaked-password protection WARN/Disabled. Production readiness remains NOT APPROVED.
+- **Safety preserved:** no hosted DB changes, no real provider side effects, no Git `main`, no production promotion/DNS/billing, and no PR merge/Ready conversion.
+- **Next safe task:** source-level inventory every external side-effect entry point and identify whether it is routed through the internal JIT gateway or has no external effect. Add exact acceptance tests for any unproven Issue #23 invariants, then run checks on the resulting exact code SHA. Keep migrations and live-provider tests separate and gated.
