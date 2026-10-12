@@ -222,3 +222,12 @@ Hosted authenticated Mission Research, real Resend inbox delivery, human visual 
 The persistent W69/W70 gateway now requires each trusted provider adapter to declare its stable `audience` identifier. Before dispatch or provider lookup, the gateway compares that identifier with the audience bound into the claimed execution request. A mismatch is fail-closed: dispatch is recorded as not sent and settled as BLOCKED, or reconciliation remains UNKNOWN without a provider lookup. This prevents a queue/event hint or adapter selection error from sending an approved request to a different provider integration.
 
 Regression coverage: `apps/web/test/persistent-dispatch-gateway.test.mjs` now tests both dispatch and reconciliation audience mismatch. The gateway remains a tested server-side seam only: no production worker or real side-effect provider is wired, and no live external dispatch is enabled. W21 on the prior exact HEAD `a3fc4e96edc810c829e0d71fc4c1f3666bcac3b7` passed all database, concurrency, browser, and cleanup gates; this change must pass its own new CI run before it is accepted.
+
+
+## Trusted worker ingress scaffold — 2026-10-12
+
+Added `POST /api/internal/agent-executions/[executionId]/dispatch` as a server-only worker ingress. It requires a timing-safe, exact Bearer token from `ZAVQERA_EXECUTION_WORKER_TOKEN`, accepts only a bounded provider audience selector, and uses a server-only Supabase service-role RPC client. The route never accepts a provider adapter or execution payload from the request body.
+
+**Intentionally fail-closed:** `provider-adapter-registry.mjs` is empty until a real provider adapter has passed review. With no registered adapter, the endpoint returns HTTP 503 before constructing the privileged database client or claiming an execution. No provider call is enabled by this scaffold. When an adapter is eventually registered, the existing persistent gateway must still validate the database JIT claim and exact audience before its single dispatch call.
+
+The service-role client is isolated in `apps/web/lib/supabase/admin.ts` with the Next.js `server-only` guard. The worker token validator and empty registry have dedicated tests. This is a protected worker ingress, **not** proof of a live provider integration or autonomous queue/scheduler. Production dispatch remains disabled until a reviewed adapter, privately configured secrets, and exact-head CI/E2E evidence exist.
