@@ -1,7 +1,7 @@
 -- W69: every delegated external side effect needs a single-use server JIT claim.
 begin;
 create extension if not exists pgtap;
-select plan(20);
+select plan(22);
 
 select ok(
   (select count(*) = 4 from information_schema.columns
@@ -82,6 +82,8 @@ declare
   v_scope jsonb;
   v_caught boolean;
   v_claim_event_count integer;
+  v_mission_version bigint;
+  v_action_version bigint;
   i integer;
 begin
   insert into auth.users(id) values (v_owner), (v_attacker);
@@ -105,6 +107,9 @@ begin
   insert into public.workspace_agents(id, workspace_id, name, description, status, authority, created_by)
   values (v_agent, v_workspace, 'W69 bounded side-effect agent', 'Disposable JIT claim test', 'ACTIVE',
     '{"mode":"bounded","external_side_effects":true,"requires_approval":true}'::jsonb, v_owner);
+
+  select version into v_mission_version from public.missions where id = v_mission;
+  select version into v_action_version from public.mission_actions where id = v_actions[3];
 
   insert into w69_cross_tenant_fixture values (v_attacker, v_mission, v_actions[1], v_agent);
 
@@ -219,6 +224,33 @@ begin
     if sqlerrm = 'AGENT_AUTHORITY_CHANGED' then v_caught := true; else raise; end if;
   end;
   insert into w69_behavior_results values ('changed_authority_denied', v_caught);
+
+  -- The approval was exact at start, but mission/action revisions can change
+  -- while the execution is waiting. The JIT claim must recheck live versioned
+  -- scope immediately before it authorizes any provider I/O.
+  update public.workspace_agents
+     set authority = '{"mode":"bounded","external_side_effects":true,"requires_approval":true}'::jsonb
+   where id = v_agent;
+
+  update public.missions set version = v_mission_version + 1 where id = v_mission;
+  v_caught := false;
+  begin
+    perform public.claim_agent_execution_dispatch(v_execution_ids[3]);
+  exception when sqlstate '42501' then
+    if sqlerrm = 'APPROVAL_REQUIRED_OR_SCOPE_CHANGED' then v_caught := true; else raise; end if;
+  end;
+  insert into w69_behavior_results values ('stale_mission_version_denied', v_caught);
+  update public.missions set version = v_mission_version where id = v_mission;
+
+  update public.mission_actions set version = v_action_version + 1 where id = v_actions[3];
+  v_caught := false;
+  begin
+    perform public.claim_agent_execution_dispatch(v_execution_ids[3]);
+  exception when sqlstate '42501' then
+    if sqlerrm = 'APPROVAL_REQUIRED_OR_SCOPE_CHANGED' then v_caught := true; else raise; end if;
+  end;
+  insert into w69_behavior_results values ('stale_action_version_denied', v_caught);
+  update public.mission_actions set version = v_action_version where id = v_actions[3];
 end;
 $behavior$;
 
@@ -276,6 +308,10 @@ select ok((select passed from w69_behavior_results where name = 'revoked_budget_
   'a budget revoked after start cannot pass the just-in-time gate');
 select ok((select passed from w69_behavior_results where name = 'changed_authority_denied'),
   'an authority change after start invalidates the dispatch claim');
+select ok((select passed from w69_behavior_results where name = 'stale_mission_version_denied'),
+  'a mission version change after start invalidates the JIT claim');
+select ok((select passed from w69_behavior_results where name = 'stale_action_version_denied'),
+  'an action version change after start invalidates the JIT claim');
 
 select * from finish();
 rollback;
