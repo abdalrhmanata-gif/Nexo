@@ -440,6 +440,13 @@ const GLOBAL_FETCH_PATHS = new Set([
   "window.fetch",
 ]);
 
+function findDirectOutboundMatches(source, pattern) {
+  // Global RegExp instances have mutable lastIndex. Clone per source file so
+  // earlier detector self-tests/scans cannot skip matches in later files.
+  const freshPattern = new RegExp(pattern.source, pattern.flags);
+  return [...source.matchAll(freshPattern)];
+}
+
 const GLOBAL_OBJECT_PATHS = new Set(["globalThis", "global", "self", "window"]);
 const DYNAMIC_LOADER_OR_CODE_PATHS = new Set([
   "require", "createRequire", "module.require", "eval", "Function",
@@ -616,6 +623,19 @@ function readAstOutboundMarkers(source, filePath = "source.mjs") {
   return markers;
 }
 
+test("direct outbound regex scans reset global match state for every source file", () => {
+  const detector = DIRECT_OUTBOUND_PATTERNS.find((entry) => entry.name === "fetch()");
+  assert.ok(detector, "fetch detector must exist");
+  detector.pattern.lastIndex = 0;
+  assert.equal(detector.pattern.test("fetch(url)"), true);
+  assert.ok(detector.pattern.lastIndex > 0, "self-test advances the shared global RegExp");
+
+  assert.equal(findDirectOutboundMatches("fetch(url)", detector.pattern).length, 1,
+    "a fresh scan must find fetch even when the shared RegExp lastIndex was advanced");
+  assert.equal(findDirectOutboundMatches("fetch(url)", detector.pattern).length, 1,
+    "repeated source scans must return the same result");
+});
+
 test("outbound-source detectors recognize representative transport and dynamic-loader escapes", () => {
   const positiveExamples = [
     ["fetch()", "await fetch(url)"],
@@ -767,7 +787,7 @@ test("Mission Action API dependency graphs cannot call outbound HTTP directly", 
       }
 
       for (const { name, pattern } of DIRECT_OUTBOUND_PATTERNS) {
-        for (const match of source.matchAll(pattern)) {
+        for (const match of findDirectOutboundMatches(source, pattern)) {
           const line = source.slice(0, match.index).split("\n").length;
           violations.push({ route, module: moduleName, marker: `${name} at line ${line}` });
         }
