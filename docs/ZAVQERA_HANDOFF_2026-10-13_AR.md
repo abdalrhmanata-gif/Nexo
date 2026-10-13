@@ -379,3 +379,29 @@ SHA التمييز: artifact يستخدم merge-test SHA `1c209060cbafcedebd84db
 
 ### الحواجز المتبقية
 PR #29 ما زال OPEN / Draft / UNMERGED، وIssue #23 OPEN. لم يحدث أي تغيير في Supabase Development أو Main/Production أو DNS أو billing أو الإنتاج. آخر جرد موثق لقاعدة Development هو W65؛ ترحيلات W66–W80 لم تطبق على البيئة المستضافة، ولذلك يبقى Research الحي محظورًا. إثبات فرض JIT الشامل على كل التأثيرات الخارجية، اعتماد adapter حقيقي، تسليم بريد حقيقي، مراجعة واجهة يدوية، وحماية كلمات المرور المسرّبة ما تزال NOT VERIFIED/NOT APPROVED. لا تُفرغ سجل adapters ولا تغلق Issue #23 حتى تكتمل هذه الأدلة.
+
+
+## نقطة تسليم محدثة — 13 أكتوبر 2026 — HEAD `fdcf43f97393c391da06284f2152715191511f3b`
+
+هذه النقطة أحدث من آخر تحديث سابق في الملف، وهي تخص رأس PR الفعلي لا SHA الدمج الاصطناعي الذي تنشئه GitHub للاختبارات.
+
+### التغييرات الأخيرة
+أُضيفت 9 حالات سلبية في `apps/web/test/persistent-dispatch-gateway.test.mjs` للتحقق من أن دليل reconciliation غير الموثوق أو غير الصالح لا ينهي مهمة UNKNOWN: `authoritative=false`، طريقة lookup غير مسموحة، `providerState` مفقود أو أطول من الحد، `checkedAt` مفقود أو معطوب أو غير أحدث من dispatch/مطالبة المصالحة، أو أبعد من خمس دقائق في المستقبل. لا تغييرات في منطق التطبيق أو SQL في commit `fdcf43f`؛ هو اختبار فقط.
+
+### بوابات الرأس الدقيق
+كل البوابات الست ناجحة على HEAD `fdcf43f97393c391da06284f2152715191511f3b`:
+- W21: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858329
+- W25: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439857991
+- Web Unit: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858251 — **343 نجاحًا، صفر إخفاقات**
+- Web CI / production build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858010
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858203
+- Netlify preview verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858268
+
+تم تنزيل وفحص أدلة W21:
+- دليل PostgreSQL/التنظيف: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858329/artifacts/11835231318 — `result=success`، إعادة migrations من المستودع على PostgreSQL 17، `supabase_stop_exit_code=0`، لا حاويات/وحدات تخزين متبقية و`cleanup_verified=true`.
+- تشخيص المتصفح: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858329/artifacts/11835026476 — preflight READY، رفض العامل غير المسجل HTTP 503 مع `providerCall=not_attempted`، وBrowser E2E **2 passed (2.6m)**، والتنظيف VERIFIED.
+
+SHA `283562e19020fb2eeedb97bdbd7acd774554a978` الوارد في دليل W21 هو merge-test commit اصطناعي من GitHub. أبواه هما قاعدة PR `46dc6029f084fb000ba511478d6e8aec3eb532b3` ورأس المصدر `fdcf43f97393c391da06284f2152715191511f3b`.
+
+### الحالة الأمنية
+PR #29 ما زال OPEN / Draft / UNMERGED، وIssue #23 ما زالت OPEN. سجل adapters لا يزال فارغًا عمدًا، وإثبات فرض JIT الشامل واعتماد مزود حقيقي لا يزالان NOT PROVEN. آخر جرد موثق لقاعدة Development هو W65؛ W66–W80 لم تُطبق على البيئة المستضافة، ولذلك يبقى Research الحي محظورًا. لا تغييرات على Supabase المستضاف أو Main/Production أو DNS أو billing أو نشر الإنتاج.

@@ -228,3 +228,16 @@ E2E stability fix: only the Playwright browser intercepts POST `/api/auth/passwo
 Dispatch/reconciliation invariants are extended: partial W69 tuples are invalid; a legacy UNKNOWN execution without dispatch proof cannot reconcile as SUCCEEDED; legacy FAILED requires authoritative no-send proof before releasing the reservation. The AST source-graph regression catches outbound SDKs/transports, dynamic module loading, computed global transport access and aliases. Its guarantee remains bounded static analysis, not complete runtime mediation.
 
 PR #29 OPEN/Draft/UNMERGED; Issue #23 OPEN; provider registry empty; hosted W66–W80 NOT APPLIED; universal JIT mediation and real provider certification NOT PROVEN.
+
+
+---
+
+## Malformed authoritative lookup evidence regression — 2026-10-13 — source SHA `fdcf43f97393c391da06284f2152715191511f3b`
+
+Nine new negative cases test that the persistent gateway refuses to persist a terminal result when provider lookup evidence is malformed, unsupported, stale or too far in the future. Cases are constrained to one read-only provider lookup; invalid evidence must leave the execution UNKNOWN and invoke only the initial claim RPC. Web Unit: [343 passed / zero failed](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858251).
+
+W21 and all companion gates are green: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858329), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439857991), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858010), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858203), [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858268).
+
+W21 evidence: [PostgreSQL/cleanup](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858329/artifacts/11835231318), [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858329/artifacts/11835026476). It verifies the no-adapter worker remains fail-closed (HTTP 503, `providerCall=not_attempted`) and the disposable PostgreSQL 17 environment is cleaned.
+
+This is test-only coverage; universal Mission Authority mediation remains **NOT PROVEN**. Issue #23 stays **OPEN**, adapter registry empty, production not approved.

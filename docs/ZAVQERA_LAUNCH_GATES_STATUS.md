@@ -978,3 +978,24 @@ The previous W21 browser failure was an upstream Pwned Passwords availability is
 The source hardening also covers partial dispatch tuples, refuses legacy UNKNOWN success without W69 proof, and permits legacy FAILED settlement only with authoritative no-send evidence. AST graph checks detect local imports, transport/SDK imports, dynamic/computed global escapes and aliases. Scope remains bounded static analysis, not a complete runtime/network proof.
 
 PR #29 remains OPEN / Draft / UNMERGED; Issue #23 remains OPEN. Provider registry remains empty. Hosted Development last documented at W65; W66–W80 are NOT APPLIED, keeping hosted Research blocked. Universal JIT mediation, real-provider certification, real email delivery, manual visual QA, and leaked-password protection remain unverified. No protected environment changes.
+
+
+---
+
+## Exact-head evidence update — 2026-10-13 — `fdcf43f97393c391da06284f2152715191511f3b`
+
+All six current PR source-head workflows passed:
+- [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858329) — [evidence/cleanup artifact](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858329/artifacts/11835231318), [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858329/artifacts/11835026476)
+- [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439857991)
+- [Web Unit](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858251) — **343 passed / 0 failed**
+- [Web CI/build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858010)
+- [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858203)
+- [Netlify preview verification](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858268)
+
+New test-only coverage adds nine negative authoritative-lookup cases: non-authoritative result, unsupported method, missing/oversized provider state, missing/invalid timestamp, timestamp not newer than dispatch or current reconciliation claim, and timestamp more than five minutes in the future. Each asserts no finalization RPC and retains status UNKNOWN.
+
+W21 artifacts were downloaded and inspected. Cleanup evidence confirms PostgreSQL 17 repository migrations, stop exit code 0, no remaining containers/volumes and `cleanup_verified=true`. Browser diagnostics confirm HTTP 503, `unregistered_adapter_denied`, `providerCall=not_attempted`, and 2/2 Browser E2E passed (2.6m).
+
+Artifact `git_sha=283562e19020fb2eeedb97bdbd7acd774554a978` is GitHub's synthetic PR test-merge commit, with parents base `46dc6029f084fb000ba511478d6e8aec3eb532b3` and PR source HEAD `fdcf43f97393c391da06284f2152715191511f3b`.
+
+PR #29 stays OPEN/Draft/UNMERGED; Issue #23 stays OPEN. Provider registry remains empty; universal JIT mediation and real-provider certification remain NOT PROVEN. Hosted Development remains documented at W65; W66–W80 NOT APPLIED. No hosted database, production, DNS or billing changes.

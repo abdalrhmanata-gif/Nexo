@@ -256,3 +256,19 @@ The current AST guard follows static local imports and detects known provider SD
 W69/W70 SQL tests and application checks reject partial modern dispatch tuples; legacy unbound UNKNOWN cannot be marked SUCCEEDED, while legacy FAILED requires authoritative no-send evidence for release. Current all-green gate set on `2bcea5a9c12852f336973f3f0066d944384a6769`: W21 https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435928163; W25 https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927175; Web Unit 341/341 https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927129; Web CI https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927161; Flutter CI https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927480; Netlify https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927505.
 
 Provider registry intentionally remains empty, Issue #23 open, and no hosted database/DNS/billing/production changes have occurred.
+
+
+---
+
+## Provider reconciliation evidence-validation tests — 2026-10-13 — `fdcf43f97393c391da06284f2152715191511f3b`
+
+The current outbound-effect inventory/guardrail now includes nine more test assertions around authoritative reconciliation evidence: an adapter result must be authoritative, use an allowlisted method, include a bounded provider-state label and provide a valid, appropriately fresh timestamp. Missing, stale, same-time, malformed or >5-minute-future timestamps cannot authorize finalization. Existing code still leaves `UNKNOWN` on invalid evidence; this change is tests only.
+
+Web Unit 343/343: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858251
+W21: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858329
+W25: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439857991
+Web CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858010
+Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858203
+Netlify preview verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858268
+
+W21 confirms no adapter is registered (503, provider not attempted) and disposable database cleanup is verified. No real provider or hosted database is used by these tests.
