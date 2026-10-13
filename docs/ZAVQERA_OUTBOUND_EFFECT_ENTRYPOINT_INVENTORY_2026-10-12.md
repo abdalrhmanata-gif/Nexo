@@ -283,3 +283,12 @@ The current-head W21/W25/Web Unit/Web CI/Flutter/Netlify gates all passed. Web U
 Source and SQL tests now guard malformed/unbound reconciliation claims, partial modern W69 dispatch tuples, unauthorized success on legacy rows, non-authoritative/unsupported/stale/future lookup evidence, uncorrelatable receipts, and retry-safe UNKNOWN/FAILED behavior. Static AST traversal catches common local import paths and outbound transport/dynamic-loader escapes, within a documented bounded scope.
 
 No universal network/runtime audit has been completed; non-Mission-Action outbound flows retain their own controls and must not be presented as JIT-certified. Registry empty, Issue #23 OPEN, production NOT APPROVED; no hosted database, provider, DNS, billing, or production changes.
+
+
+---
+
+## Scanner repeatability hardening — exact source head `65d4f2364876a95a78b23a5d5c564eff00fab206`
+
+A subtle static-audit bug was closed: a global `RegExp` instance with `g` retains `lastIndex`, so calling `source.matchAll(pattern)` across several modules could miss matches in a later module. The Mission Action outbound detector now constructs a fresh RegExp for each module scan. A unit regression proves the scanner returns the same positive result after the shared pattern has been advanced. The current Web Unit suite is **344/344 PASS** and all six workflow gates pass on this exact code/test HEAD (W21, W25, Web Unit, Web CI, Flutter, Netlify preview).
+
+This improves repeatability but does not turn the scan into a runtime network trace or universal proof. External OpenAI planning/Research/diagnostics, Resend invitations, Supabase Auth flows, and the Pwned Passwords lookup remain separately inventoried, not considered JIT-certified. The provider registry stays empty and Issue #23 remains open.

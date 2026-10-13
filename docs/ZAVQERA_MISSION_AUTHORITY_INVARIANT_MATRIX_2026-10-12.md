@@ -252,3 +252,20 @@ All six workflows pass on this source HEAD: [W21](https://github.com/abdalrhmana
 Current application guard checks dispatch-bound reconciliation timestamps, all-or-null modern W69 tuple fields, approval/hash/budget revision binding, authoritative lookup freshness, bounded provider-state evidence, stable receipts and safe legacy failure-only closure. These safeguards are tested via 343 Web Unit tests plus W69/W70 pgTAP and disposable W21 browser/gateway tests.
 
 This evidence does not establish universal runtime mediation, network tracing, hosted Development parity beyond W65, or real provider certification. Issue #23 stays OPEN and the registry stays empty.
+
+
+---
+
+## Outbound-scan regex state fix and latest exact-head evidence — 2026-10-13 — `65d4f2364876a95a78b23a5d5c564eff00fab206`
+
+The source-level Mission Action outbound detector now clones every global RegExp for each source scan, preventing shared `lastIndex` from making later files skip initial matches. A focused test advances the shared pattern deliberately and proves two repeated scans each still detect `fetch(url)`. Only the test file changed in this commit.
+
+Exact-head automated evidence:
+- [Web Unit 344/344](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197256)
+- [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197355), with [cleanup evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197355/artifacts/11836936061) and [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197355/artifacts/11837260907)
+- [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197411)
+- [Web CI/build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197350)
+- [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197297)
+- [Netlify preview verification](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197324)
+
+The AST/static scan remains bounded and does not prove complete runtime mediation. Provider registry stays empty; Issue #23 stays OPEN.

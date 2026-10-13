@@ -1016,3 +1016,18 @@ All six current-head workflows passed:
 W21 evidence: PostgreSQL 17 repo migrations; disposable Supabase stop exit 0; no remaining containers/volumes; cleanup verified. Browser evidence: HTTP 503 for the unregistered adapter, `providerCall=not_attempted`; 2 browser tests passed. Artifact merge SHA `d7432f4731c7a06202a20a4d7bcd99575b541ac1` is synthetic, with parents PR base `46dc6029f084fb000ba511478d6e8aec3eb532b3` and PR source HEAD `0aea294c6d8fb2328e6a67506807a93ccfe1f476`.
 
 Security guardrails are unchanged: PR #29 OPEN/Draft/UNMERGED; Issue #23 OPEN; registry empty; universal JIT mediation and real-provider certification unproven; Development hosted schema last documented W65 with W66–W80 not applied.
+
+
+---
+
+## Latest exact source-head verification — 2026-10-13 — `65d4f2364876a95a78b23a5d5c564eff00fab206`
+
+All six workflows passed:
+- W21: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197355 (25/25 steps; [evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197355/artifacts/11836936061); [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197355/artifacts/11837260907))
+- W25: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197411
+- Web Unit: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197256 — **344/344**
+- Web CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197350
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197297
+- Netlify preview verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197324
+
+The latest test-only change makes each outbound regex scan use a fresh RegExp instance to avoid global `lastIndex` state causing missed matches between files. No app or SQL changes. W21 evidence confirms disposable PostgreSQL 17 cleanup and HTTP 503 / `providerCall=not_attempted` for the unregistered adapter.

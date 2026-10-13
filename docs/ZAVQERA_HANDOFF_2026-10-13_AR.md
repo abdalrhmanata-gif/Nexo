@@ -434,3 +434,28 @@ PR #29 ما زال OPEN / Draft / UNMERGED، وIssue #23 ما زالت OPEN. س�
 
 ### حالة PR والإصدار
 PR #29 ما زال OPEN / Draft / UNMERGED. Issue #23 ما زالت OPEN. سجل adapters لا يزال فارغًا عمدًا، وإثبات فرض JIT الشامل واعتماد مزود حقيقي ما زالا NOT PROVEN. آخر جرد موثق لقاعدة Development هو W65؛ W66–W80 لم تُطبق على البيئة المستضافة، لذلك يبقى Research الحي محظورًا. لا تغييرات على Supabase Development أو Main/Production أو DNS أو billing أو النشر الإنتاجي.
+
+
+## Latest exact-head checkpoint — 2026-10-13 — code/test HEAD `65d4f2364876a95a78b23a5d5c564eff00fab206`
+
+This checkpoint supersedes the previous source-level verification note at `2c7448032c1961399d8b2de190177e269c2c2663`.
+
+### Last test-only fix: stateless direct-outbound scanning
+The source-graph security test uses global RegExp patterns with the `g` flag. Such RegExp objects mutate `lastIndex`; reusing the same object across source files could skip an initial match in a later file. Commit `65d4f23` adds `findDirectOutboundMatches(source, pattern)`, which constructs a fresh RegExp for each file, and a focused regression proving repeat scans detect `fetch(url)` even after the shared pattern's `lastIndex` was advanced. This changed only `apps/web/test/mission-authority-worker-auth.test.mjs`; no app runtime, SQL, or migration changed in that commit.
+
+### Exact-head workflow results
+All six gates passed on the exact PR source HEAD `65d4f2364876a95a78b23a5d5c564eff00fab206`:
+- W21 Local Launch Gate: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197355 — all 25 steps succeeded.
+- W25 PostgreSQL atomic fence: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197411 — SUCCESS.
+- Web Unit: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197256 — **344 passed / 0 failed**.
+- Web CI/build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197350 — SUCCESS.
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197297 — SUCCESS.
+- Netlify preview-route verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197324 — SUCCESS. This does not assert a production promotion or live Research readiness.
+
+### W21 artifacts inspected from this run
+- Evidence/cleanup: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197355/artifacts/11836936061 — `result=success`; repository migrations on PostgreSQL 17; disposable project `zavqera-e2e-local`; `supabase_stop_exit_code=0`; no remaining containers or volumes; `cleanup_verified=true`.
+- Browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197355/artifacts/11837260907 — preflight READY; unregistered adapter denied with HTTP 503 / `unregistered_adapter_denied` / `providerCall=not_attempted`; Browser E2E **2 passed (2.7m)**; cleanup verified.
+- W21's artifact SHA `5bc7327c33086e847d3d2dcfa82ec7f2d6801889` is GitHub's synthetic merge-test commit, whose parents are PR base `46dc6029f084fb000ba511478d6e8aec3eb532b3` and actual source HEAD `65d4f2364876a95a78b23a5d5c564eff00fab206`.
+
+### Release and safety status unchanged
+PR #29 remains OPEN / Draft / UNMERGED; Issue #23 remains OPEN. The adapter registry remains empty. Universal runtime JIT mediation remains NOT PROVEN; real-provider certification is not started. Hosted Development's last documented migration state is W65, W66–W80 are not applied there, and live Research remains blocked. No hosted database changes, SQL migrations, Main/Production changes, DNS/billing changes or production deployment were made.
