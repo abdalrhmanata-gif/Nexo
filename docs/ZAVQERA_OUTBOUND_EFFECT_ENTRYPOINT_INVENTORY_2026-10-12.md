@@ -309,3 +309,14 @@ The Mission Action outbound detector now has explicit negative fixtures for stat
 W21 [cleanup evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282759/artifacts/11839115726) and [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282759/artifacts/11839290636) confirm PostgreSQL 17, cleanup verified and unregistered-adapter HTTP 503 / `providerCall=not_attempted`.
 
 Read-only Development inventory remains W65; W69/W70 schema/RPCs absent. No hosted mutation. Keep registry empty, Issue #23 OPEN, production NOT APPROVED.
+
+
+---
+
+## Restricted runtime capability imports — 2026-10-13 — tested source SHA `7577d7fa6bf4372780b2778eb7594379d9b0b007`
+
+For API routes under the Mission Action dependency-graph test, statically reachable source modules may not import Node's module loader, child-process, VM or worker-thread APIs (`module`, `node:module`, `child_process`, `node:child_process`, `vm`, `node:vm`, `worker_threads`, `node:worker_threads`). The import inventory check covers aliased ESM declarations and literal CommonJS `require()` references. Existing checks for network transports and provider SDKs remain.
+
+Validation on exact source head: [Web Unit 344/344](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289046), [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289107), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289059), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289279), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289287), [Netlify](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289099).
+
+Scope is limited to statically reachable local source and literal import specifiers; this is not a runtime sandbox/network trace. Issue #23 remains OPEN, registry empty, universal JIT mediation NOT PROVEN.

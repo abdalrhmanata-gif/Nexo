@@ -280,3 +280,12 @@ The static outbound AST regression now explicitly flags `process.mainModule.requ
 Exact-head evidence: [Web Unit 344/344](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282813), [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282759), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282820), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282821), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282798), [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282707). W21 artifacts: [cleanup](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282759/artifacts/11839115726), [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282759/artifacts/11839290636).
 
 Hosted Development was checked read-only: migration ledger W65; W69/W70 columns and function signatures absent. Do not apply hosted migrations as part of this gate. Registry empty; universal JIT proof NOT PROVEN; Issue #23 OPEN.
+
+
+---
+
+## Runtime-capability import guard — 2026-10-13 — tested source SHA `7577d7fa6bf4372780b2778eb7594379d9b0b007`
+
+The Mission Action dependency scanner now rejects statically reachable imports of `module/node:module`, `child_process/node:child_process`, `vm/node:vm`, and `worker_threads/node:worker_threads`, in addition to outbound transport and provider SDKs. This prevents easy dynamic-loader/process/codegen/worker escape routes from being added unnoticed to the Mission Action source graph. Unit fixture covers aliased ESM imports and CommonJS loading.
+
+Web Unit 344/344, W21, W25, Web CI, Flutter CI and Netlify preview all passed on the tested source SHA. W21 evidence and browser diagnostics are linked in the launch-gate status file. The guard remains static analysis; it cannot guarantee runtime mediation against every computed/dynamic mechanism. Registry remains empty; Issue #23 OPEN; production NOT APPROVED.

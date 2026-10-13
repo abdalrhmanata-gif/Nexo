@@ -493,3 +493,29 @@ Application lookup validation and W70/W74 SQL use the same five-minute future-cl
 
 ### Decision / guardrails
 PR #29 remains OPEN / Draft / UNMERGED; Issue #23 remains OPEN. The adapter registry remains empty. This source scanner is still bounded static analysis, not a complete runtime/network trace. Universal JIT enforcement and real-provider certification remain NOT PROVEN. No Supabase Development/Main/Production changes, DNS/billing changes, real-provider calls, Vercel actions, or production deployment occurred.
+
+
+## Superseding scanner hardening checkpoint — 2026-10-13 — source HEAD `7577d7fa6bf4372780b2778eb7594379d9b0b007`
+
+This checkpoint supersedes earlier scanner/status snapshots above.
+
+### What changed
+Added a test-only restricted-capability inventory to the Mission Action local-source-graph scanner. In addition to HTTP transports and provider SDK imports, a Mission Action route or its statically reachable local modules may not import Node runtime capabilities `module/node:module`, `child_process/node:child_process`, `vm/node:vm`, or `worker_threads/node:worker_threads`. Test fixtures include aliased named imports and CommonJS `require()` so the import scanner must see all statements on actual source lines. The scanner test initially caught an incorrectly escaped newline in the fixture; that fixture was corrected before the final green run.
+
+Only `apps/web/test/mission-authority-worker-auth.test.mjs` changed in the code/test hardening commit. Application/runtime source, SQL migrations and hosted schemas were unchanged. Web Unit is **344 passed / 0 failed**.
+
+### Six gates passed on this exact source HEAD
+- W21: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289107
+- W25: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289059
+- Web Unit 344/344: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289046
+- Web CI/build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289279
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289287
+- Netlify preview-route verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289099
+
+### W21 artifact contents inspected
+- Evidence/cleanup: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289107/artifacts/11840012725 — `result=success`, migrations replayed from repository on PostgreSQL 17, disposable project `zavqera-e2e-local`, stop exit code 0, no remaining labeled containers or volumes, `cleanup_verified=true`.
+- Browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289107/artifacts/11840007713 — preflight READY; unregistered adapter HTTP 503 / `unregistered_adapter_denied` / `providerCall=not_attempted`; Browser E2E **2 passed (2.7m)**; cleanup VERIFIED.
+- W21 artifact SHA `36619b4bd03ff109888a656a988de649437595b3` is GitHub's synthetic merge-test commit. Its parents are PR base `46dc6029f084fb000ba511478d6e8aec3eb532b3` and actual PR source HEAD `7577d7fa6bf4372780b2778eb7594379d9b0b007`.
+
+### Scope / release decision
+The restricted-capability rule strengthens a bounded static source-graph regression; it is not a runtime sandbox or network trace and does not prove universal JIT mediation for every external side effect. Provider adapter registry remains empty. PR #29 stays OPEN / Draft / UNMERGED; Issue #23 stays OPEN. Hosted Development remains last documented at W65; W66–W80 are NOT APPLIED, so hosted Research remains blocked. No hosted database writes, Main/Production changes, DNS/billing changes, real-provider side effects or production deployment occurred. Production remains NOT APPROVED.

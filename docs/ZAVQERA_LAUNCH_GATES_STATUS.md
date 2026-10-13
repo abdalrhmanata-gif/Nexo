@@ -1050,3 +1050,18 @@ All six gates passed on that exact SHA:
 W21 verifies disposable PostgreSQL 17 migration replay and cleanup (`cleanup_verified=true`, no remaining containers/volumes). Browser E2E passed 2/2, and an unregistered adapter remains denied with HTTP 503 and `providerCall=not_attempted`. Artifact SHA `b584dd0be0fd1537a3e5ad0c7d45e3d84211d19c` is the synthetic merge test SHA with PR base and source-head parents; it is not a replacement for the source SHA above.
 
 Read-only Supabase Development metadata check confirms latest hosted migration W65; W69/W70 authority columns and claim/reconcile function signatures are absent. No hosted change occurred. Issue #23 stays OPEN and adapter registry empty; universal JIT enforcement remains NOT PROVEN.
+
+
+---
+
+## Current exact-head gate results — 2026-10-13 — `7577d7fa6bf4372780b2778eb7594379d9b0b007`
+
+All six gates passed on the code/test source HEAD:
+- [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289107) — PostgreSQL 17, browser E2E 2/2, clean disposable environment; [evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289107/artifacts/11840012725), [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289107/artifacts/11840007713)
+- [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289059)
+- [Web Unit 344/344](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289046)
+- [Web CI/build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289279)
+- [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289287)
+- [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289099)
+
+The AST/static source-graph scanner additionally denies Node module loader, child-process, VM and worker-thread imports in Mission Action route dependencies. This remains a bounded source regression, not proof of complete runtime/network mediation. Registry empty; universal JIT mediation not proven; Issue #23 OPEN; production NOT APPROVED.
