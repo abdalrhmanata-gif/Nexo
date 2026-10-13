@@ -1,7 +1,7 @@
 -- W57: exact, expiring approval binding for agent executions and retries.
 begin;
 create extension if not exists pgtap;
-select plan(35);
+select plan(36);
 
 select ok(exists (
   select 1 from information_schema.columns
@@ -194,6 +194,21 @@ begin
     if sqlerrm = 'APPROVAL_REQUIRED' then v_caught := true; else raise; end if;
   end;
   if not v_caught then raise exception 'TEST_FAILED: changed destination reused the original approval'; end if;
+
+  -- Changing the provider/model audience is a new delegated target, not a
+  -- harmless runtime substitution; the original approval must not carry over.
+  v_changed_request := v_request || jsonb_build_object('audience', 'w57-provider-model-v2');
+  v_caught := false;
+  begin
+    perform public.start_agent_execution(
+      v_mission, v_action, v_agent, 'w57-changed-audience-key-01', v_changed_request
+    );
+  exception when sqlstate '42501' then
+    if sqlerrm = 'APPROVAL_REQUIRED' then v_caught := true; else raise; end if;
+  end;
+  if not v_caught then
+    raise exception 'TEST_FAILED: changed provider/model audience reused the original approval';
+  end if;
 
   select * into v_execution
     from public.start_agent_execution(v_mission, v_action, v_agent, 'w57-valid-start-key-0001', v_request);
@@ -408,6 +423,7 @@ $behavior$;
 
 select pass('changed request input cannot reuse an approval');
 select pass('changed destination cannot reuse an approval');
+select pass('changing provider/model audience cannot reuse the prior approval');
 select pass('valid exact approval is linked to a start and consumed once');
 select pass('one approval cannot authorize a second independent start');
 select pass('legacy generic approvals cannot authorize execution and rejected starts create no row');
