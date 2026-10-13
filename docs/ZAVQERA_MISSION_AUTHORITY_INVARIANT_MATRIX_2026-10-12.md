@@ -115,3 +115,22 @@ This evidence is scoped to isolated PostgreSQL 17, pgTAP, browser E2E, and fake-
 **Interpretation:** these checks harden the candidate implementation seam and detect future direct API-route references. They are not a transitive call-graph proof, network trace, real-provider test, or universal external-side-effect enforcement proof. The registry remains intentionally empty; universal JIT enforcement remains **NOT PROVEN**. Issue #23 must remain **OPEN**.
 
 Hosted Development parity is still last documented at W65; W66–W80 have not been applied. Live hosted Research, real email/auth delivery, manual visual QA, password leak protection, and real-provider certification remain blocked/not verified. Production is **NOT APPROVED**.
+
+
+---
+
+## Transitive local-import guard and exact-head evidence — 2026-10-13 — `503f87e3d8a00bdec0f1983ea665f8097cb3d417`
+
+Web Unit case 183 traverses statically declared local imports from every API route and asserts only the trusted internal execution route reaches the Mission Action persistent dispatch gateway, injected worker boundary, or trusted provider registry. It recognizes local relative imports and the `@/` source alias with common source extensions. Result: [Web Unit 333/333, zero failures](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622157).
+
+Exact-head workflows all passed:
+- [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622247) — [cleanup evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622247/artifacts/11817251474) and [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622247/artifacts/11816816711)
+- [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622216)
+- [Web Unit](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622157)
+- [Web CI/build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622166)
+- [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622202)
+- [Netlify preview verification](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622197)
+
+W21 recorded HTTP 503, `unregistered_adapter_denied`, `providerCall=not_attempted`; browser E2E 2/2 passed and disposable PostgreSQL 17 cleanup was verified with no remaining containers or volumes.
+
+This guard improves static coverage but does not trace computed/dynamic imports, package internals, runtime network effects, or every external-service path. Universal Mission Authority mediation remains **NOT PROVEN**; registry empty; Issue #23 OPEN; production NOT APPROVED.

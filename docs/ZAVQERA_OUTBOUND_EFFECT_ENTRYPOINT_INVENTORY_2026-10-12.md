@@ -152,3 +152,21 @@ Exact-head evidence:
 - Web CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189422
 - Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189585
 - Netlify: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189602
+
+
+---
+
+## Transitive local-import guard — 2026-10-13 — exact source HEAD `503f87e3d8a00bdec0f1983ea665f8097cb3d417`
+
+The updated worker-auth test recursively resolves statically declared local source imports beginning at every API `route.ts` entrypoint (relative paths and `@/` aliases with known source extensions). It asserts only `/api/internal/agent-executions/[executionId]/route.ts` can reach the persistent dispatch gateway, worker boundary and trusted adapter registry. Web Unit case 183 passed; full Web Unit: **333 passed, 0 failed**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622157
+
+Exact-head evidence:
+- W21: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622247
+- W21 evidence/cleanup: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622247/artifacts/11817251474
+- W21 browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622247/artifacts/11816816711
+- W25: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622216
+- Web CI/build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622166
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622202
+- Netlify preview-route verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622197
+
+**No overclaim:** static traversal does not handle computed/dynamic imports reliably, prove dependency-package internals, instrument live network calls, or show universal Mission Authority mediation across all outbound effects. Keep registry empty and Issue #23 OPEN.

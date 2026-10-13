@@ -133,3 +133,34 @@ These are source-layout and injected-unit tests plus the W21 fake-provider/dispo
 The last documented read-only hosted Development migration inventory is W65; W66–W80 are still NOT APPLIED. Hosted Research remains blocked. Real Research with persisted citations/history, real invitation/password-reset email verification, manual visual QA, leaked-password protection, a reviewed real adapter, and universal JIT mediation remain NOT VERIFIED. No hosted schema/data changes, Main/Production changes, DNS/billing changes, production promotion, or real-provider side effect was performed.
 
 Next safe work: continue the bounded source-level audit and narrow regression coverage. Any hosted schema rollout, live Research test, real email, or provider adapter still requires its own explicit authorization and private configuration.
+
+
+## Superseding exact-head checkpoint — 2026-10-13 — PR source HEAD `503f87e3d8a00bdec0f1983ea665f8097cb3d417`
+
+This entry supersedes earlier pending-run snapshots in this file. Refresh GitHub before any subsequent write.
+
+**Current code/test head:** `503f87e3d8a00bdec0f1983ea665f8097cb3d417`; relative to the prior docs checkpoint `bd915ee9b82339f882a6a28a6ced93f24a0c941d`, the only changed file is `apps/web/test/mission-authority-worker-auth.test.mjs` (transitive local-import boundary guard). The application and SQL candidate remains `be8b96bb7d5448125d0c4134fb6275f02950ff53`.
+
+**All six workflows are green on this exact PR source HEAD:**
+- W21 Local Launch Gate: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622247
+- W25 Isolated PostgreSQL Atomic Fence: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622216
+- Web Unit: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622157 — **333 passed, 0 failed**
+- Web CI / typecheck / production build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622166
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622202
+- Netlify preview-route verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622197 — succeeded; this is not proof of a production promotion or live Research completion.
+
+**W21 artifacts were downloaded and their contents inspected:**
+- Evidence and cleanup: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622247/artifacts/11817251474 — `result=success`, repository migrations, PostgreSQL 17, disposable project `zavqera-e2e-local`, `supabase_stop_exit_code=0`, `remaining_containers=none`, `remaining_volumes=none`, `cleanup_verified=true`.
+- Browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622247/artifacts/11816816711 — preflight READY; unregistered adapter denied as HTTP 503 / `unregistered_adapter_denied` / `providerCall=not_attempted`; Browser E2E **2 passed (2.7m)**; cleanup VERIFIED.
+
+**Synthetic GitHub merge-SHA precision:** the W21 artifact records `git_sha=c01172831c716712ab6e816970f3e2624c4dad07`, which is GitHub’s synthetic PR merge commit. Its parents are base `46dc6029f084fb000ba511478d6e8aec3eb532b3` and PR head `503f87e3d8a00bdec0f1983ea665f8097cb3d417`. This is the expected merge-test checkout; the PR branch head is still `503f87e…`.
+
+### New transitive static-import guard
+
+A recursive test now follows statically declared local imports from all API route files (relative imports, the `@/` source alias and recognized source extensions) and asserts that only the trusted internal execution route reaches the Mission Action dispatch gateway / worker boundary / trusted registry. The test passed as case 183 in the 333-test Web Unit run. Existing injected worker tests cover absent/wrong/incomplete adapter contracts and invalid operations before privileged-client creation, and the valid resolution→client→dispatch order.
+
+**Scope limits remain explicit:** this is a bounded static traversal of local, statically declared imports. It does not analyze computed/dynamic imports, package internals, generated/bundled call graphs, runtime network traffic, or every non-Mission-Action outbound operation. It is not universal JIT enforcement proof. Provider registry remains empty and Issue #23 stays open.
+
+### Unchanged release blockers / guardrails
+
+PR #29 is OPEN / Draft / UNMERGED; Issue #23 is OPEN. Last documented hosted Development migration inventory remains W65; W66–W80 are NOT APPLIED, so hosted Research stays blocked. Real Research persistence/citations, real email delivery and password-reset verification, manual visual QA, leaked-password protection, and real-provider adapter certification remain NOT VERIFIED. No hosted DB writes, Main/Production changes, DNS/billing changes, real provider side effects or production deployment were performed.

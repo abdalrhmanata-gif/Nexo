@@ -840,3 +840,24 @@ W21 evidence and diagnostics for this exact source HEAD:
 The latest test-only hardening adds three kinds of direct worker contract checks and a recursive API-route source guard. It does not change application/SQL behavior and is not universal-runtime/provider proof. The app/SQL candidate remains `be8b96bb7d5448125d0c4134fb6275f02950ff53`.
 
 PR #29 remains OPEN / Draft / UNMERGED; Issue #23 remains OPEN. Hosted Development is still documented at W65 with W66–W80 NOT APPLIED. Keep Research blocked and provider registry empty. Live external integrations and production readiness remain NOT VERIFIED / NOT APPROVED. No hosted or Production writes, real provider calls, DNS/billing changes, or production deploy were made.
+
+
+---
+
+## Current exact-head gate status — 2026-10-13 — `503f87e3d8a00bdec0f1983ea665f8097cb3d417`
+
+All six workflow gates passed against PR source HEAD `503f87e3d8a00bdec0f1983ea665f8097cb3d417`:
+- W21: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622247
+- W25: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622216
+- Web Unit, **333/333**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622157
+- Web CI / production build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622166
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622202
+- Netlify preview verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622197
+
+W21 artifact checksum/evidence summary:
+- [Evidence/cleanup](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622247/artifacts/11817251474): `result=success`; PostgreSQL 17; repository migrations; disposable project stop exit code 0; no remaining labeled containers/volumes; `cleanup_verified=true`.
+- [Browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622247/artifacts/11816816711): no-adapter path HTTP 503, `providerCall=not_attempted`; Browser E2E 2 passed (2.7m).
+
+SHA note: W21 uses the synthetic merge commit `c01172831c716712ab6e816970f3e2624c4dad07`, whose parents are the PR base `46dc6029f084fb000ba511478d6e8aec3eb532b3` and PR head `503f87e3d8a00bdec0f1983ea665f8097cb3d417`. Report the PR source HEAD separately from the synthetic test merge SHA.
+
+A new Web Unit regression follows statically declared local source imports from API routes and prevents any route except the trusted internal worker route from reaching the Mission Action gateway, worker-boundary or registry modules. It is a bounded static-analysis guard, not a complete dynamic/import graph or network trace. PR #29 stays OPEN/Draft/UNMERGED, Issue #23 OPEN, registry empty, and production NOT APPROVED. Hosted Development remains documented at W65; W66–W80 NOT APPLIED. No protected environment changes.
