@@ -224,3 +224,33 @@ The evidence file records synthetic W21 test merge SHA `25206644c21e0f97ca7ebd0c
 
 ### Safety status
 PR #29 remains OPEN / Draft / UNMERGED; Issue #23 remains OPEN. Registry remains empty, universal JIT mediation and real-provider certification remain NOT PROVEN. Hosted Development remains documented at W65 and W66–W80 are NOT APPLIED, so hosted Research remains blocked. No hosted DB/data changes, Main/Production modifications, DNS/billing changes, real-provider effects or production deployment occurred.
+
+
+## Superseding verified checkpoint — 2026-10-13 — code/test HEAD `10c3f5526a3e53dd070715f9ac7c870543bfa933`
+
+This section supersedes the prior checkpoint entries. The exact PR source HEAD and six gate run records were checked before this documentation update.
+
+### Additional fail-closed protection for partial W69 tuples
+`validReconciliationClaim` now treats the presence of **any** W69 dispatch-tuple field (`dispatch_claimed_at`, `dispatch_claim_authority_hash`, `dispatch_claim_request_hash`, `dispatch_claim_budget_revision`) as evidence that the row uses the modern dispatch claim contract. If any tuple field is present, all required fields must be valid; a hash or budget revision without a dispatch timestamp can no longer fall through to the legacy `created_at` path.
+
+Three new negative scenarios cover: authority hash only, request hash only, or budget revision only while `dispatch_claimed_at` is null. They are table-driven within the existing 335-test suite. These application-layer guards defend against malformed RPC responses; the existing W69 database constraint already enforces the all-null-or-complete tuple for stored rows. **No SQL migration was changed.**
+
+### Six current-code-head gates — all PASS
+- W21 Local Launch Gate: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260222
+- W25 Isolated PostgreSQL Atomic Fence: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414261406
+- Web Unit: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260294 — **335 passed, 0 failed**
+- Web CI / production build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260230
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260556
+- Netlify preview verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260692
+
+W21 artifacts were downloaded and inspected:
+- Evidence/cleanup: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260222/artifacts/11824990132 — `result=success`, migrations replayed from the repository on PostgreSQL 17, disposable Supabase stop exit code 0, no remaining labeled containers or volumes, `cleanup_verified=true`.
+- Browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260222/artifacts/11823980703 — preflight READY, unregistered adapter path returns HTTP 503 / `unregistered_adapter_denied` / `providerCall=not_attempted`; Browser E2E **2 passed (2.7m)**; cleanup VERIFIED.
+
+W21 evidence records synthetic merge-test SHA `87c4c8ad42df5eec3989956208e469d5f6a2d5ed`; its parents are base `46dc6029f084fb000ba511478d6e8aec3eb532b3` and PR source HEAD `10c3f5526a3e53dd070715f9ac7c870543bfa933`. These SHA values must not be conflated.
+
+### Separate tool failure — AI code-scanning review
+GitHub's separate “Code scanning AI findings on PR #29” run failed because its review agent exceeded its monthly quota (HTTP 402 / `errorCode=quota`): https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414263059. This is an unavailable automated AI review, **not** a successful scan and not a failing application test. It should remain visible as a tooling limitation; do not attempt to alter billing or bypass it.
+
+### Guardrails and outstanding launch gates
+PR #29 remains OPEN / Draft / UNMERGED; Issue #23 remains OPEN. Provider registry stays empty; universal JIT mediation and real-provider certification remain NOT PROVEN. Hosted Development remains last documented at W65; W66–W80 are NOT APPLIED, so hosted Research remains blocked. No hosted DB changes, Supabase Main/Production changes, DNS/billing changes, real-provider effects or production deployment occurred.

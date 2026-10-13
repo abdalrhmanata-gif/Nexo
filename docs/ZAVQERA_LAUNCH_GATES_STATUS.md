@@ -891,3 +891,16 @@ All six gates passed on exact PR code/test head: [W21](https://github.com/abdalr
 W21 artifacts: [evidence/cleanup](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243001/artifacts/11823012738), [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243001/artifacts/11822977850). Evidence states PostgreSQL 17 replay, exit code 0, no remaining labeled containers/volumes, cleanup verified. Browser outcome remains HTTP 503, `providerCall=not_attempted`, two E2E passes.
 
 Latest hardening validates reconciliation's timestamp binding and, when a dispatch claim is present, requires original approval, authority/request hashes and a positive budget revision before provider lookup. Six new negative cases added; legacy rows with no dispatch timestamp retain the explicit `created_at` fallback. Registry remains empty; universal JIT proof is outstanding.
+
+
+---
+
+## Exact code/test HEAD verification — 2026-10-13 — `10c3f5526a3e53dd070715f9ac7c870543bfa933`
+
+All six core workflows passed for this exact code/test HEAD: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260222), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414261406), [Web Unit 335/335](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260294), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260230), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260556), [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260692).
+
+The reconciliation validator now rejects partial W69 tuples when any modern tuple field is present but another required field (including dispatch time) is absent/invalid. Three partial-tuple negative cases were added. This supplements the earlier 18 malformed/unbound reconciliation cases and the six modern authority-tuple cases. W69 SQL already has an all-or-complete consistency constraint; no SQL was altered.
+
+W21 artifacts: [cleanup evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260222/artifacts/11824990132), [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260222/artifacts/11823980703). They show PostgreSQL 17, repository migration replay, cleanup verified/no leftover containers or volumes, HTTP 503 for unregistered adapter and providerCall not attempted; Browser E2E 2/2 passed.
+
+Separate “Code scanning AI findings on PR #29” run failed due monthly model quota (HTTP 402): https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414263059. This remains a tooling limitation, not a test pass. Keep PR #29 open/draft, Issue #23 open, provider registry empty, and production NOT APPROVED.

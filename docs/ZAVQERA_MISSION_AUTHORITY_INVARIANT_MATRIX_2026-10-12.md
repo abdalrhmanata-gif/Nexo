@@ -158,3 +158,16 @@ For modern rows with `dispatch_claimed_at`, reconciliation now refuses to call t
 Exact-head evidence: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243001), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243093), [Web Unit 335/335](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412242824), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412242825), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243272), [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243977).
 
 This narrows the gate before an outbound lookup but does not certify any provider or prove universal side-effect mediation. Keep Issue #23 OPEN, registry empty and production NOT APPROVED.
+
+
+---
+
+## Fail-closed handling of partial W69 tuple values — 2026-10-13 — tested source HEAD `10c3f5526a3e53dd070715f9ac7c870543bfa933`
+
+The reconciliation claim validator now treats any present modern dispatch tuple member as a signal that the complete tuple is required. A hash or budget revision with null `dispatch_claimed_at` cannot be treated as a legacy record using `created_at`. Three negative scenarios cover partial authority hash, partial request hash and partial budget revision.
+
+The W69 SQL consistency check already guarantees the persisted tuple is all-null or complete; this change makes the app boundary independently fail closed on malformed RPC rows. No database migration was changed.
+
+Exact-head evidence: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260222), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414261406), [Web Unit 335/335](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260294), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260230), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260556), [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260692). W21 cleanup proof: [11824990132](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260222/artifacts/11824990132); Browser diagnostics: [11823980703](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260222/artifacts/11823980703).
+
+The optional AI code-scanning review failed on monthly quota HTTP 402, not on app tests: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414263059. Universal JIT mediation remains NOT PROVEN, registry empty, Issue #23 OPEN, production NOT APPROVED.
