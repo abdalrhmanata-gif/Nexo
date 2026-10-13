@@ -725,3 +725,33 @@ There is no separate `w74_reconciliation_claim_freshness.sql` test file. The exi
 
 ### Release decision unchanged
 This green result is isolated CI evidence. Hosted Supabase Development parity remains BLOCKED / NOT APPLIED; the last read-only audit found hosted Development at W65 with legacy six-argument Research completion functions still executable by `authenticated`. Do not run hosted Research or apply hosted migrations without separate review and explicit authorization. Live authenticated Research/history/citations, real invitation inbox delivery, password-reset email/callback verification, manual desktop/mobile visual QA, leaked-password protection, and production-grade universal JIT enforcement remain unresolved gates. PR #29 remains OPEN / Draft / Unmerged. Supabase Main/Production, Git `main`, production deployment, DNS, billing and real provider side effects remain untouched.
+
+
+## Current-head verification — 2026-10-13 — branch HEAD `23ea660eb34bb2947bd7a299e08fef11b4c451c7`
+
+The current PR branch is `23ea660eb34bb2947bd7a299e08fef11b4c451c7` (`docs: document W66-W80 Development rollout preflight`). This commit adds operator documentation only; application and SQL migration code remain unchanged from the previously reviewed candidate.
+
+### Automated gates on this current PR branch update
+
+- W21 Local Launch Gate — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38386319196
+- W25 isolated PostgreSQL atomic fence — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38386319248
+- Web Unit — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38386319338
+- Web CI / TypeScript / production build — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38386319190
+- Flutter CI — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38386319203
+- Netlify Deploy Preview route verification — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38386319183
+
+W21 evidence and diagnostics for this run:
+- [Disposable PostgreSQL 17, cleanup and evidence artifact](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38386319196/artifacts/11806497499)
+- [Browser E2E and fail-closed route diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38386319196/artifacts/11806427472)
+
+Artifact review confirmed repository migrations were replayed against disposable PostgreSQL 17; the W21 run passed migration/pgTAP, Mission Authority and workspace regressions, quota/plan checks, idempotency/budget/dispatch/reconciliation races, and fake-provider gateway integration. Browser E2E reported **2 passed**. The unregistered-adapter route denied with HTTP 503 (`unregistered_adapter_denied`, `providerCall=not_attempted`). Disposable cleanup was verified with no remaining labeled containers or volumes. The evidence file's `git_sha=41ac2e67456c2bc1b184e900c6eded1da34e416e` is the pull-request integration checkout SHA; GitHub's artifact metadata associates this run with branch HEAD `23ea660eb34bb2947bd7a299e08fef11b4c451c7`.
+
+Netlify verified preview routes. Its deploy job and the live OpenAI planning / authenticated live Research steps were skipped; this is neither production promotion nor proof of live Research, invitation delivery, or real-provider side effects.
+
+### Rollout and release decision unchanged
+
+The read-only hosted Development preflight still reports migration ledger W65; W66–W80 remain **NOT APPLIED**. See [W66–W80 Development migration rollout preflight and recovery plan](https://github.com/abdalrhmanata-gif/Nexo/blob/zavqera/ai-planner-integration/docs/ZAVQERA_W66_W80_DEVELOPMENT_MIGRATION_ROLLOUT_PREFLIGHT_2026-10-13.md). Do not apply the hosted migrations or run hosted Research without separate explicit authorization and a completed read-only preflight immediately before rollout. Research remains blocked during any partial W67-to-W79 rollout.
+
+Still outstanding: hosted Development migration parity/postchecks, authenticated live Research with citations/history, real Resend invitation inbox and password-reset delivery/callback, manual desktop/mobile visual QA, leaked-password protection, real adapter review/certification, and universal JIT mediation of relevant external side effects.
+
+**Release remains NOT APPROVED.** PR #29 stays OPEN / Draft / UNMERGED; Issue #23 stays OPEN. Supabase Main/Production, hosted Development, Git `main`, production deployment, DNS, billing and real-provider side effects were not modified as part of this status update.
