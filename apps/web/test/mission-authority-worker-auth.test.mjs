@@ -518,12 +518,18 @@ function readAstOutboundMarkers(source, filePath = "source.mjs") {
       if (ts.isIdentifier(node.expression) && node.expression.text === "createRequire") {
         add(node, "createRequire()");
       }
+      if (ts.isIdentifier(node.expression) && ["eval", "Function"].includes(node.expression.text)) {
+        add(node, "dynamic code execution");
+      }
 
       const callPath = normalizeExpressionPath(astExpressionPath(node.expression));
       const reason = outboundExpressionReason(node.expression);
       if (reason) add(node, reason);
       if (callPath && /^(?:globalThis|global|self|window)\.(?:fetch|WebSocket|XMLHttpRequest|EventSource)$/.test(callPath)) {
         add(node, "global transport call");
+      }
+      if (callPath?.endsWith(".require") && !staticString(node.arguments[0])) {
+        add(node, "computed require()");
       }
     }
 
@@ -532,20 +538,31 @@ function readAstOutboundMarkers(source, filePath = "source.mjs") {
       if (["WebSocket", "EventSource", "XMLHttpRequest", "globalThis.WebSocket", "globalThis.EventSource", "globalThis.XMLHttpRequest"].includes(path)) {
         add(node, "outbound transport constructor");
       }
+      if (path === "Function") add(node, "dynamic code execution");
+    }
+
+    if (ts.isElementAccessExpression(node) && node.argumentExpression && !staticString(node.argumentExpression)) {
+      const base = normalizeExpressionPath(astExpressionPath(node.expression));
+      if (["globalThis", "global", "self", "window"].includes(base)) {
+        add(node, "computed global property access");
+      }
     }
 
     if (ts.isVariableDeclaration(node) && node.initializer) {
       if (ts.isIdentifier(node.name)) {
         const reason = outboundExpressionReason(node.initializer);
         if (reason) add(node, `outbound transport alias (${reason})`);
+        if (ts.isIdentifier(node.initializer) && ["require", "createRequire", "eval", "Function"].includes(node.initializer.text)) {
+          add(node, `dynamic loader/codegen alias (${node.initializer.text})`);
+        }
       } else if (ts.isObjectBindingPattern(node.name)) {
         const base = normalizeExpressionPath(astExpressionPath(node.initializer));
         if (["globalThis", "global", "self", "window"].includes(base)) {
           for (const element of node.name.elements) {
             const property = element.propertyName || element.name;
             const propertyName = ts.isIdentifier(property) || ts.isStringLiteral(property) ? property.text : null;
-            if (["fetch", "WebSocket", "XMLHttpRequest", "EventSource"].includes(propertyName)) {
-              add(element, `destructured global transport (${propertyName})`);
+            if (["fetch", "WebSocket", "XMLHttpRequest", "EventSource", "require", "eval", "Function"].includes(propertyName)) {
+              add(element, `destructured global transport/codegen (${propertyName})`);
             }
           }
         }
@@ -619,6 +636,14 @@ test("AST outbound analysis catches aliases and computed transport calls without
     'await import(resolveProviderModuleName());',
     'require(resolveProviderPackageName());',
     'const localRequire = createRequire(import.meta.url);',
+    'const load = require; load(resolveProviderPackageName());',
+    'const { require: load } = globalThis; load(providerPackageName);',
+    'module.require(resolveProviderPackageName());',
+    'const compile = Function; compile("return fetch(url)")();',
+    'eval("fetch(url)")',
+    'new Function("return fetch(url)")()',
+    'globalThis[transportPropertyName](url);',
+    'const hidden = globalThis[transportPropertyName];',
   ];
 
   for (const source of blockedExamples) {
@@ -630,6 +655,7 @@ test("AST outbound analysis catches aliases and computed transport calls without
     'const result = await client.rpc("claim_agent_execution_dispatch", { p_execution_id: id });',
     'const payload = { fetch: "metadata", destination: "https://example.invalid" };',
     'const fs = await import("./trusted-local.mjs");',
+    'const metadata = globalThis["metadata"];',
   ];
   for (const source of allowedExamples) {
     assert.deepEqual(readAstOutboundMarkers(source).filter(marker => marker !== "computed import()"), [], source);
