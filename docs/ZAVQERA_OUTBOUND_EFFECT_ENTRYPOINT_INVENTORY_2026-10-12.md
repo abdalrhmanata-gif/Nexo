@@ -3,7 +3,7 @@
 **Branch:** `zavqera/ai-planner-integration`  
 **PR #29:** OPEN / Draft / UNMERGED  
 **Purpose:** source-level inventory supporting Issue #23. This is not a runtime/network trace and must not be described as proof that every external side effect is mediated by Mission Authority.  
-**Latest PR code/test candidate reviewed:** `be8b96bb7d5448125d0c4134fb6275f02950ff53`. Current W21/W25, Web Unit, Web CI/build, Flutter CI and Netlify preview-route checks passed for this candidate; exact links and scope limits are recorded in the Mission Authority invariant matrix.
+**Latest PR HEAD (documentation):** `4b087c5bf42de46fdb650d1c1ac1459279b70dfa`. **Latest application/migration/test candidate:** `be8b96bb7d5448125d0c4134fb6275f02950ff53`. W21/W25, Web Unit, Web CI/build, Flutter CI and Netlify preview-route checks passed on the latest PR HEAD; exact links and scope limits are recorded in the Mission Authority invariant matrix.
 
 ## Inventory
 
@@ -109,3 +109,25 @@ Reviewed the 24 `apps/web/app/api/**/route.ts` handlers listed by the repository
 No additional direct third-party REST destinations were identified in this bounded source scan beyond the existing inventory categories (OpenAI Responses/model diagnostics, Resend email and Pwned Passwords range lookup). Supabase SDK/database and Auth calls remain external service interactions. This was a source-pattern review, not a complete transitive dependency analysis or an instrumented runtime network trace; do not treat a no-new-destination finding as proof of universal JIT mediation.
 
 The current-head W21/W25, Web Unit, Web CI/build, Flutter CI and Netlify preview-route workflow runs were successful; see PR comment dated 2026-10-13 for exact run/artifact links. No hosted database, provider registry, or deployment was changed by this documentation audit.
+
+
+## Exact PR-head verification — 2026-10-13 — PR HEAD 4b087c5bf42de46fdb650d1c1ac1459279b70dfa
+
+This is a documentation-only head after the W80 fail-closed candidate be8b96bb7d5448125d0c4134fb6275f02950ff53. The latest source inventory also includes Supabase Auth callback/email effects.
+
+Fresh GitHub Actions runs associated with this PR HEAD all completed SUCCESS:
+- W21 Local Launch Gate: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38393987591
+- W25 Isolated PostgreSQL Atomic Fence: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38393987978
+- Web Unit: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38393987795
+- Web CI/build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38393987777
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38393987603
+- Netlify preview-route check: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38393987805 (workflow succeeded; deployment step skipped because this update is docs-only).
+
+W21 evidence artifact: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38393987591/artifacts/11811144271  
+W21 browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38393987591/artifacts/11811324410
+
+The evidence artifact was downloaded and inspected. It records result=success, migration_source=repo-migrations, postgres_major=17, cleanup_attempted=true, supabase_stop_exit_code=0, remaining_containers=none, remaining_volumes=none, and cleanup_verified=true. The artifact's internal git_sha=700721117992d4766d8a4e395793c65d1d8b8d87 is the integration checkout SHA used inside the run; GitHub associates this workflow run with PR HEAD 4b087c5bf42de46fdb650d1c1ac1459279b70dfa.
+
+Browser diagnostics report missionActionWorkerRoute=FAIL_CLOSED_VERIFIED, httpStatus=503, outcome=unregistered_adapter_denied, and providerCall=not_attempted. Both isolated browser E2E tests passed (2 passed), with cleanup verified and no container/volume remaining for the disposable project.
+
+This evidence is scoped to isolated PostgreSQL 17, pgTAP, browser E2E, and fake-provider integration. It does not prove hosted Development migration parity, real-provider delivery, or universal Mission Authority enforcement across every outbound effect. Keep Issue #23 OPEN, provider registry empty, PR #29 OPEN/Draft/UNMERGED, and production readiness NOT APPROVED. No hosted Supabase migration or production deployment was performed.

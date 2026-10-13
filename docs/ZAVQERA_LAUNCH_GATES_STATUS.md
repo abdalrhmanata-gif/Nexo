@@ -1,3 +1,42 @@
+# Current verification snapshot — 2026-10-13 — PR HEAD 4b087c5bf42de46fdb650d1c1ac1459279b70dfa
+
+This is a documentation-only update after the W80 fail-closed candidate be8b96bb7d5448125d0c4134fb6275f02950ff53. PR #29 remains OPEN / Draft / UNMERGED; Issue #23 remains OPEN.
+
+## Exact PR-head automated gates — all SUCCESS
+- W21 Local Launch Gate: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38393987591
+- W25 Isolated PostgreSQL Atomic Fence: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38393987978
+- Web Unit: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38393987795
+- Web CI/build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38393987777
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38393987603
+- Netlify preview-route verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38393987805 (deployment step skipped because changes are documentation-only).
+
+## W21 artifacts inspected
+- Evidence/cleanup: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38393987591/artifacts/11811144271
+- Browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38393987591/artifacts/11811324410
+- Artifact confirms result=success, repository migrations replayed against disposable PostgreSQL 17, stop exit code 0, no remaining containers/volumes, and cleanup_verified=true.
+- Browser diagnostics confirm missing-adapter fail closed: HTTP 503, unregistered_adapter_denied, providerCall=not_attempted; both browser E2E tests passed (2 passed).
+- The internal artifact git_sha=700721117992d4766d8a4e395793c65d1d8b8d87 is the workflow's integration checkout SHA, while GitHub associates this run with PR HEAD 4b087c5bf42de46fdb650d1c1ac1459279b70dfa.
+
+## Release posture and remaining blockers
+- CI/isolated gates are green. This is not approval for production launch.
+- Provider registry remains intentionally empty; no real adapter is certified. Universal side-effect/JIT enforcement across all outbound paths is NOT PROVEN. Keep Issue #23 open.
+- Hosted Supabase Development migration parity is NOT VERIFIED. The previously recorded read-only hosted inventory was at W65; later migrations including W79/W80 were not applied by this work. W79 trusted completion signature was absent in that prior hosted snapshot. Recheck the current ledger only through a separate read-only audit and do not apply migrations here.
+- Authenticated hosted/live Research with citations and durable history remains NOT VERIFIED.
+- Real Resend invitation delivery into an inbox remains NOT VERIFIED; use Deploy Preview context only if separately authorized, with secrets stored privately.
+- Supabase Auth confirmation/password-reset email and callback delivery verification remains NOT VERIFIED.
+- Development leaked-password protection remains WARN/Disabled in the last recorded audit.
+- Manual desktop/mobile visual QA is not recorded.
+- No hosted Development or Main/Production changes, production promotion, DNS/billing changes, or real-provider effects were performed.
+
+## Next safe sequence
+1. Review this snapshot with the Mission Authority invariant matrix and outbound-effect inventory.
+2. Continue source-level audit of reachable external effects and explicitly distinguish Mission Action effects from separate system workflows (planning spend, read-only Research, diagnostics, invitations, identity/email, password compromise lookup).
+3. Add narrow source/test coverage only for documented acceptance gaps, re-run local CI, preserve current no-provider fail-closed behavior.
+4. Keep PR #29 a Draft and Issue #23 open until each Issue #23 acceptance criterion is proved with named reproducible evidence.
+5. Any hosted test, live Research, real Resend email, real provider dispatch, or production change requires separate authorization and private environment configuration.
+
+---
+
 ## Current verification snapshot — 2026-10-13 — PR HEAD `da18af81b98ddf7b1a4bcf034323eecf6397c30d`
 
 This commit refreshes the source-audit and launch-status documents only; application and SQL migration code are unchanged from candidate `be8b96bb7d5448125d0c4134fb6275f02950ff53`. PR #29 remains OPEN / Draft / UNMERGED.
