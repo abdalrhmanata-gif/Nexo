@@ -31,14 +31,23 @@ select ok(
   'invitation create and revoke reject a missing workspace role');
 
 select ok(
-  not (select prosecdef from pg_proc where oid = 'public.revoke_workspace_invitation(uuid)'::regprocedure)
-  and has_function_privilege('authenticated', 'public.revoke_workspace_invitation(uuid)', 'EXECUTE')
+  not (select prosecdef from pg_proc where oid = 'public.create_workspace_invitation(uuid,text,text,text,timestamptz)'::regprocedure)
+  and not (select prosecdef from pg_proc where oid = 'public.get_workspace_invitation(text)'::regprocedure)
+  and not (select prosecdef from pg_proc where oid = 'public.accept_workspace_invitation(text)'::regprocedure)
+  and not (select prosecdef from pg_proc where oid = 'public.revoke_workspace_invitation(uuid)'::regprocedure)
+  and has_function_privilege('authenticated', 'private.create_workspace_invitation(uuid,text,text,text,timestamptz)', 'EXECUTE')
+  and not has_function_privilege('anon', 'private.create_workspace_invitation(uuid,text,text,text,timestamptz)', 'EXECUTE')
+  and has_function_privilege('authenticated', 'private.get_workspace_invitation(text)', 'EXECUTE')
+  and has_function_privilege('anon', 'private.get_workspace_invitation(text)', 'EXECUTE')
+  and has_function_privilege('authenticated', 'private.accept_workspace_invitation(text)', 'EXECUTE')
+  and not has_function_privilege('anon', 'private.accept_workspace_invitation(text)', 'EXECUTE')
   and has_function_privilege('authenticated', 'private.revoke_workspace_invitation(uuid)', 'EXECUTE')
   and not has_function_privilege('anon', 'private.revoke_workspace_invitation(uuid)', 'EXECUTE')
-  and (select prosecdef from pg_proc where oid = 'private.revoke_workspace_invitation(uuid)'::regprocedure)
-  and coalesce(array_to_string((select proconfig from pg_proc where oid = 'private.revoke_workspace_invitation(uuid)'::regprocedure), '|'), '')
-    like '%search_path=pg_catalog, public%',
-  'the public revoke wrapper is SECURITY INVOKER and calls only the pinned private SECURITY DEFINER helper');
+  and (select bool_and(p.prosecdef and coalesce(array_to_string(p.proconfig, '|'), '') like '%search_path=pg_catalog, public%')
+         from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+        where n.nspname='private'
+          and p.proname in ('create_workspace_invitation','get_workspace_invitation','accept_workspace_invitation','revoke_workspace_invitation')),
+  'invitation wrappers stay SECURITY INVOKER and private helper grants match each wrapper role with pinned SECURITY DEFINER implementations');
 
 create temporary table w44_cross_workspace_results (
   create_denied boolean not null,

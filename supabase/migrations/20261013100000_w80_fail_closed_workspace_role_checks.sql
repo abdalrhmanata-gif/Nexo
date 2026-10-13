@@ -208,6 +208,15 @@ $function$;
 
 revoke all on function public.revoke_workspace_invitation(uuid) from public, anon;
 grant execute on function public.revoke_workspace_invitation(uuid) to authenticated;
+
+-- Keep all public invitation RPCs SECURITY INVOKER. Their internal SECURITY
+-- DEFINER helpers are callable only by the roles allowed to use each wrapper.
+revoke all on function private.create_workspace_invitation(uuid,text,text,text,timestamptz) from public, anon, authenticated;
+grant execute on function private.create_workspace_invitation(uuid,text,text,text,timestamptz) to authenticated;
+revoke all on function private.get_workspace_invitation(text) from public, anon, authenticated;
+grant execute on function private.get_workspace_invitation(text) to anon, authenticated;
+revoke all on function private.accept_workspace_invitation(text) from public, anon, authenticated;
+grant execute on function private.accept_workspace_invitation(text) to authenticated;
 revoke all on function private.revoke_workspace_invitation(uuid) from public, anon, authenticated;
 grant execute on function private.revoke_workspace_invitation(uuid) to authenticated;
 
