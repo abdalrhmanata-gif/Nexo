@@ -904,3 +904,22 @@ The reconciliation validator now rejects partial W69 tuples when any modern tupl
 W21 artifacts: [cleanup evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260222/artifacts/11824990132), [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260222/artifacts/11823980703). They show PostgreSQL 17, repository migration replay, cleanup verified/no leftover containers or volumes, HTTP 503 for unregistered adapter and providerCall not attempted; Browser E2E 2/2 passed.
 
 Separate “Code scanning AI findings on PR #29” run failed due monthly model quota (HTTP 402): https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414263059. This remains a tooling limitation, not a test pass. Keep PR #29 open/draft, Issue #23 open, provider registry empty, and production NOT APPROVED.
+
+
+---
+
+## Exact-head gate status — 2026-10-13 — `813d97d4b04f9b362ace183c1d648ce6f58ed7aa`
+
+All six core gates passed on the exact PR source HEAD:
+- W21 Local Launch Gate: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126676
+- W25 Isolated PostgreSQL Atomic Fence: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126675
+- Web Unit: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126629 — **336 passed, 0 failed**
+- Web CI / production build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126712
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126788
+- Netlify preview-route verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126697
+
+W21 artifacts were verified: [cleanup evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126676/artifacts/11826217860), [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126676/artifacts/11826417697). Evidence confirms PostgreSQL 17, repo migrations, cleanup verified with no leftover containers/volumes, unregistered adapter denial HTTP 503 / `providerCall=not_attempted`, and Browser E2E 2/2 passed. W21 completed all 25 steps, including W70 pgTAP, budget/dispatch/reconciliation races and W72 integration using fake providers.
+
+Safety behavior added since the last checkpoint: app-level reconciliation now refuses to finalize legacy provider success without a W69 dispatch claim; the record remains UNKNOWN with no finalization RPC. The W70 SQL test also proves the intended legacy no-send failure path can settle FAILED and release held budget. A pgTAP plan mismatch (22 planned / 23 run) was corrected to `plan(23)`; the next exact-head W21 run passed.
+
+PR #29 OPEN / Draft / UNMERGED; Issue #23 OPEN; adapter registry empty; universal JIT enforcement NOT PROVEN; hosted Development still W65 and W66–W80 NOT APPLIED.

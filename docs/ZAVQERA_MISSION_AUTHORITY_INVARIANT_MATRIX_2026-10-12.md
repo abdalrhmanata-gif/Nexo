@@ -171,3 +171,18 @@ The W69 SQL consistency check already guarantees the persisted tuple is all-null
 Exact-head evidence: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260222), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414261406), [Web Unit 335/335](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260294), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260230), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260556), [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260692). W21 cleanup proof: [11824990132](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260222/artifacts/11824990132); Browser diagnostics: [11823980703](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260222/artifacts/11823980703).
 
 The optional AI code-scanning review failed on monthly quota HTTP 402, not on app tests: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414263059. Universal JIT mediation remains NOT PROVEN, registry empty, Issue #23 OPEN, production NOT APPROVED.
+
+
+---
+
+## Legacy reconciliation outcome invariant — 2026-10-13 — `813d97d4b04f9b362ace183c1d648ce6f58ed7aa`
+
+For a legacy `UNKNOWN` execution with no W69 `dispatch_claimed_at`, an authoritative provider lookup may not promote the execution to `SUCCEEDED`. The app gateway now returns `LEGACY_SUCCESS_WITHOUT_DISPATCH_CLAIM`, keeps status `UNKNOWN`, and does not invoke the finalization RPC. The database independently rejects success without the dispatch claim.
+
+The bounded compatibility path is only authoritative no-send evidence → `FAILED` → release held budget reservation. A new W70 pgTAP assertion covers that allowed legacy failure path. W70 now declares `plan(23)`, matching the 23 assertions.
+
+Exact-head evidence: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126676), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126675), [Web Unit 336/336](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126629), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126712), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126788), [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126697).
+
+W21 evidence/cleanup: [11826217860](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126676/artifacts/11826217860); browser diagnostics: [11826417697](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126676/artifacts/11826417697).
+
+This does not register or certify a provider, prove universal JIT enforcement, or authorize release. Keep provider registry empty, Issue #23 OPEN and production NOT APPROVED.

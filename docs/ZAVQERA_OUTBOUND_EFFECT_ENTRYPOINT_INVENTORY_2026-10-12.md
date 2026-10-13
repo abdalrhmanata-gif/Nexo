@@ -203,3 +203,16 @@ The reconciliation validator no longer selects the legacy timestamp fallback sol
 All six workflows passed at code/test HEAD `10c3f5526a3e53dd070715f9ac7c870543bfa933`: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260222), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414261406), [Web Unit 335/335](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260294), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260230), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260556), [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260692). W21 artifacts: [evidence/cleanup](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260222/artifacts/11824990132), [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414260222/artifacts/11823980703).
 
 The separate AI code-scanning review failed because of monthly model quota HTTP 402; this is NOT a successful AI scan: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38414263059. Provider registry remains empty and Issue #23 remains OPEN.
+
+
+---
+
+## Legacy reconciliation success is denied without W69 dispatch proof — 2026-10-13
+
+The application gateway now leaves legacy `UNKNOWN` records without `dispatch_claimed_at` in `UNKNOWN` if a provider lookup reports success. It does not invoke the finalization RPC. Authoritative no-send evidence is still permitted to settle a legacy attempt as `FAILED` and release the held budget reservation; a new W70 pgTAP assertion protects this compatibility case.
+
+The pgTAP mismatch discovered in the first rerun (22 planned vs 23 assertions) was corrected to `plan(23)`. The next W21 passed, including the W70 test file.
+
+All six gates passed on `813d97d4b04f9b362ace183c1d648ce6f58ed7aa`: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126676), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126675), [Web Unit 336/336](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126629), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126712), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126788), [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126697). W21 artifacts: [evidence/cleanup](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126676/artifacts/11826217860) and [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126676/artifacts/11826417697).
+
+Provider registry remains empty; universal JIT mediation remains NOT PROVEN; Issue #23 stays OPEN; hosted Development remains documented at W65 with W66–W80 NOT APPLIED.

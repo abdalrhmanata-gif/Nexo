@@ -254,3 +254,33 @@ GitHub's separate “Code scanning AI findings on PR #29” run failed because i
 
 ### Guardrails and outstanding launch gates
 PR #29 remains OPEN / Draft / UNMERGED; Issue #23 remains OPEN. Provider registry stays empty; universal JIT mediation and real-provider certification remain NOT PROVEN. Hosted Development remains last documented at W65; W66–W80 are NOT APPLIED, so hosted Research remains blocked. No hosted DB changes, Supabase Main/Production changes, DNS/billing changes, real-provider effects or production deployment occurred.
+
+
+## Superseding verified checkpoint — 2026-10-13 — PR source HEAD `813d97d4b04f9b362ace183c1d648ce6f58ed7aa`
+
+This checkpoint supersedes earlier pending/failed W21 notes. PR #29 remains OPEN / Draft / UNMERGED; Issue #23 remains OPEN.
+
+### Legacy reconciliation safety closure
+The application gateway now refuses to persist a provider-reported `SUCCEEDED` result for a legacy `UNKNOWN` execution when no W69 `dispatch_claimed_at` exists. It returns `LEGACY_SUCCESS_WITHOUT_DISPATCH_CLAIM`, leaves the result `UNKNOWN`, and does not call the finalization RPC. This prevents the application from relying solely on the SQL rejection to preserve the invariant.
+
+Compatibility for legacy records is deliberately narrow: the W70 pgTAP contract now also proves a legacy record without a W69 dispatch claim may be settled as `FAILED` only with authoritative no-send evidence, which releases its held budget reservation. W69 dispatch claims are still required before provider success can be accepted.
+
+The W70 test count was corrected from `plan(22)` to `plan(23)` after the first W21 rerun exposed a pgTAP “Bad plan” (23 tests executed vs 22 planned). The subsequent W21 run passed; this was a test-plan mismatch, not a failed assertion.
+
+### All six gates passed on this exact PR source HEAD
+- W21 Local Launch Gate: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126676
+- W25 Isolated PostgreSQL Atomic Fence: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126675
+- Web Unit: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126629 — **336 passed, 0 failed**
+- Web CI / production build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126712
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126788
+- Netlify preview-route verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126697
+
+W21 artifacts were downloaded and inspected:
+- Evidence/cleanup: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126676/artifacts/11826217860 — `result=success`, repository migrations replayed on PostgreSQL 17, disposable Supabase stop exit code 0, no remaining labeled containers or volumes, `cleanup_verified=true`.
+- Browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126676/artifacts/11826417697 — launch preflight READY; worker with unregistered adapter denied HTTP 503 / `unregistered_adapter_denied` / `providerCall=not_attempted`; Browser E2E **2 passed (2.3m)**; cleanup verified.
+- W21 completed all 25 steps without failures, including actual-ledger idempotency, authority-budget, one-time dispatch-claim and one-time reconciliation-claim races, plus W72 PostgreSQL gateway integration using fake providers.
+
+W21 logs report synthetic merge-test SHA `f3251ab7694b66aded386de1079561827f271d94`, with parents base `46dc6029f084fb000ba511478d6e8aec3eb532b3` and PR source HEAD `813d97d4b04f9b362ace183c1d648ce6f58ed7aa`. Keep these SHAs distinct.
+
+### Scope / guardrails unchanged
+No application provider is registered; provider registry remains empty. These tests use a disposable PostgreSQL 17 stack and fake providers, not real external sends. Universal JIT enforcement over every relevant outbound effect is still **NOT PROVEN**. Hosted Development remains last documented at W65; W66–W80 are NOT APPLIED, so hosted Research remains blocked. Real email/reset delivery, manual visual QA, leaked-password hardening and real-provider certification remain NOT VERIFIED. No hosted database writes, Main/Production changes, DNS/billing changes or production deployment occurred.
