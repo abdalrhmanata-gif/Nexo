@@ -47,3 +47,17 @@ test("missing reconciliation capability fails before client construction", async
   assert.deepEqual(result, { kind: "missing_reconciliation" });
   assert.deepEqual(events, []);
 });
+test("adapter audience mismatch fails closed before privileged-client construction", async () => {
+  const calls = { client: 0, dispatch: 0, reconcile: 0 };
+  const result = await runMissionActionWorker({
+    audience: "provider.send.v1",
+    operation: "dispatch",
+    executionId: "d3d61c35-1f9d-4c97-9310-e125f9e7f1c1",
+    resolveAdapter: () => ({ audience: "provider.delete.v1", reconcile: async () => ({}) }),
+    createClient() { calls.client++; throw new Error("unexpected privileged client"); },
+    dispatch() { calls.dispatch++; throw new Error("unexpected provider dispatch"); },
+    reconcile() { calls.reconcile++; throw new Error("unexpected provider reconciliation"); },
+  });
+  assert.deepEqual(result, { kind: "missing_adapter" });
+  assert.deepEqual(calls, { client: 0, dispatch: 0, reconcile: 0 });
+});
