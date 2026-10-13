@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import net from "node:net";
@@ -563,6 +564,64 @@ export async function assertAppTargetsDisposableStack(baseURL, { fetchImpl = fet
   if (supabase.targetsDevelopmentProject !== false) {
     throw new HarnessBlockedError(["The started app reports that it targets the Development project."]);
   }
+}
+
+/**
+ * Exercise the real internal mission-action HTTP route against a running,
+ * disposable local app and prove an unregistered adapter is denied before
+ * the runtime's privileged-client/dispatch path.
+ *
+ * This check must remain loopback-only and the worker token must never be
+ * copied to browser state or included in diagnostics.
+ */
+export async function assertMissionActionRouteFailsClosed(baseURL, workerToken, { fetchImpl = fetch } = {}) {
+  let origin;
+  try {
+    origin = new URL(baseURL);
+  } catch {
+    throw new HarnessBlockedError(["Mission-action route smoke test requires a valid loopback origin."]);
+  }
+  if (!isLoopbackUrl(baseURL) || origin.pathname !== "/" || origin.search || origin.hash) {
+    throw new HarnessBlockedError(["Mission-action route smoke test is restricted to a plain loopback origin."]);
+  }
+  if (typeof workerToken !== "string" || !TRUSTED_WORKER_TOKEN_PATTERN.test(workerToken)) {
+    throw new HarnessBlockedError(["Mission-action route smoke test requires the fresh trusted-worker token."]);
+  }
+
+  const executionId = randomUUID();
+  const audience = `zavqera-e2e-unregistered-${randomUUID()}`;
+  let response;
+  try {
+    response = await fetchImpl(`${normaliseUrl(baseURL)}/api/internal/agent-executions/${executionId}`, {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${workerToken}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ operation: "dispatch", audience }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch {
+    throw new Error("Mission-action route fail-closed smoke test received no response from the disposable local app.");
+  }
+
+  let body;
+  try {
+    body = await response.json();
+  } catch {
+    throw new Error("Mission-action route fail-closed smoke test received a non-JSON response.");
+  }
+  if (response.status !== 503
+      || body?.error !== "No reviewed provider adapter is registered. No provider call occurred.") {
+    throw new Error(`Mission-action route did not prove the unregistered-adapter deny path (HTTP ${response.status}).`);
+  }
+
+  return {
+    status: 503,
+    outcome: "unregistered_adapter_denied",
+    providerCall: "not_attempted",
+  };
 }
 
 /** Read-only checks used by `npm run test:e2e` before Playwright starts. */

@@ -14,6 +14,7 @@ import {
   MARKER_FILE,
   OPT_IN_MODE,
   assertAppTargetsDisposableStack,
+  assertMissionActionRouteFailsClosed,
   buildAppEnv,
   checkStaticPreconditions,
   createCommandRunner,
@@ -313,6 +314,52 @@ test("app rejects trusted worker credentials for remote or invalid targets", () 
     workerToken,
     baseURL: "https://production.example.com",
   }), HarnessBlockedError);
+});
+
+test("mission-action HTTP guard smoke targets only loopback and verifies the exact fail-closed response", async () => {
+  const workerToken = "worker-token-abcdefghijklmnopqrstuvwxyz-123456";
+  let captured;
+  const result = await assertMissionActionRouteFailsClosed("http://127.0.0.1:3210", workerToken, {
+    fetchImpl: async (url, options) => {
+      captured = { url, options };
+      return {
+        status: 503,
+        json: async () => ({ error: "No reviewed provider adapter is registered. No provider call occurred." }),
+      };
+    },
+  });
+
+  assert.deepEqual(result, {
+    status: 503,
+    outcome: "unregistered_adapter_denied",
+    providerCall: "not_attempted",
+  });
+  assert.match(captured.url, /^http:\/\/127\.0\.0\.1:3210\/api\/internal\/agent-executions\/[0-9a-f-]{36}$/);
+  assert.equal(captured.options.method, "POST");
+  assert.equal(captured.options.headers.authorization, `Bearer ${workerToken}`);
+  const body = JSON.parse(captured.options.body);
+  assert.equal(body.operation, "dispatch");
+  assert.match(body.audience, /^zavqera-e2e-unregistered-[0-9a-f-]{36}$/);
+});
+
+test("mission-action HTTP guard smoke refuses any non-loopback target before sending a request", async () => {
+  let fetchCalls = 0;
+  await assert.rejects(
+    assertMissionActionRouteFailsClosed("https://example.com", "worker-token-abcdefghijklmnopqrstuvwxyz-123456", {
+      fetchImpl: async () => { fetchCalls++; return { status: 503, json: async () => ({}) }; },
+    }),
+    HarnessBlockedError,
+  );
+  assert.equal(fetchCalls, 0);
+});
+
+test("mission-action HTTP guard smoke fails when an unregistered adapter is not denied", async () => {
+  await assert.rejects(
+    assertMissionActionRouteFailsClosed("http://127.0.0.1:3210", "worker-token-abcdefghijklmnopqrstuvwxyz-123456", {
+      fetchImpl: async () => ({ status: 200, json: async () => ({ decision: "DISPATCHED" }) }),
+    }),
+    /did not prove the unregistered-adapter deny path/,
+  );
 });
 
 test("the started app must report a configured, non-Development backend", async () => {

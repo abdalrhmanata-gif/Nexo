@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import {
   HarnessBlockedError,
   assertAppTargetsDisposableStack,
+  assertMissionActionRouteFailsClosed,
   buildAppEnv,
   checkStaticPreconditions,
   checkToolAvailability,
@@ -74,6 +75,13 @@ export default async function globalSetup() {
     });
     await waitForApp(plan.baseURL);
     await assertAppTargetsDisposableStack(plan.baseURL);
+    const workerRouteGuard = await assertMissionActionRouteFailsClosed(plan.baseURL, workerToken);
+    console.log(JSON.stringify({
+      missionActionWorkerRoute: "FAIL_CLOSED_VERIFIED",
+      httpStatus: workerRouteGuard.status,
+      outcome: workerRouteGuard.outcome,
+      providerCall: workerRouteGuard.providerCall,
+    }));
 
     process.env.ZAVQERA_E2E_RUNTIME_SUPABASE_URL = target.apiUrl;
     process.env.ZAVQERA_E2E_RUNTIME_PUBLISHABLE_KEY = target.publishableKey;
