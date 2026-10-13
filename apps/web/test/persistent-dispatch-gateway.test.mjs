@@ -460,6 +460,9 @@ function validReconciliationClaim(overrides = {}) {
     idempotency_key: "w70-unit-test-key-0001",
     created_at: RECONCILIATION_CREATED_AT,
     dispatch_claimed_at: RECONCILIATION_DISPATCHED_AT,
+    dispatch_claim_authority_hash: "a".repeat(64),
+    dispatch_claim_request_hash: "b".repeat(64),
+    dispatch_claim_budget_revision: 7,
     authority_snapshot: { external_side_effects: true, requires_approval: true },
     request: {
       destination: "https://provider.example.test/send",
@@ -557,6 +560,14 @@ test("malformed or unbound reconciliation claims never trigger provider lookup",
     ["reconciliation claim predates its dispatch bound", validReconciliationClaim({
       dispatch_claimed_at: new Date(Date.now() + 60_000).toISOString(),
     })],
+    ["recorded dispatch is missing approval id", validReconciliationClaim({ approval_id: "" })],
+    ["recorded dispatch authority snapshot does not require approval", validReconciliationClaim({
+      authority_snapshot: { external_side_effects: true, requires_approval: false },
+    })],
+    ["recorded dispatch authority hash is missing", validReconciliationClaim({ dispatch_claim_authority_hash: "" })],
+    ["recorded dispatch request hash is malformed", validReconciliationClaim({ dispatch_claim_request_hash: "z".repeat(64) })],
+    ["recorded dispatch budget revision is missing", validReconciliationClaim({ dispatch_claim_budget_revision: null })],
+    ["recorded dispatch budget revision is not positive", validReconciliationClaim({ dispatch_claim_budget_revision: 0 })],
   ];
 
   for (const [name, claim] of cases) {

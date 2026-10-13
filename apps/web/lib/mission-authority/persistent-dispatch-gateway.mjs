@@ -289,6 +289,25 @@ function validReconciliationClaim(claim, executionId) {
       || !nonEmpty(claim.reconciliation_claim_token)
       || !nonEmpty(claim.reconciliation_claimed_at)
       || !nonEmpty(claim.reconciliation_lease_expires_at)) return false;
+
+  // If this row records the modern JIT dispatch claim, preserve its complete
+  // authority tuple through reconciliation: approved scope, approval id,
+  // authority/request digests and the budget revision must all remain valid.
+  // Legacy records without dispatch_claimed_at keep the created_at fallback,
+  // but any present dispatch claim must be complete rather than partial.
+  const hasDispatchClaim = claim.dispatch_claimed_at !== null
+    && claim.dispatch_claimed_at !== undefined;
+  if (hasDispatchClaim) {
+    const budgetRevision = Number(claim.dispatch_claim_budget_revision);
+    if (!nonEmpty(claim.dispatch_claimed_at)
+        || claim.authority_snapshot?.requires_approval !== true
+        || !nonEmpty(claim.approval_id)
+        || !sha256Hex(claim.dispatch_claim_authority_hash)
+        || !sha256Hex(claim.dispatch_claim_request_hash)
+        || !Number.isSafeInteger(budgetRevision)
+        || budgetRevision < 1) return false;
+  }
+
   const dispatchBound = Date.parse(claim.dispatch_claimed_at ?? claim.created_at ?? "");
   const claimedAt = Date.parse(claim.reconciliation_claimed_at);
   const expiresAt = Date.parse(claim.reconciliation_lease_expires_at);
