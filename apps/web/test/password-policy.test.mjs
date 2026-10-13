@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { checkPasswordPolicy } from "../lib/password-policy.mjs";
+
+const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 const hashForPassword = "password";
 
@@ -38,4 +43,26 @@ test("password policy fails closed when the external check is unavailable", asyn
     checkPasswordPolicy("example-safe-password", async () => ({ ok: false, text: async () => "" })),
     /PASSWORD_POLICY_UNAVAILABLE/,
   );
+});
+
+
+test("password-policy API keeps production fail-closed behavior independent of E2E stubs", async () => {
+  const routePath = join(webRoot, "app", "api", "auth", "password-policy", "route.ts");
+  const browserTestPath = join(webRoot, "test", "e2e", "launch-gate.spec.mjs");
+  const route = await readFile(routePath, "utf8");
+  const browserTest = await readFile(browserTestPath, "utf8");
+
+  const policyCall = route.indexOf("await checkPasswordPolicy(password)");
+  const failureHandler = route.indexOf("} catch {", policyCall);
+  assert.ok(policyCall >= 0, "the API must call the real password-policy utility");
+  assert.ok(failureHandler > policyCall, "the upstream failure handler must follow the real policy call");
+  assert.match(route.slice(failureHandler, failureHandler + 500), /status:\s*503/,
+    "an unavailable policy source must fail closed with HTTP 503");
+  assert.doesNotMatch(route, /ZAVQERA_E2E|process\.env|PLAYWRIGHT/i,
+    "production password-policy behavior must not depend on E2E-only bypass flags");
+
+  assert.match(browserTest, /url\.pathname === ["']\/api\/auth\/password-policy["']/,
+    "the deterministic override belongs to the browser test boundary");
+  assert.match(browserTest, /route\.fulfill\(\{\s*status:\s*204/,
+    "Playwright may stub the policy POST only in the disposable browser flow");
 });
