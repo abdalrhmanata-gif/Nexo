@@ -432,7 +432,7 @@ begin
     from public.missions
    where id = p_mission_id
    for update;
-  if not found or not private.can_edit_workspace(v_mission.workspace_id) then
+  if not found or not private.can_edit_workspace(v_mission.workspace_id, auth.uid()) then
     raise exception 'MISSION_NOT_FOUND_OR_FORBIDDEN' using errcode = '42501';
   end if;
   if v_mission.status in ('COMPLETED', 'CANCELLED') then
@@ -862,7 +862,7 @@ begin
   select * into v_initial
     from public.agent_executions
    where id = p_execution_id;
-  if not found or not private.can_edit_workspace(v_initial.workspace_id) then
+  if not found or not private.can_edit_workspace(v_initial.workspace_id, auth.uid()) then
     raise exception 'EXECUTION_NOT_FOUND_OR_FORBIDDEN' using errcode = '42501';
   end if;
 
@@ -879,7 +879,7 @@ begin
     from public.agent_executions
    where id = p_execution_id
    for update;
-  if not found or not private.can_edit_workspace(v_execution.workspace_id) then
+  if not found or not private.can_edit_workspace(v_execution.workspace_id, auth.uid()) then
     raise exception 'EXECUTION_NOT_FOUND_OR_FORBIDDEN' using errcode = '42501';
   end if;
 
