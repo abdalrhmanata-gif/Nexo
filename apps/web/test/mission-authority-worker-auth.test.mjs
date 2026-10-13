@@ -83,6 +83,17 @@ async function findReachableSensitiveModule(entry, sensitiveModules, visited = n
   return null;
 }
 
+async function collectReachableLocalSourceModules(entry, visited = new Set()) {
+  if (visited.has(entry)) return visited;
+  visited.add(entry);
+  const source = await readFile(entry, "utf8");
+  for (const specifier of readStaticLocalImportSpecifiers(source)) {
+    const resolved = await resolveLocalSourceImport(specifier, entry);
+    if (resolved) await collectReachableLocalSourceModules(resolved, visited);
+  }
+  return visited;
+}
+
 test("accepts only the exact bearer token configured for the trusted worker", () => {
   assert.equal(isTrustedExecutionWorkerRequest(`Bearer ${TOKEN}`, TOKEN), true);
 });
@@ -384,5 +395,53 @@ test("only the trusted internal worker route transitively reaches Mission Action
       target: "lib/mission-authority/persistent-dispatch-gateway.mjs",
     }],
     "no other API route may reach Mission Action dispatch, worker-boundary or trusted-registry modules even through local static imports",
+  );
+});
+
+
+test("Mission Action API dependency graphs cannot call outbound HTTP directly", async () => {
+  const apiRoot = join(webRoot, "app", "api");
+  const routeFiles = await listApiRouteFiles(apiRoot);
+  const actionRouteFiles = routeFiles.filter((routeFile) => {
+    const route = relative(apiRoot, routeFile).replace(/\\\\/g, "/");
+    if (route.startsWith("missions/[id]/research/")) return false; // separately bounded read-only Research path
+    return route.startsWith("agent-executions/")
+      || route.startsWith("internal/agent-executions/")
+      || route.startsWith("missions/");
+  });
+  const directOutboundPatterns = [
+    { name: "fetch()", pattern: /\\bfetch\\s*\\(/g },
+    { name: "axios/got/undici request", pattern: /\\b(?:axios|got|undici)\\.(?:request|get|post|put|patch|delete)\\s*\\(/g },
+    { name: "Node HTTP request", pattern: /\\b(?:http|https)\\.request\\s*\\(/g },
+  ];
+  const explicitHttpImports = /^(?:node:)?(?:http|https|axios|got|undici)$/;
+  const violations = [];
+
+  for (const routeFile of actionRouteFiles) {
+    const route = relative(apiRoot, routeFile).replace(/\\\\/g, "/");
+    const reachable = await collectReachableLocalSourceModules(routeFile);
+    for (const modulePath of reachable) {
+      const source = await readFile(modulePath, "utf8");
+      const moduleName = relative(webRoot, modulePath).replace(/\\\\/g, "/");
+
+      for (const specifier of readStaticLocalImportSpecifiers(source)) {
+        if (explicitHttpImports.test(specifier)) {
+          violations.push({ route, module: moduleName, marker: `transport import: ${specifier}` });
+        }
+      }
+
+      for (const { name, pattern } of directOutboundPatterns) {
+        for (const match of source.matchAll(pattern)) {
+          const line = source.slice(0, match.index).split("\\n").length;
+          violations.push({ route, module: moduleName, marker: `${name} at line ${line}` });
+        }
+      }
+    }
+  }
+
+  assert.deepEqual(
+    violations,
+    [],
+    "Mission Action routes must not add direct outbound HTTP calls in their statically reachable local source graph; provider I/O belongs behind the trusted JIT adapter. Read-only Research is inventoried separately.",
   );
 });
