@@ -202,3 +202,14 @@ The test suite now guards:
 - legacy success without W69 dispatch-claim proof.
 
 W21 confirms the unregistered adapter fails closed with HTTP 503 and does not call a provider. These are source/unit/isolated-test controls, not a complete dynamic import trace, network audit, or proof of universal JIT enforcement. Provider registry remains empty and Issue #23 remains OPEN.
+
+ 
+---
+
+## Outbound graph detector extension — exact code/test head `0945d9f4e1b709d2cb8ba28fd3f5dc22415c337f`
+
+The source-graph regression now also recognizes method-based fetch calls, computed global transport access, browser-style transport constructors/beacon calls, Node TCP/TLS/UDP socket APIs, and common Node transport package imports. Current Web Unit: **338/338**; Web CI, both Flutter CI triggers, and Netlify preview verification succeeded on the exact head. See [Web Unit](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38430635229), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38430635220), [Flutter push](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38430635208), [Flutter PR](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38430642628), [Netlify](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38430642571).
+
+The previous full isolated W21/W25 set passed on `d3bffe58224d4dc6442ed42a9040bf40cfa59bcc`, with [W21 evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38429145307/artifacts/11830860215) and [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38429145307/artifacts/11830581000). The latest change is tests-only, so W21/W25 were not re-run for it.
+
+Coverage remains heuristic: it does not prove full runtime reachability, computed aliases, provider package internals, or network behavior. Empty adapter registry; Issue #23 OPEN; production NOT APPROVED.

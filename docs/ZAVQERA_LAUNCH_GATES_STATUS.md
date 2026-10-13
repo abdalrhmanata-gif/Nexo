@@ -942,3 +942,16 @@ W21 evidence confirms PostgreSQL 17, repository-migration replay, disposable pro
 The latest guard scans the statically reachable Mission Action API source graph for direct HTTP transports and direct imports of known provider SDKs. This is bounded static checking, not proof for every provider SDK or computed/dynamic import. Reconciliation now rejects malformed/partial dispatch tuple state before lookup, and legacy provider-success-without-W69-claim remains UNKNOWN.
 
 PR #29 stays OPEN/Draft/UNMERGED; Issue #23 stays OPEN; registry remains empty; W66–W80 are not applied to hosted Development. No hosted/prod mutation, DNS/billing change or real-provider I/O.
+
+ 
+---
+
+## Current test-only detector head — 2026-10-13 — `0945d9f4e1b709d2cb8ba28fd3f5dc22415c337f`
+
+The current head expands outbound-graph detector patterns in `mission-authority-worker-auth.test.mjs`; no application or SQL migration was changed.
+
+Current exact-head gates: [Web Unit 338/338](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38430635229), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38430635220), [Flutter CI push](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38430635208), [Flutter CI PR](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38430642628), [Netlify Preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38430642571) all succeeded.
+
+Latest W21/W25 remain successful on the prior code/test head `d3bffe58224d4dc6442ed42a9040bf40cfa59bcc`: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38429145307), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38429145282). W21 cleanup and E2E evidence: [artifact](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38429145307/artifacts/11830860215) and [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38429145307/artifacts/11830581000). These full gates were not re-triggered by the latest single-file test-only change.
+
+Provider registry remains empty; Issue #23 OPEN; universal JIT enforcement NOT PROVEN; PR #29 OPEN / Draft / UNMERGED.

@@ -232,3 +232,14 @@ The scan traverses statically reachable local modules from Mission Action API ro
 Current exact-head gates: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374751), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374681), [Web Unit 337/337](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374680), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374676), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374691), [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374689).
 
 Provider registry stays empty; Issue #23 stays OPEN. Hosted Development remains last documented at W65; W66–W80 are not applied.
+
+ 
+---
+
+## Additional outbound transport detector coverage — 2026-10-13 — `0945d9f4e1b709d2cb8ba28fd3f5dc22415c337f`
+
+The Mission Action source graph now checks additional direct transport escape syntax: `fetch.call/apply`, computed global transport access, WebSocket/EventSource/XHR constructors, `navigator.sendBeacon`, Node `net.connect`/`tls.connect`/`dgram.createSocket`, and imports of those transport modules. Web Unit passed 338/338 and exact-head Web CI, Flutter CI (push and PR), and Netlify preview verification all succeeded.
+
+Latest W21/W25 passed on prior test head `d3bffe58224d4dc6442ed42a9040bf40cfa59bcc`, with disposable PostgreSQL 17 cleanup verified and the unregistered adapter blocked HTTP 503 / `providerCall=not_attempted`. W21 E2E passed 2/2. Links: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38429145307), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38429145282), [evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38429145307/artifacts/11830860215), [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38429145307/artifacts/11830581000).
+
+This remains a bounded source-level guard, not a full AST/call-graph or runtime network audit. Registry remains empty and Issue #23 remains OPEN.

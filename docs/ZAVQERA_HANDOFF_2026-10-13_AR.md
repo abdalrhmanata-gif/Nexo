@@ -315,3 +315,35 @@ W21 artifact `git_sha=479216e629048f6659796c85cc699c5109d3fc6a` is GitHub's synt
 
 ### Unchanged constraints / blockers
 PR #29 remains **OPEN / Draft / UNMERGED**. Issue #23 remains **OPEN**. Provider registry remains empty. Universal JIT mediation across every relevant outbound effect and a real provider adapter remain **NOT PROVEN / NOT APPROVED**. Hosted Development is last documented at W65; W66–W80 remain NOT APPLIED, so hosted Research remains blocked. Real email/password-reset delivery, manual visual QA and leaked-password protection remain unverified. No hosted DB write, Supabase Main/Production change, DNS/billing change, real provider side effect or production deployment occurred.
+
+ 
+## Superseding checkpoint — 2026-10-13 — code/test HEAD `0945d9f4e1b709d2cb8ba28fd3f5dc22415c337f`
+
+This is the current PR source head at the time of this checkpoint. PR #29 remains OPEN / Draft / UNMERGED; Issue #23 remains OPEN.
+
+### Latest test-only outbound-graph detector hardening
+Compared with prior source HEAD `d3bffe58224d4dc6442ed42a9040bf40cfa59bcc`, this commit modifies only `apps/web/test/mission-authority-worker-auth.test.mjs`. It expands source-graph guard coverage to recognize:
+- `fetch.call/apply`
+- computed access to `globalThis/global/self/window["fetch"|"WebSocket"|"XMLHttpRequest"|"EventSource"]`
+- WebSocket, EventSource and XMLHttpRequest constructors
+- `navigator.sendBeacon`
+- Node `net.connect`, `tls.connect`, and `dgram.createSocket`
+- outbound-capable transport imports `node:net`, `node:tls`, `node:dgram`, `ws`, `websocket`, `eventsource`, and `xhr2`.
+
+Current exact-head test evidence:
+- [Web Unit](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38430635229): **338 passed / 0 failed**
+- [Web CI / production build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38430635220): SUCCESS
+- [Flutter CI push](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38430635208): SUCCESS
+- [Flutter CI PR](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38430642628): SUCCESS
+- [Netlify Preview verification](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38430642571): SUCCESS.
+
+The most recent W21/W25 full isolated launch suite passed on prior source HEAD `d3bffe58224d4dc6442ed42a9040bf40cfa59bcc` immediately before this test-only change:
+- [W21 Local Launch Gate](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38429145307)
+- [W25 Isolated PostgreSQL Atomic Fence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38429145282)
+- [W21 evidence and cleanup](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38429145307/artifacts/11830860215): PostgreSQL 17, repo migration replay, disposable Supabase stop exit code 0, no remaining containers/volumes, `cleanup_verified=true`.
+- [W21 browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38429145307/artifacts/11830581000): missing adapter denied with HTTP 503, `unregistered_adapter_denied`, `providerCall=not_attempted`; Browser E2E **2 passed (2.4m)**; cleanup verified.
+
+W21's evidence records synthetic merge-test SHA `965e0ba3fbaaa88804c2f433c6b091cbee692b89` (parents: base `46dc6029f084fb000ba511478d6e8aec3eb532b3`, source head `d3bffe58224d4dc6442ed42a9040bf40cfa59bcc`). This is not the PR source head.
+
+### Interpretation and safety
+These are conservative, direct-source detectors over the statically reachable local source graph. They still do not prove a complete runtime call graph, computed alias analysis, package-internal behavior, or a full network trace. Do not present the test as universal enforcement proof. The adapter registry remains intentionally empty. No production logic or SQL migration changed in commit `0945d9f`; no hosted Supabase changes, real provider I/O, DNS/billing changes or production deployment occurred. Hosted Development remains last documented at W65; W66–W80 are NOT APPLIED, so hosted Research stays blocked.
