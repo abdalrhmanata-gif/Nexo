@@ -175,6 +175,9 @@ export async function POST(
     if (operation.kind === "missing_adapter") {
       return NextResponse.json({ error: "No reviewed provider adapter is registered. No provider call occurred." }, { status: 503, headers: NO_STORE });
     }
+    if (operation.kind === "missing_dispatch") {
+      return NextResponse.json({ error: "The registered provider adapter has no reviewed dispatch implementation." }, { status: 503, headers: NO_STORE });
+    }
     if (operation.kind === "missing_reconciliation") {
       return NextResponse.json({ error: "The registered provider adapter has no reviewed reconciliation implementation." }, { status: 503, headers: NO_STORE });
     }
