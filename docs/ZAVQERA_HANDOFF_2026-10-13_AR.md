@@ -519,3 +519,36 @@ Only `apps/web/test/mission-authority-worker-auth.test.mjs` changed in the code/
 
 ### Scope / release decision
 The restricted-capability rule strengthens a bounded static source-graph regression; it is not a runtime sandbox or network trace and does not prove universal JIT mediation for every external side effect. Provider adapter registry remains empty. PR #29 stays OPEN / Draft / UNMERGED; Issue #23 stays OPEN. Hosted Development remains last documented at W65; W66–W80 are NOT APPLIED, so hosted Research remains blocked. No hosted database writes, Main/Production changes, DNS/billing changes, real-provider side effects or production deployment occurred. Production remains NOT APPROVED.
+
+
+## Superseding scanner-hardening checkpoint — 2026-10-13 — tested source HEAD `18f40c59b4cf9fe7dc720c9d184e26c854c9197a`
+
+This checkpoint supersedes previous pending-run notes.
+
+### Static capability inventory extension
+The Mission Action API source-graph scanner now rejects statically reachable imports of Node loader/code-generation/process/network escape capabilities, including:
+- `module` / `node:module`
+- `child_process` / `node:child_process`
+- `vm` / `node:vm`
+- `worker_threads` / `node:worker_threads`
+- `cluster` / `node:cluster`
+- `dns`, `node:dns`, `dns/promises`, `node:dns/promises`
+- `inspector` / `node:inspector`
+
+Fixtures verify ESM aliases and literal CommonJS imports are surfaced, and the dependency-graph scan applies the restricted set to local static import graphs for Mission Action routes. Changes remain confined to `apps/web/test/mission-authority-worker-auth.test.mjs`; application/runtime code and SQL migrations did not change in this hardening step. Web Unit: **344 passed / 0 failed**.
+
+### All gates green on exact code/test source HEAD
+- W21: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395483
+- W25: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395401
+- Web Unit 344/344: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395332
+- Web CI/build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395330
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395349
+- Netlify preview-route verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395365
+
+### W21 evidence artifacts inspected
+- Evidence/cleanup: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395483/artifacts/11840298714 — `result=success`, repository migrations replayed on PostgreSQL 17, disposable project `zavqera-e2e-local`, stop exit code 0, no remaining containers or volumes, `cleanup_verified=true`.
+- Browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395483/artifacts/11841246211 — preflight READY; unregistered adapter HTTP 503 / `unregistered_adapter_denied` / `providerCall=not_attempted`; Browser E2E **2 passed (2.1m)**; cleanup VERIFIED.
+- W21 synthetic merge-test SHA `805009bdfcac9e8190e453e6a753d63f287ca2df` is distinct from the PR source head. The synthetic merge parents are PR base `46dc6029f084fb000ba511478d6e8aec3eb532b3` and actual source HEAD `18f40c59b4cf9fe7dc720c9d184e26c854c9197a`.
+
+### Release / security posture unchanged
+This scanner is bounded static source analysis, not a runtime sandbox, transitive package audit, network trace, or proof of universal JIT mediation. Provider registry remains empty. PR #29 remains OPEN / Draft / UNMERGED; Issue #23 remains OPEN. Hosted Development remains last documented at W65; W66–W80 are NOT APPLIED, so hosted Research stays blocked. No hosted DB writes, Main/Production changes, DNS/billing changes, real provider calls or production deployment occurred; production remains NOT APPROVED.

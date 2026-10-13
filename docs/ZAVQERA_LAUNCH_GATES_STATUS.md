@@ -1065,3 +1065,18 @@ All six gates passed on the code/test source HEAD:
 - [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289099)
 
 The AST/static source-graph scanner additionally denies Node module loader, child-process, VM and worker-thread imports in Mission Action route dependencies. This remains a bounded source regression, not proof of complete runtime/network mediation. Registry empty; universal JIT mediation not proven; Issue #23 OPEN; production NOT APPROVED.
+
+
+---
+
+## Current exact-head verification — 2026-10-13 — `18f40c59b4cf9fe7dc720c9d184e26c854c9197a`
+
+All six workflows passed on the code/test source head:
+- [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395483) — [evidence/cleanup](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395483/artifacts/11840298714), [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395483/artifacts/11841246211)
+- [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395401)
+- [Web Unit 344/344](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395332)
+- [Web CI/build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395330)
+- [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395349)
+- [Netlify preview-route verification](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395365)
+
+W21 verifies PostgreSQL 17 repository migrations and full cleanup; browser E2E 2/2 passed. Runtime diagnostics still show HTTP 503 and `providerCall=not_attempted` for an unregistered adapter. The source-graph scanner blocks statically imported Node loaders/process/VM/worker/cluster/DNS/inspector capabilities in Mission Action routes. This remains static coverage only; registry empty, Issue #23 open, production not approved.

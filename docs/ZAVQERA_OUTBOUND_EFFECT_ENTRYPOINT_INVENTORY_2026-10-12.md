@@ -320,3 +320,14 @@ For API routes under the Mission Action dependency-graph test, statically reacha
 Validation on exact source head: [Web Unit 344/344](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289046), [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289107), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289059), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289279), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289287), [Netlify](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38449289099).
 
 Scope is limited to statically reachable local source and literal import specifiers; this is not a runtime sandbox/network trace. Issue #23 remains OPEN, registry empty, universal JIT mediation NOT PROVEN.
+
+
+---
+
+## Extended restricted runtime capabilities — 2026-10-13 — source HEAD `18f40c59b4cf9fe7dc720c9d184e26c854c9197a`
+
+The Mission Action source graph now rejects static imports of Node capabilities that can bypass the approved transport seam: loader (`module`), child process, VM/code generation, worker threads, cluster, DNS (including promises API), and inspector modules, including `node:` import forms. Tests exercise aliases and literal CommonJS imports. Existing transport and provider SDK deny checks remain.
+
+Evidence on this exact source head: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395483), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395401), [Web Unit 344/344](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395332), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395330), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395349), and [Netlify](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395365). W21 evidence/cleanup and browser diagnostics are linked in the launch-gate status checkpoint.
+
+Scope remains bounded: computed/dynamic runtime behavior and package internals are not completely audited. Universal JIT mediation remains NOT PROVEN; Issue #23 OPEN; registry empty.

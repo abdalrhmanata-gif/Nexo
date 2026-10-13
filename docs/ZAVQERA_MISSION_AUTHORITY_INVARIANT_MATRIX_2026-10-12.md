@@ -289,3 +289,12 @@ Hosted Development was checked read-only: migration ledger W65; W69/W70 columns 
 The Mission Action dependency scanner now rejects statically reachable imports of `module/node:module`, `child_process/node:child_process`, `vm/node:vm`, and `worker_threads/node:worker_threads`, in addition to outbound transport and provider SDKs. This prevents easy dynamic-loader/process/codegen/worker escape routes from being added unnoticed to the Mission Action source graph. Unit fixture covers aliased ESM imports and CommonJS loading.
 
 Web Unit 344/344, W21, W25, Web CI, Flutter CI and Netlify preview all passed on the tested source SHA. W21 evidence and browser diagnostics are linked in the launch-gate status file. The guard remains static analysis; it cannot guarantee runtime mediation against every computed/dynamic mechanism. Registry remains empty; Issue #23 OPEN; production NOT APPROVED.
+
+
+---
+
+## Extended Node runtime-capability denylist — 2026-10-13 — `18f40c59b4cf9fe7dc720c9d184e26c854c9197a`
+
+Mission Action statically reachable source modules are now tested against blocked import capabilities for dynamic module loading, process creation, code generation, worker/cluster execution, DNS transport, and inspector transport: `module`, `child_process`, `vm`, `worker_threads`, `cluster`, `dns` (including `dns/promises`), and `inspector`, with `node:` variants. ESM alias and CommonJS literal import fixtures are included. Web Unit 344/344, W21, W25, Web CI, Flutter CI and Netlify all pass on the exact source head.
+
+This is bounded static source-graph hardening, not universal runtime mediation evidence. Provider registry remains empty; Issue #23 OPEN; production not approved.
