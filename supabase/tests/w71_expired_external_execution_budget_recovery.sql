@@ -1,7 +1,7 @@
 -- W71: expired external attempts enter durable W70 reconciliation with budget held.
 begin;
 create extension if not exists pgtap;
-select plan(8);
+select plan(9);
 
 select ok(to_regprocedure('private.reconcile_stale_agent_execution(uuid)') is not null,
   'private stale-execution recovery function exists');
@@ -15,6 +15,11 @@ select ok(
   and not (select prosecdef from pg_proc where oid = 'public.reconcile_stale_agent_execution(uuid)'::regprocedure)
   and has_function_privilege('authenticated', 'public.reconcile_stale_agent_execution(uuid)', 'EXECUTE'),
   'the public recovery wrapper remains SECURITY INVOKER and is authenticated-only');
+
+select ok(
+  position('private.workspace_role(v_initial.workspace_id) is null' in lower(pg_get_functiondef('private.reconcile_stale_agent_execution(uuid)'::regprocedure))) > 0
+  and position('private.workspace_role(v_execution.workspace_id) is null' in lower(pg_get_functiondef('private.reconcile_stale_agent_execution(uuid)'::regprocedure))) > 0,
+  'stale recovery rejects a missing workspace role before changing execution or budget state');
 
 create temporary table w71_behavior_results (
   name text primary key,

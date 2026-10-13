@@ -93,40 +93,45 @@ as $function$
 declare
   v_inv public.workspace_invitations;
   v_email text := lower(btrim(p_email));
-  v_mission_id uuid;
   v_actor_role text;
 begin
   if auth.uid() is null then
-    raise exception 'AUTHENTICATION_REQUIRED' using errcode='42501';
+    raise exception 'AUTHENTICATION_REQUIRED' using errcode = '42501';
   end if;
+
   v_actor_role := private.workspace_role(p_workspace_id, auth.uid());
   if v_actor_role is null or v_actor_role not in ('owner', 'admin') then
-    raise exception 'WORKSPACE_ADMIN_REQUIRED' using errcode='42501';
+    raise exception 'WORKSPACE_ADMIN_REQUIRED' using errcode = '42501';
   end if;
   if v_email !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$' then
-    raise exception 'INVALID_INVITATION_EMAIL' using errcode='22023';
+    raise exception 'INVALID_INVITATION_EMAIL' using errcode = '22023';
   end if;
   if p_role is null or p_role not in ('admin', 'member', 'viewer') then
-    raise exception 'INVALID_INVITATION_ROLE' using errcode='22023';
+    raise exception 'INVALID_INVITATION_ROLE' using errcode = '22023';
   end if;
   if p_token_hash is null or char_length(p_token_hash) <> 64 then
-    raise exception 'INVALID_INVITATION_TOKEN' using errcode='22023';
+    raise exception 'INVALID_INVITATION_TOKEN' using errcode = '22023';
   end if;
   if p_expires_at is null or p_expires_at <= timezone('utc', now()) then
-    raise exception 'INVITATION_EXPIRED' using errcode='22023';
+    raise exception 'INVITATION_EXPIRED' using errcode = '22023';
   end if;
   if exists (
-    select 1 from public.workspace_members m
-    join auth.users u on u.id = m.user_id
-    where m.workspace_id = p_workspace_id and lower(u.email) = v_email
+    select 1
+      from public.workspace_members m
+      join auth.users u on u.id = m.user_id
+     where m.workspace_id = p_workspace_id
+       and lower(u.email) = v_email
   ) then
-    raise exception 'USER_ALREADY_MEMBER' using errcode='22023';
+    raise exception 'USER_ALREADY_MEMBER' using errcode = '22023';
   end if;
   if exists (
-    select 1 from public.workspace_invitations
-    where workspace_id = p_workspace_id and lower(email) = v_email and status = 'PENDING'
+    select 1
+      from public.workspace_invitations
+     where workspace_id = p_workspace_id
+       and lower(email) = v_email
+       and status = 'PENDING'
   ) then
-    raise exception 'INVITATION_ALREADY_PENDING' using errcode='22023';
+    raise exception 'INVITATION_ALREADY_PENDING' using errcode = '22023';
   end if;
 
   insert into public.workspace_invitations(
@@ -135,19 +140,13 @@ begin
     p_workspace_id, v_email, p_role, auth.uid(), p_token_hash, p_expires_at
   ) returning * into v_inv;
 
-  select id into v_mission_id
-    from public.missions
-   where workspace_id = p_workspace_id
-   order by created_at desc
-   limit 1;
-
-  if v_mission_id is not null then
-    perform private.record_mission_event(
-      v_mission_id,
-      'WORKSPACE_INVITATION_CREATED',
-      jsonb_build_object('invitation_id', v_inv.id, 'email', v_email, 'role', p_role)
-    );
-  end if;
+  perform private.record_workspace_activity(
+    p_workspace_id,
+    'WORKSPACE_INVITATION_CREATED',
+    'workspace_invitation',
+    v_inv.id,
+    jsonb_build_object('email', v_email, 'role', p_role)
+  );
   return v_inv;
 end;
 $function$;
@@ -160,11 +159,10 @@ set search_path = 'pg_catalog', 'public'
 as $function$
 declare
   v_inv public.workspace_invitations;
-  v_mission_id uuid;
   v_actor_role text;
 begin
   if auth.uid() is null then
-    raise exception 'AUTHENTICATION_REQUIRED' using errcode='42501';
+    raise exception 'AUTHENTICATION_REQUIRED' using errcode = '42501';
   end if;
 
   select * into v_inv
@@ -172,15 +170,15 @@ begin
    where id = p_invitation_id
    for update;
   if not found then
-    raise exception 'INVITATION_NOT_FOUND' using errcode='22023';
+    raise exception 'INVITATION_NOT_FOUND' using errcode = '22023';
   end if;
 
   v_actor_role := private.workspace_role(v_inv.workspace_id, auth.uid());
   if v_actor_role is null or v_actor_role not in ('owner', 'admin') then
-    raise exception 'WORKSPACE_ADMIN_REQUIRED' using errcode='42501';
+    raise exception 'WORKSPACE_ADMIN_REQUIRED' using errcode = '42501';
   end if;
   if v_inv.status <> 'PENDING' then
-    raise exception 'INVITATION_NOT_PENDING' using errcode='22023';
+    raise exception 'INVITATION_NOT_PENDING' using errcode = '22023';
   end if;
 
   update public.workspace_invitations
@@ -188,19 +186,13 @@ begin
    where id = v_inv.id
    returning * into v_inv;
 
-  select id into v_mission_id
-    from public.missions
-   where workspace_id = v_inv.workspace_id
-   order by created_at desc
-   limit 1;
-
-  if v_mission_id is not null then
-    perform private.record_mission_event(
-      v_mission_id,
-      'WORKSPACE_INVITATION_REVOKED',
-      jsonb_build_object('invitation_id', v_inv.id, 'role', v_inv.role)
-    );
-  end if;
+  perform private.record_workspace_activity(
+    v_inv.workspace_id,
+    'WORKSPACE_INVITATION_REVOKED',
+    'workspace_invitation',
+    v_inv.id,
+    jsonb_build_object('role', v_inv.role)
+  );
   return v_inv;
 end;
 $function$;
@@ -480,5 +472,141 @@ begin
   values (
     p_mission_id, v_owner_id, p_event_type, v_actor_type, v_actor_id, v_payload
   );
+end;
+$function$;
+
+
+-- Preserve W71 budget recovery, but reject missing workspace roles before state changes.
+create or replace function private.reconcile_stale_agent_execution(
+  p_execution_id uuid
+) returns public.agent_executions
+language plpgsql
+security definer
+set search_path = pg_catalog, public, private
+as $function$
+declare
+  v_initial public.agent_executions;
+  v_execution public.agent_executions;
+  v_mission public.missions;
+  v_reservation public.mission_authority_budget_reservations;
+  v_budget public.mission_authority_budgets;
+  v_is_external_side_effect boolean := false;
+  v_now timestamptz;
+begin
+  if auth.uid() is null then
+    raise exception 'AUTHENTICATION_REQUIRED' using errcode = '42501';
+  end if;
+
+  -- Use the same mission -> execution -> reservation -> budget lock ordering
+  -- as W69 dispatch and W70 reconciliation to avoid lock-order inversions.
+  select * into v_initial
+    from public.agent_executions
+   where id = p_execution_id;
+  if not found
+     or private.workspace_role(v_initial.workspace_id) is null
+     or private.workspace_role(v_initial.workspace_id) not in ('owner', 'admin') then
+    raise exception 'EXECUTION_NOT_FOUND_OR_FORBIDDEN' using errcode = '42501';
+  end if;
+
+  select * into v_mission
+    from public.missions
+   where id = v_initial.mission_id
+     and workspace_id = v_initial.workspace_id
+   for update;
+  if not found then
+    raise exception 'EXECUTION_NOT_FOUND_OR_FORBIDDEN' using errcode = '42501';
+  end if;
+
+  select * into v_execution
+    from public.agent_executions
+   where id = p_execution_id
+   for update;
+  if not found
+     or v_execution.mission_id <> v_initial.mission_id
+     or v_execution.workspace_id <> v_initial.workspace_id
+     or private.workspace_role(v_execution.workspace_id) is null
+     or private.workspace_role(v_execution.workspace_id) not in ('owner', 'admin') then
+    raise exception 'EXECUTION_NOT_FOUND_OR_FORBIDDEN' using errcode = '42501';
+  end if;
+  if v_execution.status <> 'RUNNING' then
+    raise exception 'EXECUTION_NOT_RUNNING' using errcode = '22023';
+  end if;
+
+  -- Sample wall-clock time after the execution lock; transaction-start now()
+  -- could otherwise revive a lease that expired during a lock wait.
+  v_now := clock_timestamp();
+  if v_execution.lease_expires_at > v_now then
+    raise exception 'EXECUTION_LEASE_NOT_EXPIRED' using errcode = '22023';
+  end if;
+
+  v_is_external_side_effect :=
+    coalesce(v_execution.authority_snapshot -> 'external_side_effects' = 'true'::jsonb, false);
+
+  if v_is_external_side_effect then
+    select * into v_reservation
+      from public.mission_authority_budget_reservations
+     where execution_id = v_execution.id
+     for update;
+    if not found or v_reservation.status not in ('RESERVED', 'HELD_UNKNOWN') then
+      raise exception 'EXECUTION_BUDGET_RESERVATION_NOT_OPEN' using errcode = '22023';
+    end if;
+
+    select * into v_budget
+      from public.mission_authority_budgets
+     where id = v_reservation.budget_id
+       and workspace_id = v_execution.workspace_id
+       and mission_id = v_execution.mission_id
+       and agent_id = v_execution.agent_id
+     for update;
+    if not found
+       or v_budget.actions_reserved < v_reservation.reserved_actions
+       or v_budget.spend_reserved < v_reservation.reserved_spend then
+      raise exception 'AUTHORITY_BUDGET_ACCOUNTING_MISMATCH' using errcode = '22023';
+    end if;
+
+    if v_reservation.status = 'RESERVED' then
+      update public.mission_authority_budget_reservations
+         set status = 'HELD_UNKNOWN',
+             settlement_reason = 'EXECUTION_LEASE_EXPIRED_OUTCOME_UNKNOWN',
+             settled_at = null
+       where id = v_reservation.id
+       returning * into v_reservation;
+    end if;
+  end if;
+
+  update public.agent_executions
+     set status = 'UNKNOWN',
+         error_code = 'EXECUTION_LEASE_EXPIRED',
+         error_message = 'No confirmed completion arrived before the execution lease expired.',
+         evidence = coalesce(evidence, '{}'::jsonb) || jsonb_build_object(
+           'outcome', 'unknown',
+           'safe_to_retry', false,
+           'reconciliation_required', v_is_external_side_effect,
+           'reconciliation_reason', 'lease_expired',
+           'budget_reservation_status', case when v_is_external_side_effect then 'HELD_UNKNOWN' else null end,
+           'cancel_requested', cancel_requested_at is not null,
+           'reconciled_at', v_now
+         ),
+         reconciled_at = v_now,
+         completed_at = v_now
+   where id = v_execution.id
+   returning * into v_execution;
+
+  perform public.record_mission_event(
+    v_execution.mission_id,
+    'AGENT_EXECUTION_RECONCILED',
+    jsonb_build_object(
+      'execution_id', v_execution.id,
+      'status', 'UNKNOWN',
+      'error_code', 'EXECUTION_LEASE_EXPIRED',
+      'safe_to_retry', false,
+      'reconciliation_required', v_is_external_side_effect,
+      'budget_reservation_id', case when v_is_external_side_effect then v_reservation.id else null end,
+      'budget_reservation_status', case when v_is_external_side_effect then 'HELD_UNKNOWN' else null end,
+      'reconciled_at', v_now
+    )
+  );
+
+  return v_execution;
 end;
 $function$;

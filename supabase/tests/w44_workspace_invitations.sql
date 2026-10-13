@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap;
 
-select plan(15);
+select plan(16);
 
 select ok(to_regclass('public.workspace_invitations') is not null, 'workspace invitations table exists');
 select ok((select relrowsecurity from pg_class where oid='public.workspace_invitations'::regclass), 'workspace invitations RLS enabled');
@@ -34,7 +34,9 @@ create temporary table w44_cross_workspace_results (
   create_denied boolean not null,
   attacker_invitation_created boolean not null,
   revoke_denied boolean not null,
-  target_status text not null
+  target_status text not null,
+  activity_before integer not null,
+  activity_after integer not null
 ) on commit drop;
 
 do $w44_cross_workspace$
@@ -46,6 +48,8 @@ declare
   v_pending public.workspace_invitations;
   v_create_denied boolean := false;
   v_revoke_denied boolean := false;
+  v_activity_before integer := 0;
+  v_activity_after integer := 0;
 begin
   insert into auth.users(id) values (v_owner), (v_attacker);
   insert into public.workspaces(id, owner_id, name)
@@ -70,6 +74,7 @@ begin
       clock_timestamp() + interval '1 hour'
     );
   perform set_config('role', 'postgres', true);
+  select count(*) into v_activity_before from public.workspace_activity where workspace_id = v_target_workspace;
 
   perform set_config('request.jwt.claim.sub', v_attacker::text, true);
   perform set_config('request.jwt.claim.role', 'authenticated', true);
@@ -95,6 +100,7 @@ begin
   end;
 
   perform set_config('role', 'postgres', true);
+  select count(*) into v_activity_after from public.workspace_activity where workspace_id = v_target_workspace;
   insert into w44_cross_workspace_results
   values (
     v_create_denied,
@@ -105,7 +111,9 @@ begin
          and email = 'cross-workspace-attacker@example.invalid'
     ),
     v_revoke_denied,
-    (select status from public.workspace_invitations where id = v_pending.id)
+    (select status from public.workspace_invitations where id = v_pending.id),
+    v_activity_before,
+    v_activity_after
   );
 end;
 $w44_cross_workspace$;
@@ -116,6 +124,10 @@ select ok(
 select ok(
   (select revoke_denied and target_status = 'PENDING' from w44_cross_workspace_results),
   'a separate-workspace owner cannot revoke the target workspace invitation');
+
+select ok(
+  (select activity_before = activity_after from w44_cross_workspace_results),
+  'denied invitation create/revoke attempts add no workspace activity');
 
 select * from finish();
 rollback;
