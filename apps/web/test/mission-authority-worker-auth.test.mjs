@@ -464,7 +464,7 @@ function astExpressionPath(node) {
 }
 
 function normalizeExpressionPath(path) {
-  return path?.replace(/\\["([^"]+)"\\]/g, ".$1") ?? null;
+  return path?.replace(/\["([^"]+)"\]/g, ".$1") ?? null;
 }
 
 function outboundExpressionReason(node) {
@@ -477,9 +477,9 @@ function outboundExpressionReason(node) {
     const base = path.slice(0, path.lastIndexOf("."));
     if (GLOBAL_FETCH_PATHS.has(base)) return "fetch method escape";
   }
-  if (/^(?:axios|got|undici)\\.(?:request|get|post|put|patch|delete)$/.test(path)) return "provider HTTP client call";
-  if (/^(?:http|https)\\.request$/.test(path)) return "Node HTTP request";
-  if (/^(?:net|tls)\\.connect$/.test(path)) return "Node socket connect";
+  if (/^(?:axios|got|undici)\.(?:request|get|post|put|patch|delete)$/.test(path)) return "provider HTTP client call";
+  if (/^(?:http|https)\.request$/.test(path)) return "Node HTTP request";
+  if (/^(?:net|tls)\.connect$/.test(path)) return "Node socket connect";
   if (path === "dgram.createSocket") return "UDP socket creation";
   if (path === "navigator.sendBeacon") return "navigator.sendBeacon";
   return null;
@@ -522,7 +522,7 @@ function readAstOutboundMarkers(source, filePath = "source.mjs") {
       const callPath = normalizeExpressionPath(astExpressionPath(node.expression));
       const reason = outboundExpressionReason(node.expression);
       if (reason) add(node, reason);
-      if (callPath && /^(?:globalThis|global|self|window)\\.(?:fetch|WebSocket|XMLHttpRequest|EventSource)$/.test(callPath)) {
+      if (callPath && /^(?:globalThis|global|self|window)\.(?:fetch|WebSocket|XMLHttpRequest|EventSource)$/.test(callPath)) {
         add(node, "global transport call");
       }
     }
