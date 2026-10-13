@@ -53,7 +53,7 @@ test("dispatch adapter registry remains fail-closed until a provider is reviewed
   assert.equal(resolveTrustedDispatchAdapter(""), null);
 });
 
-test("privileged worker route uses server-only credentials and cannot dispatch without a reviewed adapter", async () => {
+test("privileged worker route uses server-only credentials and the runtime boundary", async () => {
   const admin = await readFile(join(webRoot, "lib", "supabase", "admin.ts"), "utf8");
   const route = await readFile(join(webRoot, "app", "api", "internal", "agent-executions", "[executionId]", "route.ts"), "utf8");
   assert.match(admin, /import ["']server-only["']/);
@@ -61,10 +61,15 @@ test("privileged worker route uses server-only credentials and cannot dispatch w
   assert.match(route, /ZAVQERA_EXECUTION_WORKER_TOKEN/);
   assert.match(route, /isTrustedExecutionWorkerRequest/);
   assert.match(route, /resolveTrustedDispatchAdapter/);
-  assert.match(route, /No reviewed provider adapter is registered\. No provider call occurred\./);
+  assert.match(route, /runMissionActionWorker/);
+  assert.match(route, /No reviewed provider adapter is registered\\. No provider call occurred\\./);
   assert.match(route, /dispatchThroughJitClaim/);
   assert.match(route, /reconcileThroughTrustedClaim/);
   assert.match(route, /Only a valid operation and provider audience are accepted/);
+  const operationValidation = route.indexOf('if (bodyKeys.some((key) => key !== "operation" && key !== "audience")');
+  const executionValidation = route.indexOf("if (!UUID_PATTERN.test(executionId))", operationValidation);
+  const boundaryCall = route.indexOf("runMissionActionWorker({", executionValidation);
+  assert.ok(operationValidation >= 0 && executionValidation > operationValidation && boundaryCall > executionValidation);
 });
 
 
