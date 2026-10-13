@@ -819,3 +819,24 @@ The read-only hosted Development preflight still reports migration ledger W65; W
 Still outstanding: hosted Development migration parity/postchecks, authenticated live Research with citations/history, real Resend invitation inbox and password-reset delivery/callback, manual desktop/mobile visual QA, leaked-password protection, real adapter review/certification, and universal JIT mediation of relevant external side effects.
 
 **Release remains NOT APPROVED.** PR #29 stays OPEN / Draft / UNMERGED; Issue #23 stays OPEN. Supabase Main/Production, hosted Development, Git `main`, production deployment, DNS, billing and real-provider side effects were not modified as part of this status update.
+
+
+---
+
+## Superseding exact-head verification — 2026-10-13 — tested code/test SHA `346ffa0a8ecf26caaa9f8849cfda7604cc7cb750`
+
+All six workflow gates completed SUCCESS on this exact PR source SHA:
+- W21 Local Launch Gate: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189778
+- W25 Isolated PostgreSQL Atomic Fence: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189649
+- Web Unit: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189698 — **332 passed, 0 failed**
+- Web CI / TypeScript / production build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189422
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189585
+- Netlify preview-route verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189602
+
+W21 evidence and diagnostics for this exact source HEAD:
+- Evidence/cleanup: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189778/artifacts/11815317355 — PostgreSQL 17, repository migrations, `supabase_stop_exit_code=0`, no remaining disposable containers/volumes, `cleanup_verified=true`.
+- Browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189778/artifacts/11815317354 — two Browser E2E tests passed; unregistered adapter path returns HTTP 503 with `providerCall=not_attempted`.
+
+The latest test-only hardening adds three kinds of direct worker contract checks and a recursive API-route source guard. It does not change application/SQL behavior and is not universal-runtime/provider proof. The app/SQL candidate remains `be8b96bb7d5448125d0c4134fb6275f02950ff53`.
+
+PR #29 remains OPEN / Draft / UNMERGED; Issue #23 remains OPEN. Hosted Development is still documented at W65 with W66–W80 NOT APPLIED. Keep Research blocked and provider registry empty. Live external integrations and production readiness remain NOT VERIFIED / NOT APPROVED. No hosted or Production writes, real provider calls, DNS/billing changes, or production deploy were made.

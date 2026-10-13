@@ -99,3 +99,37 @@ Critical limitation: the provider registry remains empty and no route wires a re
 
 ## 9. New conversation prompt
 استأنف مشروع ZAVQERA/NEXO من ملف التسليم docs/ZAVQERA_HANDOFF_2026-10-13_AR.md على فرع zavqera/ai-planner-integration. أعد التحقق من HEAD وPR #29 وIssue #23 وحالة workflows لأن الفرع قد يتقدم. HEAD عند التسليم هو 4b087c5bf42de46fdb650d1c1ac1459279b70dfa، وآخر كود/SQL candidate هو be8b96bb7d5448125d0c4134fb6275f02950ff53. كانت W21/W25/Web Unit/Web CI/Flutter/Netlify كلها SUCCESS على HEAD المحفوظ. واصل العمل الفعلي على تدقيق Mission Authority ومداخل التأثيرات الخارجية. أبقِ PR #29 مفتوحًا Draft وغير مدموج، وIssue #23 مفتوحة، وسجل adapters فارغًا. لا تغيّر Supabase Development أو Main/Production أو DNS أو billing أو الإنتاج، ولا تستخدم Vercel. لا تعِد الأسئلة السابقة؛ نفّذ ما يمكن بأمان ووثّق كل نتيجة.
+
+
+## Superseding verified checkpoint — 2026-10-13, 13:03 UTC
+
+This addendum supersedes the earlier pending-run snapshot above. Recheck GitHub again before any later write.
+
+- **Exact tested PR source HEAD:** `346ffa0a8ecf26caaa9f8849cfda7604cc7cb750`.
+- **PR #29:** OPEN / Draft / UNMERGED. **Issue #23:** OPEN.
+- The application/SQL candidate remains `be8b96bb7d5448125d0c4134fb6275f02950ff53`; the additional commits after the prior checkpoint touched only `apps/web/test/mission-authority-worker-auth.test.mjs`. No application or SQL migration changed in this hardening pass.
+- All six gates passed on this exact tested HEAD:
+  - W21: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189778
+  - W25: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189649
+  - Web Unit: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189698 — 332 tests passed, 0 failed
+  - Web CI/build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189422
+  - Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189585
+  - Netlify Preview verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189602
+- W21 evidence artifact: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189778/artifacts/11815317355. It records `result=success`, repository migrations replayed on PostgreSQL 17, disposable Supabase stop exit code 0, no remaining labeled containers or volumes, and `cleanup_verified=true`.
+- W21 browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189778/artifacts/11815317354. Browser E2E **2 passed (2.5m)**; unregistered adapter denied with HTTP 503, `unregistered_adapter_denied`, and `providerCall=not_attempted`.
+
+### Additional Mission Authority worker-boundary regressions
+
+The existing test file now:
+1. Recursively scans all 24 API route source files and asserts that direct imports/references to the persistent dispatch gateway, the injected worker boundary, and the trusted adapter registry occur only in the trusted internal execution route.
+2. Covers missing adapter, wrong audience, missing dispatch implementation, and missing reconciliation implementation; every denied case asserts no privileged client creation and no dispatch/reconciliation callback.
+3. Verifies the accepted test-double order is adapter resolution → client creation → dispatch.
+4. Verifies an unsupported operation is rejected before adapter resolution or privileged client creation.
+
+These are source-layout and injected-unit tests plus the W21 fake-provider/disposable-browser evidence. They do **not** constitute a transitive dependency audit, full network trace, real-provider certification, or proof of universal enforcement. Keep the provider registry empty and Issue #23 open.
+
+### Unchanged release blockers and guardrails
+
+The last documented read-only hosted Development migration inventory is W65; W66–W80 are still NOT APPLIED. Hosted Research remains blocked. Real Research with persisted citations/history, real invitation/password-reset email verification, manual visual QA, leaked-password protection, a reviewed real adapter, and universal JIT mediation remain NOT VERIFIED. No hosted schema/data changes, Main/Production changes, DNS/billing changes, production promotion, or real-provider side effect was performed.
+
+Next safe work: continue the bounded source-level audit and narrow regression coverage. Any hosted schema rollout, live Research test, real email, or provider adapter still requires its own explicit authorization and private configuration.

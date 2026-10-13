@@ -94,3 +94,24 @@ The evidence artifact was downloaded and inspected. It records result=success, m
 Browser diagnostics report missionActionWorkerRoute=FAIL_CLOSED_VERIFIED, httpStatus=503, outcome=unregistered_adapter_denied, and providerCall=not_attempted. Both isolated browser E2E tests passed (2 passed), with cleanup verified and no container/volume remaining for the disposable project.
 
 This evidence is scoped to isolated PostgreSQL 17, pgTAP, browser E2E, and fake-provider integration. It does not prove hosted Development migration parity, real-provider delivery, or universal Mission Authority enforcement across every outbound effect. Keep Issue #23 OPEN, provider registry empty, PR #29 OPEN/Draft/UNMERGED, and production readiness NOT APPROVED. No hosted Supabase migration or production deployment was performed.
+
+
+---
+
+## Superseding worker-boundary regression evidence — 2026-10-13 — `346ffa0a8ecf26caaa9f8849cfda7604cc7cb750`
+
+**Automated acceptance on exact PR source HEAD:** W21, W25, Web Unit, Web CI/build, Flutter CI, and Netlify preview-route verification all passed. Web Unit reports 332/332 tests passing. Evidence links:
+- W21: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189778
+- W21 evidence: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189778/artifacts/11815317355
+- W21 browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189778/artifacts/11815317354
+- W25: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189649
+- Web Unit: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189698
+- Web CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189422
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189585
+- Netlify: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189602
+
+**Additional regression coverage:** the route-source scan limits direct gateway/worker-boundary/registry references to the trusted internal execution route; direct worker tests verify denied adapter-contract states create no privileged client and invoke no dispatch/reconciliation; a positive test verifies adapter validation precedes client creation; an unsupported operation is rejected before adapter lookup. W21 again proves only the no-adapter denial path at runtime (HTTP 503, provider call not attempted), with fake-provider integration and disposable database/browser tests.
+
+**Interpretation:** these checks harden the candidate implementation seam and detect future direct API-route references. They are not a transitive call-graph proof, network trace, real-provider test, or universal external-side-effect enforcement proof. The registry remains intentionally empty; universal JIT enforcement remains **NOT PROVEN**. Issue #23 must remain **OPEN**.
+
+Hosted Development parity is still last documented at W65; W66–W80 have not been applied. Live hosted Research, real email/auth delivery, manual visual QA, password leak protection, and real-provider certification remain blocked/not verified. Production is **NOT APPROVED**.

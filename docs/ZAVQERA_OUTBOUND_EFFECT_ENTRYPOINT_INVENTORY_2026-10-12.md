@@ -131,3 +131,24 @@ The evidence artifact was downloaded and inspected. It records result=success, m
 Browser diagnostics report missionActionWorkerRoute=FAIL_CLOSED_VERIFIED, httpStatus=503, outcome=unregistered_adapter_denied, and providerCall=not_attempted. Both isolated browser E2E tests passed (2 passed), with cleanup verified and no container/volume remaining for the disposable project.
 
 This evidence is scoped to isolated PostgreSQL 17, pgTAP, browser E2E, and fake-provider integration. It does not prove hosted Development migration parity, real-provider delivery, or universal Mission Authority enforcement across every outbound effect. Keep Issue #23 OPEN, provider registry empty, PR #29 OPEN/Draft/UNMERGED, and production readiness NOT APPROVED. No hosted Supabase migration or production deployment was performed.
+
+
+---
+
+## Superseding static boundary scan — 2026-10-13 — tested source SHA `346ffa0a8ecf26caaa9f8849cfda7604cc7cb750`
+
+The 24 API `route.ts` files were reviewed for direct outbound URLs/calls and Mission Action gateway references. Mission/action CRUD, approval, verification, outcome, execution state-control, notification, usage, product-event and status handlers do not directly import/call the persistent Mission Action dispatch/reconciliation gateway or make direct third-party HTTP calls in the reviewed route source. Direct outbound operations already inventoried remain separate paths: OpenAI planning, read-only Research, model diagnostics, Resend invitations, Supabase Auth identity flows and the Pwned Passwords range lookup. They have their own controls and are not evidence of Mission Action JIT enforcement.
+
+A new regression recursively scans API route source and asserts that direct imports/references of `persistent-dispatch-gateway.mjs`, `mission-action-worker-boundary.mjs`, `provider-adapter-registry.mjs`, and their key entry functions occur only in `/api/internal/agent-executions/[executionId]`. Further injected-unit tests check missing/wrong/incomplete adapters and unsupported operations fail before privileged-client creation or provider callback. Web Unit: 332/332 passed; W21 browser E2E: 2 passed; W21 diagnostics show the unregistered adapter path denied with HTTP 503 and `providerCall=not_attempted`.
+
+**Scope limitation:** source scanning direct imports/fetches is not a transitive dependency/call-graph audit or network trace. A helper imported indirectly could still need review. Therefore universal mediation of every relevant external side effect remains **NOT PROVEN**. Keep Issue #23 open and the adapter registry empty.
+
+Exact-head evidence:
+- W21: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189778
+- W21 evidence: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189778/artifacts/11815317355
+- Browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189778/artifacts/11815317354
+- W25: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189649
+- Web Unit: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189698
+- Web CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189422
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189585
+- Netlify: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38401189602
