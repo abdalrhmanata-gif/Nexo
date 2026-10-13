@@ -31,12 +31,14 @@ select ok(
   'invitation create and revoke reject a missing workspace role');
 
 select ok(
-  (select prosecdef from pg_proc where oid = 'public.revoke_workspace_invitation(uuid)'::regprocedure)
-  and coalesce(array_to_string((select proconfig from pg_proc where oid = 'public.revoke_workspace_invitation(uuid)'::regprocedure), '|'), '')
-    like '%search_path=pg_catalog, public, private%'
+  not (select prosecdef from pg_proc where oid = 'public.revoke_workspace_invitation(uuid)'::regprocedure)
   and has_function_privilege('authenticated', 'public.revoke_workspace_invitation(uuid)', 'EXECUTE')
-  and not has_function_privilege('authenticated', 'private.revoke_workspace_invitation(uuid)', 'EXECUTE'),
-  'the public revoke wrapper uses a pinned definer while direct private RPC execution remains denied');
+  and has_function_privilege('authenticated', 'private.revoke_workspace_invitation(uuid)', 'EXECUTE')
+  and not has_function_privilege('anon', 'private.revoke_workspace_invitation(uuid)', 'EXECUTE')
+  and (select prosecdef from pg_proc where oid = 'private.revoke_workspace_invitation(uuid)'::regprocedure)
+  and coalesce(array_to_string((select proconfig from pg_proc where oid = 'private.revoke_workspace_invitation(uuid)'::regprocedure), '|'), '')
+    like '%search_path=pg_catalog, public%',
+  'the public revoke wrapper is SECURITY INVOKER and calls only the pinned private SECURITY DEFINER helper');
 
 create temporary table w44_cross_workspace_results (
   create_denied boolean not null,

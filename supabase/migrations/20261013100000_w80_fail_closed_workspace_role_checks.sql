@@ -201,14 +201,15 @@ $function$;
 create or replace function public.revoke_workspace_invitation(p_invitation_id uuid)
 returns public.workspace_invitations
 language sql
-security definer
-set search_path = pg_catalog, public, private
+set search_path = pg_catalog, public
 as $function$
   select private.revoke_workspace_invitation(p_invitation_id);
 $function$;
 
 revoke all on function public.revoke_workspace_invitation(uuid) from public, anon;
 grant execute on function public.revoke_workspace_invitation(uuid) to authenticated;
+revoke all on function private.revoke_workspace_invitation(uuid) from public, anon, authenticated;
+grant execute on function private.revoke_workspace_invitation(uuid) to authenticated;
 
 create or replace function private.record_mission_event(
   p_mission_id uuid,
