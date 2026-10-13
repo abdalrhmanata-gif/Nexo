@@ -269,3 +269,14 @@ Exact-head automated evidence:
 - [Netlify preview verification](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197324)
 
 The AST/static scan remains bounded and does not prove complete runtime mediation. Provider registry stays empty; Issue #23 stays OPEN.
+
+
+---
+
+## Alternate Node loader scanner hardening and current evidence — 2026-10-13 — source HEAD `4202704e251b832c8daa947202120ef86dd2370a`
+
+The static outbound AST regression now explicitly flags `process.mainModule.require`, `module.constructor._load`, `process.getBuiltinModule` and aliased references. This narrows additional static-scanner blind spots but does not establish complete runtime reachability or network tracing. No application runtime or SQL migration changed.
+
+Exact-head evidence: [Web Unit 344/344](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282813), [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282759), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282820), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282821), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282798), [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282707). W21 artifacts: [cleanup](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282759/artifacts/11839115726), [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282759/artifacts/11839290636).
+
+Hosted Development was checked read-only: migration ledger W65; W69/W70 columns and function signatures absent. Do not apply hosted migrations as part of this gate. Registry empty; universal JIT proof NOT PROVEN; Issue #23 OPEN.

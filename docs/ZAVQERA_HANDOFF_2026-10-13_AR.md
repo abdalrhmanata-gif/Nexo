@@ -459,3 +459,37 @@ All six gates passed on the exact PR source HEAD `65d4f2364876a95a78b23a5d5c564e
 
 ### Release and safety status unchanged
 PR #29 remains OPEN / Draft / UNMERGED; Issue #23 remains OPEN. The adapter registry remains empty. Universal runtime JIT mediation remains NOT PROVEN; real-provider certification is not started. Hosted Development's last documented migration state is W65, W66–W80 are not applied there, and live Research remains blocked. No hosted database changes, SQL migrations, Main/Production changes, DNS/billing changes or production deployment were made.
+
+
+## Latest static-scanner and Development parity checkpoint — 2026-10-13 — code/test HEAD `4202704e251b832c8daa947202120ef86dd2370a`
+
+### Latest test-only hardening
+Extended `apps/web/test/mission-authority-worker-auth.test.mjs` to detect alternate Node module-loader paths:
+- `process.mainModule.require(...)`
+- `module.constructor._load(...)`
+- `process.getBuiltinModule(...)`
+- aliased references to those loader functions
+
+This adds explicit fixtures to the AST outbound-source detector. It changes only the test/scanner file; no application runtime or SQL migration changed. Web Unit: **344 passed / 0 failed**.
+
+### All gates passed on the exact code/test head
+- W21: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282759
+- W25: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282820
+- Web Unit 344/344: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282813
+- Web CI/build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282821
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282798
+- Netlify preview verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282707
+
+W21 artifacts were downloaded and inspected:
+- Evidence/cleanup: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282759/artifacts/11839115726 — `result=success`, repository migrations replayed on PostgreSQL 17, disposable project `zavqera-e2e-local`, stop exit code 0, no remaining containers/volumes, `cleanup_verified=true`.
+- Browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282759/artifacts/11839290636 — preflight READY, unregistered adapter denied with HTTP 503 / `unregistered_adapter_denied` / `providerCall=not_attempted`, Browser E2E 2/2 passed (2.7m), cleanup verified.
+- W21 artifact `git_sha=b584dd0be0fd1537a3e5ad0c7d45e3d84211d19c` is GitHub's synthetic PR merge-test SHA; its parents are base `46dc6029f084fb000ba511478d6e8aec3eb532b3` and actual PR source HEAD `4202704e251b832c8daa947202120ef86dd2370a`.
+
+### Read-only hosted Development inventory
+Verified the connected project identity first: `ZAVQERA Development`, project `mrwmmbytcymqgwvcoywd`, ACTIVE_HEALTHY, PostgreSQL 17. Read-only migration listing ends at **W65**. A metadata-only SELECT confirmed the W69/W70 dispatch/reconciliation columns and claim/reconcile RPC signatures are absent from hosted Development. The public-table inventory reports RLS enabled for every listed public table. No user-content rows were queried and no SQL writes, migration, or hosted change was performed. W66–W80 remain unapplied there, so hosted Research stays blocked.
+
+### Timestamp parity check
+Application lookup validation and W70/W74 SQL use the same five-minute future-clock-skew ceiling. Unit and pgTAP negative cases reject evidence at +6 minutes. This audit found no discrepancy, so no code or migration change was required.
+
+### Decision / guardrails
+PR #29 remains OPEN / Draft / UNMERGED; Issue #23 remains OPEN. The adapter registry remains empty. This source scanner is still bounded static analysis, not a complete runtime/network trace. Universal JIT enforcement and real-provider certification remain NOT PROVEN. No Supabase Development/Main/Production changes, DNS/billing changes, real-provider calls, Vercel actions, or production deployment occurred.

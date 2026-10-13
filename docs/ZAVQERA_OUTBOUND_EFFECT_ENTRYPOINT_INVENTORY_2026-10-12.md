@@ -292,3 +292,20 @@ No universal network/runtime audit has been completed; non-Mission-Action outbou
 A subtle static-audit bug was closed: a global `RegExp` instance with `g` retains `lastIndex`, so calling `source.matchAll(pattern)` across several modules could miss matches in a later module. The Mission Action outbound detector now constructs a fresh RegExp for each module scan. A unit regression proves the scanner returns the same positive result after the shared pattern has been advanced. The current Web Unit suite is **344/344 PASS** and all six workflow gates pass on this exact code/test HEAD (W21, W25, Web Unit, Web CI, Flutter, Netlify preview).
 
 This improves repeatability but does not turn the scan into a runtime network trace or universal proof. External OpenAI planning/Research/diagnostics, Resend invitations, Supabase Auth flows, and the Pwned Passwords lookup remain separately inventoried, not considered JIT-certified. The provider registry stays empty and Issue #23 remains open.
+
+
+---
+
+## Alternate Node loader coverage and exact-head evidence — 2026-10-13
+
+The Mission Action outbound detector now has explicit negative fixtures for static-analysis detection of `process.mainModule.require`, `module.constructor._load`, `process.getBuiltinModule` and aliases. This is source/AST guard coverage only, not a runtime network trace. All 6 workflows passed on source HEAD `4202704e251b832c8daa947202120ef86dd2370a`; Web Unit 344/344 PASS:
+- W21 https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282759
+- W25 https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282820
+- Web Unit https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282813
+- Web CI https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282821
+- Flutter CI https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282798
+- Netlify preview https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282707
+
+W21 [cleanup evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282759/artifacts/11839115726) and [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282759/artifacts/11839290636) confirm PostgreSQL 17, cleanup verified and unregistered-adapter HTTP 503 / `providerCall=not_attempted`.
+
+Read-only Development inventory remains W65; W69/W70 schema/RPCs absent. No hosted mutation. Keep registry empty, Issue #23 OPEN, production NOT APPROVED.

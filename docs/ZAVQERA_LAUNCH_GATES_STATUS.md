@@ -1031,3 +1031,22 @@ All six workflows passed:
 - Netlify preview verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38442197324
 
 The latest test-only change makes each outbound regex scan use a fresh RegExp instance to avoid global `lastIndex` state causing missed matches between files. No app or SQL changes. W21 evidence confirms disposable PostgreSQL 17 cleanup and HTTP 503 / `providerCall=not_attempted` for the unregistered adapter.
+
+
+---
+
+## Latest exact code/test SHA — `4202704e251b832c8daa947202120ef86dd2370a` — 2026-10-13
+
+The latest change is test-only: outbound AST scanner regression fixtures now cover `process.mainModule.require`, `module.constructor._load`, `process.getBuiltinModule` and aliases. No application runtime or SQL changed. Web Unit is 344/344 PASS.
+
+All six gates passed on that exact SHA:
+- W21: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282759 — [cleanup evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282759/artifacts/11839115726) and [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282759/artifacts/11839290636)
+- W25: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282820
+- Web Unit 344/344: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282813
+- Web CI/build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282821
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282798
+- Netlify preview verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38446282707
+
+W21 verifies disposable PostgreSQL 17 migration replay and cleanup (`cleanup_verified=true`, no remaining containers/volumes). Browser E2E passed 2/2, and an unregistered adapter remains denied with HTTP 503 and `providerCall=not_attempted`. Artifact SHA `b584dd0be0fd1537a3e5ad0c7d45e3d84211d19c` is the synthetic merge test SHA with PR base and source-head parents; it is not a replacement for the source SHA above.
+
+Read-only Supabase Development metadata check confirms latest hosted migration W65; W69/W70 authority columns and claim/reconcile function signatures are absent. No hosted change occurred. Issue #23 stays OPEN and adapter registry empty; universal JIT enforcement remains NOT PROVEN.
