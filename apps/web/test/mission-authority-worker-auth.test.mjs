@@ -473,7 +473,7 @@ function astExpressionPath(node) {
 }
 
 function normalizeExpressionPath(path) {
-  return path?.replace(/\\["([^"]+)"\\]/g, ".$1") ?? null;
+  return path?.replace(/\["([^"]+)"\]/g, ".$1") ?? null;
 }
 
 function resolveAliasedExpressionPath(node, aliases) {
@@ -490,10 +490,10 @@ function isSensitiveAliasPath(path) {
     || GLOBAL_FETCH_PATHS.has(path)
     || DYNAMIC_LOADER_OR_CODE_PATHS.has(path)
     || /^(?:WebSocket|XMLHttpRequest|EventSource)$/.test(path)
-    || /^(?:globalThis|global|self|window)\\.(?:WebSocket|XMLHttpRequest|EventSource|fetch|require|createRequire|eval|Function)$/.test(path)
-    || /^(?:axios|got|undici)\\.(?:request|get|post|put|patch|delete)$/.test(path)
-    || /^(?:http|https)\\.request$/.test(path)
-    || /^(?:net|tls)\\.connect$/.test(path)
+    || /^(?:globalThis|global|self|window)\.(?:WebSocket|XMLHttpRequest|EventSource|fetch|require|createRequire|eval|Function)$/.test(path)
+    || /^(?:axios|got|undici)\.(?:request|get|post|put|patch|delete)$/.test(path)
+    || /^(?:http|https)\.request$/.test(path)
+    || /^(?:net|tls)\.connect$/.test(path)
     || path === "dgram.createSocket"
     || path === "navigator.sendBeacon"
   );
