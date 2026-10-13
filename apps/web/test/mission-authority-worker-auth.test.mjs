@@ -5,6 +5,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { isTrustedExecutionWorkerRequest } from "../lib/mission-authority/worker-auth.mjs";
 import { resolveTrustedWorkerOrigin } from "../lib/mission-authority/trusted-worker-origin.mjs";
+import { runMissionActionWorker } from "../lib/mission-authority/mission-action-worker-boundary.mjs";
 import {
   hasTrustedProviderAdapterContractShape,
   resolveTrustedDispatchAdapter,
@@ -169,4 +170,90 @@ test("Mission Action execution boundary is directly referenced only by the trust
     ["internal/agent-executions/[executionId]/route.ts"],
     "only the trusted internal worker route may import or reference the JIT gateway, worker boundary, or trusted adapter registry",
   );
+});
+
+
+test("mission-action worker denies absent or incomplete trusted adapters before privileged client creation", async () => {
+  const audience = "provider.send.v1";
+  const completeAdapter = {
+    audience,
+    dispatch: async () => ({ state: "FAKE_ACCEPTED" }),
+    reconcile: async () => ({ state: "FAKE_UNKNOWN" }),
+  };
+  const cases = [
+    { name: "missing adapter", operation: "dispatch", adapter: null, expected: "missing_adapter" },
+    { name: "wrong audience", operation: "dispatch", adapter: { ...completeAdapter, audience: "provider.other.v1" }, expected: "missing_adapter" },
+    { name: "missing dispatch implementation", operation: "dispatch", adapter: { audience, reconcile: async () => ({ state: "FAKE_UNKNOWN" }) }, expected: "missing_dispatch" },
+    { name: "missing reconciliation implementation", operation: "reconcile", adapter: { audience, dispatch: async () => ({ state: "FAKE_ACCEPTED" }) }, expected: "missing_reconciliation" },
+  ];
+
+  for (const testCase of cases) {
+    let clientCreations = 0;
+    let dispatchCalls = 0;
+    let reconcileCalls = 0;
+
+    const result = await runMissionActionWorker({
+      audience,
+      operation: testCase.operation,
+      executionId: "execution-test-id",
+      resolveAdapter: () => testCase.adapter,
+      createClient: () => {
+        clientCreations += 1;
+        return { kind: "test-only-client" };
+      },
+      dispatch: async () => {
+        dispatchCalls += 1;
+        return { state: "FAKE_ACCEPTED" };
+      },
+      reconcile: async () => {
+        reconcileCalls += 1;
+        return { state: "FAKE_UNKNOWN" };
+      },
+    });
+
+    assert.deepEqual(result, { kind: testCase.expected }, testCase.name);
+    assert.equal(clientCreations, 0, `${testCase.name}: privileged client must not be created`);
+    assert.equal(dispatchCalls, 0, `${testCase.name}: dispatch must not be called`);
+    assert.equal(reconcileCalls, 0, `${testCase.name}: reconciliation must not be called`);
+  }
+});
+
+test("mission-action worker creates its client only after validating a complete trusted adapter", async () => {
+  const audience = "provider.send.v1";
+  const expectedClient = { kind: "test-only-client" };
+  const events = [];
+  const adapter = {
+    audience,
+    dispatch: async () => ({ state: "FAKE_ACCEPTED" }),
+    reconcile: async () => ({ state: "FAKE_UNKNOWN" }),
+  };
+
+  const result = await runMissionActionWorker({
+    audience,
+    operation: "dispatch",
+    executionId: "execution-test-id",
+    resolveAdapter: (requestedAudience) => {
+      events.push("resolve-adapter");
+      assert.equal(requestedAudience, audience);
+      return adapter;
+    },
+    createClient: () => {
+      events.push("create-client");
+      return expectedClient;
+    },
+    dispatch: async ({ client, adapter: trustedAdapter, executionId }) => {
+      events.push("dispatch");
+      assert.equal(client, expectedClient);
+      assert.equal(trustedAdapter, adapter);
+      assert.equal(executionId, "execution-test-id");
+      return { state: "FAKE_ACCEPTED" };
+    },
+    reconcile: async () => {
+      events.push("reconcile");
+      return { state: "FAKE_UNKNOWN" };
+    },
+  });
+
+  assert.deepEqual(result, { kind: "completed", result: { state: "FAKE_ACCEPTED" } });
+  assert.deepEqual(events, ["resolve-adapter", "create-client", "dispatch"]);
 });
