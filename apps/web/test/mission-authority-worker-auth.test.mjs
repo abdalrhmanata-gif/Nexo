@@ -1,5 +1,5 @@
-import { readFile, readdir } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { readFile, readdir, stat } from "node:fs/promises";
+import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -22,6 +22,65 @@ async function listApiRouteFiles(directory) {
     return entry.isFile() && entry.name === "route.ts" ? [path] : [];
   }));
   return nested.flat();
+}
+
+const LOCAL_SOURCE_EXTENSIONS = [".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"];
+
+async function resolveLocalSourceImport(specifier, importer) {
+  let base;
+  if (specifier.startsWith("./") || specifier.startsWith("../")) {
+    base = resolve(dirname(importer), specifier);
+  } else if (specifier.startsWith("@/")) {
+    base = resolve(webRoot, specifier.slice(2));
+  } else {
+    return null;
+  }
+
+  const candidates = [
+    base,
+    ...LOCAL_SOURCE_EXTENSIONS.map((extension) => `${base}${extension}`),
+    ...LOCAL_SOURCE_EXTENSIONS.map((extension) => join(base, `index${extension}`)),
+  ];
+
+  for (const candidate of candidates) {
+    if (candidate !== webRoot && !candidate.startsWith(`${webRoot}/`)) continue;
+    try {
+      if ((await stat(candidate)).isFile()) return candidate;
+    } catch {
+      // Non-resolving source candidates are normal while checking extensionless imports.
+    }
+  }
+  return null;
+}
+
+function readStaticLocalImportSpecifiers(source) {
+  const specifiers = new Set();
+  const patterns = [
+    /^\s*(?:import|export)\s+(?!\s*\()(?:(?!;)[\s\S])*?\sfrom\s*["']([^"']+)["']/gm,
+    /^\s*import\s*["']([^"']+)["']/gm,
+    /\bimport\(\s*["']([^"']+)["']\s*\)/g,
+    /\brequire\(\s*["']([^"']+)["']\s*\)/g,
+  ];
+
+  for (const pattern of patterns) {
+    for (const match of source.matchAll(pattern)) specifiers.add(match[1]);
+  }
+  return [...specifiers];
+}
+
+async function findReachableSensitiveModule(entry, sensitiveModules, visited = new Set()) {
+  if (sensitiveModules.has(entry)) return [entry];
+  if (visited.has(entry)) return null;
+  visited.add(entry);
+
+  const source = await readFile(entry, "utf8");
+  for (const specifier of readStaticLocalImportSpecifiers(source)) {
+    const resolved = await resolveLocalSourceImport(specifier, entry);
+    if (!resolved) continue;
+    const childPath = await findReachableSensitiveModule(resolved, sensitiveModules, visited);
+    if (childPath) return [entry, ...childPath];
+  }
+  return null;
 }
 
 test("accepts only the exact bearer token configured for the trusted worker", () => {
@@ -296,4 +355,34 @@ test("mission-action worker rejects unsupported operations before adapter resolu
   assert.equal(clientCreations, 0);
   assert.equal(dispatchCalls, 0);
   assert.equal(reconcileCalls, 0);
+});
+
+
+test("only the trusted internal worker route transitively reaches Mission Action dispatch modules", async () => {
+  const apiRoot = join(webRoot, "app", "api");
+  const routeFiles = await listApiRouteFiles(apiRoot);
+  const sensitiveModules = new Set([
+    join(webRoot, "lib", "mission-authority", "persistent-dispatch-gateway.mjs"),
+    join(webRoot, "lib", "mission-authority", "mission-action-worker-boundary.mjs"),
+    join(webRoot, "lib", "mission-authority", "provider-adapter-registry.mjs"),
+  ]);
+  const reachableRoutes = [];
+
+  for (const routeFile of routeFiles) {
+    const chain = await findReachableSensitiveModule(routeFile, sensitiveModules);
+    if (!chain) continue;
+    reachableRoutes.push({
+      route: relative(apiRoot, routeFile).replace(/\\\\/g, "/"),
+      target: relative(webRoot, chain.at(-1)).replace(/\\\\/g, "/"),
+    });
+  }
+
+  assert.deepEqual(
+    reachableRoutes,
+    [{
+      route: "internal/agent-executions/[executionId]/route.ts",
+      target: "lib/mission-authority/persistent-dispatch-gateway.mjs",
+    }],
+    "no other API route may reach Mission Action dispatch, worker-boundary or trusted-registry modules even through local static imports",
+  );
 });
