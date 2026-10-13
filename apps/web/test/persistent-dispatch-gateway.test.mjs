@@ -174,6 +174,60 @@ test("malformed claimed row records a not-sent block without invoking the adapte
   assert.equal(client.calls[1].args.p_evidence.safe_to_retry, true);
 });
 
+test("each mandatory dispatch-claim authority binding fails closed before provider I/O", async () => {
+  const baseline = validClaim();
+  const cases = [
+    ["execution id mismatch", validClaim({ id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" })],
+    ["claim is not RUNNING", validClaim({ status: "SUCCEEDED" })],
+    ["missing dispatch timestamp", validClaim({ dispatch_claimed_at: "" })],
+    ["invalid dispatch timestamp", validClaim({ dispatch_claimed_at: "not-a-timestamp" })],
+    ["invalid lease timestamp", validClaim({ lease_expires_at: "not-a-timestamp" })],
+    ["claim timestamp is not before lease expiry", validClaim({
+      dispatch_claimed_at: new Date(Date.now() + 60_000).toISOString(),
+      lease_expires_at: new Date(Date.now() + 30_000).toISOString(),
+    })],
+    ["malformed authority hash", validClaim({ dispatch_claim_authority_hash: "a".repeat(63) })],
+    ["malformed request hash", validClaim({ dispatch_claim_request_hash: "g".repeat(64) })],
+    ["invalid budget revision", validClaim({ dispatch_claim_budget_revision: "not-a-revision" })],
+    ["zero budget revision", validClaim({ dispatch_claim_budget_revision: 0 })],
+    ["missing idempotency key", validClaim({ idempotency_key: " " })],
+    ["request is not a record", validClaim({ request: null })],
+    ["authority snapshot is not a record", validClaim({ authority_snapshot: null })],
+    ["external side effects are not authorized", validClaim({
+      authority_snapshot: { ...baseline.authority_snapshot, external_side_effects: false },
+    })],
+    ["approval requirement is absent", validClaim({
+      authority_snapshot: { ...baseline.authority_snapshot, requires_approval: false },
+    })],
+    ["action id is missing", validClaim({ action_id: "" })],
+    ["approval id is missing", validClaim({ approval_id: "" })],
+    ["destination is missing", validClaim({
+      request: { ...baseline.request, destination: "" },
+    })],
+    ["provider audience is missing", validClaim({
+      request: { ...baseline.request, audience: "" },
+    })],
+  ];
+
+  for (const [name, claim] of cases) {
+    const client = fakeClient({
+      claim,
+      completion: { id: EXECUTION_ID, status: "BLOCKED" },
+    });
+    const adapter = fakeAdapter();
+    const result = await dispatchThroughJitClaim({ client, adapter, executionId: EXECUTION_ID });
+
+    assert.equal(result.decision, PERSISTENT_DISPATCH_DECISIONS.DENY, name);
+    assert.equal(result.reasonCode, "INVALID_DISPATCH_CLAIM_RECORD", name);
+    assert.equal(adapter.calls.length, 0, `${name}: adapter must not be called`);
+    assert.equal(client.calls.length, 2, `${name}: the malformed claim is settled as blocked`);
+    assert.equal(client.calls[0].name, "claim_agent_execution_dispatch", name);
+    assert.equal(client.calls[1].args.p_status, "BLOCKED", name);
+    assert.equal(client.calls[1].args.p_evidence.provider_not_sent, true, name);
+    assert.equal(client.calls[1].args.p_evidence.safe_to_retry, true, name);
+  }
+});
+
 test("expired dispatch claim never reaches the provider adapter", async () => {
   const client = fakeClient({
     claim: validClaim({ lease_expires_at: new Date(Date.now() - 1_000).toISOString() }),
