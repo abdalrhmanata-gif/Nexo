@@ -3,6 +3,7 @@ import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 import assert from "node:assert/strict";
+import ts from "typescript";
 import { isTrustedExecutionWorkerRequest } from "../lib/mission-authority/worker-auth.mjs";
 import { resolveTrustedWorkerOrigin } from "../lib/mission-authority/trusted-worker-origin.mjs";
 import { runMissionActionWorker } from "../lib/mission-authority/mission-action-worker-boundary.mjs";
@@ -431,6 +432,131 @@ const EXPLICIT_PROVIDER_SDK_IMPORTS = new Set([
   "@microsoft/microsoft-graph-client",
 ]);
 
+const GLOBAL_FETCH_PATHS = new Set([
+  "fetch",
+  "globalThis.fetch",
+  "global.fetch",
+  "self.fetch",
+  "window.fetch",
+]);
+
+function sourceScriptKind(filePath) {
+  const extension = filePath.toLowerCase().split(".").pop();
+  if (["ts", "mts", "cts"].includes(extension)) return ts.ScriptKind.TS;
+  if (extension === "tsx") return ts.ScriptKind.TSX;
+  if (extension === "jsx") return ts.ScriptKind.JSX;
+  return ts.ScriptKind.JS;
+}
+
+function astExpressionPath(node) {
+  if (!node) return null;
+  if (ts.isIdentifier(node)) return node.text;
+  if (ts.isPropertyAccessExpression(node)) {
+    const parent = astExpressionPath(node.expression);
+    return parent ? `${parent}.${node.name.text}` : null;
+  }
+  if (ts.isElementAccessExpression(node) && node.argumentExpression
+      && (ts.isStringLiteral(node.argumentExpression) || ts.isNoSubstitutionTemplateLiteral(node.argumentExpression))) {
+    const parent = astExpressionPath(node.expression);
+    return parent ? `${parent}["${node.argumentExpression.text}"]` : null;
+  }
+  return null;
+}
+
+function normalizeExpressionPath(path) {
+  return path?.replace(/\\["([^"]+)"\\]/g, ".$1") ?? null;
+}
+
+function outboundExpressionReason(node) {
+  const rawPath = astExpressionPath(node);
+  const path = normalizeExpressionPath(rawPath);
+  if (!path) return null;
+
+  if (GLOBAL_FETCH_PATHS.has(path)) return "fetch transport reference";
+  if (path.endsWith(".call") || path.endsWith(".apply") || path.endsWith(".bind")) {
+    const base = path.slice(0, path.lastIndexOf("."));
+    if (GLOBAL_FETCH_PATHS.has(base)) return "fetch method escape";
+  }
+  if (/^(?:axios|got|undici)\\.(?:request|get|post|put|patch|delete)$/.test(path)) return "provider HTTP client call";
+  if (/^(?:http|https)\\.request$/.test(path)) return "Node HTTP request";
+  if (/^(?:net|tls)\\.connect$/.test(path)) return "Node socket connect";
+  if (path === "dgram.createSocket") return "UDP socket creation";
+  if (path === "navigator.sendBeacon") return "navigator.sendBeacon";
+  return null;
+}
+
+function readAstOutboundMarkers(source, filePath = "source.mjs") {
+  const sourceFile = ts.createSourceFile(
+    filePath,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    sourceScriptKind(filePath),
+  );
+  const markers = [];
+  const seen = new Set();
+  const add = (node, reason) => {
+    const line = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;
+    const marker = `${reason} at line ${line}`;
+    if (!seen.has(marker)) {
+      seen.add(marker);
+      markers.push(marker);
+    }
+  };
+  const staticString = (node) => Boolean(
+    node && (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node))
+  );
+
+  function visit(node) {
+    if (ts.isCallExpression(node)) {
+      if (node.expression.kind === ts.SyntaxKind.ImportKeyword && !staticString(node.arguments[0])) {
+        add(node, "computed import()");
+      }
+      if (ts.isIdentifier(node.expression) && node.expression.text === "require" && !staticString(node.arguments[0])) {
+        add(node, "computed require()");
+      }
+      if (ts.isIdentifier(node.expression) && node.expression.text === "createRequire") {
+        add(node, "createRequire()");
+      }
+
+      const callPath = normalizeExpressionPath(astExpressionPath(node.expression));
+      const reason = outboundExpressionReason(node.expression);
+      if (reason) add(node, reason);
+      if (callPath && /^(?:globalThis|global|self|window)\\.(?:fetch|WebSocket|XMLHttpRequest|EventSource)$/.test(callPath)) {
+        add(node, "global transport call");
+      }
+    }
+
+    if (ts.isNewExpression(node) && node.expression) {
+      const path = normalizeExpressionPath(astExpressionPath(node.expression));
+      if (["WebSocket", "EventSource", "XMLHttpRequest", "globalThis.WebSocket", "globalThis.EventSource", "globalThis.XMLHttpRequest"].includes(path)) {
+        add(node, "outbound transport constructor");
+      }
+    }
+
+    if (ts.isVariableDeclaration(node) && node.initializer) {
+      if (ts.isIdentifier(node.name)) {
+        const reason = outboundExpressionReason(node.initializer);
+        if (reason) add(node, `outbound transport alias (${reason})`);
+      } else if (ts.isObjectBindingPattern(node.name)) {
+        const base = normalizeExpressionPath(astExpressionPath(node.initializer));
+        if (["globalThis", "global", "self", "window"].includes(base)) {
+          for (const element of node.name.elements) {
+            const property = element.propertyName || element.name;
+            const propertyName = ts.isIdentifier(property) || ts.isStringLiteral(property) ? property.text : null;
+            if (["fetch", "WebSocket", "XMLHttpRequest", "EventSource"].includes(propertyName)) {
+              add(element, `destructured global transport (${propertyName})`);
+            }
+          }
+        }
+      }
+    }
+    ts.forEachChild(node, visit);
+  }
+  visit(sourceFile);
+  return markers;
+}
+
 test("outbound-source detectors recognize representative transport and dynamic-loader escapes", () => {
   const positiveExamples = [
     ["fetch()", "await fetch(url)"],
@@ -477,6 +603,39 @@ test("outbound-source detectors recognize representative transport and dynamic-l
     "known provider SDKs are recognized as outbound-capable dependencies");
 });
 
+test("AST outbound analysis catches aliases and computed transport calls without flagging ordinary database RPCs", () => {
+  const blockedExamples = [
+    'const request = globalThis.fetch; await request("/outbound");',
+    'const request = globalThis["fetch"]; await request("/outbound");',
+    'const { fetch: request } = globalThis; await request("/outbound");',
+    'globalThis.fetch.call(globalThis, "/outbound");',
+    'const request = fetch.bind(globalThis); await request("/outbound");',
+    'new WebSocket("wss://example.invalid");',
+    'new XMLHttpRequest();',
+    'navigator.sendBeacon("/outbound", "payload");',
+    'net.connect({ host: "example.invalid", port: 443 });',
+    'tls.connect({ host: "example.invalid", port: 443 });',
+    'dgram.createSocket("udp4");',
+    'await import(resolveProviderModuleName());',
+    'require(resolveProviderPackageName());',
+    'const localRequire = createRequire(import.meta.url);',
+  ];
+
+  for (const source of blockedExamples) {
+    assert.ok(readAstOutboundMarkers(source).length > 0, source + " must be detected");
+  }
+
+  const allowedExamples = [
+    'const result = await supabase.from("missions").select("*");',
+    'const result = await client.rpc("claim_agent_execution_dispatch", { p_execution_id: id });',
+    'const payload = { fetch: "metadata", destination: "https://example.invalid" };',
+    'const fs = await import("./trusted-local.mjs");',
+  ];
+  for (const source of allowedExamples) {
+    assert.deepEqual(readAstOutboundMarkers(source).filter(marker => marker !== "computed import()"), [], source);
+  }
+});
+
 test("Mission Action API dependency graphs cannot call outbound HTTP directly", async () => {
   const apiRoot = join(webRoot, "app", "api");
   const routeFiles = await listApiRouteFiles(apiRoot);
@@ -510,6 +669,10 @@ test("Mission Action API dependency graphs cannot call outbound HTTP directly", 
           const line = source.slice(0, match.index).split("\n").length;
           violations.push({ route, module: moduleName, marker: `${name} at line ${line}` });
         }
+      }
+
+      for (const marker of readAstOutboundMarkers(source, modulePath)) {
+        violations.push({ route, module: moduleName, marker: `AST ${marker}` });
       }
     }
   }
