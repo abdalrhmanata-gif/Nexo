@@ -289,10 +289,16 @@ function validReconciliationClaim(claim, executionId) {
       || !nonEmpty(claim.reconciliation_claim_token)
       || !nonEmpty(claim.reconciliation_claimed_at)
       || !nonEmpty(claim.reconciliation_lease_expires_at)) return false;
+  const dispatchBound = Date.parse(claim.dispatch_claimed_at ?? claim.created_at ?? "");
   const claimedAt = Date.parse(claim.reconciliation_claimed_at);
   const expiresAt = Date.parse(claim.reconciliation_lease_expires_at);
-  return Number.isFinite(claimedAt)
+  // Reject malformed/unbound claims before any provider lookup. A valid
+  // reconciliation attempt must refer to a recorded dispatch attempt and
+  // cannot be claimed earlier than that attempt's persisted time.
+  return Number.isFinite(dispatchBound)
+    && Number.isFinite(claimedAt)
     && Number.isFinite(expiresAt)
+    && dispatchBound <= claimedAt
     && claimedAt < expiresAt
     && expiresAt > Date.now();
 }

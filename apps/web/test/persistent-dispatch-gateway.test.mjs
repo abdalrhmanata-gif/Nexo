@@ -517,6 +517,62 @@ function fakeReconciler({ result, error } = {}) {
   };
 }
 
+
+test("malformed or unbound reconciliation claims never trigger provider lookup", async () => {
+  const baseline = validReconciliationClaim();
+  const cases = [
+    ["execution id mismatch", validReconciliationClaim({ id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" })],
+    ["claim is not UNKNOWN", validReconciliationClaim({ status: "RUNNING" })],
+    ["external side effects are not in scope", validReconciliationClaim({
+      authority_snapshot: { ...baseline.authority_snapshot, external_side_effects: false },
+    })],
+    ["action id is missing", validReconciliationClaim({ action_id: "" })],
+    ["idempotency key is missing", validReconciliationClaim({ idempotency_key: "" })],
+    ["request is not a record", validReconciliationClaim({ request: null })],
+    ["destination is missing", validReconciliationClaim({
+      request: { ...baseline.request, destination: "" },
+    })],
+    ["provider audience is missing", validReconciliationClaim({
+      request: { ...baseline.request, audience: "" },
+    })],
+    ["reconciliation claim token is missing", validReconciliationClaim({ reconciliation_claim_token: "" })],
+    ["reconciliation claimed timestamp is missing", validReconciliationClaim({ reconciliation_claimed_at: "" })],
+    ["reconciliation claimed timestamp is invalid", validReconciliationClaim({ reconciliation_claimed_at: "not-a-timestamp" })],
+    ["reconciliation lease expiry is missing", validReconciliationClaim({ reconciliation_lease_expires_at: "" })],
+    ["reconciliation lease expiry is invalid", validReconciliationClaim({ reconciliation_lease_expires_at: "not-a-timestamp" })],
+    ["reconciliation lease is already expired", validReconciliationClaim({
+      reconciliation_lease_expires_at: new Date(Date.now() - 1_000).toISOString(),
+    })],
+    ["reconciliation claim is at or after lease expiry", validReconciliationClaim({
+      reconciliation_claimed_at: new Date(Date.now() + 60_000).toISOString(),
+      reconciliation_lease_expires_at: new Date(Date.now() + 30_000).toISOString(),
+    })],
+    ["dispatch bound timestamp is absent", validReconciliationClaim({
+      dispatch_claimed_at: "",
+      created_at: "",
+    })],
+    ["dispatch bound timestamp is invalid", validReconciliationClaim({
+      dispatch_claimed_at: "not-a-timestamp",
+    })],
+    ["reconciliation claim predates its dispatch bound", validReconciliationClaim({
+      dispatch_claimed_at: new Date(Date.now() + 60_000).toISOString(),
+    })],
+  ];
+
+  for (const [name, claim] of cases) {
+    const client = fakeReconciliationClient({ claim });
+    const adapter = fakeReconciler();
+    const result = await reconcileThroughTrustedClaim({ client, adapter, executionId: EXECUTION_ID });
+
+    assert.equal(result.decision, PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED, name);
+    assert.equal(result.reasonCode, "INVALID_RECONCILIATION_CLAIM_RECORD", name);
+    assert.equal(result.providerLookupPerformed, false, name);
+    assert.equal(result.persisted, false, name);
+    assert.equal(adapter.calls.length, 0, name + ": provider lookup must not run");
+    assert.deepEqual(client.calls.map((call) => call.name), ["claim_agent_execution_reconciliation"], name);
+  }
+});
+
 test("reconciliation audience mismatch never calls the wrong provider adapter", async () => {
   const client = fakeReconciliationClient({
     claim: validReconciliationClaim({ request: { ...validReconciliationClaim().request, audience: "provider.other.v1" } }),
