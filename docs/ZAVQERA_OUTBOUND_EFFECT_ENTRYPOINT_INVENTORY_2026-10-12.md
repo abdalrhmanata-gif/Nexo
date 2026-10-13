@@ -170,3 +170,16 @@ Exact-head evidence:
 - Netlify preview-route verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38403622197
 
 **No overclaim:** static traversal does not handle computed/dynamic imports reliably, prove dependency-package internals, instrument live network calls, or show universal Mission Authority mediation across all outbound effects. Keep registry empty and Issue #23 OPEN.
+
+
+---
+
+## Reconciliation lookup now requires a valid dispatch-time binding — 2026-10-13
+
+The gateway's reconciliation claim validator now rejects malformed records before `adapter.reconcile` when `dispatch_claimed_at` and `created_at` are both missing/invalid, the current reconciliation claim timestamp is invalid, the lease is invalid/expired, or the reconciliation claim predates the dispatch-bound timestamp. A table-driven regression exercises 18 cases and confirms no provider lookup or finalization RPC occurs for invalid records.
+
+This matches SQL contract in W70/W74: reconciliation evidence must be newer than the dispatch bound (dispatch claim timestamp or execution creation time) and newer than the current reconciliation claim, under a valid current claim token/lease. No SQL or hosted database was modified.
+
+All six gates passed on exact PR source HEAD `10dac572cd672c789cddcf891b51cdcce17b1f73`: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407193288), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407194176), [Web Unit 335/335](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407192895), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407193049), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407194147), and [Netlify preview verification](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407194404). W21 artifacts: [cleanup evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407193288/artifacts/11820075267) and [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407193288/artifacts/11820205143).
+
+The registry is still empty, real-provider certification and universal JIT mediation remain unproven, Issue #23 remains OPEN, and production is NOT APPROVED.

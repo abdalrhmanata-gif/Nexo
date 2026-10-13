@@ -861,3 +861,22 @@ W21 artifact checksum/evidence summary:
 SHA note: W21 uses the synthetic merge commit `c01172831c716712ab6e816970f3e2624c4dad07`, whose parents are the PR base `46dc6029f084fb000ba511478d6e8aec3eb532b3` and PR head `503f87e3d8a00bdec0f1983ea665f8097cb3d417`. Report the PR source HEAD separately from the synthetic test merge SHA.
 
 A new Web Unit regression follows statically declared local source imports from API routes and prevents any route except the trusted internal worker route from reaching the Mission Action gateway, worker-boundary or registry modules. It is a bounded static-analysis guard, not a complete dynamic/import graph or network trace. PR #29 stays OPEN/Draft/UNMERGED, Issue #23 OPEN, registry empty, and production NOT APPROVED. Hosted Development remains documented at W65; W66–W80 NOT APPLIED. No protected environment changes.
+
+
+---
+
+## Exact-head gate status and reconciliation hardening — 2026-10-13 — `10dac572cd672c789cddcf891b51cdcce17b1f73`
+
+All six current PR source-head workflows passed:
+- [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407193288) — evidence/cleanup artifact [11820075267](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407193288/artifacts/11820075267), browser diagnostics [11820205143](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407193288/artifacts/11820205143)
+- [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407194176)
+- [Web Unit, 335/335](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407192895)
+- [Web CI/build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407193049)
+- [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407194147)
+- [Netlify preview verification](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407194404)
+
+The gateway now validates a non-empty, parseable dispatch-bound time (`dispatch_claimed_at`, else `created_at`) and ensures it is no later than the reconciliation claim time before allowing provider lookup. The 18-case regression test asserts invalid or unbound claims never invoke the reconciliation adapter. This is consistent with W70/W74 SQL freshness checks; no SQL or hosted data was changed.
+
+SHA distinction: W21 artifact `git_sha=3297661185557c924774d6efbaae33305b2ed999` is the synthetic test merge SHA; the PR source head is `10dac572cd672c789cddcf891b51cdcce17b1f73`.
+
+The provider registry stays empty; Issue #23 remains open because universal JIT mediation and real-provider certification are unproven. PR #29 stays OPEN/Draft/UNMERGED. Hosted Development remains documented at W65; W66–W80 are NOT APPLIED.

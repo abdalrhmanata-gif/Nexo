@@ -134,3 +134,16 @@ Exact-head workflows all passed:
 W21 recorded HTTP 503, `unregistered_adapter_denied`, `providerCall=not_attempted`; browser E2E 2/2 passed and disposable PostgreSQL 17 cleanup was verified with no remaining containers or volumes.
 
 This guard improves static coverage but does not trace computed/dynamic imports, package internals, runtime network effects, or every external-service path. Universal Mission Authority mediation remains **NOT PROVEN**; registry empty; Issue #23 OPEN; production NOT APPROVED.
+
+
+---
+
+## Reconciliation source-time binding guard — 2026-10-13 — tested code SHA `10dac572cd672c789cddcf891b51cdcce17b1f73`
+
+Before calling the reconciliation adapter, the gateway now requires a valid dispatch-bound timestamp (`dispatch_claimed_at` or legacy `created_at`), a valid current reconciliation claim timestamp and lease, with dispatch-bound time no later than the reconciliation claim. Eighteen invalid/missing/stale cases assert that provider lookup is not performed and no finalization RPC is attempted.
+
+SQL contract cross-check: W70's claim function returns the full execution row; W70/W74 finalization requires authoritative provider evidence later than the dispatch bound, later than the current reconciliation claim, and under the live claim token/lease. The application guard now mirrors that prerequisite before spend on a provider lookup.
+
+Evidence: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407193288), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407194176), [Web Unit 335/335](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407192895), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407193049), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407194147), [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407194404). W21 evidence/cleanup: [11820075267](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407193288/artifacts/11820075267); browser diagnostics: [11820205143](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407193288/artifacts/11820205143).
+
+This does not enable or certify a real provider. Registry stays empty; universal enforcement remains NOT PROVEN; Issue #23 OPEN; production NOT APPROVED.

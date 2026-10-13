@@ -164,3 +164,35 @@ A recursive test now follows statically declared local imports from all API rout
 ### Unchanged release blockers / guardrails
 
 PR #29 is OPEN / Draft / UNMERGED; Issue #23 is OPEN. Last documented hosted Development migration inventory remains W65; W66–W80 are NOT APPLIED, so hosted Research stays blocked. Real Research persistence/citations, real email delivery and password-reset verification, manual visual QA, leaked-password protection, and real-provider adapter certification remain NOT VERIFIED. No hosted DB writes, Main/Production changes, DNS/billing changes, real provider side effects or production deployment were performed.
+
+
+## Superseding checkpoint — 2026-10-13 — current code/test HEAD `10dac572cd672c789cddcf891b51cdcce17b1f73`
+
+This section supersedes the previous pending-run notes. Exact PR head and workflow metadata were rechecked before recording.
+
+### Reconciliation-claim validation hardening
+The persistent gateway now validates the reconciliation claim's source-time binding **before calling adapter.reconcile**. A claim is rejected as `INVALID_RECONCILIATION_CLAIM_RECORD` when its dispatch bound (`dispatch_claimed_at`, falling back to `created_at`) is missing/invalid, when its reconciliation timestamp is missing/invalid, when the claim predates the dispatch bound, or when the claim/lease interval is invalid or expired. The adapter lookup is not called in these malformed-claim cases.
+
+A table-driven test contains 18 malformed/unbound reconciliation scenarios and asserts `RECONCILE_REQUIRED`, `providerLookupPerformed=false`, `persisted=false`, zero adapter calls and no finalization RPC. Web Unit passed **335 tests / 0 failures**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407192895
+
+The SQL comparison is consistent with the application guard: W70/W74 return the complete `agent_executions` row from `claim_agent_execution_reconciliation`; trusted completion requires provider evidence newer than `coalesce(dispatch_claimed_at, created_at)`, newer than the current `reconciliation_claimed_at`, and a valid current, unexpired claim token. No SQL migration or hosted database was changed in this fix.
+
+### Exact-head gates and artifacts
+All six gates passed on source HEAD `10dac572cd672c789cddcf891b51cdcce17b1f73`:
+- W21 Local Launch Gate: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407193288
+- W25 Isolated PostgreSQL Atomic Fence: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407194176
+- Web Unit: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407192895 — 335 passed, 0 failed
+- Web CI / production build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407193049
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407194147
+- Netlify preview-route verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407194404 — succeeded; this does not claim production promotion or live Research verification.
+
+W21 artifacts were downloaded and inspected:
+- Evidence/cleanup: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407193288/artifacts/11820075267 — result success, repository migrations replayed on PostgreSQL 17, disposable Supabase stop exit code 0, no remaining labeled containers/volumes, `cleanup_verified=true`.
+- Browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407193288/artifacts/11820205143 — no-adapter worker path HTTP 503 / `unregistered_adapter_denied` / `providerCall=not_attempted`; Browser E2E 2 passed (2.0m), cleanup verified.
+
+W21's recorded `git_sha=3297661185557c924774d6efbaae33305b2ed999` is the synthetic GitHub merge-test commit. It must be distinguished from PR source HEAD `10dac572cd672c789cddcf891b51cdcce17b1f73`.
+
+### Guardrails and unresolved launch criteria
+PR #29 remains OPEN / Draft / UNMERGED. Issue #23 remains OPEN. The adapter registry remains empty. Static imports, unit regressions and disposable fake-provider evidence improve coverage but are not a complete transitive runtime/network trace and do not prove universal JIT mediation or certify a real provider.
+
+Last documented hosted Development migration inventory remains W65; W66–W80 are NOT APPLIED, so hosted Research remains blocked. Real email/reset delivery, manual visual QA, leaked-password protection and real-provider certification remain NOT VERIFIED. No hosted database writes, Supabase Main/Production modifications, DNS/billing changes, provider side effects, production deployment or PR merge occurred.
