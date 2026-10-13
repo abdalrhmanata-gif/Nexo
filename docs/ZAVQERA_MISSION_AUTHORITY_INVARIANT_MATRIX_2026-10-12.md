@@ -2,8 +2,8 @@
 
 **Reviewed branch:** `zavqera/ai-planner-integration`  
 **Reviewed PR:** #29, OPEN / Draft / UNMERGED  
-**Reviewed source head:** `17eef72d98be6f44f6998dc0080067e1313995f3`  
-**Latest code/test evidence:** W21 and companion gates passed on code/test SHA `7a2e559d3f6c3a91b69bce387f2adf98c17ee3d7`; `17eef72` is the later documentation-only successor reported by the branch/PR. This matrix is a source and evidence audit, not a claim of universal production enforcement.
+**Latest code/test head verified:** `4f80362e276cdd9623b2d7485bbacdcc656374db`  
+**Latest code/test evidence:** W21 and companion gates passed on code/test SHA `4f80362e276cdd9623b2d7485bbacdcc656374db`; the later documentation-only commit in this follow-up does not change application or test code. This matrix is a source and evidence audit, not a claim of universal production enforcement.
 
 ## Decision summary
 
@@ -51,3 +51,21 @@ The W21 artifacts were recorded as available with SHA-256 hashes in the launch-g
 ## Safety boundaries
 
 No hosted database change, live Research, real provider dispatch, production promotion, DNS/billing change, Git `main` change, or PR merge was performed for this audit. PR #29 remains OPEN / Draft / UNMERGED. Production launch remains **NOT APPROVED**.
+
+## Follow-up validation — 2026-10-13 (code/test SHA `4f80362e276cdd9623b2d7485bbacdcc656374db`)
+
+The internal Mission Action worker now has a **runtime HTTP fail-closed smoke check** in the disposable local E2E setup, in addition to the injected worker-boundary unit tests and static route-ordering assertions.
+
+- The test starts the application only against the verified disposable Supabase stack, sends an authenticated loopback HTTP `POST` to `/api/internal/agent-executions/{executionId}` with a fresh worker token and a randomly generated, unregistered `audience`, and requires HTTP **503** with the exact no-reviewed-adapter response.
+- The setup refuses non-loopback targets before making the request. The token remains server-side and is not passed to Playwright or browser state.
+- The existing runtime unit regression verifies that a missing/mismatched adapter cannot create the privileged client or invoke dispatch/reconciliation. Together, these tests prove the specific unregistered-adapter deny path, not all possible route paths or universal external-effect enforcement.
+- Web Unit **328/328 PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38369165964
+- Web CI / TypeScript / production build **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38369165944
+- Flutter CI **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38369165997
+- W25 isolated PostgreSQL atomic fence **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38369165962
+- W21 Local Launch Gate **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38369165919 — all 25 job steps succeeded, including disposable PostgreSQL 17/pgTAP, Mission Authority regressions, concurrency races, fake-provider gateway integration, both browser E2E tests, stack teardown, cleanup verification, and evidence uploads.
+- W21 evidence: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38369165919/artifacts/11798412271
+- W21 browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38369165919/artifacts/11798422262
+- Netlify Deploy Preview is **READY** and the branch preview verification check is green: https://deploy-preview-29--unique-kringle-3ce321.netlify.app
+
+This does **not** change the decision for Issue #23: all external side effects still are not proven to pass through the Mission Authority JIT gateway, the provider registry remains intentionally empty, and no real provider adapter is certified. Hosted Development schema parity and other external release gates remain unverified. PR #29 stays OPEN / Draft / UNMERGED.

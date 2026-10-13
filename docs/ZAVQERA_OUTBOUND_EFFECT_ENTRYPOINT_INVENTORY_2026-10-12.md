@@ -30,7 +30,7 @@
 
 1. Keep the provider registry empty and the internal dispatch route fail-closed.
 2. Search and review all reachable `fetch`, provider SDK, email, webhook, queue and callback call sites, including transitive helper modules, and add any newly found entry points to this inventory.
-3. For Mission Action execution specifically, add an explicit route-level regression proving no action can reach provider I/O without a registered reviewed adapter and a persisted JIT claim; prove the negative path performs zero provider calls.
+3. **Completed for the current no-adapter path on code/test SHA `4f80362e276cdd9623b2d7485bbacdcc656374db`:** the disposable full-loop E2E setup now sends a real authenticated HTTP request to the internal mission-action route with a fresh server-only worker token and a randomly unregistered `audience`; it requires the exact HTTP 503 no-adapter denial. Paired injected-boundary unit tests assert zero privileged-client creation and zero dispatch/reconciliation calls. This proves the missing-adapter deny path, not every route/path or a registered-provider side effect.
 4. Add exact tests for changed action/input/destination, stale/revoked authority, missing approval, provider/model replacement without authority expansion, and cross-tenant denial.
 5. Keep hosted migration rollout, live Research, Resend inbox delivery, password reset verification and real-provider adapter certification separately authorized.
 
@@ -48,3 +48,15 @@ No hosted database was changed, no hosted Research or real mission provider call
 - Review of W57/W68/W69/W70 SQL tests confirms strong exact-scope, budget, one-time claim, reconciliation, stale-evidence and same-workspace member/admin assertions. However, the reviewed W57, W68, W69 and W70 fixtures each create a single workspace; these files do not currently provide an explicit different-workspace/cross-tenant negative assertion. This is an evidence gap, not proof that the underlying SQL authorization is broken. A regression must use the correct authenticated role and test fixture context before it can count as evidence.
 - The internal mission-action route still rejects an absent adapter before privileged client construction and JIT claim. The existing route-ordering test statically inspects source order; it is not a runtime proof of zero I/O. A dynamic route-level proof remains outstanding.
 - No code changes were made during this audit pass. Code/test HEAD remains `706f7801c92f54feb9a55b77103c00c2e54f2d10`; this follow-up is documentation only. Do not conflate the passing current-head CI with hosted Development migration parity or real-provider certification.
+
+## Runtime route verification — 2026-10-13 (code/test SHA `4f80362e276cdd9623b2d7485bbacdcc656374db`)
+
+The dynamic route-level check previously listed as outstanding is now present for the **unregistered-adapter fail-closed path**:
+
+1. The disposable E2E setup starts the app against a freshly reset local PostgreSQL 17/Supabase stack, verifies the configured backend is not hosted Development, and then sends a token-authenticated `POST` over loopback to the real internal mission-action route.
+2. The request uses a randomly generated execution UUID and an `audience` that is randomly generated per run and is not registered in the intentionally empty trusted adapter registry.
+3. The check requires HTTP 503 and the exact response `No reviewed provider adapter is registered. No provider call occurred.`; unexpected success, other status, wrong response, non-loopback base URL, or absent response fails the E2E setup.
+4. The worker-boundary unit tests separately assert that missing/mismatched adapters and invalid operations do not construct the privileged client and do not call dispatch/reconciliation.
+5. W21 on this code/test SHA passed all 25 steps, including browser E2E, disposal cleanup, cleanup verification and both artifact uploads: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38369165919
+
+This check is intentionally narrow. It does not register a provider, make a real outbound provider request, or prove that all external side effects in the product are mediated by Mission Authority. The provider registry remains empty and the universal-boundary acceptance criterion in Issue #23 remains open.
