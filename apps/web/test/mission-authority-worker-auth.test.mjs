@@ -410,9 +410,9 @@ test("Mission Action API dependency graphs cannot call outbound HTTP directly", 
       || route.startsWith("missions/");
   });
   const directOutboundPatterns = [
-    { name: "fetch()", pattern: /\\bfetch\\s*\\(/g },
-    { name: "axios/got/undici request", pattern: /\\b(?:axios|got|undici)\\.(?:request|get|post|put|patch|delete)\\s*\\(/g },
-    { name: "Node HTTP request", pattern: /\\b(?:http|https)\\.request\\s*\\(/g },
+    { name: "fetch()", pattern: new RegExp("\\bfetch\\s*\\(", "g") },
+    { name: "axios/got/undici request", pattern: new RegExp("\\b(?:axios|got|undici)\\.(?:request|get|post|put|patch|delete)\\s*\\(", "g") },
+    { name: "Node HTTP request", pattern: new RegExp("\\b(?:http|https)\\.request\\s*\\(", "g") },
   ];
   const explicitHttpImports = /^(?:node:)?(?:http|https|axios|got|undici)$/;
   const violations = [];
@@ -432,7 +432,7 @@ test("Mission Action API dependency graphs cannot call outbound HTTP directly", 
 
       for (const { name, pattern } of directOutboundPatterns) {
         for (const match of source.matchAll(pattern)) {
-          const line = source.slice(0, match.index).split("\\n").length;
+          const line = source.slice(0, match.index).split("\n").length;
           violations.push({ route, module: moduleName, marker: `${name} at line ${line}` });
         }
       }
