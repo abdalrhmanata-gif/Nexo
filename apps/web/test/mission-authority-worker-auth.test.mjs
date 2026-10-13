@@ -62,7 +62,7 @@ test("privileged worker route uses server-only credentials and the runtime bound
   assert.match(route, /isTrustedExecutionWorkerRequest/);
   assert.match(route, /resolveTrustedDispatchAdapter/);
   assert.match(route, /runMissionActionWorker/);
-  assert.match(route, /No reviewed provider adapter is registered\\. No provider call occurred\\./);
+  assert.ok(route.includes("No reviewed provider adapter is registered. No provider call occurred."));
   assert.match(route, /dispatchThroughJitClaim/);
   assert.match(route, /reconcileThroughTrustedClaim/);
   assert.match(route, /Only a valid operation and provider audience are accepted/);
