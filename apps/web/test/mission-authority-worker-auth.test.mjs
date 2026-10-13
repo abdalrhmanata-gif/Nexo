@@ -540,6 +540,13 @@ function readAstOutboundMarkers(source, filePath = "source.mjs") {
   );
 
   function visit(node) {
+    if (ts.isPropertyAccessExpression(node) || ts.isElementAccessExpression(node)) {
+      const accessPath = resolveAliasedExpressionPath(node, aliases);
+      if (isSensitiveAliasPath(accessPath) && !GLOBAL_OBJECT_PATHS.has(accessPath)) {
+        add(node, "outbound-capable transport/loader reference");
+      }
+    }
+
     if (ts.isCallExpression(node)) {
       if (node.expression.kind === ts.SyntaxKind.ImportKeyword && !staticString(node.arguments[0])) {
         add(node, "computed import()");
@@ -653,6 +660,26 @@ test("outbound-source detectors recognize representative transport and dynamic-l
   assert.deepEqual(specifiers.sort(), ["openai", "resend"]);
   assert.equal(specifiers.every((specifier) => EXPLICIT_PROVIDER_SDK_IMPORTS.has(specifier)), true,
     "known provider SDKs are recognized as outbound-capable dependencies");
+});
+
+test("AST outbound analysis rejects sensitive transport references passed through helpers", () => {
+  const blockedExamples = [
+    'const relay = (callback, value) => callback(value); relay(globalThis.fetch, "/outbound");',
+    'const browserGlobal = globalThis; const relay = (callback, value) => callback(value); relay(browserGlobal.fetch, "/outbound");',
+    'const runtimeGlobal = globalThis; const handoff = (loader, name) => loader(name); handoff(runtimeGlobal.require, providerPackageName);',
+    'const runtimeGlobal = globalThis; const compile = runtimeGlobal.Function; handoff(compile, sourceText);',
+  ];
+  for (const source of blockedExamples) {
+    assert.ok(readAstOutboundMarkers(source).length > 0, source + " must flag a transport/loader passed as a value");
+  }
+
+  const allowedExamples = [
+    'const payload = { fetch: "field name", destination: "https://example.invalid" };',
+    'const metadata = globalThis["metadata"];',
+  ];
+  for (const source of allowedExamples) {
+    assert.deepEqual(readAstOutboundMarkers(source), [], source);
+  }
 });
 
 test("AST outbound analysis follows aliases of global objects, transports and dynamic loaders", () => {
