@@ -1,3 +1,27 @@
+## Current verification snapshot — 2026-10-13 — PR HEAD `a11b869ce074ee787ef1a1d302e3f3cb0fd7f427`
+
+This is a documentation-only candidate on top of the previously reviewed app/SQL source. Current PR branch head: `a11b869ce074ee787ef1a1d302e3f3cb0fd7f427`.
+
+### Exact-head automated gates
+
+- **W21 Local Launch Gate — PASS:** [run 38389588469](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38389588469). All 25 workflow steps completed successfully, including disposable PostgreSQL 17 migration replay/pgTAP, Mission Authority and quota/workspace regressions, actual-ledger race proofs, W72 fake-provider gateway integration, browser E2E, cleanup, cleanup verification, and both artifact uploads.
+- **W21 evidence / cleanup artifact:** [artifact 11808971118](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38389588469/artifacts/11808971118). It reports `migration_source=repo-migrations`, `postgres_major=17`, `supabase_stop_exit_code=0`, no remaining containers or volumes, and `cleanup_verified=true`. Its internal `git_sha=387a2b0b0a8aa95b8d1f7b7ce4ead14891e765b7` is the PR integration checkout SHA; GitHub artifact metadata associates the run with branch HEAD `a11b869ce074ee787ef1a1d302e3f3cb0fd7f427`.
+- **W21 browser diagnostics:** [artifact 11808941135](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38389588469/artifacts/11808941135). The unregistered-adapter route returned HTTP 503 (`unregistered_adapter_denied`, `providerCall=not_attempted`); browser E2E was `2 passed (2.0m)`.
+- **W25 isolated PostgreSQL atomic fence — PASS:** [run 38389588567](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38389588567).
+- **Web Unit — PASS:** [run 38389588462](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38389588462).
+- **Web CI / TypeScript / production build — PASS:** [run 38389588608](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38389588608).
+- **Flutter CI — PASS:** [run 38389588694](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38389588694).
+- **Netlify Deploy Preview route verification — PASS:** [run 38389588509](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38389588509). Deploy and authenticated live Research jobs were skipped; this is not a production deployment or live Research test.
+
+### Source audit and release boundaries
+
+The expanded source-level outbound-effect inventory is at `docs/ZAVQERA_OUTBOUND_EFFECT_ENTRYPOINT_INVENTORY_2026-10-12.md`. This is a source-pattern audit, not a complete transitive dependency analysis or instrumented runtime network trace.
+
+Hosted Supabase Development remains last verified at W65; W66–W80 are **NOT APPLIED**. Follow `docs/ZAVQERA_W66_W80_DEVELOPMENT_MIGRATION_ROLLOUT_PREFLIGHT_2026-10-13.md`; the decision not to apply remains until separate explicit authorization. Hosted Research, real invitation/password-reset delivery, manual visual QA, leaked-password hardening, and a reviewed real provider adapter remain unverified.
+
+**Decision unchanged:** universal Mission Authority enforcement is **NOT PROVEN** and full launch remains **NOT APPROVED**. PR #29 stays OPEN / Draft / UNMERGED; Issue #23 stays OPEN. No hosted database, production deployment, DNS, billing, or real-provider changes were made.
+
+---
 ## Mission Authority invariant audit — 2026-10-12
 
 A source-level acceptance matrix has been added at [`docs/ZAVQERA_MISSION_AUTHORITY_INVARIANT_MATRIX_2026-10-12.md`](ZAVQERA_MISSION_AUTHORITY_INVARIANT_MATRIX_2026-10-12.md).
