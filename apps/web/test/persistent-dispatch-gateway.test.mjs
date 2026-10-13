@@ -699,6 +699,51 @@ test("lookup timestamp must be newer than the current reconciliation claim", asy
   assert.equal(client.calls.length, 1, "stale evidence must not be persisted as a final outcome");
 });
 
+
+test("malformed, unsupported or future-dated provider lookup evidence never finalizes UNKNOWN", async () => {
+  const claim = validReconciliationClaim();
+  const cases = [
+    ["lookup is not authoritative", { authoritative: false }],
+    ["lookup method is unsupported", { method: "arbitrary_url_lookup" }],
+    ["provider state is missing", { providerState: "" }],
+    ["provider state exceeds the bounded length", { providerState: "x".repeat(101) }],
+    ["lookup timestamp is missing", { checkedAt: "" }],
+    ["lookup timestamp is malformed", { checkedAt: "not-a-timestamp" }],
+    ["lookup timestamp is not newer than dispatch", {
+      checkedAt: claim.dispatch_claimed_at,
+    }],
+    ["lookup timestamp is not newer than reconciliation claim", {
+      checkedAt: claim.reconciliation_claimed_at,
+    }],
+    ["lookup timestamp is too far in the future", {
+      checkedAt: new Date(Date.now() + 6 * 60_000).toISOString(),
+    }],
+  ];
+
+  for (const [name, overrides] of cases) {
+    const client = fakeReconciliationClient({ claim });
+    const adapter = fakeReconciler({ result: {
+      state: "NOT_SENT",
+      authoritative: true,
+      method: "idempotency_key_lookup",
+      providerState: "not_found",
+      checkedAt: new Date().toISOString(),
+      ...overrides,
+    } });
+
+    const result = await reconcileThroughTrustedClaim({ client, adapter, executionId: EXECUTION_ID });
+
+    assert.equal(result.decision, PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED, name);
+    assert.equal(result.reasonCode, "AUTHORITATIVE_LOOKUP_EVIDENCE_REQUIRED", name);
+    assert.equal(result.providerLookupPerformed, true, name);
+    assert.equal(result.persisted, false, name);
+    assert.equal(result.status, "UNKNOWN", name);
+    assert.equal(adapter.calls.length, 1, name + ": one read-only lookup may occur");
+    assert.equal(client.calls.length, 1, name + ": invalid evidence must not call finalization RPC");
+    assert.deepEqual(client.calls.map((call) => call.name), ["claim_agent_execution_reconciliation"], name);
+  }
+});
+
 test("authoritative no-send reconciliation releases the held reservation through FAILED", async () => {
   const client = fakeReconciliationClient();
   const adapter = fakeReconciler({ result: {
