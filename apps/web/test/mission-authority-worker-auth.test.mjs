@@ -415,6 +415,25 @@ test("Mission Action API dependency graphs cannot call outbound HTTP directly", 
     { name: "Node HTTP request", pattern: new RegExp("\\b(?:http|https)\\.request\\s*\\(", "g") },
   ];
   const explicitHttpImports = /^(?:node:)?(?:http|https|axios|got|undici)$/;
+  // Provider SDK imports are also direct outbound paths, even when their
+  // implementation hides fetch()/http.request() inside node_modules.
+  // Keep Mission Action provider I/O behind the reviewed trusted adapter only.
+  const explicitProviderSdkImports = new Set([
+    "openai",
+    "@ai-sdk/openai",
+    "@ai-sdk/anthropic",
+    "@anthropic-ai/sdk",
+    "@google/generative-ai",
+    "resend",
+    "nodemailer",
+    "@sendgrid/mail",
+    "stripe",
+    "twilio",
+    "@aws-sdk/client-ses",
+    "@slack/web-api",
+    "googleapis",
+    "@microsoft/microsoft-graph-client",
+  ]);
   const violations = [];
 
   for (const routeFile of actionRouteFiles) {
@@ -427,6 +446,9 @@ test("Mission Action API dependency graphs cannot call outbound HTTP directly", 
       for (const specifier of readStaticLocalImportSpecifiers(source)) {
         if (explicitHttpImports.test(specifier)) {
           violations.push({ route, module: moduleName, marker: `transport import: ${specifier}` });
+        }
+        if (explicitProviderSdkImports.has(specifier)) {
+          violations.push({ route, module: moduleName, marker: `provider SDK import: ${specifier}` });
         }
       }
 
