@@ -1,7 +1,7 @@
 -- W70: only a trusted leased worker can settle UNKNOWN external outcomes.
 begin;
 create extension if not exists pgtap;
-select plan(21);
+select plan(22);
 
 select ok(to_regprocedure('public.claim_agent_execution_reconciliation(uuid)') is not null,
   'trusted reconciliation-claim RPC exists');
@@ -44,6 +44,9 @@ declare
   v_agent uuid := gen_random_uuid();
   v_actions uuid[] := array[gen_random_uuid(), gen_random_uuid(), gen_random_uuid()];
   v_exec_ids uuid[] := array[gen_random_uuid(), gen_random_uuid(), gen_random_uuid()];
+  v_legacy_action uuid := gen_random_uuid();
+  v_legacy_execution_id uuid := gen_random_uuid();
+  v_legacy_claim public.agent_executions;
   v_budget_id uuid := gen_random_uuid();
   v_budget public.mission_authority_budgets;
   v_reservation public.mission_authority_budget_reservations;
@@ -255,6 +258,55 @@ begin
   insert into w70_behavior_results values ('valid_retry_after_rejected_settlement_succeeds',
     v_done.status = 'SUCCEEDED' and v_budget.actions_reserved = 0 and v_budget.actions_consumed = 2
     and v_budget.spend_reserved = 0 and v_budget.spend_consumed = 8.5);
+
+  -- Legacy UNKNOWN attempts may still be reconciled as FAILED with authoritative
+  -- no-send proof, but must never be promoted to SUCCEEDED without a W69 dispatch claim.
+  update public.mission_authority_budgets
+     set actions_reserved = actions_reserved + 1,
+         spend_reserved = spend_reserved + 5
+   where id = v_budget_id;
+
+  insert into public.mission_actions(id, mission_id, title, position, status)
+  values (v_legacy_action, v_mission, 'W70 legacy no-dispatch action', 4, 'RUNNING');
+
+  insert into public.agent_executions(
+    id, workspace_id, mission_id, action_id, agent_id, requested_by, idempotency_key,
+    status, authority_snapshot, request, evidence, lease_expires_at, completed_at
+  ) values (
+    v_legacy_execution_id, v_workspace, v_mission, v_legacy_action, v_agent, v_owner,
+    'w70-legacy-no-dispatch-claim-key', 'UNKNOWN',
+    '{"mode":"bounded","external_side_effects":true,"requires_approval":true}'::jsonb,
+    jsonb_build_object('destination', 'https://provider.example.test/w70/legacy',
+      'audience', 'provider.operation.v1'),
+    '{"outcome":"UNKNOWN","reconciliation_required":true}'::jsonb,
+    clock_timestamp() - interval '1 minute',
+    clock_timestamp() - interval '1 minute'
+  );
+
+  insert into public.mission_authority_budget_reservations(
+    budget_id, execution_id, reserved_actions, reserved_spend, currency, status
+  ) values (v_budget_id, v_legacy_execution_id, 1, 5, 'NOK', 'HELD_UNKNOWN');
+
+  select * into v_legacy_claim
+    from public.claim_agent_execution_reconciliation(v_legacy_execution_id);
+  v_success_evidence := jsonb_set(v_success_evidence, '{reconciliation,checked_at}',
+    to_jsonb(clock_timestamp()), false);
+  v_caught := false;
+  begin
+    perform public.reconcile_agent_execution_outcome(
+      v_legacy_execution_id, v_legacy_claim.reconciliation_claim_token,
+      'SUCCEEDED', v_success_result, v_success_evidence);
+  exception when sqlstate '22023' then
+    if sqlerrm = 'EXECUTION_NOT_RECONCILABLE' then v_caught := true; else raise; end if;
+  end;
+  select * into v_execution from public.agent_executions where id = v_legacy_execution_id;
+  select * into v_reservation from public.mission_authority_budget_reservations
+   where execution_id = v_legacy_execution_id;
+  insert into w70_behavior_results values ('legacy_success_without_dispatch_claim_denied',
+    v_caught and v_execution.status = 'UNKNOWN'
+    and v_execution.dispatch_claimed_at is null
+    and v_execution.reconciliation_claim_token = v_legacy_claim.reconciliation_claim_token
+    and v_reservation.status = 'HELD_UNKNOWN');
 end;
 $behavior$;
 
@@ -282,6 +334,9 @@ select ok((select passed from w70_behavior_results where name = 'overcap_receipt
   'over-cap provider charges leave the execution UNKNOWN and reservation held');
 select ok((select passed from w70_behavior_results where name = 'valid_retry_after_rejected_settlement_succeeds'),
   'a corrected authoritative receipt settles the same attempt without a new provider dispatch');
+
+select ok((select passed from w70_behavior_results where name = 'legacy_success_without_dispatch_claim_denied'),
+  'a legacy UNKNOWN execution without W69 dispatch claim cannot be reconciled as provider success');
 
 select * from finish();
 rollback;
