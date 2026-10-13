@@ -1,7 +1,7 @@
 -- W69: every delegated external side effect needs a single-use server JIT claim.
 begin;
 create extension if not exists pgtap;
-select plan(27);
+select plan(28);
 
 select ok(
   (select count(*) = 4 from information_schema.columns
@@ -92,6 +92,8 @@ declare
   v_request jsonb;
   v_scope jsonb;
   v_caught boolean;
+  v_constraint_name text;
+  v_partial_tuple_checks_passed boolean := true;
   v_claim_event_count integer;
   v_mission_version bigint;
   v_action_version bigint;
@@ -272,6 +274,48 @@ begin
   end;
   insert into w69_behavior_results values ('changed_authority_denied', v_caught);
 
+  -- The database must independently reject partial W69 dispatch tuples, not
+  -- only rely on the application gateway to reject malformed RPC records.
+  v_constraint_name := null;
+  v_caught := false;
+  begin
+    update public.agent_executions
+       set dispatch_claim_authority_hash = repeat('a', 64)
+     where id = v_execution_ids[3];
+  exception when check_violation then
+    get stacked diagnostics v_constraint_name = CONSTRAINT_NAME;
+    v_caught := v_constraint_name = 'agent_executions_dispatch_claim_consistency';
+  end;
+  v_partial_tuple_checks_passed := v_partial_tuple_checks_passed and v_caught;
+
+  v_constraint_name := null;
+  v_caught := false;
+  begin
+    update public.agent_executions
+       set dispatch_claimed_at = clock_timestamp()
+     where id = v_execution_ids[5];
+  exception when check_violation then
+    get stacked diagnostics v_constraint_name = CONSTRAINT_NAME;
+    v_caught := v_constraint_name = 'agent_executions_dispatch_claim_consistency';
+  end;
+  v_partial_tuple_checks_passed := v_partial_tuple_checks_passed and v_caught;
+
+  v_constraint_name := null;
+  v_caught := false;
+  begin
+    update public.agent_executions
+       set dispatch_claim_budget_revision = v_revision
+     where id = v_execution_ids[6];
+  exception when check_violation then
+    get stacked diagnostics v_constraint_name = CONSTRAINT_NAME;
+    v_caught := v_constraint_name = 'agent_executions_dispatch_claim_consistency';
+  end;
+  v_partial_tuple_checks_passed := v_partial_tuple_checks_passed and v_caught;
+  insert into w69_behavior_results values (
+    'partial_dispatch_claim_tuple_rejected',
+    v_partial_tuple_checks_passed
+  );
+
 
 end;
 $behavior$;
@@ -392,6 +436,9 @@ select ok((select passed from w69_behavior_results where name = 'stale_mission_v
   'a mission version change after start invalidates the JIT claim');
 select ok((select passed from w69_behavior_results where name = 'stale_action_version_denied'),
   'an action version change after start invalidates the JIT claim');
+
+select ok((select passed from w69_behavior_results where name = 'partial_dispatch_claim_tuple_rejected'),
+  'the database constraint rejects partial W69 dispatch-claim tuples');
 
 select * from finish();
 rollback;
