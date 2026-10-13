@@ -399,6 +399,68 @@ test("only the trusted internal worker route transitively reaches Mission Action
 });
 
 
+const DIRECT_OUTBOUND_PATTERNS = [
+  { name: "fetch()", pattern: new RegExp("\\bfetch\\s*\\(", "g") },
+  { name: "axios/got/undici request", pattern: new RegExp("\\b(?:axios|got|undici)\\.(?:request|get|post|put|patch|delete)\\s*\\(", "g") },
+  { name: "Node HTTP request", pattern: new RegExp("\\b(?:http|https)\\.request\\s*\\(", "g") },
+  { name: "computed import()", pattern: /\bimport\s*\(\s*(?!["'])/g },
+  { name: "computed require()", pattern: /\brequire\s*\(\s*(?!["'])/g },
+  { name: "createRequire()", pattern: /\bcreateRequire\s*\(/g },
+];
+const EXPLICIT_HTTP_IMPORTS = /^(?:node:)?(?:http|https|axios|got|undici)$/;
+const EXPLICIT_PROVIDER_SDK_IMPORTS = new Set([
+  "openai",
+  "@ai-sdk/openai",
+  "@ai-sdk/anthropic",
+  "@anthropic-ai/sdk",
+  "@google/generative-ai",
+  "resend",
+  "nodemailer",
+  "@sendgrid/mail",
+  "stripe",
+  "twilio",
+  "@aws-sdk/client-ses",
+  "@slack/web-api",
+  "googleapis",
+  "@microsoft/microsoft-graph-client",
+]);
+
+test("outbound-source detectors recognize representative transport and dynamic-loader escapes", () => {
+  const positiveExamples = [
+    ["fetch()", "await fetch(url)"],
+    ["axios/got/undici request", "await axios.post(url, body)"],
+    ["Node HTTP request", "https.request(options)"],
+    ["computed import()", "await import(providerModuleName)"],
+    ["computed require()", "require(providerPackageName)"],
+    ["createRequire()", "const localRequire = createRequire(import.meta.url)"],
+  ];
+
+  for (const [name, source] of positiveExamples) {
+    const detector = DIRECT_OUTBOUND_PATTERNS.find((entry) => entry.name === name);
+    assert.ok(detector, name + ": detector must be configured");
+    detector.pattern.lastIndex = 0;
+    assert.equal(detector.pattern.test(source), true, name + ": representative escape must be detected");
+  }
+
+  const computedImport = DIRECT_OUTBOUND_PATTERNS.find((entry) => entry.name === "computed import()");
+  const computedRequire = DIRECT_OUTBOUND_PATTERNS.find((entry) => entry.name === "computed require()");
+  computedImport.pattern.lastIndex = 0;
+  computedRequire.pattern.lastIndex = 0;
+  assert.equal(computedImport.pattern.test('await import("./trusted-local.mjs")'), false,
+    "a literal local import is followed by the source-graph traversal, not classified as computed");
+  assert.equal(computedRequire.pattern.test('require("./trusted-local.cjs")'), false,
+    "a literal local require is followed by the source-graph traversal, not classified as computed");
+
+  assert.equal(EXPLICIT_HTTP_IMPORTS.test("node:https"), true);
+  assert.equal(EXPLICIT_HTTP_IMPORTS.test("node:fs"), false);
+  const specifiers = readStaticLocalImportSpecifiers(
+    'import Client from "openai";\\nconst mail = require("resend");',
+  );
+  assert.deepEqual(specifiers.sort(), ["openai", "resend"]);
+  assert.equal(specifiers.every((specifier) => EXPLICIT_PROVIDER_SDK_IMPORTS.has(specifier)), true,
+    "known provider SDKs are recognized as outbound-capable dependencies");
+});
+
 test("Mission Action API dependency graphs cannot call outbound HTTP directly", async () => {
   const apiRoot = join(webRoot, "app", "api");
   const routeFiles = await listApiRouteFiles(apiRoot);
@@ -409,34 +471,6 @@ test("Mission Action API dependency graphs cannot call outbound HTTP directly", 
       || route.startsWith("internal/agent-executions/")
       || route.startsWith("missions/");
   });
-  const directOutboundPatterns = [
-    { name: "fetch()", pattern: new RegExp("\\bfetch\\s*\\(", "g") },
-    { name: "axios/got/undici request", pattern: new RegExp("\\b(?:axios|got|undici)\\.(?:request|get|post|put|patch|delete)\\s*\\(", "g") },
-    { name: "Node HTTP request", pattern: new RegExp("\\b(?:http|https)\\.request\\s*\\(", "g") },
-    { name: "computed import()", pattern: /\bimport\s*\(\s*(?!["'])/g },
-    { name: "computed require()", pattern: /\brequire\s*\(\s*(?!["'])/g },
-    { name: "createRequire()", pattern: /\bcreateRequire\s*\(/g },
-  ];
-  const explicitHttpImports = /^(?:node:)?(?:http|https|axios|got|undici)$/;
-  // Provider SDK imports are also direct outbound paths, even when their
-  // implementation hides fetch()/http.request() inside node_modules.
-  // Keep Mission Action provider I/O behind the reviewed trusted adapter only.
-  const explicitProviderSdkImports = new Set([
-    "openai",
-    "@ai-sdk/openai",
-    "@ai-sdk/anthropic",
-    "@anthropic-ai/sdk",
-    "@google/generative-ai",
-    "resend",
-    "nodemailer",
-    "@sendgrid/mail",
-    "stripe",
-    "twilio",
-    "@aws-sdk/client-ses",
-    "@slack/web-api",
-    "googleapis",
-    "@microsoft/microsoft-graph-client",
-  ]);
   const violations = [];
 
   for (const routeFile of actionRouteFiles) {
@@ -447,15 +481,15 @@ test("Mission Action API dependency graphs cannot call outbound HTTP directly", 
       const moduleName = relative(webRoot, modulePath).replace(/\\\\/g, "/");
 
       for (const specifier of readStaticLocalImportSpecifiers(source)) {
-        if (explicitHttpImports.test(specifier)) {
+        if (EXPLICIT_HTTP_IMPORTS.test(specifier)) {
           violations.push({ route, module: moduleName, marker: `transport import: ${specifier}` });
         }
-        if (explicitProviderSdkImports.has(specifier)) {
+        if (EXPLICIT_PROVIDER_SDK_IMPORTS.has(specifier)) {
           violations.push({ route, module: moduleName, marker: `provider SDK import: ${specifier}` });
         }
       }
 
-      for (const { name, pattern } of directOutboundPatterns) {
+      for (const { name, pattern } of DIRECT_OUTBOUND_PATTERNS) {
         for (const match of source.matchAll(pattern)) {
           const line = source.slice(0, match.index).split("\n").length;
           violations.push({ route, module: moduleName, marker: `${name} at line ${line}` });
