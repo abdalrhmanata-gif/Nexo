@@ -70,8 +70,8 @@ declare
   v_workspace uuid := gen_random_uuid();
   v_mission uuid := gen_random_uuid();
   v_agent uuid := gen_random_uuid();
-  v_actions uuid[] := array[gen_random_uuid(), gen_random_uuid(), gen_random_uuid(), gen_random_uuid()];
-  v_execution_ids uuid[] := array[null::uuid, null::uuid, null::uuid, null::uuid];
+  v_actions uuid[] := array[gen_random_uuid(), gen_random_uuid(), gen_random_uuid(), gen_random_uuid(), gen_random_uuid(), gen_random_uuid()];
+  v_execution_ids uuid[] := array[null::uuid, null::uuid, null::uuid, null::uuid, null::uuid, null::uuid];
   v_budget jsonb;
   v_budget_id uuid;
   v_revision bigint;
@@ -109,19 +109,19 @@ begin
     '{"mode":"bounded","external_side_effects":true,"requires_approval":true}'::jsonb, v_owner);
 
   select version into v_mission_version from public.missions where id = v_mission;
-  select version into v_action_version from public.mission_actions where id = v_actions[3];
+  select version into v_action_version from public.mission_actions where id = v_actions[6];
 
   insert into w69_cross_tenant_fixture values (v_attacker, v_mission, v_actions[1], v_agent);
 
   v_budget := public.configure_mission_authority_budget(
-    v_workspace, v_mission, v_agent, 4, 40, 10, 'USD',
+    v_workspace, v_mission, v_agent, 6, 60, 10, 'USD',
     clock_timestamp() + interval '1 hour',
     clock_timestamp() - interval '1 minute'
   );
   v_budget_id := (v_budget ->> 'id')::uuid;
   v_revision := (v_budget ->> 'authority_revision')::bigint;
 
-  for i in 1..4 loop
+  for i in 1..6 loop
     v_request := jsonb_build_object(
       'authority_budget_revision', v_revision,
       'destination', 'https://example.invalid/w69/action-' || i,
@@ -182,6 +182,28 @@ begin
   end;
   insert into w69_behavior_results values ('same_execution_cannot_claim_twice', v_caught);
 
+  -- Dedicated, still-authorized executions isolate stale-version tests from
+  -- the later budget-revocation and authority-change tests.
+  update public.missions set version = v_mission_version + 1 where id = v_mission;
+  v_caught := false;
+  begin
+    perform public.claim_agent_execution_dispatch(v_execution_ids[5]);
+  exception when sqlstate '42501' then
+    if sqlerrm = 'APPROVAL_REQUIRED_OR_SCOPE_CHANGED' then v_caught := true; else raise; end if;
+  end;
+  insert into w69_behavior_results values ('stale_mission_version_denied', v_caught);
+  update public.missions set version = v_mission_version where id = v_mission;
+
+  update public.mission_actions set version = v_action_version + 1 where id = v_actions[6];
+  v_caught := false;
+  begin
+    perform public.claim_agent_execution_dispatch(v_execution_ids[6]);
+  exception when sqlstate '42501' then
+    if sqlerrm = 'APPROVAL_REQUIRED_OR_SCOPE_CHANGED' then v_caught := true; else raise; end if;
+  end;
+  insert into w69_behavior_results values ('stale_action_version_denied', v_caught);
+  update public.mission_actions set version = v_action_version where id = v_actions[6];
+
   update public.agent_executions
      set lease_expires_at = clock_timestamp() - interval '1 second'
    where id = v_execution_ids[2];
@@ -225,32 +247,7 @@ begin
   end;
   insert into w69_behavior_results values ('changed_authority_denied', v_caught);
 
-  -- The approval was exact at start, but mission/action revisions can change
-  -- while the execution is waiting. The JIT claim must recheck live versioned
-  -- scope immediately before it authorizes any provider I/O.
-  update public.workspace_agents
-     set authority = '{"mode":"bounded","external_side_effects":true,"requires_approval":true}'::jsonb
-   where id = v_agent;
 
-  update public.missions set version = v_mission_version + 1 where id = v_mission;
-  v_caught := false;
-  begin
-    perform public.claim_agent_execution_dispatch(v_execution_ids[3]);
-  exception when sqlstate '42501' then
-    if sqlerrm = 'APPROVAL_REQUIRED_OR_SCOPE_CHANGED' then v_caught := true; else raise; end if;
-  end;
-  insert into w69_behavior_results values ('stale_mission_version_denied', v_caught);
-  update public.missions set version = v_mission_version where id = v_mission;
-
-  update public.mission_actions set version = v_action_version + 1 where id = v_actions[3];
-  v_caught := false;
-  begin
-    perform public.claim_agent_execution_dispatch(v_execution_ids[3]);
-  exception when sqlstate '42501' then
-    if sqlerrm = 'APPROVAL_REQUIRED_OR_SCOPE_CHANGED' then v_caught := true; else raise; end if;
-  end;
-  insert into w69_behavior_results values ('stale_action_version_denied', v_caught);
-  update public.mission_actions set version = v_action_version where id = v_actions[3];
 end;
 $behavior$;
 
