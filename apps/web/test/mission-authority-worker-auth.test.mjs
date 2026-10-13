@@ -691,8 +691,8 @@ test("outbound-source detectors recognize representative transport and dynamic-l
       specifier + " exposes a dynamic loader, child-process, code-generation or worker capability");
   }
   const restrictedSpecifiers = readStaticLocalImportSpecifiers(
-    'import { createRequire as makeRequire } from "node:module";\\n'
-      + 'const { spawn } = require("node:child_process");\\n'
+    'import { createRequire as makeRequire } from "node:module";\n'
+      + 'const { spawn } = require("node:child_process");\n'
       + 'import vm from "node:vm";',
   );
   assert.deepEqual(
