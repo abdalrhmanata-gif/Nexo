@@ -58,11 +58,6 @@ select ok(
   and position('private.workspace_role(v_approval.workspace_id, auth.uid())' in lower(pg_get_functiondef('private.decide_mission_approval(uuid,text,text)'::regprocedure))) > 0,
   'approval decision rejects a NULL workspace role before changing status or history');
 
-select ok(
-  position('coalesce' in lower(pg_get_functiondef('private.can_edit_workspace(uuid,uuid)'::regprocedure))) > 0
-  and position('private.workspace_role' in lower(pg_get_functiondef('private.can_edit_workspace(uuid,uuid)'::regprocedure))) > 0
-  and position('false' in lower(pg_get_functiondef('private.can_edit_workspace(uuid,uuid)'::regprocedure))) > 0,
-  'workspace edit authorization returns false rather than NULL for a non-member');
 
 create temporary table w69_behavior_results (
   name text primary key,
@@ -111,6 +106,10 @@ begin
   values
     (v_workspace, v_owner, 'owner'),
     (v_attacker_workspace, v_attacker, 'owner');
+  insert into w69_behavior_results values (
+    'nonmember_edit_returns_false',
+    private.can_edit_workspace(v_workspace, v_attacker) is false
+  );
   insert into public.missions(id, workspace_id, owner_id, objective, status)
   values (v_mission, v_workspace, v_owner, 'Prove one-time JIT dispatch claim', 'READY');
 
@@ -369,6 +368,8 @@ select ok(
        and e.payload ->> 'approval_id' = (select target_approval_id::text from w69_cross_tenant_fixture)
   ),
   'a denied cross-workspace decision leaves the pending approval and event history unchanged');
+select ok((select passed from w69_behavior_results where name = 'nonmember_edit_returns_false'),
+  'workspace edit authorization returns false rather than NULL for a non-member');
 select ok((select passed from w69_behavior_results where name = 'cross_tenant_approval_decision_denied'),
   'an owner in another workspace cannot decide or cancel this mission approval');
 select ok((select passed from w69_behavior_results where name = 'cross_tenant_start_denied'),
