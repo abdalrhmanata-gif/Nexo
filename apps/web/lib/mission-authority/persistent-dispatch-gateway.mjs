@@ -295,8 +295,15 @@ function validReconciliationClaim(claim, executionId) {
   // authority/request digests and the budget revision must all remain valid.
   // Legacy records without dispatch_claimed_at keep the created_at fallback,
   // but any present dispatch claim must be complete rather than partial.
-  const hasDispatchClaim = claim.dispatch_claimed_at !== null
-    && claim.dispatch_claimed_at !== undefined;
+  const dispatchClaimFields = [
+    claim.dispatch_claimed_at,
+    claim.dispatch_claim_authority_hash,
+    claim.dispatch_claim_request_hash,
+    claim.dispatch_claim_budget_revision,
+  ];
+  // A partial modern tuple must not fall through to the legacy created_at
+  // path just because dispatch_claimed_at itself is absent.
+  const hasDispatchClaim = dispatchClaimFields.some((value) => value !== null && value !== undefined);
   if (hasDispatchClaim) {
     const budgetRevision = Number(claim.dispatch_claim_budget_revision);
     if (!nonEmpty(claim.dispatch_claimed_at)

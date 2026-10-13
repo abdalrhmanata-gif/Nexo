@@ -564,6 +564,18 @@ test("malformed or unbound reconciliation claims never trigger provider lookup",
     ["recorded dispatch authority snapshot does not require approval", validReconciliationClaim({
       authority_snapshot: { external_side_effects: true, requires_approval: false },
     })],
+    ["partial authority hash without dispatch timestamp is not legacy", validReconciliationClaim({
+      dispatch_claimed_at: null,
+      dispatch_claim_authority_hash: "a".repeat(64),
+    })],
+    ["partial request hash without dispatch timestamp is not legacy", validReconciliationClaim({
+      dispatch_claimed_at: null,
+      dispatch_claim_request_hash: "b".repeat(64),
+    })],
+    ["partial budget revision without dispatch timestamp is not legacy", validReconciliationClaim({
+      dispatch_claimed_at: null,
+      dispatch_claim_budget_revision: 7,
+    })],
     ["recorded dispatch authority hash is missing", validReconciliationClaim({ dispatch_claim_authority_hash: "" })],
     ["recorded dispatch request hash is malformed", validReconciliationClaim({ dispatch_claim_request_hash: "z".repeat(64) })],
     ["recorded dispatch budget revision is missing", validReconciliationClaim({ dispatch_claim_budget_revision: null })],
