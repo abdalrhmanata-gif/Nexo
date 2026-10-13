@@ -56,6 +56,12 @@ create temporary table w69_behavior_results (
   name text primary key,
   passed boolean not null
 ) on commit drop;
+create temporary table w69_cross_tenant_fixture (
+  attacker_id uuid not null,
+  mission_id uuid not null,
+  action_id uuid not null,
+  agent_id uuid not null
+) on commit drop;
 
 do $behavior$
 declare
@@ -100,26 +106,7 @@ begin
   values (v_agent, v_workspace, 'W69 bounded side-effect agent', 'Disposable JIT claim test', 'ACTIVE',
     '{"mode":"bounded","external_side_effects":true,"requires_approval":true}'::jsonb, v_owner);
 
-  -- A different authenticated principal must not discover or start this mission.
-  perform set_config('request.jwt.claim.sub', v_attacker::text, true);
-  perform set_config('request.jwt.claim.role', 'authenticated', true);
-  perform set_config('request.jwt.claims',
-    jsonb_build_object('sub', v_attacker, 'role', 'authenticated')::text, true);
-  v_caught := false;
-  begin
-    perform public.start_agent_execution(
-      v_mission, null, v_agent, 'w69-cross-tenant-denial-key-01',
-      '{"destination":"https://example.invalid/denied","audience":"w69-test"}'::jsonb
-    );
-  exception when sqlstate '42501' then
-    if sqlerrm = 'MISSION_NOT_FOUND_OR_FORBIDDEN' then v_caught := true; else raise; end if;
-  end;
-  insert into w69_behavior_results values ('cross_tenant_start_denied', v_caught);
-
-  perform set_config('request.jwt.claim.sub', v_owner::text, true);
-  perform set_config('request.jwt.claim.role', 'authenticated', true);
-  perform set_config('request.jwt.claims',
-    jsonb_build_object('sub', v_owner, 'role', 'authenticated')::text, true);
+  insert into w69_cross_tenant_fixture values (v_attacker, v_mission, v_actions[1], v_agent);
 
   v_budget := public.configure_mission_authority_budget(
     v_workspace, v_mission, v_agent, 4, 40, 10, 'USD',
@@ -234,6 +221,32 @@ begin
   insert into w69_behavior_results values ('changed_authority_denied', v_caught);
 end;
 $behavior$;
+
+-- Change JWT identity between SQL statements so auth.uid() is evaluated for the outsider.
+select set_config('request.jwt.claim.sub', attacker_id::text, true)
+  from w69_cross_tenant_fixture;
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select set_config('request.jwt.claims',
+  jsonb_build_object('sub', attacker_id, 'role', 'authenticated')::text, true)
+  from w69_cross_tenant_fixture;
+do $cross_tenant$
+declare
+  v_fixture w69_cross_tenant_fixture%rowtype;
+  v_caught boolean := false;
+begin
+  select * into v_fixture from w69_cross_tenant_fixture;
+  begin
+    perform public.start_agent_execution(
+      v_fixture.mission_id, v_fixture.action_id, v_fixture.agent_id,
+      'w69-cross-tenant-denial-key-01',
+      '{"destination":"https://example.invalid/denied","audience":"w69-test"}'::jsonb
+    );
+  exception when sqlstate '42501' then
+    if sqlerrm = 'MISSION_NOT_FOUND_OR_FORBIDDEN' then v_caught := true; else raise; end if;
+  end;
+  insert into w69_behavior_results values ('cross_tenant_start_denied', v_caught);
+end;
+$cross_tenant$;
 
 select ok((select passed from w69_behavior_results where name = 'cross_tenant_start_denied'),
   'an authenticated user outside the workspace cannot start or discover its mission execution');
