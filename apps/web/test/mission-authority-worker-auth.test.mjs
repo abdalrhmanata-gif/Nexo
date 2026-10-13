@@ -413,6 +413,9 @@ test("Mission Action API dependency graphs cannot call outbound HTTP directly", 
     { name: "fetch()", pattern: new RegExp("\\bfetch\\s*\\(", "g") },
     { name: "axios/got/undici request", pattern: new RegExp("\\b(?:axios|got|undici)\\.(?:request|get|post|put|patch|delete)\\s*\\(", "g") },
     { name: "Node HTTP request", pattern: new RegExp("\\b(?:http|https)\\.request\\s*\\(", "g") },
+    { name: "computed import()", pattern: /\\bimport\\s*\\(\\s*(?!["'])/g },
+    { name: "computed require()", pattern: /\\brequire\\s*\\(\\s*(?!["'])/g },
+    { name: "createRequire()", pattern: /\\bcreateRequire\\s*\\(/g },
   ];
   const explicitHttpImports = /^(?:node:)?(?:http|https|axios|got|undici)$/;
   // Provider SDK imports are also direct outbound paths, even when their
