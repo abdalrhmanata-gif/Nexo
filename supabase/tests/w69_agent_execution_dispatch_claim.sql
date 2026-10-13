@@ -59,8 +59,9 @@ select ok(
   'approval decision rejects a NULL workspace role before changing status or history');
 
 select ok(
-  position('coalesce(' in lower(pg_get_functiondef('private.can_edit_workspace(uuid,uuid)'::regprocedure))) > 0
-  and position(', false)' in lower(pg_get_functiondef('private.can_edit_workspace(uuid,uuid)'::regprocedure))) > 0,
+  position('coalesce' in lower(pg_get_functiondef('private.can_edit_workspace(uuid,uuid)'::regprocedure))) > 0
+  and position('private.workspace_role' in lower(pg_get_functiondef('private.can_edit_workspace(uuid,uuid)'::regprocedure))) > 0
+  and position('false' in lower(pg_get_functiondef('private.can_edit_workspace(uuid,uuid)'::regprocedure))) > 0,
   'workspace edit authorization returns false rather than NULL for a non-member');
 
 create temporary table w69_behavior_results (
