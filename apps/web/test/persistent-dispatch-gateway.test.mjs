@@ -765,6 +765,35 @@ test("terminal reconciliation replay returns stored status without another provi
   assert.equal(client.calls.length, 1);
 });
 
+test("legacy reconciliation success without a W69 dispatch claim stays UNKNOWN and is not finalized", async () => {
+  const claim = validReconciliationClaim({
+    dispatch_claimed_at: null,
+    dispatch_claim_authority_hash: null,
+    dispatch_claim_request_hash: null,
+    dispatch_claim_budget_revision: null,
+  });
+  const client = fakeReconciliationClient({ claim });
+  const adapter = fakeReconciler({ result: {
+    state: "SUCCEEDED",
+    authoritative: true,
+    method: "receipt_lookup",
+    providerState: "succeeded",
+    checkedAt: new Date().toISOString(),
+    receipt: { id: "legacy-unbound-provider-ref", charge_amount: 2.5, currency: "NOK" },
+  } });
+
+  const result = await reconcileThroughTrustedClaim({ client, adapter, executionId: EXECUTION_ID });
+
+  assert.equal(result.decision, PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED);
+  assert.equal(result.reasonCode, "LEGACY_SUCCESS_WITHOUT_DISPATCH_CLAIM");
+  assert.equal(result.providerLookupPerformed, true);
+  assert.equal(result.persisted, false);
+  assert.equal(result.status, "UNKNOWN");
+  assert.equal(adapter.calls.length, 1, "reconciliation lookup is read-only and must not dispatch");
+  assert.equal(client.calls.length, 1, "legacy provider success must not invoke finalization");
+  assert.equal(client.calls[0].name, "claim_agent_execution_reconciliation");
+});
+
 test("reconciliation success without a usable receipt remains UNKNOWN", async () => {
   const client = fakeReconciliationClient();
   const adapter = fakeReconciler({ result: {

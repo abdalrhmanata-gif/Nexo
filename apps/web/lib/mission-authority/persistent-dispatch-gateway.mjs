@@ -501,6 +501,20 @@ export async function reconcileThroughTrustedClaim({ client, adapter, executionI
   }
 
   const finalStatus = lookup.state === "SUCCEEDED" ? "SUCCEEDED" : "FAILED";
+  // Legacy records without a W69 dispatch claim can only be closed as
+  // FAILED after authoritative no-send proof. A provider success may be real,
+  // but without the original JIT claim the server cannot bind it to this
+  // authorized Mission Action, so leave the execution UNKNOWN and held.
+  if (finalStatus === "SUCCEEDED" && !nonEmpty(claim.dispatchClaimedAt)) {
+    return {
+      decision: PERSISTENT_DISPATCH_DECISIONS.RECONCILE_REQUIRED,
+      executionId,
+      reasonCode: "LEGACY_SUCCESS_WITHOUT_DISPATCH_CLAIM",
+      providerLookupPerformed: true,
+      persisted: false,
+      status: "UNKNOWN",
+    };
+  }
   const receipt = lookup.state === "SUCCEEDED" ? sanitiseProviderReceipt(lookup.receipt) : null;
   if (lookup.state === "SUCCEEDED" && !receipt) {
     return {

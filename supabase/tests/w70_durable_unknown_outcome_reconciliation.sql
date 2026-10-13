@@ -307,6 +307,23 @@ begin
     and v_execution.dispatch_claimed_at is null
     and v_execution.reconciliation_claim_token = v_legacy_claim.reconciliation_claim_token
     and v_reservation.status = 'HELD_UNKNOWN');
+
+  -- Compatibility is limited to an authoritative no-send result: legacy rows
+  -- without W69 dispatch proof may settle FAILED, but never SUCCEEDED.
+  v_failed_evidence := jsonb_set(v_failed_evidence, '{reconciliation,checked_at}',
+    to_jsonb(clock_timestamp()), false);
+  select * into v_done from public.reconcile_agent_execution_outcome(
+    v_legacy_execution_id, v_legacy_claim.reconciliation_claim_token,
+    'FAILED', v_failed_result, v_failed_evidence);
+  select * into v_execution from public.agent_executions where id = v_legacy_execution_id;
+  select * into v_reservation from public.mission_authority_budget_reservations
+   where execution_id = v_legacy_execution_id;
+  insert into w70_behavior_results values ('legacy_failed_with_no_send_proof_releases_budget',
+    v_done.status = 'FAILED' and v_done.reconciled_at is not null
+    and v_execution.dispatch_claimed_at is null
+    and v_done.evidence -> 'provider_not_sent' = 'true'::jsonb
+    and v_done.evidence -> 'safe_to_retry' = 'true'::jsonb
+    and v_reservation.status = 'RELEASED');
 end;
 $behavior$;
 
@@ -337,6 +354,8 @@ select ok((select passed from w70_behavior_results where name = 'valid_retry_aft
 
 select ok((select passed from w70_behavior_results where name = 'legacy_success_without_dispatch_claim_denied'),
   'a legacy UNKNOWN execution without W69 dispatch claim cannot be reconciled as provider success');
+select ok((select passed from w70_behavior_results where name = 'legacy_failed_with_no_send_proof_releases_budget'),
+  'a legacy UNKNOWN execution without W69 dispatch claim may settle FAILED only with authoritative no-send proof');
 
 select * from finish();
 rollback;
