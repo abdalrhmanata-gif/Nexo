@@ -1,7 +1,7 @@
 -- W71: expired external attempts enter durable W70 reconciliation with budget held.
 begin;
 create extension if not exists pgtap;
-select plan(9);
+select plan(10);
 
 select ok(to_regprocedure('private.reconcile_stale_agent_execution(uuid)') is not null,
   'private stale-execution recovery function exists');
@@ -29,7 +29,9 @@ create temporary table w71_behavior_results (
 do $behavior$
 declare
   v_owner uuid := gen_random_uuid();
+  v_outsider uuid := gen_random_uuid();
   v_workspace uuid := gen_random_uuid();
+  v_outsider_workspace uuid := gen_random_uuid();
   v_mission uuid := gen_random_uuid();
   v_agent uuid := gen_random_uuid();
   v_action_with_budget uuid := gen_random_uuid();
@@ -44,11 +46,13 @@ declare
   v_claim public.agent_executions;
   v_caught boolean;
 begin
-  insert into auth.users(id) values (v_owner);
+  insert into auth.users(id) values (v_owner), (v_outsider);
   insert into public.workspaces(id, owner_id, name)
-  values (v_workspace, v_owner, 'W71 expired external reservation recovery');
+  values
+    (v_workspace, v_owner, 'W71 expired external reservation recovery'),
+    (v_outsider_workspace, v_outsider, 'W71 separate outsider workspace');
   insert into public.workspace_members(workspace_id, user_id, role)
-  values (v_workspace, v_owner, 'owner');
+  values (v_workspace, v_owner, 'owner'), (v_outsider_workspace, v_outsider, 'owner');
   insert into public.missions(id, workspace_id, owner_id, objective, status)
   values (v_mission, v_workspace, v_owner, 'Recover expired external execution budget', 'READY');
 
@@ -165,6 +169,24 @@ begin
   insert into w71_behavior_results values ('missing_external_reservation_fails_closed',
     v_caught and v_execution.status = 'RUNNING');
 
+  -- A separate authenticated workspace owner must be denied before the stale
+  -- execution state or its budget reservation can be inspected or mutated.
+  perform set_config('request.jwt.claim.sub', v_outsider::text, true);
+  perform set_config('request.jwt.claim.role', 'authenticated', true);
+  perform set_config('request.jwt.claims',
+    jsonb_build_object('sub', v_outsider, 'role', 'authenticated')::text, true);
+  perform set_config('role', 'authenticated', true);
+  v_caught := false;
+  begin
+    perform public.reconcile_stale_agent_execution(v_missing_budget_execution_id);
+  exception when sqlstate '42501' then
+    if sqlerrm = 'EXECUTION_NOT_FOUND_OR_FORBIDDEN' then v_caught := true; else raise; end if;
+  end;
+  perform set_config('role', 'postgres', true);
+  select * into v_execution from public.agent_executions where id = v_missing_budget_execution_id;
+  insert into w71_behavior_results values ('cross_workspace_recovery_denied',
+    v_caught and v_execution.status = 'RUNNING');
+
 end;
 $behavior$;
 
@@ -178,6 +200,8 @@ select ok((select passed from w71_behavior_results where name = 'w70_claim_succe
   'the durable W70 reconciliation claimant can claim an execution recovered by W71');
 select ok((select passed from w71_behavior_results where name = 'missing_external_reservation_fails_closed'),
   'missing reservation prevents a false UNKNOWN transition and leaves execution recoverable');
+select ok((select passed from w71_behavior_results where name = 'cross_workspace_recovery_denied'),
+  'an owner of another workspace cannot reconcile or mutate the target execution');
 
 select * from finish();
 rollback;

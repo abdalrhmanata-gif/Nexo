@@ -2,7 +2,7 @@
 begin;
 create extension if not exists pgtap;
 
-select plan(16);
+select plan(17);
 
 select ok(to_regclass('public.workspace_invitations') is not null, 'workspace invitations table exists');
 select ok((select relrowsecurity from pg_class where oid='public.workspace_invitations'::regclass), 'workspace invitations RLS enabled');
@@ -29,6 +29,14 @@ select ok(
   and lower(pg_get_functiondef('private.create_workspace_invitation(uuid,text,text,text,timestamptz)'::regprocedure)) like '%v_actor_role not in%'
   and lower(pg_get_functiondef('private.revoke_workspace_invitation(uuid)'::regprocedure)) like '%v_actor_role not in%',
   'invitation create and revoke reject a missing workspace role');
+
+select ok(
+  (select prosecdef from pg_proc where oid = 'public.revoke_workspace_invitation(uuid)'::regprocedure)
+  and coalesce(array_to_string((select proconfig from pg_proc where oid = 'public.revoke_workspace_invitation(uuid)'::regprocedure), '|'), '')
+    like '%search_path=pg_catalog, public, private%'
+  and has_function_privilege('authenticated', 'public.revoke_workspace_invitation(uuid)', 'EXECUTE')
+  and not has_function_privilege('authenticated', 'private.revoke_workspace_invitation(uuid)', 'EXECUTE'),
+  'the public revoke wrapper uses a pinned definer while direct private RPC execution remains denied');
 
 create temporary table w44_cross_workspace_results (
   create_denied boolean not null,
