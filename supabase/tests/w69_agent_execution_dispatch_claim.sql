@@ -1,7 +1,7 @@
 -- W69: every delegated external side effect needs a single-use server JIT claim.
 begin;
 create extension if not exists pgtap;
-select plan(23);
+select plan(24);
 
 select ok(
   (select count(*) = 4 from information_schema.columns
@@ -61,7 +61,8 @@ create temporary table w69_cross_tenant_fixture (
   attacker_workspace_id uuid not null,
   mission_id uuid not null,
   action_id uuid not null,
-  agent_id uuid not null
+  agent_id uuid not null,
+  target_approval_id uuid not null
 ) on commit drop;
 
 do $behavior$
@@ -78,6 +79,7 @@ declare
   v_budget_id uuid;
   v_revision bigint;
   v_approval public.mission_approvals;
+  v_target_pending_approval_id uuid;
   v_execution public.agent_executions;
   v_claim public.agent_executions;
   v_request jsonb;
@@ -117,8 +119,6 @@ begin
   select version into v_mission_version from public.missions where id = v_mission;
   select version into v_action_version from public.mission_actions where id = v_actions[6];
 
-  insert into w69_cross_tenant_fixture values (v_attacker, v_attacker_workspace, v_mission, v_actions[1], v_agent);
-
   v_budget := public.configure_mission_authority_budget(
     v_workspace, v_mission, v_agent, 6, 60, 10, 'USD',
     clock_timestamp() + interval '1 hour',
@@ -153,6 +153,14 @@ begin
       );
     v_execution_ids[i] := v_execution.id;
   end loop;
+
+  -- Keep one real pending target-workspace approval alive so a user from the
+  -- separate attacker-owned workspace can be tested against the decision RPC.
+  select * into v_approval
+    from public.request_mission_approval(v_mission, v_actions[6], v_scope);
+  v_target_pending_approval_id := v_approval.id;
+  insert into w69_cross_tenant_fixture
+    values (v_attacker, v_attacker_workspace, v_mission, v_actions[1], v_agent, v_target_pending_approval_id);
 
   v_caught := false;
   begin
@@ -269,6 +277,7 @@ declare
   v_fixture w69_cross_tenant_fixture%rowtype;
   v_caught boolean := false;
   v_approval_caught boolean := false;
+  v_decision_caught boolean := false;
 begin
   select * into v_fixture from w69_cross_tenant_fixture;
   if auth.uid() is distinct from v_fixture.attacker_id then
@@ -288,6 +297,17 @@ begin
      ) then
     raise exception 'TEST_IDENTITY_OR_AUTHORIZATION_MISMATCH';
   end if;
+  v_decision_caught := false;
+  begin
+    perform public.decide_mission_approval(
+      v_fixture.target_approval_id,
+      'CANCELLED',
+      'Cross-workspace decision must be denied'
+    );
+  exception when sqlstate '42501' then
+    if sqlerrm = 'APPROVAL_NOT_FOUND_OR_FORBIDDEN' then v_decision_caught := true; else raise; end if;
+  end;
+
   v_approval_caught := false;
   begin
     perform public.request_mission_approval(
@@ -320,11 +340,14 @@ begin
     if sqlerrm = 'MISSION_NOT_FOUND_OR_FORBIDDEN' then v_caught := true; else raise; end if;
   end;
   perform set_config('role', 'postgres', true);
+  insert into w69_behavior_results values ('cross_tenant_approval_decision_denied', v_decision_caught);
   insert into w69_behavior_results values ('cross_tenant_approval_request_denied', v_approval_caught);
   insert into w69_behavior_results values ('cross_tenant_start_denied', v_caught);
 end;
 $cross_tenant$;
 
+select ok((select passed from w69_behavior_results where name = 'cross_tenant_approval_decision_denied'),
+  'an owner in another workspace cannot decide or cancel this mission approval');
 select ok((select passed from w69_behavior_results where name = 'cross_tenant_start_denied'),
   'an authenticated user outside the workspace cannot start or discover its mission execution');
 select ok((select passed from w69_behavior_results where name = 'cross_tenant_approval_request_denied'),
