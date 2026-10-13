@@ -2,7 +2,7 @@
 -- the legacy user path still records real users, not a null authenticated actor.
 begin;
 create extension if not exists pgtap;
-select plan(26);
+select plan(27);
 
 select ok(to_regprocedure('private.record_mission_event(uuid,text,jsonb)') is not null,
   'private mission-event writer exists');
@@ -54,6 +54,10 @@ select ok(not has_function_privilege('anon', 'public.record_mission_event(uuid,t
   'anonymous users cannot append mission history');
 select ok(not has_function_privilege('anon', 'private.record_mission_event(uuid,text,jsonb)', 'EXECUTE'),
   'anonymous users cannot bypass the public event wrapper');
+
+select ok(
+  position('private.workspace_role(v_workspace_id, auth.uid()) is null' in lower(pg_get_functiondef('private.record_mission_event(uuid,text,jsonb)'::regprocedure))) > 0,
+  'stale-recovery history events reject a missing workspace role explicitly');
 
 create temporary table w73_behavior_results (
   name text primary key,

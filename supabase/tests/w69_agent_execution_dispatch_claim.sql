@@ -1,7 +1,7 @@
 -- W69: every delegated external side effect needs a single-use server JIT claim.
 begin;
 create extension if not exists pgtap;
-select plan(26);
+select plan(27);
 
 select ok(
   (select count(*) = 4 from information_schema.columns
@@ -57,6 +57,11 @@ select ok(
   and position('v_workspace_role not in' in lower(pg_get_functiondef('private.decide_mission_approval(uuid,text,text)'::regprocedure))) > 0
   and position('private.workspace_role(v_approval.workspace_id, auth.uid())' in lower(pg_get_functiondef('private.decide_mission_approval(uuid,text,text)'::regprocedure))) > 0,
   'approval decision rejects a NULL workspace role before changing status or history');
+
+select ok(
+  position('coalesce(' in lower(pg_get_functiondef('private.can_edit_workspace(uuid,uuid)'::regprocedure))) > 0
+  and position(', false)' in lower(pg_get_functiondef('private.can_edit_workspace(uuid,uuid)'::regprocedure))) > 0,
+  'workspace edit authorization returns false rather than NULL for a non-member');
 
 create temporary table w69_behavior_results (
   name text primary key,
