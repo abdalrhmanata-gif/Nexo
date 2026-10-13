@@ -197,7 +197,7 @@ begin
 end;
 $function$;
 
--- Preserve trusted event semantics while hardening the role-checked recovery branch.
+-- Latest W78 event writer: preserve research-history integrity while failing closed on missing roles.
 create or replace function private.record_mission_event(
   p_mission_id uuid,
   p_event_type text,
@@ -213,6 +213,9 @@ declare
   v_owner_id uuid;
   v_workspace_id uuid;
   v_execution_id uuid;
+  v_run_id uuid;
+  v_source_count integer;
+  v_source jsonb;
   v_execution public.agent_executions;
   v_agent public.workspace_agents;
   v_actor_type text;
@@ -352,6 +355,116 @@ begin
     -- Read-only research has a deliberately narrow user completion RPC (W64).
     -- Preserve its USER-attributed audit entry, while preventing that entry
     -- from being forged for a side-effecting agent or an unrelated execution.
+    -- W78: a research-history row must match one completed, read-only ledger attempt.
+    -- This prevents authenticated callers from fabricating past research summaries/citations.
+    if p_event_type = 'RESEARCH_RUN_COMPLETED' then
+      if jsonb_typeof(v_payload -> 'execution_id') is distinct from 'string'
+         or jsonb_typeof(v_payload -> 'run_id') is distinct from 'string' then
+        raise exception 'RESEARCH_RUN_EXECUTION_BINDING_REQUIRED' using errcode = '22023';
+      end if;
+      begin
+        v_execution_id := (v_payload ->> 'execution_id')::uuid;
+        v_run_id := (v_payload ->> 'run_id')::uuid;
+      exception when invalid_text_representation then
+        raise exception 'RESEARCH_RUN_EXECUTION_BINDING_REQUIRED' using errcode = '22023';
+      end;
+      if v_execution_id is null or v_run_id is null then
+        raise exception 'RESEARCH_RUN_EXECUTION_BINDING_REQUIRED' using errcode = '22023';
+      end if;
+
+      if (select count(*) from jsonb_object_keys(v_payload)) <> 11
+         or exists (
+           select 1 from jsonb_object_keys(v_payload) as payload_key(key)
+            where payload_key.key not in (
+              'schema_version', 'title', 'execution', 'status', 'run_id',
+              'request_id', 'summary', 'sources', 'source_count', 'verified', 'execution_id'
+            )
+         )
+         or v_payload -> 'schema_version' is distinct from '1'::jsonb
+         or v_payload ->> 'title' is distinct from 'Read-only research completed'
+         or v_payload ->> 'execution' is distinct from 'read_only_research'
+         or v_payload ->> 'status' is distinct from 'COMPLETED'
+         or v_payload -> 'verified' is distinct from 'false'::jsonb
+         or jsonb_typeof(v_payload -> 'request_id') is distinct from 'string'
+         or nullif(btrim(v_payload ->> 'request_id'), '') is null
+         or char_length(v_payload ->> 'request_id') > 200
+         or jsonb_typeof(v_payload -> 'summary') is distinct from 'string'
+         or nullif(btrim(v_payload ->> 'summary'), '') is null
+         or char_length(v_payload ->> 'summary') > 12000
+         or jsonb_typeof(v_payload -> 'source_count') is distinct from 'number'
+         or (v_payload ->> 'source_count')::numeric < 0
+         or (v_payload ->> 'source_count')::numeric > 12
+         or trunc((v_payload ->> 'source_count')::numeric) <> (v_payload ->> 'source_count')::numeric
+         or jsonb_typeof(v_payload -> 'sources') is distinct from 'array' then
+        raise exception 'RESEARCH_RUN_EVENT_INVALID' using errcode = '22023';
+      end if;
+
+      v_source_count := (v_payload ->> 'source_count')::integer;
+      if jsonb_array_length(v_payload -> 'sources') <> v_source_count then
+        raise exception 'RESEARCH_RUN_EVENT_INVALID' using errcode = '22023';
+      end if;
+
+      for v_source in
+        select value from jsonb_array_elements(v_payload -> 'sources') as source(value)
+      loop
+        if jsonb_typeof(v_source) is distinct from 'object' then
+          raise exception 'RESEARCH_RUN_SOURCE_INVALID' using errcode = '22023';
+        end if;
+        if (select count(*) from jsonb_object_keys(v_source)) <> 2
+           or exists (
+             select 1 from jsonb_object_keys(v_source) as source_key(key)
+              where source_key.key not in ('title', 'url')
+           )
+           or jsonb_typeof(v_source -> 'title') is distinct from 'string'
+           or nullif(btrim(v_source ->> 'title'), '') is null
+           or char_length(v_source ->> 'title') > 500
+           or jsonb_typeof(v_source -> 'url') is distinct from 'string'
+           or (v_source ->> 'url') !~ '^https?://[^[:space:]/?#]+'
+           or (v_source ->> 'url') ~ '[[:space:]]'
+           or char_length(v_source ->> 'url') > 4096 then
+          raise exception 'RESEARCH_RUN_SOURCE_INVALID' using errcode = '22023';
+        end if;
+      end loop;
+
+      select * into v_execution
+        from public.agent_executions e
+       where e.id = v_execution_id
+         and e.mission_id = p_mission_id
+         and e.requested_by = auth.uid()
+       for update;
+      if not found then
+        raise exception 'RESEARCH_RUN_EXECUTION_NOT_FOUND' using errcode = '42501';
+      end if;
+
+      if v_execution.status <> 'SUCCEEDED'
+         or v_execution.completed_at is null
+         or v_execution.action_id is not null
+         or v_execution.request ->> 'type' is distinct from 'read_only_research'
+         or v_execution.request ->> 'request_id' is distinct from v_payload ->> 'request_id'
+         or v_execution.authority_snapshot ->> 'mode' is distinct from 'read_only'
+         or v_execution.authority_snapshot -> 'external_side_effects' is distinct from 'false'::jsonb
+         or v_execution.result -> 'summary' is distinct from v_payload -> 'summary'
+         or v_execution.result -> 'source_count' is distinct from v_payload -> 'source_count'
+         or v_execution.evidence -> 'outcome' is distinct from '"SUCCEEDED"'::jsonb
+         or v_execution.evidence -> 'verified' is distinct from 'false'::jsonb
+         or v_execution.evidence -> 'request_id' is distinct from v_payload -> 'request_id'
+         or v_execution.evidence -> 'sources' is distinct from v_payload -> 'sources' then
+        raise exception 'RESEARCH_RUN_EVENT_INVALID' using errcode = '22023';
+      end if;
+
+      if exists (
+        select 1 from public.mission_events me
+         where me.mission_id = p_mission_id
+           and me.event_type = p_event_type
+           and (
+             me.payload ->> 'execution_id' = v_execution_id::text
+             or me.payload ->> 'run_id' = v_run_id::text
+           )
+      ) then
+        raise exception 'MISSION_EVENT_ALREADY_RECORDED' using errcode = '22023';
+      end if;
+    end if;
+
     if p_event_type = 'AGENT_EXECUTION_COMPLETED' then
       if jsonb_typeof(v_payload -> 'execution_id') is distinct from 'string' then
         raise exception 'READ_ONLY_RESEARCH_COMPLETION_EVENT_REQUIRED' using errcode = '42501';
@@ -474,7 +587,6 @@ begin
   );
 end;
 $function$;
-
 
 -- Preserve W71 budget recovery, but reject missing workspace roles before state changes.
 create or replace function private.reconcile_stale_agent_execution(
@@ -608,5 +720,203 @@ begin
   );
 
   return v_execution;
+end;
+$function$;
+
+-- W68 budget administration: prevent non-member NULL roles from configuring or revoking authority.
+create or replace function private.configure_mission_authority_budget(
+  p_workspace_id uuid,
+  p_mission_id uuid,
+  p_agent_id uuid,
+  p_action_limit bigint,
+  p_max_spend numeric,
+  p_max_spend_per_action numeric,
+  p_currency text,
+  p_expires_at timestamptz,
+  p_not_before timestamptz default null
+) returns jsonb
+language plpgsql
+security definer
+set search_path = pg_catalog, public, private, extensions
+as $function$
+declare
+  v_mission public.missions;
+  v_agent public.workspace_agents;
+  v_existing public.mission_authority_budgets;
+  v_budget public.mission_authority_budgets;
+  v_revision bigint;
+  v_not_before timestamptz := coalesce(p_not_before, clock_timestamp());
+  v_authority_hash text;
+begin
+  if auth.uid() is null then
+    raise exception 'AUTHENTICATION_REQUIRED' using errcode = '42501';
+  end if;
+  if private.workspace_role(p_workspace_id) is null
+     or private.workspace_role(p_workspace_id) not in ('owner', 'admin') then
+    raise exception 'AUTHORITY_BUDGET_ADMIN_REQUIRED' using errcode = '42501';
+  end if;
+  if p_action_limit is null or p_action_limit < 1 or p_action_limit > 1000000
+     or p_max_spend is null or p_max_spend::text in ('NaN', 'Infinity', '-Infinity')
+     or p_max_spend < 0 or p_max_spend > 99999999999999.999999
+     or p_max_spend_per_action is null
+     or p_max_spend_per_action::text in ('NaN', 'Infinity', '-Infinity')
+     or p_max_spend_per_action < 0
+     or p_max_spend_per_action > p_max_spend
+     or nullif(p_currency, '') is null
+     or p_currency !~ '^[A-Z]{3}$'
+     or p_expires_at is null
+     or p_expires_at <= v_not_before
+     or p_expires_at <= clock_timestamp() then
+    raise exception 'INVALID_AUTHORITY_BUDGET' using errcode = '22023';
+  end if;
+
+  select * into v_mission
+    from public.missions
+   where id = p_mission_id and workspace_id = p_workspace_id
+   for update;
+  if not found then
+    raise exception 'MISSION_NOT_FOUND_OR_FORBIDDEN' using errcode = '42501';
+  end if;
+  if v_mission.status in ('COMPLETED', 'CANCELLED') then
+    raise exception 'MISSION_CLOSED' using errcode = '22023';
+  end if;
+
+  select * into v_agent
+    from public.workspace_agents
+   where id = p_agent_id and workspace_id = p_workspace_id
+   for update;
+  if not found or v_agent.status <> 'ACTIVE' then
+    raise exception 'AGENT_NOT_FOUND_OR_FORBIDDEN' using errcode = '42501';
+  end if;
+  if v_agent.authority -> 'external_side_effects' is distinct from 'true'::jsonb
+     or v_agent.authority -> 'requires_approval' is distinct from 'true'::jsonb then
+    raise exception 'EXACT_APPROVAL_REQUIRED_FOR_EXTERNAL_EFFECTS' using errcode = '42501';
+  end if;
+
+  select * into v_existing
+    from public.mission_authority_budgets
+   where workspace_id = p_workspace_id
+     and mission_id = p_mission_id
+     and agent_id = p_agent_id
+     and status = 'ACTIVE'
+   for update;
+
+  if found then
+    if exists (
+      select 1
+        from public.mission_authority_budget_reservations r
+       where r.budget_id = v_existing.id
+         and r.status in ('RESERVED', 'HELD_UNKNOWN')
+    ) then
+      raise exception 'AUTHORITY_BUDGET_HAS_OPEN_RESERVATIONS' using errcode = '22023';
+    end if;
+    update public.mission_authority_budgets
+       set status = 'SUPERSEDED',
+           updated_at = clock_timestamp()
+     where id = v_existing.id;
+  end if;
+
+  select coalesce(max(authority_revision), 0) + 1
+    into v_revision
+    from public.mission_authority_budgets
+   where workspace_id = p_workspace_id
+     and mission_id = p_mission_id
+     and agent_id = p_agent_id;
+
+  v_authority_hash := encode(
+    extensions.digest(convert_to(v_agent.authority::text, 'UTF8'), 'sha256'),
+    'hex'
+  );
+
+  insert into public.mission_authority_budgets (
+    workspace_id, mission_id, agent_id, authority_revision, authority_hash,
+    status, not_before, expires_at, action_limit, max_spend,
+    max_spend_per_action, currency, created_by, created_at, updated_at
+  )
+  values (
+    p_workspace_id, p_mission_id, p_agent_id, v_revision, v_authority_hash,
+    'ACTIVE', v_not_before, p_expires_at, p_action_limit, p_max_spend,
+    p_max_spend_per_action, p_currency, auth.uid(), clock_timestamp(), clock_timestamp()
+  )
+  returning * into v_budget;
+
+  return jsonb_build_object(
+    'id', v_budget.id,
+    'workspace_id', v_budget.workspace_id,
+    'mission_id', v_budget.mission_id,
+    'agent_id', v_budget.agent_id,
+    'authority_revision', v_budget.authority_revision,
+    'status', v_budget.status,
+    'not_before', v_budget.not_before,
+    'expires_at', v_budget.expires_at,
+    'action_limit', v_budget.action_limit,
+    'max_spend', v_budget.max_spend,
+    'max_spend_per_action', v_budget.max_spend_per_action,
+    'currency', v_budget.currency
+  );
+end;
+$function$;
+
+create or replace function private.revoke_mission_authority_budget(
+  p_budget_id uuid
+) returns jsonb
+language plpgsql
+security definer
+set search_path = pg_catalog, public, private
+as $function$
+declare
+  v_initial public.mission_authority_budgets;
+  v_mission public.missions;
+  v_agent public.workspace_agents;
+  v_budget public.mission_authority_budgets;
+begin
+  if auth.uid() is null then
+    raise exception 'AUTHENTICATION_REQUIRED' using errcode = '42501';
+  end if;
+  select * into v_initial
+    from public.mission_authority_budgets
+   where id = p_budget_id;
+  if not found then
+    raise exception 'AUTHORITY_BUDGET_NOT_FOUND' using errcode = 'P0002';
+  end if;
+  if private.workspace_role(v_initial.workspace_id) is null
+     or private.workspace_role(v_initial.workspace_id) not in ('owner', 'admin') then
+    raise exception 'AUTHORITY_BUDGET_ADMIN_REQUIRED' using errcode = '42501';
+  end if;
+
+  select * into v_mission
+    from public.missions
+   where id = v_initial.mission_id and workspace_id = v_initial.workspace_id
+   for update;
+  if not found then
+    raise exception 'AUTHORITY_BUDGET_NOT_FOUND' using errcode = 'P0002';
+  end if;
+  select * into v_agent
+    from public.workspace_agents
+   where id = v_initial.agent_id and workspace_id = v_initial.workspace_id
+   for update;
+  if not found then
+    raise exception 'AUTHORITY_BUDGET_NOT_FOUND' using errcode = 'P0002';
+  end if;
+  select * into v_budget
+    from public.mission_authority_budgets
+   where id = p_budget_id
+   for update;
+
+  if v_budget.status = 'ACTIVE' then
+    update public.mission_authority_budgets
+       set status = 'REVOKED',
+           updated_at = clock_timestamp()
+     where id = v_budget.id
+     returning * into v_budget;
+  elsif v_budget.status <> 'REVOKED' then
+    raise exception 'AUTHORITY_BUDGET_NOT_ACTIVE' using errcode = '22023';
+  end if;
+
+  return jsonb_build_object(
+    'id', v_budget.id,
+    'authority_revision', v_budget.authority_revision,
+    'status', v_budget.status
+  );
 end;
 $function$;

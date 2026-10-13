@@ -1,7 +1,7 @@
 -- W78: a user cannot fabricate a RESEARCH_RUN_COMPLETED row unrelated to a durable read-only execution.
 begin;
 create extension if not exists pgtap;
-select plan(15);
+select plan(16);
 
 select ok(position('RESEARCH_RUN_COMPLETED' in pg_get_functiondef('private.record_mission_event(uuid,text,jsonb)'::regprocedure)) > 0,
   'mission-event writer has a dedicated research-history policy');
@@ -15,6 +15,10 @@ select ok(position('v_execution.result -> ''summary'' is distinct from v_payload
   'history summary must exactly match the ledger result');
 select ok(position('MISSION_EVENT_ALREADY_RECORDED' in pg_get_functiondef('private.record_mission_event(uuid,text,jsonb)'::regprocedure)) > 0,
   'one completed read-only execution cannot create duplicate history rows');
+
+select ok(
+  position('private.workspace_role(v_workspace_id, auth.uid()) is null' in lower(pg_get_functiondef('private.record_mission_event(uuid,text,jsonb)'::regprocedure))) > 0,
+  'recovery-history events reject a missing workspace role explicitly');
 
 create temporary table w78_behavior_results (
   name text primary key,

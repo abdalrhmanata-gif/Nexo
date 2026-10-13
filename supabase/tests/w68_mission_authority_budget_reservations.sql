@@ -1,7 +1,7 @@
 -- W68: actual persistent authority-budget accounting on the execution ledger.
 begin;
 create extension if not exists pgtap;
-select plan(21);
+select plan(23);
 
 select ok(to_regclass('public.mission_authority_budgets') is not null,
   'persistent authority budget table exists');
@@ -50,6 +50,10 @@ select ok(lower(pg_get_functiondef('private.complete_agent_execution(uuid,text,j
 select ok(not has_function_privilege('authenticated',
   'private.reserve_agent_execution_budget(uuid,uuid)', 'EXECUTE'),
   'authenticated clients cannot invoke the internal reservation helper');
+select ok(
+  lower(pg_get_functiondef('private.configure_mission_authority_budget(uuid,uuid,uuid,bigint,numeric,numeric,text,timestamptz,timestamptz)'::regprocedure)) like '%workspace_role(p_workspace_id) is null%'
+  and lower(pg_get_functiondef('private.revoke_mission_authority_budget(uuid)'::regprocedure)) like '%workspace_role(v_initial.workspace_id) is null%',
+  'budget configuration and revocation reject missing workspace roles');
 
 create temporary table w68_behavior_results (
   name text primary key,
@@ -61,6 +65,7 @@ declare
   v_owner uuid := gen_random_uuid();
   v_other uuid := gen_random_uuid();
   v_workspace uuid := gen_random_uuid();
+  v_other_workspace uuid := gen_random_uuid();
   v_mission uuid := gen_random_uuid();
   v_agent uuid := gen_random_uuid();
   v_action_a uuid := gen_random_uuid();
@@ -87,9 +92,11 @@ declare
 begin
   insert into auth.users(id) values (v_owner), (v_other);
   insert into public.workspaces(id, owner_id, name)
-  values (v_workspace, v_owner, 'W68 authority-budget reservation test');
+  values
+    (v_workspace, v_owner, 'W68 authority-budget reservation test'),
+    (v_other_workspace, v_other, 'W68 separate attacker-owned workspace');
   insert into public.workspace_members(workspace_id, user_id, role)
-  values (v_workspace, v_owner, 'owner'), (v_workspace, v_other, 'member');
+  values (v_workspace, v_owner, 'owner'), (v_other_workspace, v_other, 'owner');
   insert into public.missions(id, workspace_id, owner_id, objective, status)
   values (v_mission, v_workspace, v_owner, 'Test actual persistent action/spend budget', 'READY');
 
@@ -112,12 +119,12 @@ begin
     v_owner
   );
 
-  -- A workspace member may execute only within approved scope, but cannot
-  -- mint or enlarge the authoritative action/spend budget.
+  -- An owner of a separate workspace must not configure or enlarge this budget.
   perform set_config('request.jwt.claim.sub', v_other::text, true);
   perform set_config('request.jwt.claim.role', 'authenticated', true);
   perform set_config('request.jwt.claims',
     jsonb_build_object('sub', v_other, 'role', 'authenticated')::text, true);
+  perform set_config('role', 'authenticated', true);
   v_caught := false;
   begin
     perform public.configure_mission_authority_budget(
@@ -128,6 +135,7 @@ begin
   exception when sqlstate '42501' then
     if sqlerrm = 'AUTHORITY_BUDGET_ADMIN_REQUIRED' then v_caught := true; else raise; end if;
   end;
+  perform set_config('role', 'postgres', true);
   insert into w68_behavior_results values ('non_admin_budget_configuration_denied', v_caught);
 
   perform set_config('request.jwt.claim.sub', v_owner::text, true);
@@ -141,6 +149,30 @@ begin
     clock_timestamp() - interval '1 minute'
   );
   v_budget_id := (v_budget ->> 'id')::uuid;
+
+  -- A separate-workspace owner cannot revoke this real target budget either.
+  perform set_config('request.jwt.claim.sub', v_other::text, true);
+  perform set_config('request.jwt.claim.role', 'authenticated', true);
+  perform set_config('request.jwt.claims',
+    jsonb_build_object('sub', v_other, 'role', 'authenticated')::text, true);
+  perform set_config('role', 'authenticated', true);
+  v_caught := false;
+  begin
+    perform public.revoke_mission_authority_budget(v_budget_id);
+  exception when sqlstate '42501' then
+    if sqlerrm = 'AUTHORITY_BUDGET_ADMIN_REQUIRED' then v_caught := true; else raise; end if;
+  end;
+  perform set_config('role', 'postgres', true);
+  select * into v_budget_row from public.mission_authority_budgets where id = v_budget_id;
+  insert into w68_behavior_results values (
+    'cross_workspace_budget_revocation_denied',
+    v_caught and v_budget_row.status = 'ACTIVE'
+  );
+
+  perform set_config('request.jwt.claim.sub', v_owner::text, true);
+  perform set_config('request.jwt.claim.role', 'authenticated', true);
+  perform set_config('request.jwt.claims',
+    jsonb_build_object('sub', v_owner, 'role', 'authenticated')::text, true);
   v_revision := (v_budget ->> 'authority_revision')::bigint;
 
   v_request_a := jsonb_build_object(
@@ -339,7 +371,9 @@ select ok((select passed from w68_behavior_results where name = 'unknown_keeps_b
 select ok((select passed from w68_behavior_results where name = 'exhausted_budget_denies_new_start'),
   'action allowance cannot be exceeded by starting another side-effect attempt');
 select ok((select passed from w68_behavior_results where name = 'non_admin_budget_configuration_denied'),
-  'workspace members cannot mint or enlarge the authoritative budget');
+  'a separate-workspace owner cannot mint or enlarge the target budget');
+select ok((select passed from w68_behavior_results where name = 'cross_workspace_budget_revocation_denied'),
+  'a separate-workspace owner cannot revoke the target budget or change its status');
 
 select * from finish();
 rollback;
