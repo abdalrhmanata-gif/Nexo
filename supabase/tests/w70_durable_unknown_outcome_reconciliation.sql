@@ -1,7 +1,7 @@
 -- W70: only a trusted leased worker can settle UNKNOWN external outcomes.
 begin;
 create extension if not exists pgtap;
-select plan(22);
+select plan(23);
 
 select ok(to_regprocedure('public.claim_agent_execution_reconciliation(uuid)') is not null,
   'trusted reconciliation-claim RPC exists');
