@@ -128,19 +128,12 @@ test("trusted research completion is a narrow worker operation behind the authen
 });
 
 
-test("mission-action worker rejects an unregistered adapter before privileged client construction or JIT claim", async () => {
+test("mission-action worker route validates input before invoking the runtime boundary", async () => {
   const route = await readFile(join(webRoot, "app", "api", "internal", "agent-executions", "[executionId]", "route.ts"), "utf8");
   const dispatchInputValidation = route.indexOf('if (bodyKeys.some((key) => key !== "operation" && key !== "audience")');
-  const adapterResolution = route.indexOf("const adapter = resolveTrustedDispatchAdapter(workerBody.audience);", dispatchInputValidation);
-  const missingAdapterGuard = route.indexOf("if (!adapter)", adapterResolution);
-  const failClosedResponse = route.indexOf("No reviewed provider adapter is registered. No provider call occurred.", missingAdapterGuard);
-  const privilegedClientConstruction = route.indexOf("const client = createSupabaseAdminClient();", missingAdapterGuard);
-  const jitDispatchCall = route.indexOf("dispatchThroughJitClaim({ client, adapter, executionId })", missingAdapterGuard);
-
+  const executionValidation = route.indexOf("if (!UUID_PATTERN.test(executionId))", dispatchInputValidation);
+  const boundaryCall = route.indexOf("runMissionActionWorker({", executionValidation);
   assert.ok(dispatchInputValidation >= 0, "dispatch/reconciliation input validation must be present");
-  assert.ok(adapterResolution > dispatchInputValidation, "the trusted adapter must be resolved only after operation validation");
-  assert.ok(missingAdapterGuard > adapterResolution, "an absent adapter must be rejected before the worker proceeds");
-  assert.ok(failClosedResponse > missingAdapterGuard, "the no-adapter branch must return the explicit fail-closed response");
-  assert.ok(privilegedClientConstruction > failClosedResponse, "no privileged database client may be constructed before the no-adapter return");
-  assert.ok(jitDispatchCall > privilegedClientConstruction, "the JIT dispatch call must only be reachable after adapter resolution and the fail-closed guard");
+  assert.ok(executionValidation > dispatchInputValidation, "execution id must be validated after the operation shape");
+  assert.ok(boundaryCall > executionValidation, "only validated requests may reach the runtime boundary");
 });

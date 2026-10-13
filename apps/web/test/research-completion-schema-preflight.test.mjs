@@ -40,14 +40,14 @@ test("internal worker schema probe is token-protected, read-only, and fail-close
   const authGate = trustedWorkerRoute.indexOf("if (!isTrustedExecutionWorkerRequest(");
   const preflightStart = trustedWorkerRoute.indexOf('if (workerBody.operation === "preflight_read_only_research")');
   const completionStart = trustedWorkerRoute.indexOf('if (workerBody.operation === "complete_read_only_research")');
-  const dispatchAdapter = trustedWorkerRoute.indexOf("const adapter = resolveTrustedDispatchAdapter(");
+  const dispatchBoundary = trustedWorkerRoute.indexOf("runMissionActionWorker({");
 
   assert.ok(authGate >= 0 && authGate < preflightStart,
     "worker bearer authorization must be enforced before the probe operation");
   assert.ok(preflightStart >= 0 && completionStart > preflightStart,
     "preflight must be handled in its own operation branch");
-  assert.ok(dispatchAdapter > completionStart,
-    "the schema probe branch must terminate before the dispatch/reconciliation adapter path");
+  assert.ok(dispatchBoundary > completionStart,
+    "the schema probe branch must terminate before the dispatch/reconciliation runtime boundary");
 
   const preflightBranch = trustedWorkerRoute.slice(preflightStart, completionStart);
   assert.match(preflightBranch, /new Set\(\["operation", "requestedBy"\]\)/,
