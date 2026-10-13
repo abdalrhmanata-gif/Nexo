@@ -420,6 +420,9 @@ const RESTRICTED_RUNTIME_CAPABILITY_IMPORTS = new Set([
   "child_process", "node:child_process",
   "vm", "node:vm",
   "worker_threads", "node:worker_threads",
+  "cluster", "node:cluster",
+  "dns", "node:dns", "dns/promises", "node:dns/promises",
+  "inspector", "node:inspector",
 ]);
 const EXPLICIT_PROVIDER_SDK_IMPORTS = new Set([
   "openai",
@@ -686,6 +689,9 @@ test("outbound-source detectors recognize representative transport and dynamic-l
     "child_process", "node:child_process",
     "vm", "node:vm",
     "worker_threads", "node:worker_threads",
+    "cluster", "node:cluster",
+    "dns", "node:dns", "dns/promises", "node:dns/promises",
+    "inspector", "node:inspector",
   ]) {
     assert.equal(RESTRICTED_RUNTIME_CAPABILITY_IMPORTS.has(specifier), true,
       specifier + " exposes a dynamic loader, child-process, code-generation or worker capability");
@@ -693,11 +699,14 @@ test("outbound-source detectors recognize representative transport and dynamic-l
   const restrictedSpecifiers = readStaticLocalImportSpecifiers(
     'import { createRequire as makeRequire } from "node:module";\n'
       + 'const { spawn } = require("node:child_process");\n'
-      + 'import vm from "node:vm";',
+      + 'import vm from "node:vm";\n'
+      + 'import dns from "node:dns/promises";\n'
+      + 'const inspector = require("node:inspector");\n'
+      + 'import cluster from "node:cluster";',
   );
   assert.deepEqual(
     restrictedSpecifiers.filter((specifier) => RESTRICTED_RUNTIME_CAPABILITY_IMPORTS.has(specifier)).sort(),
-    ["node:child_process", "node:module", "node:vm"],
+    ["node:child_process", "node:cluster", "node:dns/promises", "node:inspector", "node:module", "node:vm"],
     "aliased imports and CommonJS module loading must surface restricted runtime capabilities",
   );
   const specifiers = readStaticLocalImportSpecifiers(
