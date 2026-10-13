@@ -58,6 +58,7 @@ create temporary table w69_behavior_results (
 ) on commit drop;
 create temporary table w69_cross_tenant_fixture (
   attacker_id uuid not null,
+  attacker_workspace_id uuid not null,
   mission_id uuid not null,
   action_id uuid not null,
   agent_id uuid not null
@@ -68,6 +69,7 @@ declare
   v_owner uuid := gen_random_uuid();
   v_attacker uuid := gen_random_uuid();
   v_workspace uuid := gen_random_uuid();
+  v_attacker_workspace uuid := gen_random_uuid();
   v_mission uuid := gen_random_uuid();
   v_agent uuid := gen_random_uuid();
   v_actions uuid[] := array[gen_random_uuid(), gen_random_uuid(), gen_random_uuid(), gen_random_uuid(), gen_random_uuid(), gen_random_uuid()];
@@ -88,9 +90,13 @@ declare
 begin
   insert into auth.users(id) values (v_owner), (v_attacker);
   insert into public.workspaces(id, owner_id, name)
-  values (v_workspace, v_owner, 'W69 dispatch claim test');
+  values
+    (v_workspace, v_owner, 'W69 dispatch claim test'),
+    (v_attacker_workspace, v_attacker, 'W69 attacker-owned separate workspace');
   insert into public.workspace_members(workspace_id, user_id, role)
-  values (v_workspace, v_owner, 'owner');
+  values
+    (v_workspace, v_owner, 'owner'),
+    (v_attacker_workspace, v_attacker, 'owner');
   insert into public.missions(id, workspace_id, owner_id, objective, status)
   values (v_mission, v_workspace, v_owner, 'Prove one-time JIT dispatch claim', 'READY');
 
@@ -111,7 +117,7 @@ begin
   select version into v_mission_version from public.missions where id = v_mission;
   select version into v_action_version from public.mission_actions where id = v_actions[6];
 
-  insert into w69_cross_tenant_fixture values (v_attacker, v_mission, v_actions[1], v_agent);
+  insert into w69_cross_tenant_fixture values (v_attacker, v_attacker_workspace, v_mission, v_actions[1], v_agent);
 
   v_budget := public.configure_mission_authority_budget(
     v_workspace, v_mission, v_agent, 6, 60, 10, 'USD',
@@ -271,6 +277,10 @@ begin
   -- Match a real authenticated PostgREST request, not only its claim settings.
   perform set_config('role', 'authenticated', true);
   if auth.uid() is distinct from v_fixture.attacker_id
+     or not private.can_edit_workspace(v_fixture.attacker_workspace_id, v_fixture.attacker_id)
+     or v_fixture.attacker_workspace_id = (
+       select workspace_id from public.missions where id = v_fixture.mission_id
+     )
      or private.can_edit_workspace(
        (select workspace_id from public.missions where id = v_fixture.mission_id),
        v_fixture.attacker_id
