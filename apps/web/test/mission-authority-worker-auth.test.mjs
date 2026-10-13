@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
@@ -12,6 +12,16 @@ import {
 
 const TOKEN = "worker-token-abcdefghijklmnopqrstuvwxyz-123456";
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+async function listApiRouteFiles(directory) {
+  const entries = await readdir(directory, { withFileTypes: true });
+  const nested = await Promise.all(entries.map(async (entry) => {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) return listApiRouteFiles(path);
+    return entry.isFile() && entry.name === "route.ts" ? [path] : [];
+  }));
+  return nested.flat();
+}
 
 test("accepts only the exact bearer token configured for the trusted worker", () => {
   assert.equal(isTrustedExecutionWorkerRequest(`Bearer ${TOKEN}`, TOKEN), true);
@@ -137,4 +147,26 @@ test("mission-action worker route validates input before invoking the runtime bo
   assert.ok(dispatchInputValidation >= 0, "dispatch/reconciliation input validation must be present");
   assert.ok(executionValidation > dispatchInputValidation, "execution id must be validated after the operation shape");
   assert.ok(boundaryCall > executionValidation, "only validated requests may reach the runtime boundary");
+});
+
+
+test("mission-action dispatch and reconciliation gateway is reachable only through the trusted internal worker route", async () => {
+  const apiRoot = join(webRoot, "app", "api");
+  const routeFiles = await listApiRouteFiles(apiRoot);
+  const gatewayConsumers = [];
+
+  for (const path of routeFiles) {
+    const source = await readFile(path, "utf8");
+    const importsGateway = /from\\s+["'][^"']*mission-authority\\/persistent-dispatch-gateway(?:\\.mjs)?["']/.test(source);
+    const callsGateway = /\\b(?:dispatchThroughJitClaim|reconcileThroughTrustedClaim)\\b/.test(source);
+    if (importsGateway || callsGateway) {
+      gatewayConsumers.push(path.slice(apiRoot.length + 1).replace(/\\\\/g, "/"));
+    }
+  }
+
+  assert.deepEqual(
+    gatewayConsumers,
+    ["internal/agent-executions/[executionId]/route.ts"],
+    "all Mission Action dispatch/reconciliation gateway access must remain behind the trusted internal worker route",
+  );
 });
