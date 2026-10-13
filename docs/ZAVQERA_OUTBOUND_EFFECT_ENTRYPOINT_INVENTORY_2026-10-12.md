@@ -70,3 +70,32 @@ This check is intentionally narrow. It does not register a provider, make a real
 A follow-up review of shared helpers found one more external HTTP call that was not in the original route-only list: the password-compromise range lookup in `apps/web/lib/password-policy.mjs`, invoked from `apps/web/app/api/auth/password-policy/route.ts` by the sign-up and reset-password flows. This row now records what is sent and its failure behavior. The request is not a Mission Action; do not treat its presence as a JIT-gateway bypass.
 
 Evidence: `apps/web/test/password-policy.test.mjs` asserts the URL contains only a five-character SHA-1 prefix, padding is enabled, a matched suffix denies a password, and the helper fails closed when the external check is unavailable. This review covers the selected application routes and shared helpers examined on code/test SHA `4f80362e276cdd9623b2d7485bbacdcc656374db`; it is not a claim of a complete transitive dependency/network trace.
+
+
+## Expanded source scan — 2026-10-13 — PR head `2a5fa41852fb8e30e5e74a2b74294a0bda080508`
+
+The following source sweep was performed against PR branch HEAD `2a5fa41852fb8e30e5e74a2b74294a0bda080508`. That commit only changed launch-gate documentation; the application/source candidate remains the code already tested by the W21/W25 and web CI gates.
+
+### Scope of the review
+
+- All **24** files under `apps/web/app/api/**/route.ts`.
+- All **36** TypeScript/JavaScript modules under `apps/web/lib/`.
+- All **49** TypeScript/JavaScript source files under `apps/web/app/` and `apps/web/components/` outside the API route and library directories.
+- Searched direct fetch calls, absolute endpoint URLs, known provider identifiers, Supabase Auth/RPC invocations, and mission-worker/gateway call sites. The exact route and shared-helper inventory above remains the authoritative per-entry description.
+
+### Outbound paths confirmed
+
+1. **OpenAI planning:** `apps/web/app/api/ai/plan/route.ts` and `apps/web/app/api/ai/plan/anonymous/route.ts` call `apps/web/lib/ai-planner.ts`, which sends a Responses API request to `https://api.openai.com/v1/responses`. This is mission drafting and provider-cost usage, not a mission-action dispatch.
+2. **OpenAI read-only Research:** `apps/web/app/api/missions/[id]/research/route.ts` uses the read-only Research helper `apps/web/lib/ai-research.ts` for its Responses API request. The route also uses two internal trusted-worker HTTP calls for schema preflight/completion. This is bounded read-only Research, not authorization to perform mission side effects; the hosted path remains blocked pending W66–W80 rollout and postchecks.
+3. **OpenAI diagnostics:** `apps/web/app/api/ai/diagnostics/route.ts` calls `https://api.openai.com/v1/models/{model}` to test connectivity/model access. It is a diagnostic read, not a mission action.
+4. **Resend invitations:** `apps/web/app/api/business/invitations/route.ts` posts to `https://api.resend.com/emails`. This workspace-admin email effect is outside the Mission Action gateway; real inbox delivery remains unverified.
+5. **Password-compromise range lookup:** `apps/web/lib/password-policy.mjs` calls `https://api.pwnedpasswords.com/range/{prefix}`; the inspected code computes SHA-1 locally and sends only the first five hex characters, with the remainder compared locally. It is a read-only security lookup, not a delegated mission action.
+6. **Supabase Auth identity flows:** `apps/web/components/auth-form.tsx` uses the Supabase browser Auth SDK for sign-in, sign-up, OAuth, password-reset email, password update, and sign-out; `apps/web/app/auth/callback/route.ts` exchanges/verifies Auth callbacks. These identity-provider effects have their own identity/session contract, not Mission Action dispatch.
+7. **Supabase platform calls:** `apps/web/lib/anonymous-ai-usage.mjs` makes REST RPC requests to the configured Supabase project for quota accounting. Route-handler `supabase.rpc(...)` calls and client-facing `fetch("/api/...")` calls target this application's own data/API layer, not third-party mission-effect providers.
+8. **Mission Action gateway:** `apps/web/app/api/internal/agent-executions/[executionId]/route.ts` is the reviewed worker route; `persistent-dispatch-gateway.mjs` and `controlled-adapter.mjs` do not themselves make an HTTP provider request, and `provider-adapter-registry.mjs` remains intentionally empty. The missing-adapter path is dynamically verified by W21 as HTTP 503, `unregistered_adapter_denied`, `providerCall=not_attempted`.
+
+### Scope limitation / decision
+
+This sweep did not find an additional direct third-party HTTP provider call in the reviewed application routes, libraries, pages, or components beyond the entries already listed above. It is still a **source-level pattern audit**, not a complete transitive dependency analysis, instrumented runtime network trace, provider certification, or proof that every future or indirect effect is mediated by Mission Authority. In particular, the OpenAI draft/research/diagnostic calls, Resend email, Supabase Auth, and Pwned Passwords are deliberately classified as platform/service operations outside the Mission Action gateway; that classification must not be used to claim they are governed by mission authority.
+
+The central Issue #23 requirement remains **NOT PROVEN**: the code currently has no reviewed real provider adapter, so no real mission-action integration is enabled. Keep the registry empty until the exact mission-action boundary and provider adapter receive their own review and acceptance tests. Hosted Development, Supabase Main/Production and production deployment were not changed by this source review.
