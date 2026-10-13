@@ -2,8 +2,8 @@
 
 **Reviewed branch:** `zavqera/ai-planner-integration`  
 **Reviewed PR:** #29, OPEN / Draft / UNMERGED  
-**Latest code/test head verified:** `4f80362e276cdd9623b2d7485bbacdcc656374db`  
-**Latest code/test evidence:** W21 and companion gates passed on code/test SHA `4f80362e276cdd9623b2d7485bbacdcc656374db`; the later documentation-only commit in this follow-up does not change application or test code. This matrix is a source and evidence audit, not a claim of universal production enforcement.
+**Latest PR code/test candidate reviewed:** `be8b96bb7d5448125d0c4134fb6275f02950ff53`  
+**Verification set:** W21, W25, Web Unit, Web CI/build, Flutter CI and Netlify preview-route verification completed successfully for this candidate. The W21 evidence artifact records the pull-request merge ref `3869460f4fc1bbaefd1480383654957dec236fb8`; the PR source head is recorded separately above. This matrix is a source and evidence audit, not a claim of universal production enforcement.
 
 ## Decision summary
 
@@ -23,27 +23,29 @@
 | Successful external side effect requires correlatable receipt | **Implemented in candidate migration/code; isolated evidence** | W75/W76 migration and tests; gateway checks receipt reference on dispatch/reconciliation; W21 replay includes migrations through W79. | Receipt shape checks do not independently certify provider authenticity or correct provider semantics. |
 | Trusted audit events cannot be forged by ordinary users | **Implemented in candidate SQL contract; isolated evidence** | W73 trusted system events migration and pgTAP test; contract section “W73 / W72 exact-head validation”. | Hosted Development has not been migrated to W73. |
 | Research completion cannot be forged by authenticated caller and must bind requester | **Implemented in branch candidate; hosted state not current** | `supabase/migrations/20261012180000_w79_trusted_research_completion.sql`; `supabase/tests/w79_trusted_research_completion.sql`; `apps/web/app/api/internal/agent-executions/[executionId]/route.ts`. | Hosted Development was last read-only checked at W65; W79 signature is absent there. Research remains blocked until a separately authorized rollout and exact hosted preflight. |
-| Cross-tenant denial / role and approval scope | **W80 fail-closed candidate; broader CI validation pending** | W80 makes `private.can_edit_workspace` false for missing roles, guards approval decisions, preserves W46 workspace-activity logging, hardens W68 budget and W71 stale-recovery role gates, and retains the W78 trusted history boundary. W44 now tests the full invitation wrapper/helper privilege matrix: all public RPCs remain SECURITY INVOKER; private helpers are SECURITY DEFINER with pinned paths; authenticated and anon execution privileges match the intended get/create/accept/revoke roles. W71 tests that an owner in another workspace cannot reconcile the target execution. | The latest W21 reached and passed Mission Authority regressions but then failed the wider workspace gate at the public `revoke_workspace_invitation` wrapper due to missing private-function execution context. The wrapper fix and tests are now part of the candidate; fresh W21 must pass before considering it resolved. Issue #23 remains open. |
+| Cross-tenant denial / role and approval scope | **W80 fail-closed candidate; isolated gates PASS** | W80 makes `private.can_edit_workspace` false for missing roles, guards approval decisions, preserves W46 workspace-activity logging, hardens W68 budget and W71 stale-recovery role gates, and retains the W78 trusted history boundary. W44 tests the invitation wrapper/helper privilege matrix: public RPCs remain SECURITY INVOKER; private helpers are SECURITY DEFINER with pinned paths; EXECUTE grants match the intended get/create/accept/revoke roles. W71 tests cross-workspace stale-execution reconciliation denial. W21 on the current PR integration completed the disposable PostgreSQL 17/pgTAP gate and Mission Authority/workspace regressions successfully (run 38384206748). | This is isolated CI evidence only. Hosted Development migration parity, all mutation paths, and universal enforcement across all external side-effect entry points remain unverified. Keep Issue #23 open. |
 | All external side effects pass through this gateway | **Missing / not proven** | `apps/web/lib/mission-authority/persistent-dispatch-gateway.mjs` explicitly states no route currently wires a real provider; `provider-adapter-registry.mjs` is intentionally empty. The internal route is fail-closed until reviewed adapter registration. | This is the central blocker for the universal enforcement claim. Before any provider is enabled, enumerate side-effect entry points, prove they cannot bypass the gateway, review the concrete adapter, and add real-boundary contract tests. |
 | Live Research with persisted citations/history, real email, password reset, manual visual QA | **External release gates not verified** | `docs/ZAVQERA_LAUNCH_GATES_STATUS.md`. | Separate authorized preview-only tests are required. These are not substitutes for the JIT gateway proof. |
 
-## Exact automated evidence currently available
+## Exact automated evidence — current PR update (2026-10-13)
 
-- W21 Local Launch Gate — PASS on code/test SHA `7a2e559d3f6c3a91b69bce387f2adf98c17ee3d7`: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38289544742
-- W21 evidence/cleanup artifact: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38289544742/artifacts/11764643205
-- W21 browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38289544742/artifacts/11764364237
-- Web Unit: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38289544756
-- Web CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38289544739
-- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38289544914
-- W25 isolated PostgreSQL atomic fence: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38289544646
-- Netlify workflow: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38289544695 (preview verification succeeded; deployment and live-provider checks were skipped).
+Current PR code/test candidate reviewed: `be8b96bb7d5448125d0c4134fb6275f02950ff53`.
 
-The W21 artifacts were recorded as available with SHA-256 hashes in the launch-gates status document; the ZIP contents were not unpacked for this matrix. Do not claim artifact internals beyond the workflow step summaries.
+- W21 Local Launch Gate — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38384206748
+- W21 evidence/cleanup artifact — `postgres_major=17`, `cleanup_verified=true`, no remaining containers or volumes: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38384206748/artifacts/11805171305
+- W21 browser diagnostics — unregistered adapter denied with HTTP 503 and `providerCall=not_attempted`; browser E2E reports `2 passed`: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38384206748/artifacts/11804922028
+- W25 isolated PostgreSQL atomic fence — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38384206763
+- Web Unit — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38384206782
+- Web CI/build — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38384206772
+- Flutter CI — **PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38384206787
+- Netlify preview-route verification — **PASS**; the deploy job was skipped because this migration/test/docs-only update does not require a live deploy: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38384206826
+
+The workflow artifact records the pull-request merge ref `3869460f4fc1bbaefd1480383654957dec236fb8`, while the PR source head is `be8b96bb7d5448125d0c4134fb6275f02950ff53`. This evidence verifies the isolated candidate and the tested unregistered-adapter path, not hosted Development parity, a real provider, or universal Mission Authority enforcement.
 
 ## Safe next acceptance sequence
 
 1. Keep the provider registry empty and hosted Research blocked.
-2. Complete a source-level inventory of every reachable external side-effect entry point and map each to either the reviewed JIT gateway or an explicit “no external side effect” classification.
+2. Extend and reconcile the existing source-level outbound-effect inventory against every reachable external side-effect entry point; mark each as mediated by the reviewed JIT gateway or explicitly outside Mission Action scope. Record that the current inventory is not a transitive network trace.
 3. Add exact tests for each Issue #23 acceptance item that is not already tied to a named regression test; include changed destination/input/action, stale/revoked authority, missing approval, cross-tenant denial, and provider/model replacement without authority expansion.
 4. Review the ordered W66–W79 rollout and rollback/recovery plan. The current hosted Development ledger was last verified at W65; no hosted migrations are authorized by this audit.
 5. Only after a concrete provider adapter is reviewed and every entry point is proven to route through the gateway should Issue #23 be considered for closure. Live provider tests require separate explicit authorization and a preview-only environment.
