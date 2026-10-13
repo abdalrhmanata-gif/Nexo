@@ -235,6 +235,12 @@ declare
   v_caught boolean := false;
 begin
   select * into v_fixture from w69_cross_tenant_fixture;
+  if auth.uid() is distinct from v_fixture.attacker_id then
+    raise exception 'TEST_IDENTITY_MISMATCH: attacker JWT did not resolve to the attacker';
+  end if;
+
+  -- Match a real authenticated PostgREST request, not only its claim settings.
+  perform set_config('role', 'authenticated', true);
   begin
     perform public.start_agent_execution(
       v_fixture.mission_id, v_fixture.action_id, v_fixture.agent_id,
@@ -244,6 +250,7 @@ begin
   exception when sqlstate '42501' then
     if sqlerrm = 'MISSION_NOT_FOUND_OR_FORBIDDEN' then v_caught := true; else raise; end if;
   end;
+  perform set_config('role', 'postgres', true);
   insert into w69_behavior_results values ('cross_tenant_start_denied', v_caught);
 end;
 $cross_tenant$;
