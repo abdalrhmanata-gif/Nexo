@@ -241,3 +241,14 @@ W21 and all companion gates are green: [W21](https://github.com/abdalrhmanata-gi
 W21 evidence: [PostgreSQL/cleanup](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858329/artifacts/11835231318), [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38439858329/artifacts/11835026476). It verifies the no-adapter worker remains fail-closed (HTTP 503, `providerCall=not_attempted`) and the disposable PostgreSQL 17 environment is cleaned.
 
 This is test-only coverage; universal Mission Authority mediation remains **NOT PROVEN**. Issue #23 stays **OPEN**, adapter registry empty, production not approved.
+
+
+---
+
+## Current-head verification — 2026-10-13 — `0aea294c6d8fb2328e6a67506807a93ccfe1f476`
+
+All six workflows pass on this source HEAD: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38440976087), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38440976263), [Web Unit 343/343](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38440976154), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38440976403), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38440975982), [Netlify](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38440976295). W21 confirms PostgreSQL 17 migration replay and verified cleanup; no-adapter HTTP 503 / `providerCall=not_attempted`; Browser E2E 2/2 passed.
+
+Current application guard checks dispatch-bound reconciliation timestamps, all-or-null modern W69 tuple fields, approval/hash/budget revision binding, authoritative lookup freshness, bounded provider-state evidence, stable receipts and safe legacy failure-only closure. These safeguards are tested via 343 Web Unit tests plus W69/W70 pgTAP and disposable W21 browser/gateway tests.
+
+This evidence does not establish universal runtime mediation, network tracing, hosted Development parity beyond W65, or real provider certification. Issue #23 stays OPEN and the registry stays empty.

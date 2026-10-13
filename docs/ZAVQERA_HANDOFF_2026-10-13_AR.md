@@ -405,3 +405,32 @@ SHA `283562e19020fb2eeedb97bdbd7acd774554a978` الوارد في دليل W21 ه
 
 ### الحالة الأمنية
 PR #29 ما زال OPEN / Draft / UNMERGED، وIssue #23 ما زالت OPEN. سجل adapters لا يزال فارغًا عمدًا، وإثبات فرض JIT الشامل واعتماد مزود حقيقي لا يزالان NOT PROVEN. آخر جرد موثق لقاعدة Development هو W65؛ W66–W80 لم تُطبق على البيئة المستضافة، ولذلك يبقى Research الحي محظورًا. لا تغييرات على Supabase المستضاف أو Main/Production أو DNS أو billing أو نشر الإنتاج.
+
+
+## نقطة تسليم حيّة — 13 أكتوبر 2026 — PR HEAD `0aea294c6d8fb2328e6a67506807a93ccfe1f476`
+
+هذه النقطة تتجاوز حالة fdcf43 السابقة. تم التحقق الحي من PR #29 وIssue #23 ومن جميع الـworkflows على رأس PR أعلاه.
+
+### بوابات الرأس الحالي — كلها PASS
+- W21 Local Launch Gate: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38440976087 — انتهت جميع الخطوات الـ25 بنجاح.
+- W25 Isolated PostgreSQL Atomic Fence: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38440976263 — SUCCESS.
+- Web Unit: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38440976154 — **343 passed / 0 failed**.
+- Web CI / production build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38440976403 — SUCCESS.
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38440975982 — SUCCESS.
+- Netlify preview-route verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38440976295 — SUCCESS. لا تعني هذه النتيجة نشرًا إنتاجيًا أو تحقق Research الحي؛ بعض خطوات النشر/التكامل الحي تخطّاها الـworkflow.
+
+### أدلة W21 التي تم تنزيلها وفحص محتواها
+- Evidence/cleanup: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38440976087/artifacts/11834978169 — `result=success`, migration source `repo-migrations`, PostgreSQL 17, disposable project `zavqera-e2e-local`, `supabase_stop_exit_code=0`, `remaining_containers=none`, `remaining_volumes=none`, `cleanup_verified=true`.
+- Browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38440976087/artifacts/11835417356 — preflight READY; العامل يرفض غياب adapter بإرجاع HTTP 503 / `unregistered_adapter_denied` / `providerCall=not_attempted`; Browser E2E **2 passed (2.5m)**؛ والتنظيف VERIFIED.
+- SHA `d7432f4731c7a06202a20a4d7bcd99575b541ac1` من الأثر هو merge-test SHA اصطناعي من GitHub؛ أبواه هما قاعدة PR `46dc6029f084fb000ba511478d6e8aec3eb532b3` ورأس PR الحقيقي `0aea294c6d8fb2328e6a67506807a93ccfe1f476`.
+
+### آخر hardening للتفويض والمصالحة
+رأس الكود/الاختبارات قبل هذا التوثيق يتضمن:
+- رفض reconciliation claim قبل provider lookup إذا لم يرتبط بزمن dispatch/created_at صالح، أو كانت مطالبة/مهلة المصالحة غير صالحة أو منتهية.
+- رفض tuple حديث جزئي لمطالبة W69؛ إذا وُجد أي من حقول tuple يجب وجود dispatch timestamp وapproval ID وrequires_approval وhashes SHA-256 صحيحة وbudget revision موجبة.
+- رفض نجاح reconciliation لسجل legacy من دون W69 dispatch claim؛ يبقى UNKNOWN، ولا يُسمح بإغلاقه FAILED إلا مع authoritative no-send proof.
+- اختبارات أدلة lookup تمنع الإنهاء إذا لم تكن authoritative أو كانت الطريقة غير مسموحة، أو providerState مفقودًا/طويلًا، أو checkedAt مفقودًا/غير صالح/قديمًا/بعيدًا في المستقبل. W69 وW70 pgTAP plans مضبوطة على 28 و23 اختبارًا على التوالي.
+- AST/source-graph guard يتتبع imports المحلية الثابتة ويرصد مسارات النقل/التحميل الديناميكية وaliases ضمن نطاقه. يظل تحليلًا ثابتًا محدودًا وليس trace كاملًا لكل حركة شبكة.
+
+### حالة PR والإصدار
+PR #29 ما زال OPEN / Draft / UNMERGED. Issue #23 ما زالت OPEN. سجل adapters لا يزال فارغًا عمدًا، وإثبات فرض JIT الشامل واعتماد مزود حقيقي ما زالا NOT PROVEN. آخر جرد موثق لقاعدة Development هو W65؛ W66–W80 لم تُطبق على البيئة المستضافة، لذلك يبقى Research الحي محظورًا. لا تغييرات على Supabase Development أو Main/Production أو DNS أو billing أو النشر الإنتاجي.
