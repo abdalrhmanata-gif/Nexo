@@ -213,3 +213,18 @@ The source-graph regression now also recognizes method-based fetch calls, comput
 The previous full isolated W21/W25 set passed on `d3bffe58224d4dc6442ed42a9040bf40cfa59bcc`, with [W21 evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38429145307/artifacts/11830860215) and [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38429145307/artifacts/11830581000). The latest change is tests-only, so W21/W25 were not re-run for it.
 
 Coverage remains heuristic: it does not prove full runtime reachability, computed aliases, provider package internals, or network behavior. Empty adapter registry; Issue #23 OPEN; production NOT APPROVED.
+
+
+---
+
+## Current verified checkpoint — 2026-10-13 — `2bcea5a9c12852f336973f3f0066d944384a6769`
+
+All gates passed on this exact source HEAD: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435928163), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927175), [Web Unit 341/341](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927129), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927161), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927480), [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927505).
+
+W21 [evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435928163/artifacts/11833646432) proves disposable PostgreSQL 17 cleanup with no remaining project containers/volumes; [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435928163/artifacts/11833706506) prove 2/2 E2E tests passed and the worker denies an unregistered adapter (503, `providerCall=not_attempted`).
+
+E2E stability fix: only the Playwright browser intercepts POST `/api/auth/password-policy` to avoid coupling signup/reset tests to Pwned Passwords availability. There is no bypass in the application/API route. `password-policy.test.mjs` still validates hashing/range semantics, compromised-password rejection, and failure-closed behavior when the upstream source fails.
+
+Dispatch/reconciliation invariants are extended: partial W69 tuples are invalid; a legacy UNKNOWN execution without dispatch proof cannot reconcile as SUCCEEDED; legacy FAILED requires authoritative no-send proof before releasing the reservation. The AST source-graph regression catches outbound SDKs/transports, dynamic module loading, computed global transport access and aliases. Its guarantee remains bounded static analysis, not complete runtime mediation.
+
+PR #29 OPEN/Draft/UNMERGED; Issue #23 OPEN; provider registry empty; hosted W66–W80 NOT APPLIED; universal JIT mediation and real provider certification NOT PROVEN.

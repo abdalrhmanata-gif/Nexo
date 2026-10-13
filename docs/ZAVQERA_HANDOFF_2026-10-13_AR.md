@@ -347,3 +347,35 @@ W21's evidence records synthetic merge-test SHA `965e0ba3fbaaa88804c2f433c6b091c
 
 ### Interpretation and safety
 These are conservative, direct-source detectors over the statically reachable local source graph. They still do not prove a complete runtime call graph, computed alias analysis, package-internal behavior, or a full network trace. Do not present the test as universal enforcement proof. The adapter registry remains intentionally empty. No production logic or SQL migration changed in commit `0945d9f`; no hosted Supabase changes, real provider I/O, DNS/billing changes or production deployment occurred. Hosted Development remains last documented at W65; W66–W80 are NOT APPLIED, so hosted Research stays blocked.
+
+
+## نقطة تسليم محدثة — 2026-10-13 — HEAD `2bcea5a9c12852f336973f3f0066d944384a6769`
+
+هذه أحدث نقطة تحقق حية، وتعلو على أي ملاحظة أقدم عن فشل W21 أو بقاء الاختبارات قيد التنفيذ.
+
+### إغلاق W21
+نجحت جميع بوابات الرأس الحالي:
+- W21: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435928163
+- W25: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927175
+- Web Unit: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927129 — 341 اختبارًا ناجحًا، صفر فشل
+- Web CI / build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927161
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927480
+- Netlify Preview: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927505
+
+تم تنزيل وفحص أدلة W21:
+- دليل PostgreSQL/التنظيف: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435928163/artifacts/11833646432 — إعادة تشغيل migrations من المستودع على PostgreSQL 17، `supabase_stop_exit_code=0`، لا حاويات أو وحدات تخزين متبقية، و`cleanup_verified=true`.
+- تشخيص المتصفح: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435928163/artifacts/11833706506 — فحص العامل يعيد HTTP 503 عند عدم وجود adapter مع `providerCall=not_attempted`، وBrowser E2E: **2 passed (1.9m)**، وتنظيف VERIFIED.
+
+SHA التمييز: artifact يستخدم merge-test SHA `1c209060cbafcedebd84dbc57bdc4608e706eff6`، وهو commit اصطناعي من GitHub وأبواه قاعدة PR `46dc6029f084fb000ba511478d6e8aec3eb532b3` وHEAD المصدر `2bcea5a9c12852f336973f3f0066d944384a6769`.
+
+### إصلاح سبب فشل W21 السابق
+كان فشل الرأس السابق في signup/reset بسبب عدم توفر خدمة Pwned Passwords الخارجية؛ صفحة التسجيل تصرفت بشكل آمن وأغلقت التسجيل مؤقتًا. عُدّل اختبار Playwright فقط ليعترض POST إلى `/api/auth/password-policy` ويعيد 204 حتميًا في سياق المتصفح التجريبي. لم يتغير route الإنتاج أو دالة السياسة؛ تظل السياسة الفعلية fail-closed عند تعذر الخدمة، وتغطي اختبارات `password-policy.test.mjs` منطق التجزئة والرفض عند تطابق كلمة مخترقة والفشل الآمن عند تعطل المصدر. لذلك W21 لا تعتمد على خدمة خارجية غير حتمية لإنجاز دورة auth.
+
+### تقوية التفويض وفحوص المخرجات
+- بوابة المصالحة تتحقق من ربط وقت المطالبة بزمن dispatch، وترفض tuple جزئيًا، وتحافظ على حالة UNKNOWN إذا لم يوجد إثبات dispatch موثوق. اختبارات W70 تمنع نجاح reconciliation القديم دون dispatch claim، وتسمح بحالة FAILED فقط مع دليل authoritative `provider_not_sent` و`safe_to_retry`.
+- اختبار W69 يتحقق من رفض tuples جزئية لمطالبة dispatch.
+- AST source-graph guard يتتبع imports محلية ثابتة ويرفض مراجع النقل/التحميل الحساسة واستدعاءات dynamic/computed global paths، بما فيها alias للـglobal object أو تمرير مرجع النقل إلى helper. هذا فحص static bounded، وليس trace كاملًا لكل تشغيل runtime أو لكل شبكة.
+- سجل adapters ما زال `Object.freeze({})`؛ لا adapter حقيقي مسجل أو معتمد.
+
+### الحواجز المتبقية
+PR #29 ما زال OPEN / Draft / UNMERGED، وIssue #23 OPEN. لم يحدث أي تغيير في Supabase Development أو Main/Production أو DNS أو billing أو الإنتاج. آخر جرد موثق لقاعدة Development هو W65؛ ترحيلات W66–W80 لم تطبق على البيئة المستضافة، ولذلك يبقى Research الحي محظورًا. إثبات فرض JIT الشامل على كل التأثيرات الخارجية، اعتماد adapter حقيقي، تسليم بريد حقيقي، مراجعة واجهة يدوية، وحماية كلمات المرور المسرّبة ما تزال NOT VERIFIED/NOT APPROVED. لا تُفرغ سجل adapters ولا تغلق Issue #23 حتى تكتمل هذه الأدلة.

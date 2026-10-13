@@ -243,3 +243,16 @@ The Mission Action source graph now checks additional direct transport escape sy
 Latest W21/W25 passed on prior test head `d3bffe58224d4dc6442ed42a9040bf40cfa59bcc`, with disposable PostgreSQL 17 cleanup verified and the unregistered adapter blocked HTTP 503 / `providerCall=not_attempted`. W21 E2E passed 2/2. Links: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38429145307), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38429145282), [evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38429145307/artifacts/11830860215), [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38429145307/artifacts/11830581000).
 
 This remains a bounded source-level guard, not a full AST/call-graph or runtime network audit. Registry remains empty and Issue #23 remains OPEN.
+
+
+---
+
+## Exact-head effect-boundary update — 2026-10-13 — `2bcea5a9c12852f336973f3f0066d944384a6769`
+
+Browser E2E now intercepts only the local page's POST to `/api/auth/password-policy` with a deterministic 204 so auth/recovery tests do not depend on external Pwned Passwords availability. This is a Playwright-only test seam; the server API route and production policy still fail closed on upstream errors. Separate password-policy tests retain matched-compromised-password and upstream-unavailable cases. Latest W21 passes 2/2 browser tests and verifies cleanup: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435928163; [evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435928163/artifacts/11833646432), [diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435928163/artifacts/11833706506).
+
+The current AST guard follows static local imports and detects known provider SDK/transport imports, computed imports/requires, alias and computed-global transport references, and outbound transport references passed to helper functions. This is not a full static call graph or live network trace. Separate outbound operations (OpenAI planning/Research/diagnostics, Resend delivery, Supabase Auth, and Pwned Passwords check) remain distinct from Mission Action dispatch; universal JIT mediation remains NOT PROVEN.
+
+W69/W70 SQL tests and application checks reject partial modern dispatch tuples; legacy unbound UNKNOWN cannot be marked SUCCEEDED, while legacy FAILED requires authoritative no-send evidence for release. Current all-green gate set on `2bcea5a9c12852f336973f3f0066d944384a6769`: W21 https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435928163; W25 https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927175; Web Unit 341/341 https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927129; Web CI https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927161; Flutter CI https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927480; Netlify https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927505.
+
+Provider registry intentionally remains empty, Issue #23 open, and no hosted database/DNS/billing/production changes have occurred.

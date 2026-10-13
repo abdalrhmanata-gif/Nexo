@@ -955,3 +955,26 @@ Current exact-head gates: [Web Unit 338/338](https://github.com/abdalrhmanata-gi
 Latest W21/W25 remain successful on the prior code/test head `d3bffe58224d4dc6442ed42a9040bf40cfa59bcc`: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38429145307), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38429145282). W21 cleanup and E2E evidence: [artifact](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38429145307/artifacts/11830860215) and [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38429145307/artifacts/11830581000). These full gates were not re-triggered by the latest single-file test-only change.
 
 Provider registry remains empty; Issue #23 OPEN; universal JIT enforcement NOT PROVEN; PR #29 OPEN / Draft / UNMERGED.
+
+
+---
+
+## Current exact-head status — 2026-10-13 — `2bcea5a9c12852f336973f3f0066d944384a6769`
+
+All six PR workflows succeeded on this exact source HEAD:
+- W21: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435928163
+- W25: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927175
+- Web Unit: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927129 — 341 passed, 0 failed
+- Web CI/build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927161
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927480
+- Netlify preview: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435927505
+
+W21 evidence/cleanup artifact [11833646432](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435928163/artifacts/11833646432): PostgreSQL 17 repository migration replay, disposable Supabase stop exit code 0, no remaining containers/volumes, `cleanup_verified=true`. Browser diagnostics [11833706506](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38435928163/artifacts/11833706506): fail-closed worker response HTTP 503 / `providerCall=not_attempted`; 2 Browser E2E tests passed; cleanup verified.
+
+W21’s source checkout SHA is GitHub’s synthetic merge-test commit `1c209060cbafcedebd84dbc57bdc4608e706eff6`, with parents base `46dc6029f084fb000ba511478d6e8aec3eb532b3` and PR source HEAD `2bcea5a9c12852f336973f3f0066d944384a6769`.
+
+The previous W21 browser failure was an upstream Pwned Passwords availability issue; signup/reset correctly failed closed. The browser test now mocks the app’s password-policy POST at the Playwright page boundary only to keep auth E2E deterministic. Production route and fail-closed policy remain unchanged; the password-policy unit tests continue to cover matched compromised passwords and upstream failure. The test suite therefore isolates the auth lifecycle from the external provider without adding a production bypass.
+
+The source hardening also covers partial dispatch tuples, refuses legacy UNKNOWN success without W69 proof, and permits legacy FAILED settlement only with authoritative no-send evidence. AST graph checks detect local imports, transport/SDK imports, dynamic/computed global escapes and aliases. Scope remains bounded static analysis, not a complete runtime/network proof.
+
+PR #29 remains OPEN / Draft / UNMERGED; Issue #23 remains OPEN. Provider registry remains empty. Hosted Development last documented at W65; W66–W80 are NOT APPLIED, keeping hosted Research blocked. Universal JIT mediation, real-provider certification, real email delivery, manual visual QA, and leaked-password protection remain unverified. No protected environment changes.
