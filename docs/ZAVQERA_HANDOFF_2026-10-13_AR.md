@@ -552,3 +552,31 @@ Fixtures verify ESM aliases and literal CommonJS imports are surfaced, and the d
 
 ### Release / security posture unchanged
 This scanner is bounded static source analysis, not a runtime sandbox, transitive package audit, network trace, or proof of universal JIT mediation. Provider registry remains empty. PR #29 remains OPEN / Draft / UNMERGED; Issue #23 remains OPEN. Hosted Development remains last documented at W65; W66–W80 are NOT APPLIED, so hosted Research stays blocked. No hosted DB writes, Main/Production changes, DNS/billing changes, real provider calls or production deployment occurred; production remains NOT APPROVED.
+
+
+## Verified handoff checkpoint — 2026-10-13 — exact PR source HEAD `4f344ae9c020c6cf61535dec195ab95b71a6db1f`
+
+All six gates passed on this exact PR head:
+- W21 Local Launch Gate: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453478950
+- W25 isolated PostgreSQL atomic fence: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453479005
+- Web Unit: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453479190 — **344 passed, 0 failed**
+- Web CI/build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453478870
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453479014
+- Netlify preview-route verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453479258
+
+W21 artifact files were downloaded and inspected:
+- [Evidence/cleanup](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453478950/artifacts/11841693675): `result=success`, repository migrations replayed on PostgreSQL 17, disposable project `zavqera-e2e-local`, stop exit code 0, no remaining labeled containers/volumes, `cleanup_verified=true`.
+- [Browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453478950/artifacts/11841753558): preflight READY; unregistered adapter denied with HTTP 503 / `unregistered_adapter_denied` / `providerCall=not_attempted`; Browser E2E **2 passed (2.6m)**; cleanup verified.
+- W21's `git_sha=7f7fefae25fcaccdf3eff4e9e92770186837b19d` is the synthetic test-merge SHA. The actual PR source head is `4f344ae9c020c6cf61535dec195ab95b71a6db1f`; do not conflate the two.
+
+### Outbound source/AST scanner coverage added
+The latest test-only change extends the Mission Action dependency-graph scanner regression to reject:
+- `http2` / `node:http2` transport imports and `http2.connect()`, including aliased calls;
+- Node internal escape capabilities `process.binding`, `process._linkedBinding`, and `process.dlopen`, including aliases and access via a process alias.
+
+The only changed code/test file for this hardening step is `apps/web/test/mission-authority-worker-auth.test.mjs`. It adds no runtime adapter and changes no production application route, SQL migration, database or hosted configuration. Full suite remains 344/344 because these cases extend existing table-driven/scanner tests.
+
+**Scope limitation:** this is static/AST source detection over statically reachable Mission Action route modules, not a runtime sandbox or network trace and not proof of universal mediation for every external side effect. Read-only Research and direct OpenAI/Resend/Supabase Auth paths remain separately inventoried. Keep the provider registry empty and Issue #23 open.
+
+### Unchanged release blockers and guardrails
+PR #29 remains OPEN / Draft / UNMERGED; Issue #23 remains OPEN. Universal external-effect JIT enforcement remains NOT PROVEN. Latest read-only hosted Development migration inventory is W65; W66–W80 remain NOT APPLIED, so hosted Research remains blocked. Real Research persistence, real email/reset delivery, manual visual QA, leaked-password protection, and real-provider certification remain NOT VERIFIED. No hosted DB writes, Main/Production changes, DNS/billing changes, real-provider side effects, Vercel use, PR merge or production promotion.

@@ -1080,3 +1080,14 @@ All six workflows passed on the code/test source head:
 - [Netlify preview-route verification](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395365)
 
 W21 verifies PostgreSQL 17 repository migrations and full cleanup; browser E2E 2/2 passed. Runtime diagnostics still show HTTP 503 and `providerCall=not_attempted` for an unregistered adapter. The source-graph scanner blocks statically imported Node loaders/process/VM/worker/cluster/DNS/inspector capabilities in Mission Action routes. This remains static coverage only; registry empty, Issue #23 open, production not approved.
+
+
+---
+
+## Exact-head gate checkpoint — `4f344ae9c020c6cf61535dec195ab95b71a6db1f` — 2026-10-13
+
+All six current-head gates passed: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453478950), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453479005), [Web Unit 344/344](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453479190), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453478870), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453479014), [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453479258).
+
+W21 [cleanup evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453478950/artifacts/11841693675) verifies PostgreSQL 17 repository migrations, successful stack stop, no remaining labeled containers/volumes and `cleanup_verified=true`. [Browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453478950/artifacts/11841753558) verifies HTTP 503 on unregistered adapter, `providerCall=not_attempted`, Browser E2E 2/2, cleanup verified.
+
+The latest static/AST scanner test-only update detects HTTP/2 transport imports/calls and Node internal transport escapes (`process.binding`, `process._linkedBinding`, `process.dlopen`) in statically reachable Mission Action source. It does not add runtime behavior or certify a real adapter. Registry empty; Issue #23 open; universal mediation not proven; hosted W66–W80 not applied.

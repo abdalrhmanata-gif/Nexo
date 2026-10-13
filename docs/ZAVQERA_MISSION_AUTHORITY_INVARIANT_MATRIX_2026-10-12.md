@@ -298,3 +298,12 @@ Web Unit 344/344, W21, W25, Web CI, Flutter CI and Netlify preview all passed on
 Mission Action statically reachable source modules are now tested against blocked import capabilities for dynamic module loading, process creation, code generation, worker/cluster execution, DNS transport, and inspector transport: `module`, `child_process`, `vm`, `worker_threads`, `cluster`, `dns` (including `dns/promises`), and `inspector`, with `node:` variants. ESM alias and CommonJS literal import fixtures are included. Web Unit 344/344, W21, W25, Web CI, Flutter CI and Netlify all pass on the exact source head.
 
 This is bounded static source-graph hardening, not universal runtime mediation evidence. Provider registry remains empty; Issue #23 OPEN; production not approved.
+
+
+---
+
+## Transport/runtime escape regression coverage — 2026-10-13 — source SHA `4f344ae9c020c6cf61535dec195ab95b71a6db1f`
+
+The Mission Action source/AST regression now checks HTTP/2 transport imports (`http2`, `node:http2`) and `http2.connect()`, plus Node internal runtime paths `process.binding`, `process._linkedBinding`, and `process.dlopen` including aliases. Web Unit passed 344/344; all six exact-head gates pass: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453478950), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453479005), [Web Unit](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453479190), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453478870), [Flutter](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453479014), [Netlify](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453479258).
+
+W21 evidence proves disposable PostgreSQL 17 cleanup and fail-closed no-adapter HTTP 503. Static AST checks are bounded source analysis, not runtime network telemetry or complete universal enforcement. Keep registry empty and Issue #23 OPEN.

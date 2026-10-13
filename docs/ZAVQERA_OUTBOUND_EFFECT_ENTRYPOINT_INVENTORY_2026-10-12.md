@@ -331,3 +331,14 @@ The Mission Action source graph now rejects static imports of Node capabilities 
 Evidence on this exact source head: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395483), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395401), [Web Unit 344/344](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395332), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395330), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395349), and [Netlify](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38451395365). W21 evidence/cleanup and browser diagnostics are linked in the launch-gate status checkpoint.
 
 Scope remains bounded: computed/dynamic runtime behavior and package internals are not completely audited. Universal JIT mediation remains NOT PROVEN; Issue #23 OPEN; registry empty.
+
+
+---
+
+## Additional outbound/runtime escape coverage — 2026-10-13 — source SHA `4f344ae9c020c6cf61535dec195ab95b71a6db1f`
+
+Mission Action static-source/AST scanner regressions now include HTTP/2 (`http2`, `node:http2`, `http2.connect()`) and Node internal capability paths `process.binding`, `process._linkedBinding`, `process.dlopen`, including references passed through aliases. These paths are rejected in the statically reachable Mission Action dependency graph; no runtime/provider code or SQL changed.
+
+All six workflows passed on exact source HEAD: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453478950), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453479005), [Web Unit 344/344](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453479190), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453478870), [Flutter](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453479014), [Netlify](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453479258). W21 cleanup evidence: [11841693675](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453478950/artifacts/11841693675); browser diagnostics: [11841753558](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453478950/artifacts/11841753558).
+
+This remains a bounded static regression guard, not a complete dynamic execution/network audit. Provider registry intentionally empty; Issue #23 OPEN; universal JIT enforcement NOT PROVEN.
