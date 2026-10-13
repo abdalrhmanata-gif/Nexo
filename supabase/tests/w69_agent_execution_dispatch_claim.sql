@@ -268,6 +268,7 @@ do $cross_tenant$
 declare
   v_fixture w69_cross_tenant_fixture%rowtype;
   v_caught boolean := false;
+  v_approval_caught boolean := false;
 begin
   select * into v_fixture from w69_cross_tenant_fixture;
   if auth.uid() is distinct from v_fixture.attacker_id then
@@ -287,7 +288,7 @@ begin
      ) then
     raise exception 'TEST_IDENTITY_OR_AUTHORIZATION_MISMATCH';
   end if;
-  v_caught := false;
+  v_approval_caught := false;
   begin
     perform public.request_mission_approval(
       v_fixture.mission_id,
@@ -305,10 +306,10 @@ begin
       )
     );
   exception when sqlstate '42501' then
-    if sqlerrm = 'MISSION_NOT_FOUND_OR_FORBIDDEN' then v_caught := true; else raise; end if;
+    if sqlerrm = 'MISSION_NOT_FOUND_OR_FORBIDDEN' then v_approval_caught := true; else raise; end if;
   end;
-  insert into w69_behavior_results values ('cross_tenant_approval_request_denied', v_caught);
 
+  v_caught := false;
   begin
     perform public.start_agent_execution(
       v_fixture.mission_id, v_fixture.action_id, v_fixture.agent_id,
@@ -319,6 +320,7 @@ begin
     if sqlerrm = 'MISSION_NOT_FOUND_OR_FORBIDDEN' then v_caught := true; else raise; end if;
   end;
   perform set_config('role', 'postgres', true);
+  insert into w69_behavior_results values ('cross_tenant_approval_request_denied', v_approval_caught);
   insert into w69_behavior_results values ('cross_tenant_start_denied', v_caught);
 end;
 $cross_tenant$;
