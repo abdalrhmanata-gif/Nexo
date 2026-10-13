@@ -415,6 +415,12 @@ const DIRECT_OUTBOUND_PATTERNS = [
   { name: "createRequire()", pattern: /\bcreateRequire\s*\(/g },
 ];
 const EXPLICIT_HTTP_IMPORTS = /^(?:node:)?(?:http|https|net|tls|dgram|axios|got|undici|ws|websocket|eventsource|xhr2)$/;
+const RESTRICTED_RUNTIME_CAPABILITY_IMPORTS = new Set([
+  "module", "node:module",
+  "child_process", "node:child_process",
+  "vm", "node:vm",
+  "worker_threads", "node:worker_threads",
+]);
 const EXPLICIT_PROVIDER_SDK_IMPORTS = new Set([
   "openai",
   "@ai-sdk/openai",
@@ -675,6 +681,25 @@ test("outbound-source detectors recognize representative transport and dynamic-l
     assert.equal(EXPLICIT_HTTP_IMPORTS.test(specifier), true, specifier + " is an outbound-capable transport");
   }
   assert.equal(EXPLICIT_HTTP_IMPORTS.test("node:fs"), false);
+  for (const specifier of [
+    "module", "node:module",
+    "child_process", "node:child_process",
+    "vm", "node:vm",
+    "worker_threads", "node:worker_threads",
+  ]) {
+    assert.equal(RESTRICTED_RUNTIME_CAPABILITY_IMPORTS.has(specifier), true,
+      specifier + " exposes a dynamic loader, child-process, code-generation or worker capability");
+  }
+  const restrictedSpecifiers = readStaticLocalImportSpecifiers(
+    'import { createRequire as makeRequire } from "node:module";\\n'
+      + 'const { spawn } = require("node:child_process");\\n'
+      + 'import vm from "node:vm";',
+  );
+  assert.deepEqual(
+    restrictedSpecifiers.filter((specifier) => RESTRICTED_RUNTIME_CAPABILITY_IMPORTS.has(specifier)).sort(),
+    ["node:child_process", "node:module", "node:vm"],
+    "aliased imports and CommonJS module loading must surface restricted runtime capabilities",
+  );
   const specifiers = readStaticLocalImportSpecifiers(
     'import Client from "openai";\\nconst mail = require("resend");',
   );
@@ -765,7 +790,7 @@ test("AST outbound analysis catches aliases and computed transport calls without
   }
 });
 
-test("Mission Action API dependency graphs cannot call outbound HTTP directly", async () => {
+test("Mission Action API dependency graphs cannot bypass the trusted external-effect boundary", async () => {
   const apiRoot = join(webRoot, "app", "api");
   const routeFiles = await listApiRouteFiles(apiRoot);
   const actionRouteFiles = routeFiles.filter((routeFile) => {
@@ -788,6 +813,9 @@ test("Mission Action API dependency graphs cannot call outbound HTTP directly", 
         if (EXPLICIT_HTTP_IMPORTS.test(specifier)) {
           violations.push({ route, module: moduleName, marker: `transport import: ${specifier}` });
         }
+        if (RESTRICTED_RUNTIME_CAPABILITY_IMPORTS.has(specifier)) {
+          violations.push({ route, module: moduleName, marker: `restricted runtime capability import: ${specifier}` });
+        }
         if (EXPLICIT_PROVIDER_SDK_IMPORTS.has(specifier)) {
           violations.push({ route, module: moduleName, marker: `provider SDK import: ${specifier}` });
         }
@@ -809,6 +837,6 @@ test("Mission Action API dependency graphs cannot call outbound HTTP directly", 
   assert.deepEqual(
     violations,
     [],
-    "Mission Action routes must not add direct outbound HTTP calls in their statically reachable local source graph; provider I/O belongs behind the trusted JIT adapter. Read-only Research is inventoried separately.",
+    "Mission Action routes must not add direct outbound calls, provider SDKs, dynamic loaders, child processes, dynamic code or worker capabilities in their statically reachable local source graph; provider I/O belongs behind the trusted JIT adapter. Read-only Research is inventoried separately.",
   );
 });
