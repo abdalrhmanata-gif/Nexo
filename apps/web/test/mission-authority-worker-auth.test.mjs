@@ -401,13 +401,19 @@ test("only the trusted internal worker route transitively reaches Mission Action
 
 const DIRECT_OUTBOUND_PATTERNS = [
   { name: "fetch()", pattern: new RegExp("\\bfetch\\s*\\(", "g") },
+  { name: "fetch.call/apply", pattern: /\bfetch\s*\.\s*(?:call|apply)\s*\(/g },
+  { name: "computed global transport access", pattern: /\b(?:globalThis|global|self|window)\s*\[\s*["'](?:fetch|WebSocket|XMLHttpRequest|EventSource)["']\s*\]/g },
+  { name: "WebSocket/EventSource/XHR constructor", pattern: /\bnew\s+(?:WebSocket|EventSource|XMLHttpRequest)\s*\(/g },
+  { name: "navigator.sendBeacon()", pattern: /\bnavigator\s*\.\s*sendBeacon\s*\(/g },
+  { name: "Node socket connect", pattern: /\b(?:net|tls)\s*\.\s*connect\s*\(/g },
+  { name: "UDP socket creation", pattern: /\bdgram\s*\.\s*createSocket\s*\(/g },
   { name: "axios/got/undici request", pattern: new RegExp("\\b(?:axios|got|undici)\\.(?:request|get|post|put|patch|delete)\\s*\\(", "g") },
   { name: "Node HTTP request", pattern: new RegExp("\\b(?:http|https)\\.request\\s*\\(", "g") },
   { name: "computed import()", pattern: /\bimport\s*\(\s*(?!["'])/g },
   { name: "computed require()", pattern: /\brequire\s*\(\s*(?!["'])/g },
   { name: "createRequire()", pattern: /\bcreateRequire\s*\(/g },
 ];
-const EXPLICIT_HTTP_IMPORTS = /^(?:node:)?(?:http|https|axios|got|undici)$/;
+const EXPLICIT_HTTP_IMPORTS = /^(?:node:)?(?:http|https|net|tls|dgram|axios|got|undici|ws|websocket|eventsource|xhr2)$/;
 const EXPLICIT_PROVIDER_SDK_IMPORTS = new Set([
   "openai",
   "@ai-sdk/openai",
@@ -428,6 +434,14 @@ const EXPLICIT_PROVIDER_SDK_IMPORTS = new Set([
 test("outbound-source detectors recognize representative transport and dynamic-loader escapes", () => {
   const positiveExamples = [
     ["fetch()", "await fetch(url)"],
+    ["fetch.call/apply", "fetch.call(globalThis, url)"],
+    ["computed global transport access", 'globalThis["fetch"](url)'],
+    ["WebSocket/EventSource/XHR constructor", "new WebSocket(url)"],
+    ["WebSocket/EventSource/XHR constructor", "new XMLHttpRequest()"],
+    ["navigator.sendBeacon()", "navigator.sendBeacon(url, body)"],
+    ["Node socket connect", "net.connect(options)"],
+    ["Node socket connect", "tls.connect(options)"],
+    ["UDP socket creation", 'dgram.createSocket("udp4")'],
     ["axios/got/undici request", "await axios.post(url, body)"],
     ["Node HTTP request", "https.request(options)"],
     ["computed import()", "await import(providerModuleName)"],
@@ -451,7 +465,9 @@ test("outbound-source detectors recognize representative transport and dynamic-l
   assert.equal(computedRequire.pattern.test('require("./trusted-local.cjs")'), false,
     "a literal local require is followed by the source-graph traversal, not classified as computed");
 
-  assert.equal(EXPLICIT_HTTP_IMPORTS.test("node:https"), true);
+  for (const specifier of ["node:http", "node:https", "node:net", "node:tls", "node:dgram", "ws", "websocket", "eventsource", "xhr2"]) {
+    assert.equal(EXPLICIT_HTTP_IMPORTS.test(specifier), true, specifier + " is an outbound-capable transport");
+  }
   assert.equal(EXPLICIT_HTTP_IMPORTS.test("node:fs"), false);
   const specifiers = readStaticLocalImportSpecifiers(
     'import Client from "openai";\\nconst mail = require("resend");',
