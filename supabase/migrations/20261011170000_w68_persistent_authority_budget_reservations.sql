@@ -432,7 +432,15 @@ begin
     from public.missions
    where id = p_mission_id
    for update;
-  if not found or not private.can_edit_workspace(v_mission.workspace_id, auth.uid()) then
+  if not found
+     or not exists (
+       select 1
+         from public.workspace_members wm
+        where wm.workspace_id = v_mission.workspace_id
+          and wm.user_id = auth.uid()
+          and wm.role in ('owner', 'admin', 'member')
+     )
+     or not private.can_edit_workspace(v_mission.workspace_id, auth.uid()) then
     raise exception 'MISSION_NOT_FOUND_OR_FORBIDDEN' using errcode = '42501';
   end if;
   if v_mission.status in ('COMPLETED', 'CANCELLED') then

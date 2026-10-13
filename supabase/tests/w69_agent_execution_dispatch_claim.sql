@@ -241,6 +241,10 @@ begin
 
   -- Match a real authenticated PostgREST request, not only its claim settings.
   perform set_config('role', 'authenticated', true);
+  if auth.uid() is distinct from v_fixture.attacker_id
+     or private.can_edit_workspace(v_fixture.mission_id, v_fixture.attacker_id) then
+    raise exception 'TEST_IDENTITY_OR_AUTHORIZATION_MISMATCH';
+  end if;
   begin
     perform public.start_agent_execution(
       v_fixture.mission_id, v_fixture.action_id, v_fixture.agent_id,
