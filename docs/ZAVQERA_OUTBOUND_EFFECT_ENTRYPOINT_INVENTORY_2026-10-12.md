@@ -216,3 +216,19 @@ The pgTAP mismatch discovered in the first rerun (22 planned vs 23 assertions) w
 All six gates passed on `813d97d4b04f9b362ace183c1d648ce6f58ed7aa`: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126676), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126675), [Web Unit 336/336](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126629), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126712), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126788), [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126697). W21 artifacts: [evidence/cleanup](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126676/artifacts/11826217860) and [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126676/artifacts/11826417697).
 
 Provider registry remains empty; universal JIT mediation remains NOT PROVEN; Issue #23 stays OPEN; hosted Development remains documented at W65 with W66–W80 NOT APPLIED.
+
+
+---
+
+## Direct outbound transport and known provider SDK guard — 2026-10-13 — `b0f050afb0ebdd7d5ce7d8350b6615b0bd4e5793`
+
+The Mission Action API source-graph regression now rejects:
+- direct `fetch()`, `axios/got/undici` request methods, Node `http/https.request()`;
+- explicit HTTP transport imports;
+- direct imports from a denylist of known provider SDKs (OpenAI / selected AI SDKs, Resend, Nodemailer, SendGrid, Stripe, Twilio, SES, Slack and Google/Microsoft API clients).
+
+The scan traverses statically reachable local modules from Mission Action API routes and treats read-only Research as separately inventoried. It cannot detect every SDK not in the denylist, computed imports, package-internal calls hidden in other libraries, or runtime network traffic. Universal outbound-effect mediation therefore remains NOT PROVEN.
+
+Current exact-head gates: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374751), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374681), [Web Unit 337/337](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374680), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374676), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374691), [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374689).
+
+Provider registry stays empty; Issue #23 stays OPEN. Hosted Development remains last documented at W65; W66–W80 are not applied.

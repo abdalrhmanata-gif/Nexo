@@ -284,3 +284,34 @@ W21 logs report synthetic merge-test SHA `f3251ab7694b66aded386de1079561827f271d
 
 ### Scope / guardrails unchanged
 No application provider is registered; provider registry remains empty. These tests use a disposable PostgreSQL 17 stack and fake providers, not real external sends. Universal JIT enforcement over every relevant outbound effect is still **NOT PROVEN**. Hosted Development remains last documented at W65; W66–W80 are NOT APPLIED, so hosted Research remains blocked. Real email/reset delivery, manual visual QA, leaked-password hardening and real-provider certification remain NOT VERIFIED. No hosted database writes, Main/Production changes, DNS/billing changes or production deployment occurred.
+
+
+## Superseding exact-head checkpoint — 2026-10-13 — PR source HEAD `b0f050afb0ebdd7d5ce7d8350b6615b0bd4e5793`
+
+This checkpoint supersedes earlier pending-run notes. The PR source head, Issue state, and workflow metadata were rechecked before recording.
+
+### Exact-head gate status — all PASS
+- W21 Local Launch Gate: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374751
+- W25 Isolated PostgreSQL Atomic Fence: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374681
+- Web Unit: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374680 — **337 passed, 0 failed**
+- Web CI / typecheck / production build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374676
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374691
+- Netlify preview-route verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374689
+
+W21 artifacts were downloaded and inspected:
+- Evidence/cleanup: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374751/artifacts/11827823136 — repository migrations replayed on PostgreSQL 17, disposable Supabase stop exit code 0, no remaining labeled containers or volumes, `cleanup_verified=true`.
+- Browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374751/artifacts/11827953013 — preflight READY; unregistered adapter denied with HTTP 503 / `unregistered_adapter_denied` / `providerCall=not_attempted`; Browser E2E **2 passed (2.2m)**; cleanup VERIFIED.
+
+### Latest security hardening
+- Reconciliation claim validation rejects malformed/unbound timestamps and partial modern W69 dispatch tuples before the reconciliation adapter is called.
+- A legacy `UNKNOWN` execution lacking W69 dispatch-claim proof is never marked `SUCCEEDED` on provider lookup alone; it remains `UNKNOWN`. A legacy attempt may settle `FAILED` only with authoritative no-send proof.
+- W69 schema constraint tests reject partial dispatch tuples at the database layer; W70 pgTAP has been aligned to 23 assertions and covers legacy success denial/no-send compatibility.
+- The Mission Action source-graph test blocks direct HTTP transport use and a documented denylist of known provider SDK imports (OpenAI, Resend and selected common provider SDKs) in the statically reachable Mission Action API graph. This is a preventive test guard, not proof that every possible outbound SDK or dynamic import is covered.
+
+The recent source/test commits changed the gateway, tests and SQL test files; **no Supabase migration file was changed or applied** in this hardening pass.
+
+### SHA precision
+W21 artifact `git_sha=479216e629048f6659796c85cc699c5109d3fc6a` is GitHub's synthetic PR merge-test commit. Its parents are base `46dc6029f084fb000ba511478d6e8aec3eb532b3` and PR source HEAD `b0f050afb0ebdd7d5ce7d8350b6615b0bd4e5793`. Report these as distinct SHAs.
+
+### Unchanged constraints / blockers
+PR #29 remains **OPEN / Draft / UNMERGED**. Issue #23 remains **OPEN**. Provider registry remains empty. Universal JIT mediation across every relevant outbound effect and a real provider adapter remain **NOT PROVEN / NOT APPROVED**. Hosted Development is last documented at W65; W66–W80 remain NOT APPLIED, so hosted Research remains blocked. Real email/password-reset delivery, manual visual QA and leaked-password protection remain unverified. No hosted DB write, Supabase Main/Production change, DNS/billing change, real provider side effect or production deployment occurred.

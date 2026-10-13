@@ -923,3 +923,22 @@ W21 artifacts were verified: [cleanup evidence](https://github.com/abdalrhmanata
 Safety behavior added since the last checkpoint: app-level reconciliation now refuses to finalize legacy provider success without a W69 dispatch claim; the record remains UNKNOWN with no finalization RPC. The W70 SQL test also proves the intended legacy no-send failure path can settle FAILED and release held budget. A pgTAP plan mismatch (22 planned / 23 run) was corrected to `plan(23)`; the next exact-head W21 run passed.
 
 PR #29 OPEN / Draft / UNMERGED; Issue #23 OPEN; adapter registry empty; universal JIT enforcement NOT PROVEN; hosted Development still W65 and W66–W80 NOT APPLIED.
+
+
+---
+
+## Exact-head verification — 2026-10-13 — `b0f050afb0ebdd7d5ce7d8350b6615b0bd4e5793`
+
+All six current PR-head gates passed:
+- [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374751) — [cleanup evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374751/artifacts/11827823136) and [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374751/artifacts/11827953013)
+- [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374681)
+- [Web Unit, 337/337](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374680)
+- [Web CI/build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374676)
+- [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374691)
+- [Netlify preview verification](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374689)
+
+W21 evidence confirms PostgreSQL 17, repository-migration replay, disposable project cleanup with no remaining containers/volumes and `cleanup_verified=true`. Browser E2E passed 2/2; the unregistered adapter route returned HTTP 503 / `providerCall=not_attempted`.
+
+The latest guard scans the statically reachable Mission Action API source graph for direct HTTP transports and direct imports of known provider SDKs. This is bounded static checking, not proof for every provider SDK or computed/dynamic import. Reconciliation now rejects malformed/partial dispatch tuple state before lookup, and legacy provider-success-without-W69-claim remains UNKNOWN.
+
+PR #29 stays OPEN/Draft/UNMERGED; Issue #23 stays OPEN; registry remains empty; W66–W80 are not applied to hosted Development. No hosted/prod mutation, DNS/billing change or real-provider I/O.

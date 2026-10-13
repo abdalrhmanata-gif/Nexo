@@ -186,3 +186,19 @@ Exact-head evidence: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/run
 W21 evidence/cleanup: [11826217860](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126676/artifacts/11826217860); browser diagnostics: [11826417697](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38420126676/artifacts/11826417697).
 
 This does not register or certify a provider, prove universal JIT enforcement, or authorize release. Keep provider registry empty, Issue #23 OPEN and production NOT APPROVED.
+
+
+---
+
+## Latest tested authority guard — 2026-10-13 — `b0f050afb0ebdd7d5ce7d8350b6615b0bd4e5793`
+
+All gates passed on this exact PR source SHA: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374751), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374681), [Web Unit 337/337](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374680), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374676), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374691), and [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38424374689).
+
+The test suite now guards:
+- direct gateway / worker-boundary / trusted-registry references from other routes;
+- direct HTTP client use across the statically reachable Mission Action source graph;
+- imports of known provider SDKs outside the trusted adapter boundary;
+- malformed/partial W69 dispatch claim tuples before reconciliation;
+- legacy success without W69 dispatch-claim proof.
+
+W21 confirms the unregistered adapter fails closed with HTTP 503 and does not call a provider. These are source/unit/isolated-test controls, not a complete dynamic import trace, network audit, or proof of universal JIT enforcement. Provider registry remains empty and Issue #23 remains OPEN.
