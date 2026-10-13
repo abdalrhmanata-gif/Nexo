@@ -59,6 +59,14 @@ async function guardSensitiveAuthQuery(page) {
       await route.abort("blockedbyclient");
       return;
     }
+    if (route.request().method() === "POST" && url.pathname === "/api/auth/password-policy") {
+      // Keep the browser suite hermetic: random disposable passwords are used,
+      // and the policy utility's breached-password and fail-closed behavior is
+      // exercised in password-policy.test.mjs. This interception exists only
+      // in Playwright; the application/API route has no test-mode bypass.
+      await route.fulfill({ status: 204, headers: { "cache-control": "no-store" } });
+      return;
+    }
     await route.continue();
   };
   await page.route("**/*", handler);
