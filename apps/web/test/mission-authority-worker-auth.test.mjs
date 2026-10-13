@@ -449,7 +449,8 @@ function findDirectOutboundMatches(source, pattern) {
 
 const GLOBAL_OBJECT_PATHS = new Set(["globalThis", "global", "self", "window"]);
 const DYNAMIC_LOADER_OR_CODE_PATHS = new Set([
-  "require", "createRequire", "module.require", "eval", "Function",
+  "require", "createRequire", "module.require", "module.constructor._load",
+  "process.mainModule.require", "process.getBuiltinModule", "eval", "Function",
   "globalThis.require", "global.require", "self.require", "window.require",
   "globalThis.createRequire", "global.createRequire", "self.createRequire", "window.createRequire",
   "globalThis.eval", "global.eval", "self.eval", "window.eval",
@@ -735,6 +736,12 @@ test("AST outbound analysis catches aliases and computed transport calls without
     'const load = require; load(resolveProviderPackageName());',
     'const { require: load } = globalThis; load(providerPackageName);',
     'module.require(resolveProviderPackageName());',
+    'process.mainModule.require("node:http");',
+    'const loadFromMainModule = process.mainModule.require; loadFromMainModule("node:https");',
+    'module.constructor._load("node:http");',
+    'const builtinLoader = module.constructor._load; builtinLoader("node:https");',
+    'process.getBuiltinModule("http");',
+    'const getBuiltin = process.getBuiltinModule; getBuiltin("https");',
     'const compile = Function; compile("return fetch(url)")();',
     'eval("fetch(url)")',
     'new Function("return fetch(url)")()',
