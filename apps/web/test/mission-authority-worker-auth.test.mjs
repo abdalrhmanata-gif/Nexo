@@ -157,10 +157,10 @@ test("mission-action dispatch and reconciliation gateway is reachable only throu
 
   for (const path of routeFiles) {
     const source = await readFile(path, "utf8");
-    const importsGateway = /from\\s+["'][^"']*mission-authority\\/persistent-dispatch-gateway(?:\\.mjs)?["']/.test(source);
-    const callsGateway = /\\b(?:dispatchThroughJitClaim|reconcileThroughTrustedClaim)\\b/.test(source);
+    const importsGateway = /from\s+["'][^"']*mission-authority\/persistent-dispatch-gateway(?:\.mjs)?["']/.test(source);
+    const callsGateway = /\b(?:dispatchThroughJitClaim|reconcileThroughTrustedClaim)\b/.test(source);
     if (importsGateway || callsGateway) {
-      gatewayConsumers.push(path.slice(apiRoot.length + 1).replace(/\\\\/g, "/"));
+      gatewayConsumers.push(path.slice(apiRoot.length + 1).replace(/\\/g, "/"));
     }
   }
 
