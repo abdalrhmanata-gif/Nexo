@@ -219,6 +219,34 @@ test("fails closed for cross-tenant, stale, revoked, expired, lease-mismatch and
   assert.equal(external.calls().length, 1);
 });
 
+test("provider substitution cannot expand approved authority or allowed actions", async () => {
+  const { adapter, external } = setup();
+
+  const swappedProvider = await adapter.execute(request({
+    audience: "fake.external.alternate.v1",
+    idempotencyKey: "provider-swap-denied-0001",
+  }));
+  assert.equal(swappedProvider.decision, DECISIONS.DENY);
+  assert.equal(swappedProvider.reasonCode, "BINDING_MISMATCH");
+  assert.equal(external.calls().length, 0);
+
+  const widenedAction = await adapter.execute(request({
+    actionId: "delete",
+    idempotencyKey: "authority-expansion-denied-01",
+  }));
+  assert.equal(widenedAction.decision, DECISIONS.DENY);
+  assert.equal(widenedAction.reasonCode, "ACTION_NOT_ALLOWED");
+  assert.equal(external.calls().length, 0);
+
+  const swappedDestination = await adapter.execute(request({
+    destination: "https://alternate-provider.example.test/send",
+    idempotencyKey: "destination-swap-denied-001",
+  }));
+  assert.equal(swappedDestination.decision, DECISIONS.DENY);
+  assert.equal(swappedDestination.reasonCode, "BINDING_MISMATCH");
+  assert.equal(external.calls().length, 0);
+});
+
 test("requires exact approval binding instead of dispatching when approval is required", async () => {
   const input = { message: "hello", count: 1 };
   const validApproval = {
