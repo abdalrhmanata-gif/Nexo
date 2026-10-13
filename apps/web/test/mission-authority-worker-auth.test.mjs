@@ -440,6 +440,15 @@ const GLOBAL_FETCH_PATHS = new Set([
   "window.fetch",
 ]);
 
+const GLOBAL_OBJECT_PATHS = new Set(["globalThis", "global", "self", "window"]);
+const DYNAMIC_LOADER_OR_CODE_PATHS = new Set([
+  "require", "createRequire", "module.require", "eval", "Function",
+  "globalThis.require", "global.require", "self.require", "window.require",
+  "globalThis.createRequire", "global.createRequire", "self.createRequire", "window.createRequire",
+  "globalThis.eval", "global.eval", "self.eval", "window.eval",
+  "globalThis.Function", "global.Function", "self.Function", "window.Function",
+]);
+
 function sourceScriptKind(filePath) {
   const extension = filePath.toLowerCase().split(".").pop();
   if (["ts", "mts", "cts"].includes(extension)) return ts.ScriptKind.TS;
@@ -464,12 +473,34 @@ function astExpressionPath(node) {
 }
 
 function normalizeExpressionPath(path) {
-  return path?.replace(/\["([^"]+)"\]/g, ".$1") ?? null;
+  return path?.replace(/\\["([^"]+)"\\]/g, ".$1") ?? null;
 }
 
-function outboundExpressionReason(node) {
-  const rawPath = astExpressionPath(node);
-  const path = normalizeExpressionPath(rawPath);
+function resolveAliasedExpressionPath(node, aliases) {
+  const path = normalizeExpressionPath(astExpressionPath(node));
+  if (!path) return null;
+  const [root, ...tail] = path.split(".");
+  const replacement = aliases?.get(root);
+  return replacement ? [replacement, ...tail].join(".") : path;
+}
+
+function isSensitiveAliasPath(path) {
+  return Boolean(path) && (
+    GLOBAL_OBJECT_PATHS.has(path)
+    || GLOBAL_FETCH_PATHS.has(path)
+    || DYNAMIC_LOADER_OR_CODE_PATHS.has(path)
+    || /^(?:WebSocket|XMLHttpRequest|EventSource)$/.test(path)
+    || /^(?:globalThis|global|self|window)\\.(?:WebSocket|XMLHttpRequest|EventSource|fetch|require|createRequire|eval|Function)$/.test(path)
+    || /^(?:axios|got|undici)\\.(?:request|get|post|put|patch|delete)$/.test(path)
+    || /^(?:http|https)\\.request$/.test(path)
+    || /^(?:net|tls)\\.connect$/.test(path)
+    || path === "dgram.createSocket"
+    || path === "navigator.sendBeacon"
+  );
+}
+
+function outboundExpressionReason(node, aliases = new Map()) {
+  const path = resolveAliasedExpressionPath(node, aliases);
   if (!path) return null;
 
   if (GLOBAL_FETCH_PATHS.has(path)) return "fetch transport reference";
@@ -495,6 +526,7 @@ function readAstOutboundMarkers(source, filePath = "source.mjs") {
   );
   const markers = [];
   const seen = new Set();
+  const aliases = new Map();
   const add = (node, reason) => {
     const line = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1;
     const marker = `${reason} at line ${line}`;
@@ -522,8 +554,8 @@ function readAstOutboundMarkers(source, filePath = "source.mjs") {
         add(node, "dynamic code execution");
       }
 
-      const callPath = normalizeExpressionPath(astExpressionPath(node.expression));
-      const reason = outboundExpressionReason(node.expression);
+      const callPath = resolveAliasedExpressionPath(node.expression, aliases);
+      const reason = outboundExpressionReason(node.expression, aliases);
       if (reason) add(node, reason);
       if (callPath && /^(?:globalThis|global|self|window)\.(?:fetch|WebSocket|XMLHttpRequest|EventSource)$/.test(callPath)) {
         add(node, "global transport call");
@@ -534,35 +566,38 @@ function readAstOutboundMarkers(source, filePath = "source.mjs") {
     }
 
     if (ts.isNewExpression(node) && node.expression) {
-      const path = normalizeExpressionPath(astExpressionPath(node.expression));
-      if (["WebSocket", "EventSource", "XMLHttpRequest", "globalThis.WebSocket", "globalThis.EventSource", "globalThis.XMLHttpRequest"].includes(path)) {
+      const path = resolveAliasedExpressionPath(node.expression, aliases);
+      if (["WebSocket", "EventSource", "XMLHttpRequest", "globalThis.WebSocket", "globalThis.EventSource", "globalThis.XMLHttpRequest", "global.WebSocket", "global.EventSource", "global.XMLHttpRequest", "self.WebSocket", "self.EventSource", "self.XMLHttpRequest", "window.WebSocket", "window.EventSource", "window.XMLHttpRequest"].includes(path)) {
         add(node, "outbound transport constructor");
       }
       if (path === "Function") add(node, "dynamic code execution");
     }
 
     if (ts.isElementAccessExpression(node) && node.argumentExpression && !staticString(node.argumentExpression)) {
-      const base = normalizeExpressionPath(astExpressionPath(node.expression));
-      if (["globalThis", "global", "self", "window"].includes(base)) {
+      const base = resolveAliasedExpressionPath(node.expression, aliases);
+      if (GLOBAL_OBJECT_PATHS.has(base)) {
         add(node, "computed global property access");
       }
     }
 
     if (ts.isVariableDeclaration(node) && node.initializer) {
       if (ts.isIdentifier(node.name)) {
-        const reason = outboundExpressionReason(node.initializer);
+        const initialPath = resolveAliasedExpressionPath(node.initializer, aliases);
+        const reason = outboundExpressionReason(node.initializer, aliases);
         if (reason) add(node, `outbound transport alias (${reason})`);
-        if (ts.isIdentifier(node.initializer) && ["require", "createRequire", "eval", "Function"].includes(node.initializer.text)) {
-          add(node, `dynamic loader/codegen alias (${node.initializer.text})`);
+        if (initialPath && DYNAMIC_LOADER_OR_CODE_PATHS.has(initialPath)) {
+          add(node, `dynamic loader/codegen alias (${initialPath})`);
         }
+        if (initialPath && isSensitiveAliasPath(initialPath)) aliases.set(node.name.text, initialPath);
       } else if (ts.isObjectBindingPattern(node.name)) {
-        const base = normalizeExpressionPath(astExpressionPath(node.initializer));
-        if (["globalThis", "global", "self", "window"].includes(base)) {
+        const base = resolveAliasedExpressionPath(node.initializer, aliases);
+        if (GLOBAL_OBJECT_PATHS.has(base)) {
           for (const element of node.name.elements) {
             const property = element.propertyName || element.name;
             const propertyName = ts.isIdentifier(property) || ts.isStringLiteral(property) ? property.text : null;
             if (["fetch", "WebSocket", "XMLHttpRequest", "EventSource", "require", "eval", "Function"].includes(propertyName)) {
               add(element, `destructured global transport/codegen (${propertyName})`);
+              aliases.set(element.name.getText(sourceFile), `${base}.${propertyName}`);
             }
           }
         }
@@ -618,6 +653,20 @@ test("outbound-source detectors recognize representative transport and dynamic-l
   assert.deepEqual(specifiers.sort(), ["openai", "resend"]);
   assert.equal(specifiers.every((specifier) => EXPLICIT_PROVIDER_SDK_IMPORTS.has(specifier)), true,
     "known provider SDKs are recognized as outbound-capable dependencies");
+});
+
+test("AST outbound analysis follows aliases of global objects, transports and dynamic loaders", () => {
+  const blockedExamples = [
+    'const browserGlobal = globalThis; browserGlobal.fetch("/outbound");',
+    'const browserGlobal = globalThis; const request = browserGlobal.fetch; request("/outbound");',
+    'const runtimeGlobal = globalThis; const request = runtimeGlobal["fetch"]; request("/outbound");',
+    'const runtimeGlobal = globalThis; const load = runtimeGlobal.require; load(providerPackageName);',
+    'const runtimeGlobal = globalThis; const compile = runtimeGlobal.Function; compile("return fetch(url)")();',
+    'const runtimeGlobal = globalThis; const hidden = runtimeGlobal[transportPropertyName];',
+  ];
+  for (const source of blockedExamples) {
+    assert.ok(readAstOutboundMarkers(source).length > 0, source + " must be detected through aliases");
+  }
 });
 
 test("AST outbound analysis catches aliases and computed transport calls without flagging ordinary database RPCs", () => {
