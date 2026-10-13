@@ -1,7 +1,7 @@
 -- W69: every delegated external side effect needs a single-use server JIT claim.
 begin;
 create extension if not exists pgtap;
-select plan(24);
+select plan(26);
 
 select ok(
   (select count(*) = 4 from information_schema.columns
@@ -51,6 +51,12 @@ select ok(
   and lower(pg_get_functiondef('private.claim_agent_execution_dispatch(uuid)'::regprocedure))
     like '%approval_expired_requires_reapproval%',
   'the final clock sample and expiry check happen after the approval row lock');
+
+select ok(
+  position('v_workspace_role is null' in lower(pg_get_functiondef('private.decide_mission_approval(uuid,text,text)'::regprocedure))) > 0
+  and position('v_workspace_role not in' in lower(pg_get_functiondef('private.decide_mission_approval(uuid,text,text)'::regprocedure))) > 0
+  and position('private.workspace_role(v_approval.workspace_id, auth.uid())' in lower(pg_get_functiondef('private.decide_mission_approval(uuid,text,text)'::regprocedure))) > 0,
+  'approval decision rejects a NULL workspace role before changing status or history');
 
 create temporary table w69_behavior_results (
   name text primary key,
@@ -346,6 +352,17 @@ begin
 end;
 $cross_tenant$;
 
+select ok(
+  (select a.status = 'PENDING'
+     from public.mission_approvals a
+    where a.id = (select target_approval_id from w69_cross_tenant_fixture))
+  and not exists (
+    select 1
+      from public.mission_events e
+     where e.event_type = 'APPROVAL_DECIDED'
+       and e.payload ->> 'approval_id' = (select target_approval_id::text from w69_cross_tenant_fixture)
+  ),
+  'a denied cross-workspace decision leaves the pending approval and event history unchanged');
 select ok((select passed from w69_behavior_results where name = 'cross_tenant_approval_decision_denied'),
   'an owner in another workspace cannot decide or cancel this mission approval');
 select ok((select passed from w69_behavior_results where name = 'cross_tenant_start_denied'),
