@@ -1,7 +1,7 @@
 -- W69: every delegated external side effect needs a single-use server JIT claim.
 begin;
 create extension if not exists pgtap;
-select plan(22);
+select plan(23);
 
 select ok(
   (select count(*) = 4 from information_schema.columns
@@ -287,6 +287,28 @@ begin
      ) then
     raise exception 'TEST_IDENTITY_OR_AUTHORIZATION_MISMATCH';
   end if;
+  v_caught := false;
+  begin
+    perform public.request_mission_approval(
+      v_fixture.mission_id,
+      v_fixture.action_id,
+      jsonb_build_object(
+        'schema_version', 1,
+        'type', 'agent_execution_binding_v1',
+        'agent_id', v_fixture.agent_id,
+        'request', jsonb_build_object(
+          'destination', 'https://example.invalid/cross-workspace-approval',
+          'audience', 'w69-test',
+          'summary', 'This request must stay in the target workspace',
+          'payload', jsonb_build_object('operation', 'cross-workspace-denial')
+        )
+      )
+    );
+  exception when sqlstate '42501' then
+    if sqlerrm = 'MISSION_NOT_FOUND_OR_FORBIDDEN' then v_caught := true; else raise; end if;
+  end;
+  insert into w69_behavior_results values ('cross_tenant_approval_request_denied', v_caught);
+
   begin
     perform public.start_agent_execution(
       v_fixture.mission_id, v_fixture.action_id, v_fixture.agent_id,
@@ -303,6 +325,8 @@ $cross_tenant$;
 
 select ok((select passed from w69_behavior_results where name = 'cross_tenant_start_denied'),
   'an authenticated user outside the workspace cannot start or discover its mission execution');
+select ok((select passed from w69_behavior_results where name = 'cross_tenant_approval_request_denied'),
+  'an owner in another workspace cannot create an exact execution approval for this mission');
 select ok((select passed from w69_behavior_results where name = 'authenticated_claim_denied'),
   'an authenticated workspace owner cannot mint a dispatch claim');
 select ok((select passed from w69_behavior_results where name = 'first_exact_claim_succeeds'),
