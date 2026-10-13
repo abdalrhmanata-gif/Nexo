@@ -150,16 +150,16 @@ test("mission-action worker route validates input before invoking the runtime bo
 });
 
 
-test("mission-action dispatch and reconciliation gateway is reachable only through the trusted internal worker route", async () => {
+test("Mission Action execution boundary is directly referenced only by the trusted internal worker route", async () => {
   const apiRoot = join(webRoot, "app", "api");
   const routeFiles = await listApiRouteFiles(apiRoot);
   const gatewayConsumers = [];
 
   for (const path of routeFiles) {
     const source = await readFile(path, "utf8");
-    const importsGateway = /from\s+["'][^"']*mission-authority\/persistent-dispatch-gateway(?:\.mjs)?["']/.test(source);
-    const callsGateway = /\b(?:dispatchThroughJitClaim|reconcileThroughTrustedClaim)\b/.test(source);
-    if (importsGateway || callsGateway) {
+    const importsPrivilegedBoundary = /from\s+["'][^"']*mission-authority\/(?:persistent-dispatch-gateway|mission-action-worker-boundary|provider-adapter-registry)(?:\.mjs)?["']/.test(source);
+    const referencesPrivilegedBoundary = /\b(?:dispatchThroughJitClaim|reconcileThroughTrustedClaim|runMissionActionWorker|resolveTrustedDispatchAdapter)\b/.test(source);
+    if (importsPrivilegedBoundary || referencesPrivilegedBoundary) {
       gatewayConsumers.push(path.slice(apiRoot.length + 1).replace(/\\/g, "/"));
     }
   }
@@ -167,6 +167,6 @@ test("mission-action dispatch and reconciliation gateway is reachable only throu
   assert.deepEqual(
     gatewayConsumers,
     ["internal/agent-executions/[executionId]/route.ts"],
-    "all Mission Action dispatch/reconciliation gateway access must remain behind the trusted internal worker route",
+    "only the trusted internal worker route may import or reference the JIT gateway, worker boundary, or trusted adapter registry",
   );
 });
