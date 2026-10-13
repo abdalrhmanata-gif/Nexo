@@ -1,0 +1,49 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { runMissionActionWorker } from "../lib/mission-authority/mission-action-worker-boundary.mjs";
+
+test("missing adapter causes zero privileged-client construction and zero provider calls", async () => {
+  const calls = { client: 0, dispatch: 0, reconcile: 0 };
+  const result = await runMissionActionWorker({
+    audience: "provider.send.v1",
+    operation: "dispatch",
+    executionId: "d3d61c35-1f9d-4c97-9310-e125f9e7f1c1",
+    resolveAdapter: () => null,
+    createClient() { calls.client++; throw new Error("unexpected privileged client"); },
+    dispatch() { calls.dispatch++; throw new Error("unexpected provider dispatch"); },
+    reconcile() { calls.reconcile++; throw new Error("unexpected provider reconciliation"); },
+  });
+  assert.deepEqual(result, { kind: "missing_adapter" });
+  assert.deepEqual(calls, { client: 0, dispatch: 0, reconcile: 0 });
+});
+
+test("adapter resolution precedes client construction and gateway invocation", async () => {
+  const events = [];
+  const adapter = { audience: "provider.send.v1", reconcile: async () => ({}) };
+  const result = await runMissionActionWorker({
+    audience: adapter.audience,
+    operation: "dispatch",
+    executionId: "d3d61c35-1f9d-4c97-9310-e125f9e7f1c1",
+    resolveAdapter() { events.push("resolve"); return adapter; },
+    createClient() { events.push("client"); return {}; },
+    async dispatch({ adapter: actual }) { events.push("dispatch"); assert.equal(actual, adapter); return { decision: "DISPATCHED" }; },
+    async reconcile() { events.push("reconcile"); return {}; },
+  });
+  assert.deepEqual(events, ["resolve", "client", "dispatch"]);
+  assert.deepEqual(result, { kind: "completed", result: { decision: "DISPATCHED" } });
+});
+
+test("missing reconciliation capability fails before client construction", async () => {
+  const events = [];
+  const result = await runMissionActionWorker({
+    audience: "provider.send.v1",
+    operation: "reconcile",
+    executionId: "d3d61c35-1f9d-4c97-9310-e125f9e7f1c1",
+    resolveAdapter: () => ({ audience: "provider.send.v1" }),
+    createClient() { events.push("client"); return {}; },
+    async dispatch() { events.push("dispatch"); return {}; },
+    async reconcile() { events.push("reconcile"); return {}; },
+  });
+  assert.deepEqual(result, { kind: "missing_reconciliation" });
+  assert.deepEqual(events, []);
+});
