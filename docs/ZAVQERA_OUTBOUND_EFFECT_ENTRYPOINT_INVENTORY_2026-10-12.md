@@ -183,3 +183,12 @@ This matches SQL contract in W70/W74: reconciliation evidence must be newer than
 All six gates passed on exact PR source HEAD `10dac572cd672c789cddcf891b51cdcce17b1f73`: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407193288), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407194176), [Web Unit 335/335](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407192895), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407193049), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407194147), and [Netlify preview verification](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407194404). W21 artifacts: [cleanup evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407193288/artifacts/11820075267) and [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407193288/artifacts/11820205143).
 
 The registry is still empty, real-provider certification and universal JIT mediation remain unproven, Issue #23 remains OPEN, and production is NOT APPROVED.
+
+
+---
+
+## Reconciliation dispatch tuple check — `b9e5ded49cc7da8af5e4d70413b42558cf09c7d9`
+
+When a stored dispatch claim is present, the reconciliation helper now rejects the record before `adapter.reconcile` if approval ID, `requires_approval`, authority/request hash shape, or positive budget revision is missing/invalid. Six new negative cases were added in addition to 18 timestamp/scope/lease cases. Legacy records without `dispatch_claimed_at` retain the explicit `created_at` bound for compatibility.
+
+All six current-head gates passed: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243001), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243093), [Web Unit 335/335](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412242824), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412242825), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243272), and [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243977). [W21 cleanup evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243001/artifacts/11823012738) and [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243001/artifacts/11822977850) were downloaded and inspected.

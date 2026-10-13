@@ -147,3 +147,14 @@ SQL contract cross-check: W70's claim function returns the full execution row; W
 Evidence: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407193288), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407194176), [Web Unit 335/335](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407192895), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407193049), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407194147), [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407194404). W21 evidence/cleanup: [11820075267](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407193288/artifacts/11820075267); browser diagnostics: [11820205143](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38407193288/artifacts/11820205143).
 
 This does not enable or certify a real provider. Registry stays empty; universal enforcement remains NOT PROVEN; Issue #23 OPEN; production NOT APPROVED.
+
+
+---
+
+## Dispatch tuple preservation during reconciliation — 2026-10-13 — `b9e5ded49cc7da8af5e4d70413b42558cf09c7d9`
+
+For modern rows with `dispatch_claimed_at`, reconciliation now refuses to call the lookup adapter unless the original dispatch claim still carries a non-empty approval ID, `requires_approval=true`, both valid authority/request SHA-256 digests and a positive safe-integer budget revision. The 18 existing malformed-time/scope tests plus six new binding tests verify fail-closed behavior before provider lookup. Legacy rows with no dispatch claim retain the documented creation-time fallback.
+
+Exact-head evidence: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243001), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243093), [Web Unit 335/335](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412242824), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412242825), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243272), [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243977).
+
+This narrows the gate before an outbound lookup but does not certify any provider or prove universal side-effect mediation. Keep Issue #23 OPEN, registry empty and production NOT APPROVED.

@@ -196,3 +196,31 @@ W21's recorded `git_sha=3297661185557c924774d6efbaae33305b2ed999` is the synthet
 PR #29 remains OPEN / Draft / UNMERGED. Issue #23 remains OPEN. The adapter registry remains empty. Static imports, unit regressions and disposable fake-provider evidence improve coverage but are not a complete transitive runtime/network trace and do not prove universal JIT mediation or certify a real provider.
 
 Last documented hosted Development migration inventory remains W65; W66–W80 are NOT APPLIED, so hosted Research remains blocked. Real email/reset delivery, manual visual QA, leaked-password protection and real-provider certification remain NOT VERIFIED. No hosted database writes, Supabase Main/Production modifications, DNS/billing changes, provider side effects, production deployment or PR merge occurred.
+
+
+## Superseding checkpoint — 2026-10-13 — code/test HEAD `b9e5ded49cc7da8af5e4d70413b42558cf09c7d9`
+
+This checkpoint supersedes the prior pending-run notes in this file.
+
+### Additional reconciliation authority-tuple validation
+When a reconciliation row contains `dispatch_claimed_at`, the gateway now requires the original dispatch authorization tuple to be complete before any provider lookup: approval ID present, `authority_snapshot.requires_approval === true`, valid 64-character hex authority/request digests, and a positive safe-integer budget revision. A partially populated modern dispatch claim is rejected fail-closed. For legacy rows with no `dispatch_claimed_at`, the prior `created_at` time-bound fallback remains supported; no SQL migrations were changed.
+
+Six new regression scenarios test the missing approval, disabled approval requirement, missing/bad hashes and missing/non-positive budget revision. They are added to the prior 18 malformed/unbound reconciliation cases. Web Unit is **335/335, zero failures**.
+
+### Exact-head gate evidence
+All six workflows succeeded on this code/test SHA:
+- W21 Local Launch Gate: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243001
+- W25 Isolated PostgreSQL Atomic Fence: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243093
+- Web Unit, 335/335: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412242824
+- Web CI / production build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412242825
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243272
+- Netlify preview-route verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243977
+
+W21 artifacts were downloaded and inspected:
+- Evidence/cleanup: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243001/artifacts/11823012738 — repository migrations replayed on PostgreSQL 17, disposable Supabase stopped with exit code 0, no remaining containers or volumes, `cleanup_verified=true`.
+- Browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243001/artifacts/11822977850 — unregistered adapter rejected with HTTP 503 / `unregistered_adapter_denied` / `providerCall=not_attempted`; Browser E2E 2 passed (2.5m); cleanup verified.
+
+The evidence file records synthetic W21 test merge SHA `25206644c21e0f97ca7ebd0cc239e6ed258da265`; distinguish it from PR source HEAD `b9e5ded49cc7da8af5e4d70413b42558cf09c7d9`.
+
+### Safety status
+PR #29 remains OPEN / Draft / UNMERGED; Issue #23 remains OPEN. Registry remains empty, universal JIT mediation and real-provider certification remain NOT PROVEN. Hosted Development remains documented at W65 and W66–W80 are NOT APPLIED, so hosted Research remains blocked. No hosted DB/data changes, Main/Production modifications, DNS/billing changes, real-provider effects or production deployment occurred.

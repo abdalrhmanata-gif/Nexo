@@ -880,3 +880,14 @@ The gateway now validates a non-empty, parseable dispatch-bound time (`dispatch_
 SHA distinction: W21 artifact `git_sha=3297661185557c924774d6efbaae33305b2ed999` is the synthetic test merge SHA; the PR source head is `10dac572cd672c789cddcf891b51cdcce17b1f73`.
 
 The provider registry stays empty; Issue #23 remains open because universal JIT mediation and real-provider certification are unproven. PR #29 stays OPEN/Draft/UNMERGED. Hosted Development remains documented at W65; W66–W80 are NOT APPLIED.
+
+
+---
+
+## Current tested head — `b9e5ded49cc7da8af5e4d70413b42558cf09c7d9`
+
+All six gates passed on exact PR code/test head: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243001), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243093), [Web Unit 335/335](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412242824), [Web CI/build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412242825), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243272), [Netlify preview verification](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243977).
+
+W21 artifacts: [evidence/cleanup](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243001/artifacts/11823012738), [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38412243001/artifacts/11822977850). Evidence states PostgreSQL 17 replay, exit code 0, no remaining labeled containers/volumes, cleanup verified. Browser outcome remains HTTP 503, `providerCall=not_attempted`, two E2E passes.
+
+Latest hardening validates reconciliation's timestamp binding and, when a dispatch claim is present, requires original approval, authority/request hashes and a positive budget revision before provider lookup. Six new negative cases added; legacy rows with no dispatch timestamp retain the explicit `created_at` fallback. Registry remains empty; universal JIT proof is outstanding.
