@@ -257,3 +257,43 @@ test("mission-action worker creates its client only after validating a complete 
   assert.deepEqual(result, { kind: "completed", result: { state: "FAKE_ACCEPTED" } });
   assert.deepEqual(events, ["resolve-adapter", "create-client", "dispatch"]);
 });
+
+
+test("mission-action worker rejects unsupported operations before adapter resolution or privileged client creation", async () => {
+  let adapterResolutions = 0;
+  let clientCreations = 0;
+  let dispatchCalls = 0;
+  let reconcileCalls = 0;
+
+  const result = await runMissionActionWorker({
+    audience: "provider.send.v1",
+    operation: "execute_anything",
+    executionId: "execution-test-id",
+    resolveAdapter: () => {
+      adapterResolutions += 1;
+      return {
+        audience: "provider.send.v1",
+        dispatch: async () => ({ state: "FAKE_ACCEPTED" }),
+        reconcile: async () => ({ state: "FAKE_UNKNOWN" }),
+      };
+    },
+    createClient: () => {
+      clientCreations += 1;
+      return { kind: "test-only-client" };
+    },
+    dispatch: async () => {
+      dispatchCalls += 1;
+      return { state: "FAKE_ACCEPTED" };
+    },
+    reconcile: async () => {
+      reconcileCalls += 1;
+      return { state: "FAKE_UNKNOWN" };
+    },
+  });
+
+  assert.deepEqual(result, { kind: "invalid_operation" });
+  assert.equal(adapterResolutions, 0);
+  assert.equal(clientCreations, 0);
+  assert.equal(dispatchCalls, 0);
+  assert.equal(reconcileCalls, 0);
+});
