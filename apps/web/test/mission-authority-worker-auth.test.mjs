@@ -410,11 +410,12 @@ const DIRECT_OUTBOUND_PATTERNS = [
   { name: "UDP socket creation", pattern: /\bdgram\s*\.\s*createSocket\s*\(/g },
   { name: "axios/got/undici request", pattern: new RegExp("\\b(?:axios|got|undici)\\.(?:request|get|post|put|patch|delete)\\s*\\(", "g") },
   { name: "Node HTTP request", pattern: new RegExp("\\b(?:http|https)\\.request\\s*\\(", "g") },
+  { name: "Node HTTP/2 connect", pattern: new RegExp("\\bhttp2\\.connect\\s*\\(", "g") },
   { name: "computed import()", pattern: /\bimport\s*\(\s*(?!["'])/g },
   { name: "computed require()", pattern: /\brequire\s*\(\s*(?!["'])/g },
   { name: "createRequire()", pattern: /\bcreateRequire\s*\(/g },
 ];
-const EXPLICIT_HTTP_IMPORTS = /^(?:node:)?(?:http|https|net|tls|dgram|axios|got|undici|ws|websocket|eventsource|xhr2)$/;
+const EXPLICIT_HTTP_IMPORTS = /^(?:node:)?(?:http|https|http2|net|tls|dgram|axios|got|undici|ws|websocket|eventsource|xhr2)$/;
 const RESTRICTED_RUNTIME_CAPABILITY_IMPORTS = new Set([
   "module", "node:module",
   "child_process", "node:child_process",
@@ -456,10 +457,11 @@ function findDirectOutboundMatches(source, pattern) {
   return [...source.matchAll(freshPattern)];
 }
 
-const GLOBAL_OBJECT_PATHS = new Set(["globalThis", "global", "self", "window"]);
+const GLOBAL_OBJECT_PATHS = new Set(["globalThis", "global", "self", "window", "process"]);
 const DYNAMIC_LOADER_OR_CODE_PATHS = new Set([
   "require", "createRequire", "module.require", "module.constructor._load",
-  "process.mainModule.require", "process.getBuiltinModule", "eval", "Function",
+  "process.mainModule.require", "process.getBuiltinModule", "process.binding",
+  "process._linkedBinding", "process.dlopen", "eval", "Function",
   "globalThis.require", "global.require", "self.require", "window.require",
   "globalThis.createRequire", "global.createRequire", "self.createRequire", "window.createRequire",
   "globalThis.eval", "global.eval", "self.eval", "window.eval",
@@ -510,6 +512,7 @@ function isSensitiveAliasPath(path) {
     || /^(?:globalThis|global|self|window)\.(?:WebSocket|XMLHttpRequest|EventSource|fetch|require|createRequire|eval|Function)$/.test(path)
     || /^(?:axios|got|undici)\.(?:request|get|post|put|patch|delete)$/.test(path)
     || /^(?:http|https)\.request$/.test(path)
+    || path === "http2.connect"
     || /^(?:net|tls)\.connect$/.test(path)
     || path === "dgram.createSocket"
     || path === "navigator.sendBeacon"
@@ -527,6 +530,7 @@ function outboundExpressionReason(node, aliases = new Map()) {
   }
   if (/^(?:axios|got|undici)\.(?:request|get|post|put|patch|delete)$/.test(path)) return "provider HTTP client call";
   if (/^(?:http|https)\.request$/.test(path)) return "Node HTTP request";
+  if (path === "http2.connect") return "Node HTTP/2 connect";
   if (/^(?:net|tls)\.connect$/.test(path)) return "Node socket connect";
   if (path === "dgram.createSocket") return "UDP socket creation";
   if (path === "navigator.sendBeacon") return "navigator.sendBeacon";
@@ -659,6 +663,7 @@ test("outbound-source detectors recognize representative transport and dynamic-l
     ["UDP socket creation", 'dgram.createSocket("udp4")'],
     ["axios/got/undici request", "await axios.post(url, body)"],
     ["Node HTTP request", "https.request(options)"],
+    ["Node HTTP/2 connect", "http2.connect(authority)"],
     ["computed import()", "await import(providerModuleName)"],
     ["computed require()", "require(providerPackageName)"],
     ["createRequire()", "const localRequire = createRequire(import.meta.url)"],
@@ -680,7 +685,7 @@ test("outbound-source detectors recognize representative transport and dynamic-l
   assert.equal(computedRequire.pattern.test('require("./trusted-local.cjs")'), false,
     "a literal local require is followed by the source-graph traversal, not classified as computed");
 
-  for (const specifier of ["node:http", "node:https", "node:net", "node:tls", "node:dgram", "ws", "websocket", "eventsource", "xhr2"]) {
+  for (const specifier of ["node:http", "node:https", "node:http2", "http2", "node:net", "node:tls", "node:dgram", "ws", "websocket", "eventsource", "xhr2"]) {
     assert.equal(EXPLICIT_HTTP_IMPORTS.test(specifier), true, specifier + " is an outbound-capable transport");
   }
   assert.equal(EXPLICIT_HTTP_IMPORTS.test("node:fs"), false);
@@ -764,6 +769,14 @@ test("AST outbound analysis catches aliases and computed transport calls without
     'net.connect({ host: "example.invalid", port: 443 });',
     'tls.connect({ host: "example.invalid", port: 443 });',
     'dgram.createSocket("udp4");',
+    'http2.connect("https://example.invalid");',
+    'const connectHttp2 = http2.connect; connectHttp2(authority);',
+    'process.binding("tcp_wrap");',
+    'const bindInternal = process.binding; bindInternal("tcp_wrap");',
+    'process._linkedBinding("http2");',
+    'process.dlopen(module, nativeAddonPath);',
+    'const loadNative = process.dlopen; loadNative(module, nativeAddonPath);',
+    'const runtimeProcess = process; runtimeProcess.dlopen(module, nativeAddonPath);',
     'await import(resolveProviderModuleName());',
     'require(resolveProviderPackageName());',
     'const localRequire = createRequire(import.meta.url);',
