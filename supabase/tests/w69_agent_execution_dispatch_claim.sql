@@ -1,7 +1,7 @@
 -- W69: every delegated external side effect needs a single-use server JIT claim.
 begin;
 create extension if not exists pgtap;
-select plan(19);
+select plan(20);
 
 select ok(
   (select count(*) = 4 from information_schema.columns
@@ -60,6 +60,7 @@ create temporary table w69_behavior_results (
 do $behavior$
 declare
   v_owner uuid := gen_random_uuid();
+  v_attacker uuid := gen_random_uuid();
   v_workspace uuid := gen_random_uuid();
   v_mission uuid := gen_random_uuid();
   v_agent uuid := gen_random_uuid();
@@ -77,7 +78,7 @@ declare
   v_claim_event_count integer;
   i integer;
 begin
-  insert into auth.users(id) values (v_owner);
+  insert into auth.users(id) values (v_owner), (v_attacker);
   insert into public.workspaces(id, owner_id, name)
   values (v_workspace, v_owner, 'W69 dispatch claim test');
   insert into public.workspace_members(workspace_id, user_id, role)
@@ -98,6 +99,27 @@ begin
   insert into public.workspace_agents(id, workspace_id, name, description, status, authority, created_by)
   values (v_agent, v_workspace, 'W69 bounded side-effect agent', 'Disposable JIT claim test', 'ACTIVE',
     '{"mode":"bounded","external_side_effects":true,"requires_approval":true}'::jsonb, v_owner);
+
+  -- A different authenticated principal must not discover or start this mission.
+  perform set_config('request.jwt.claim.sub', v_attacker::text, true);
+  perform set_config('request.jwt.claim.role', 'authenticated', true);
+  perform set_config('request.jwt.claims',
+    jsonb_build_object('sub', v_attacker, 'role', 'authenticated')::text, true);
+  v_caught := false;
+  begin
+    perform public.start_agent_execution(
+      v_mission, null, v_agent, 'w69-cross-tenant-denial-key-01',
+      '{"destination":"https://example.invalid/denied","audience":"w69-test"}'::jsonb
+    );
+  exception when sqlstate '42501' then
+    if sqlerrm = 'MISSION_NOT_FOUND_OR_FORBIDDEN' then v_caught := true; else raise; end if;
+  end;
+  insert into w69_behavior_results values ('cross_tenant_start_denied', v_caught);
+
+  perform set_config('request.jwt.claim.sub', v_owner::text, true);
+  perform set_config('request.jwt.claim.role', 'authenticated', true);
+  perform set_config('request.jwt.claims',
+    jsonb_build_object('sub', v_owner, 'role', 'authenticated')::text, true);
 
   v_budget := public.configure_mission_authority_budget(
     v_workspace, v_mission, v_agent, 4, 40, 10, 'USD',
@@ -213,6 +235,8 @@ begin
 end;
 $behavior$;
 
+select ok((select passed from w69_behavior_results where name = 'cross_tenant_start_denied'),
+  'an authenticated user outside the workspace cannot start or discover its mission execution');
 select ok((select passed from w69_behavior_results where name = 'authenticated_claim_denied'),
   'an authenticated workspace owner cannot mint a dispatch claim');
 select ok((select passed from w69_behavior_results where name = 'first_exact_claim_succeeds'),
