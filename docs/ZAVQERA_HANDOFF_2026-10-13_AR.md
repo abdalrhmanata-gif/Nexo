@@ -633,3 +633,27 @@ Static/AST scanning is not a complete runtime/network trace or proof of universa
 
 ### Next execution
 Continue reviewing concrete AST capability escapes, then reconcile the scanner coverage against the full outbound-effect inventory. Keep the adapter registry empty until runtime enforcement is proven.
+
+
+## Exact-head checkpoint — 2026-10-14 — source/test HEAD `92d77702c19e397aaf7d2c31b339383056025885`
+
+### Outbound capability scanner hardening
+The source-level AST audit now tracks destructured aliases from aliased global objects and destructured helpers such as `Reflect.get`, `Object.getOwnPropertyDescriptor`, and `Object.getOwnPropertyDescriptors`. This commit adds six negative examples for destructured Node runtime capabilities: `process.binding`, `process._linkedBinding`, `process.dlopen`, `process.getBuiltinModule`, and `process.mainModule.require` (including aliasing). The Web Unit suite passed **344/344, 0 failed**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513206048
+
+### Exact-head gates
+All six gates passed on PR source HEAD `92d77702c19e397aaf7d2c31b339383056025885`:
+- W21 Local Launch Gate: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513206042
+- W25 Isolated PostgreSQL Atomic Fence: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513205944
+- Web Unit, 344/344: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513206048
+- Web CI/build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513205938
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513205957
+- Netlify preview-route verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513205985
+
+W21 artifacts were downloaded and inspected:
+- Evidence/cleanup: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513206042/artifacts/11871205079 — result=success, repo migrations replayed on PostgreSQL 17, disposable Supabase stop exit code 0, no remaining labeled containers/volumes, cleanup_verified=true.
+- Browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513206042/artifacts/11870623964 — preflight READY; missionActionWorkerRoute=FAIL_CLOSED_VERIFIED, HTTP 503, outcome=unregistered_adapter_denied, providerCall=not_attempted; Browser E2E 2 passed (2.7m), cleanup VERIFIED.
+
+W21's internal `git_sha=84e2e327293e5dece5106d900af79700b2fa3f27` is the disposable integration checkout SHA, distinct from the PR source HEAD above.
+
+### Remaining limits / guardrails
+This is stronger static source-analysis coverage, not a complete transitive dependency audit or instrumented runtime network trace. Issue #23 remains OPEN: universal Mission Authority JIT mediation across all relevant side effects is NOT PROVEN, and the provider adapter registry remains empty. PR #29 remains OPEN / Draft / UNMERGED. Hosted Development remains last documented at W65; W66–W80 are NOT APPLIED, so hosted Research remains blocked. No hosted database writes, Supabase Main/Production changes, provider side effects, DNS/billing changes or production deployment occurred.

@@ -387,3 +387,14 @@ Exact current-head checks:
 The immediately preceding test/documentation-only source HEAD `7e556f17d046af4eb79e99d216d935922ea585ff` passed [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38507901867), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38507901873), and [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38507901912); application code and SQL remain unchanged on `ee20f67`. W21 evidence [11868368648](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38507901867/artifacts/11868368648) verifies PostgreSQL 17 repository migrations and cleanup. Browser diagnostics [11868189197](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38507901867/artifacts/11868189197) report HTTP 503 / `unregistered_adapter_denied` / `providerCall=not_attempted`, Browser E2E 2/2, and cleanup verified.
 
 Static/AST scanning is not a complete runtime/network trace or proof of universal JIT mediation. Provider registry empty; Issue #23 OPEN; PR #29 OPEN/Draft/UNMERGED. Hosted Development remains last documented at W65; W66–W80 NOT APPLIED. Production NOT APPROVED. No hosted database, Supabase Main/Production, DNS/billing, real provider, or production deployment changed.
+
+
+---
+
+## AST capability alias follow-up — 2026-10-14 — source/test HEAD `92d77702c19e397aaf7d2c31b339383056025885`
+
+The outbound-effect AST test now tracks destructured helper aliases from aliased global objects, `Reflect.get`, `Object.getOwnPropertyDescriptor(s)`, and selected Node runtime capabilities. Six new negative examples cover destructured `process.binding`, `process._linkedBinding`, `process.dlopen`, `process.getBuiltinModule`, and `process.mainModule.require`. Web Unit: [344/344 passed](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513206048).
+
+Exact-head validation: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513206042), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513205944), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513205938), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513205957), [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513205985); W21 [evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513206042/artifacts/11871205079) and [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513206042/artifacts/11870623964).
+
+Scope limit unchanged: static source analysis is not an instrumented runtime network trace and does not prove universal JIT mediation. Registry remains empty; Issue #23 OPEN; production NOT APPROVED.
