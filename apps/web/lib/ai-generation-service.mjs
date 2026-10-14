@@ -21,7 +21,9 @@ const KNOWN_PROVIDER_FAILURES = new Map([
 ]);
 
 export function classifyProviderFailure(error) {
-  const code = error instanceof Error ? error.message : "";
+  const rawCode = error instanceof Error ? error.message : "";
+  const [baseCode, detail] = rawCode.split(":", 2);
+  const code = baseCode;
   const known = KNOWN_PROVIDER_FAILURES.get(code);
   if (known) {
     return {
@@ -29,6 +31,7 @@ export function classifyProviderFailure(error) {
       disposition: known.kind === "unknown" ? "hold" : "release",
       status: known.status,
       code,
+      ...(detail && /^[A-Z0-9_]{1,128}$/.test(detail) ? { detail } : {}),
     };
   }
 

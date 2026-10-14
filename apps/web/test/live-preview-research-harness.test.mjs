@@ -112,6 +112,10 @@ test("Mission research opens the server-side agent and JIT gate before calling t
 test("the trusted research claim is single-use, service-role-only, and binds the current mission snapshot", () => {
   const migration = readFileSync(join(root, "../../supabase/migrations/20261014110000_w81_read_only_research_jit_claim.sql"), "utf8");
   assert.match(trustedWorkerRoute, /workerBody\.operation === "claim_read_only_research"/);
+  assert.match(trustedWorkerRoute, /RESEARCH_CLAIM_ERROR_CODES/);
+  assert.match(trustedWorkerRoute, /errorCode,/);
+  assert.match(researchRoute, /AGENT_RESEARCH_JIT_CLAIM_DENIED:\$\{safeCode\}/);
+  assert.match(researchRoute, /errorCode: result\.detail \?\? "RESEARCH_CLAIM_REJECTED"/);
   assert.match(migration, /v_agent\.authority ->> 'mode' is distinct from 'read_only'/);
   assert.match(migration, /v_agent\.authority -> 'external_side_effects' is distinct from 'false'::jsonb/);
   assert.match(migration, /research_claimed_at is null/);

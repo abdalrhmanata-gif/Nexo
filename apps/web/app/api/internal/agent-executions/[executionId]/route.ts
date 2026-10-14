@@ -23,6 +23,16 @@ const TOKEN_PATTERN = /^[A-Za-z0-9._~-]{32,512}$/;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_INTERNAL_BODY_BYTES = 160_000;
 const RESEARCH_COMPLETION_STATUSES = new Set(["SUCCEEDED", "FAILED", "UNKNOWN"]);
+const RESEARCH_CLAIM_ERROR_CODES = new Set([
+  "TRUSTED_EXECUTOR_REQUIRED",
+  "INVALID_RESEARCH_CLAIM_BINDING",
+  "EXECUTION_NOT_FOUND_OR_FORBIDDEN",
+  "MISSION_CLOSED_OR_NOT_FOUND",
+  "RESEARCH_AGENT_AUTHORITY_CHANGED",
+  "READ_ONLY_RESEARCH_EXECUTION_REQUIRED",
+  "RESEARCH_EXECUTION_ALREADY_CLAIMED",
+  "EXECUTION_LEASE_EXPIRED",
+]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -146,7 +156,13 @@ export async function POST(
           || typeof claim.data.authority_hash !== "string"
           || !/^[0-9a-f]{64}$/.test(claim.data.authority_hash)
           || typeof claim.data.claimed_at !== "string") {
-        return NextResponse.json({ error: "The read-only research JIT claim was denied or could not be confirmed." }, {
+        const errorCode = claim.error && RESEARCH_CLAIM_ERROR_CODES.has(claim.error.message)
+          ? claim.error.message
+          : "RESEARCH_CLAIM_RESPONSE_UNCONFIRMED";
+        return NextResponse.json({
+          error: "The read-only research JIT claim was denied or could not be confirmed.",
+          errorCode,
+        }, {
           status: claim.error ? (claim.error.code === "42501" || claim.error.code === "22023" ? 409 : 503) : 503,
           headers: NO_STORE,
         });

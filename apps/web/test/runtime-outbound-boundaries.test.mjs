@@ -51,19 +51,19 @@ test("Mission Research sends only after JIT preparation and uses a redirect-bloc
 });
 
 test("Research authorization denial or uncertainty never reaches the OpenAI transport", async () => {
-  for (const [errorCode, expectedKind, shouldRelease, expectedCompletion] of [
+  for (const [errorCode, expectedKind, shouldRelease, expectedCompletion, expectedDetail] of [
     ["AGENT_RESEARCH_JIT_CLAIM_DENIED", "provider_error", true, {
       status: "FAILED",
       result: { reason: "RESEARCH_JIT_CLAIM_DENIED" },
       evidence: { outcome: "FAILED", verified: false, request_id: "research-agent_research_jit_claim_denied-0001" },
       errorCode: "RESEARCH_JIT_CLAIM_DENIED",
-    }],
+    }, "RESEARCH_AGENT_AUTHORITY_CHANGED"],
     ["AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED", "provider_error", false, {
       status: "UNKNOWN",
       result: { reason: "AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED" },
       evidence: { outcome: "UNKNOWN", verified: false, request_id: "research-agent_research_jit_claim_unconfirmed-0001" },
       errorCode: "AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED",
-    }],
+    }, undefined],
   ]) {
     let providerCalls = 0;
     let releases = 0;
@@ -71,7 +71,7 @@ test("Research authorization denial or uncertainty never reaches the OpenAI tran
     const outcome = await runAiGeneration({
       requestId,
       reserve: async () => ({ allowed: true, reservation_id: "reservation-2" }),
-      prepare: async () => { throw new Error(errorCode); },
+      prepare: async () => { throw new Error(expectedDetail ? `${errorCode}:${expectedDetail}` : errorCode); },
       generate: async () => {
         return requestMissionResearch(mission, { apiKey: "test-only", fetchImpl: async () => {
           providerCalls += 1;
@@ -82,6 +82,7 @@ test("Research authorization denial or uncertainty never reaches the OpenAI tran
       release: async () => { releases += 1; },
     });
     assert.equal(outcome.kind, expectedKind);
+    assert.equal(outcome.detail, expectedDetail);
     assert.equal(providerCalls, 0, `${errorCode} must block the OpenAI call`);
     assert.equal(releases, shouldRelease ? 1 : 0);
 

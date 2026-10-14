@@ -167,7 +167,16 @@ async function claimReadOnlyResearchExecution(request: Request, input: {
   } catch {
     throw new Error("AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED");
   }
-  if (response.status === 409) throw new Error("AGENT_RESEARCH_JIT_CLAIM_DENIED");
+  if (response.status === 409) {
+    const denial: unknown = await response.json().catch(() => null);
+    const denialCode = denial && typeof denial === "object" && !Array.isArray(denial)
+      ? (denial as { errorCode?: unknown }).errorCode
+      : null;
+    const safeCode = typeof denialCode === "string" && /^[A-Z0-9_]{1,128}$/.test(denialCode)
+      ? denialCode
+      : "RESEARCH_CLAIM_REJECTED";
+    throw new Error(`AGENT_RESEARCH_JIT_CLAIM_DENIED:${safeCode}`);
+  }
   if (!response.ok) throw new Error("AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED");
 
   const payload: unknown = await response.json().catch(() => null);
@@ -383,7 +392,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         return NextResponse.json({ error: "The agent execution boundary could not be opened." }, { status: 503 });
       }
       if (result.code === "AGENT_RESEARCH_JIT_CLAIM_DENIED") {
-        return NextResponse.json({ error: "Mission Research authorization changed before the provider request." }, { status: 409 });
+        return NextResponse.json({
+          error: "Mission Research authorization changed before the provider request.",
+          errorCode: result.detail ?? "RESEARCH_CLAIM_REJECTED",
+        }, { status: 409 });
       }
       if (result.code === "AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED") {
         return NextResponse.json({ error: "Mission Research authorization could not be confirmed. Inspect execution history before retrying." }, { status: 503 });

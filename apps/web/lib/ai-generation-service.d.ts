@@ -24,6 +24,7 @@ export type AiGenerationOutcome<T = MissionPlan> =
       disposition: "release" | "hold";
       status: number;
       code: string;
+      detail?: string;
       reservationId?: string;
     }
   | {
@@ -43,6 +44,7 @@ export declare function classifyProviderFailure(error: unknown): {
   disposition: "release" | "hold";
   status: number;
   code: string;
+  detail?: string;
 };
 
 export declare function runAiGeneration<T = MissionPlan>(args: {
