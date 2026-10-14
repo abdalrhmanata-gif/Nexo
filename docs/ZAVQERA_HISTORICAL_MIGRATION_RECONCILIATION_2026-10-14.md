@@ -189,7 +189,8 @@ Current monthly quota constraints for Free=5/Plus=50/Pro=300 are present. That d
 - No trigger exists on agent_executions in the inspected trigger inventory; W75/W76 receipt enforcement is not installed.
 - Aggregate counts only: agent_executions has 3 SUCCEEDED and no RUNNING/UNKNOWN rows; quota reservations 15 consumed / 12 released; workspace_invitations 1 PENDING. Recheck immediately before any authorized rollout.
 - Security Advisor reports auth_leaked_password_protection Disabled (WARN). It also flags three private.anonymous_ai_* tables for RLS disabled. Targeted catalog checks found anon has no private-schema USAGE, the tables have owner-only ACLs/no anon or authenticated table SELECT, and public anonymous-AI RPCs execute only as service_role. The warning alone does not prove Data API exposure. Do not enable RLS without tracing the definer call paths and regression testing.
-- W80 has no dedicated supabase/tests/w80_*.sql regression in the repository. Existing W44 invitation tests cover only part of W80. Add and pass a focused test for NULL workspace-role denial (zero state/event/activity/email mutation) and helper ACLs before rollout acceptance. Hosted private.create_workspace_invitation still has effective PUBLIC-derived EXECUTE; its function checks auth and workspace role, and anon lacks private-schema USAGE, but its ACL does not match W80’s intended grant boundary.
+- W80 now has a dedicated `supabase/tests/w80_invitation_helper_privileges.sql` regression, wired into W21 after W44. It asserts exact overload counts, effective EXECUTE for anon/authenticated/service_role, exact non-owner ACL grantees (including rejecting PUBLIC/unknown-role grants), and owner/security-mode/search_path for all eight invitation wrappers/helpers. Contract from source: public wrappers are SECURITY INVOKER; private helpers are postgres-owned SECURITY DEFINER; both use `search_path=pg_catalog, public`. Authenticated has execute on all helpers and wrappers because the invoker wrappers call them; anon has execute only on `get_workspace_invitation`, explicitly used by the token-gated public lookup. This is a declared exception, not a general anonymous helper grant. Test has not yet run on PostgreSQL/pgTAP; W21 evidence is still required. The existing W44 test covers NULL-role create/revoke denial and no invitation/activity mutation across tenants, but it does not assert the full W80 exact ACL/overload contract. W80's NULL-role/no-mutation and ACL coverage must both pass before rollout acceptance.
+- The prior Development audit observed PUBLIC-derived EXECUTE on `private.create_workspace_invitation` before W80. It also found no anon USAGE on `private`, while authenticated has private-schema USAGE. Thus anon's explicit get-helper EXECUTE does not grant direct schema access; runtime invocation of the public anon lookup wrapper through this helper has not been verified and is a separate item to include in the disposable W21 check. Do not infer behavior from ACL inspection alone.
 
 ## 5. Per-migration sequence and decisions
 
@@ -211,11 +212,11 @@ Use this exact timestamp order only after the history is reconciled and Developm
 | 12 | W77 20261012160000; w77_read_only_research_payload_bounds.sql | Verify Research result/evidence allowlists and size/count bounds. |
 | 13 | W78 20261012170000; w78_research_history_event_binding.sql | Verify history is bound to the exact execution/request/result. |
 | 14 | W79 20261012180000; w79_trusted_research_completion.sql | Drop old overloads; install requester-bound seven-arg completion; verify service-only grants and app contract. |
-| 15 | W80 20261013100000; dedicated test missing | Hold full rollout acceptance until W80 NULL-role and ACL regression exists and passes. |
+| 15 | W80 20261013100000; `w80_invitation_helper_privileges.sql` added, W21 not yet run | Hold rollout acceptance until W80 ACL regression passes on disposable PG17 and NULL-role/no-mutation coverage is confirmed. |
 | 16 | W81 20261014110000; w81_read_only_research_jit_claim.sql | Verify claim columns/check/index, single-use service-only JIT and no unclaimed success/unknown completion. |
 | 17 | W82 20261014130000; w82_ai_generation_reservation_identity.sql | Verify three-argument reserve, dropped legacy overloads, input binding, duplicate denial and ambiguous expiry charged as unknown. |
 
-Matching pgTAP files exist for W66–W71, W73, W75–W79, W81 and W82; W74 is exercised in W70 stale-lookup tests. W72 is fake-provider integration. W80 is the concrete test gap.
+Matching pgTAP files exist for W66–W71, W73, W75–W79, W81 and W82; W74 is exercised in W70 stale-lookup tests. W72 is fake-provider integration. W80 now has dedicated privilege coverage, but it remains unverified until W21 runs the added test on disposable PG17.
 
 ## 6. Forward-only operator procedure (prepared only)
 
@@ -223,7 +224,7 @@ Matching pgTAP files exist for W66–W71, W73, W75–W79, W81 and W82; W74 is ex
 
 1. Owner separately authorizes Development-only DDL and explicitly supersedes Issue #23. This document is not that authorization.
 2. Reconcile the 24 alternate-version candidates and four source-less historical ledger rows from original migration source or effect-level evidence. Decide the W5 replay-baseline handling. Do not use migration repair, edit schema_migrations manually, or rename files just to silence drift.
-3. Review every SQL file and pgTAP test at the exact source SHA; add/run W80 regression; rerun W21 and relevant gates against the exact SHA.
+3. Review every SQL file and pgTAP test at the exact source SHA; run the newly wired W80 regression through W21, including an anon public token-lookup invocation check; rerun W21 and relevant gates against the exact SHA.
 4. Verify a Development backup/restore point with the actual project plan, recovery window and data-loss window. No reviewed down-migration set exists; treat this as forward-only. Never claim rollback without an approved and tested restoration path.
 5. Take minimized counts/relationships for existing executions, approvals, budgets/reservations, invitations and receipts. Recheck immediately before applying.
 6. Confirm no concurrent migration/deploy operation; capture ledger and catalogs read-only. Stop if baseline diverges from the reconciled snapshot.
@@ -233,7 +234,7 @@ Matching pgTAP files exist for W66–W71, W73, W75–W79, W81 and W82; W74 is ex
 1. After authorization, use the reviewed Supabase migration runner, one file at a time in Section 5 order. Do not use Dashboard SQL fragments or apply W67 out of order.
 2. After each file, inspect its ledger row and actual catalog effects. Do not continue after any failed test or mismatch.
 3. Keep Research unavailable after W67 until W79 and W81 both pass all postchecks. No provider adapter, live Research, email or side-effect test is part of this rollout.
-4. Finish only when ledger history matches the reviewed files through W82 (no W72 row), expected catalog state passes, W80 regression passes, and the Security Advisor is reviewed.
+4. Finish only when ledger history matches the reviewed files through W82 (no W72 row), expected catalog state passes, W80 ACL and anon lookup behavior are verified, NULL-role/no-mutation checks pass, and the Security Advisor is reviewed.
 
 ### Read-only postcheck SQL
 
@@ -304,6 +305,13 @@ Expected: after W66 all five service_role privilege checks false; after W67 old 
 
 ## 7. Tests and evidence
 
+### W80 invitation ACL regression status (repository update)
+
+- Added `supabase/tests/w80_invitation_helper_privileges.sql` with 49 pgTAP assertions. It checks the 8 known public/private function signatures (exactly one each; no overloads), effective EXECUTE for anon/authenticated/service_role, exact non-owner ACL grantees (therefore no PUBLIC/unknown-role grant), owner, SECURITY mode and pinned search_path, wrapper-to-helper delegation, private-schema USAGE, and an anon invocation of the public token lookup. Authenticated execution on private helpers is intentional because public wrappers are SECURITY INVOKER; anon execution is intentionally allowed only for token lookup. The test checks that exception explicitly.
+- `.github/workflows/zavqera-w21-e2e.yml` copies the test into its disposable project and runs it immediately after W44. W21 has **not** run with this change, and no local PostgreSQL 17/Supabase CLI/Docker is installed; the 49 assertions have not yet been executed. W21 must establish whether anon can traverse the invoker lookup wrapper without private-schema USAGE. If not, that is a separate W80 migration correction; do not change W80 in this test-only task.
+- Coverage review: W66's 11 assertions cover all seven table-level privileges on `agent_executions` and the intended completion-function access, but do not compare the exact table ACL/grant-option entries. W81 checks new claim RPC role boundaries but contains no assertion for the legacy six-argument Research completion. W67 separately checks anon/authenticated/service_role cannot execute the old public/private signatures, and W79 asserts the old signatures are removed in the final migration state. W82 exercises authenticated reservation behavior and checks old one-argument overload removal, but does not assert an anon/service_role/PUBLIC privilege matrix for the new reserve functions. These coverage limits are documented; no W66/W81/W82 behavior was changed.
+- The six historical exact-HEAD CI runs listed below predate this W80 test/workflow change and are not evidence for it. A new W21 run on the exact changed commit remains required; this task does not push or change PR #29's head.
+
 - Focused local Web tests: 22/22 passed:
   node --test test/runtime-outbound-boundaries.test.mjs test/ai-usage-security.test.mjs test/research-completion-schema-preflight.test.mjs test/live-preview-research-harness.test.mjs
 - Full Web Unit suite: 356/356 passed (npm test).
@@ -316,7 +324,7 @@ Expected: after W66 all five service_role privilege checks false; after W67 old 
 1. Explicit Development-only DDL authorization that supersedes Issue #23. Until then, no hosted write.
 2. Recovery of original SQL/source or sufficient effect-level proof for 24 alternate-version mappings and four source-less ledger entries; decide W5 baseline disposition without migration repair/manual ledger edits.
 3. Acceptance of temporary Research downtime between W67 and W79/W81; the application stays fail-closed throughout.
-4. Add and pass W80 NULL-role/private-helper ACL regression.
+4. Run the W80 regression added at `supabase/tests/w80_invitation_helper_privileges.sql` on disposable PG17; also verify anon token lookup through the invoker wrapper and confirm W44 NULL-role/no-mutation coverage.
 5. Keep claims scoped: this audit/tests do not prove universal Mission Authority enforcement or launch readiness.
 
 No hosted changes made. Provider registry remains empty. PR #29 remains OPEN/Draft/UNMERGED. Issue #23 remains OPEN. No Production/Main, deployment, DNS, billing, provider, or email action was performed.
