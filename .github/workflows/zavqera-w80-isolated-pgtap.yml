@@ -265,6 +265,21 @@ jobs:
             exit "${exit_code:-0}"
           } > "${proof}" 2>&1
 
+      - name: Redact disposable local credentials from evidence artifacts
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          for artifact in "${RUNNER_TEMP}"/W80_*.txt; do
+            [ -f "${artifact}" ] || continue
+            sed -E -i \
+              -e 's/sb_(publishable|secret)_[A-Za-z0-9_-]+/sb_\1_[REDACTED_LOCAL_KEY]/g' \
+              -e 's#eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+#[REDACTED_LOCAL_JWT]#g' \
+              -e 's#(postgresql?://[^:/[:space:]]+:)[^@/[:space:]]+@#\1[REDACTED_DB_PASSWORD]@#g' \
+              -e 's/(SERVICE_ROLE_KEY=|ANON_KEY=|JWT_SECRET=)[^[:space:]]+/\1[REDACTED_LOCAL_SECRET]/g' \
+              "${artifact}"
+          done
+
       - name: Upload W80 isolated verification artifacts
         if: always()
         uses: actions/upload-artifact@v4
