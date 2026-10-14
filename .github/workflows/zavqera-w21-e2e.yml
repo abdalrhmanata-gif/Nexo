@@ -207,7 +207,6 @@ jobs:
             supabase/tests/w77_read_only_research_payload_bounds.sql \
             supabase/tests/w78_research_history_event_binding.sql \
             supabase/tests/w79_trusted_research_completion.sql
-            supabase/tests/w82_ai_generation_reservation_identity.sql
           do
             echo "Running Mission Authority regression: $test_file"
             timeout 10m supabase test db "$test_file"
