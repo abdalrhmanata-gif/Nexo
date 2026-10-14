@@ -580,3 +580,23 @@ The only changed code/test file for this hardening step is `apps/web/test/missio
 
 ### Unchanged release blockers and guardrails
 PR #29 remains OPEN / Draft / UNMERGED; Issue #23 remains OPEN. Universal external-effect JIT enforcement remains NOT PROVEN. Latest read-only hosted Development migration inventory is W65; W66–W80 remain NOT APPLIED, so hosted Research remains blocked. Real Research persistence, real email/reset delivery, manual visual QA, leaked-password protection, and real-provider certification remain NOT VERIFIED. No hosted DB writes, Main/Production changes, DNS/billing changes, real-provider side effects, Vercel use, PR merge or production promotion.
+
+
+## Superseding security-scanner checkpoint — 2026-10-14 — tested source HEAD `edb498ac7262c2bf63398fd1dd7905f28c394411`
+
+The outbound-effect AST scanner now detects `Object.getOwnPropertyDescriptor(globalThis, "fetch").value` and descriptor-based access to global transport/dynamic-loader/code-generation capabilities, including a local alias for the global object. Two negative examples were added to the scanner's blocked source cases. This is test-only hardening: no runtime route, provider adapter, SQL migration, hosted database or deployment behavior was changed.
+
+Exact-head gates all completed SUCCESS:
+- [W21 Local Launch Gate](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913259) — evidence [11868571697](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913259/artifacts/11868571697), browser diagnostics [11868028850](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913259/artifacts/11868028850)
+- [W25 Isolated PostgreSQL Atomic Fence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913320)
+- [Web Unit 344/344](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913368)
+- [Web CI/build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913307)
+- [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913428)
+- [Netlify preview verification](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913348)
+
+W21 evidence records PostgreSQL 17, repository migrations, successful disposable Supabase shutdown, no remaining labeled containers/volumes and `cleanup_verified=true`. Browser diagnostics record HTTP 503 / `unregistered_adapter_denied` / `providerCall=not_attempted`, Browser E2E 2 passed (2.7m), and verified fixture/container cleanup. The artifact's internal `git_sha=0f2fc1c7004bb4cfc9a503daa9ade62e8ede525f` is the synthetic merge-test checkout SHA; PR source HEAD is `edb498ac7262c2bf63398fd1dd7905f28c394411`.
+
+Scope remains limited: AST scanning is not a complete runtime/network trace or proof of universal JIT mediation. Registry remains empty; Issue #23 OPEN; PR #29 OPEN/Draft/UNMERGED. Hosted Development remains last documented at W65; W66–W80 NOT APPLIED. Production NOT APPROVED. No hosted database, Supabase Main/Production, DNS/billing, provider side effects, or production deployment was touched.
+
+### Next step
+Continue AST capability-escape review with new test cases only where a concrete unrecognized transport/loader path is found; keep static-analysis limitations explicit.

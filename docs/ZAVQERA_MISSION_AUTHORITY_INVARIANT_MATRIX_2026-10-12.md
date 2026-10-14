@@ -307,3 +307,20 @@ This is bounded static source-graph hardening, not universal runtime mediation e
 The Mission Action source/AST regression now checks HTTP/2 transport imports (`http2`, `node:http2`) and `http2.connect()`, plus Node internal runtime paths `process.binding`, `process._linkedBinding`, and `process.dlopen` including aliases. Web Unit passed 344/344; all six exact-head gates pass: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453478950), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453479005), [Web Unit](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453479190), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453478870), [Flutter](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453479014), [Netlify](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38453479258).
 
 W21 evidence proves disposable PostgreSQL 17 cleanup and fail-closed no-adapter HTTP 503. Static AST checks are bounded source analysis, not runtime network telemetry or complete universal enforcement. Keep registry empty and Issue #23 OPEN.
+
+
+## Superseding security-scanner checkpoint — 2026-10-14 — tested source HEAD `edb498ac7262c2bf63398fd1dd7905f28c394411`
+
+The outbound-effect AST scanner now detects `Object.getOwnPropertyDescriptor(globalThis, "fetch").value` and descriptor-based access to global transport/dynamic-loader/code-generation capabilities, including a local alias for the global object. Two negative examples were added to the scanner's blocked source cases. This is test-only hardening: no runtime route, provider adapter, SQL migration, hosted database or deployment behavior was changed.
+
+Exact-head gates all completed SUCCESS:
+- [W21 Local Launch Gate](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913259) — evidence [11868571697](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913259/artifacts/11868571697), browser diagnostics [11868028850](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913259/artifacts/11868028850)
+- [W25 Isolated PostgreSQL Atomic Fence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913320)
+- [Web Unit 344/344](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913368)
+- [Web CI/build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913307)
+- [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913428)
+- [Netlify preview verification](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913348)
+
+W21 evidence records PostgreSQL 17, repository migrations, successful disposable Supabase shutdown, no remaining labeled containers/volumes and `cleanup_verified=true`. Browser diagnostics record HTTP 503 / `unregistered_adapter_denied` / `providerCall=not_attempted`, Browser E2E 2 passed (2.7m), and verified fixture/container cleanup. The artifact's internal `git_sha=0f2fc1c7004bb4cfc9a503daa9ade62e8ede525f` is the synthetic merge-test checkout SHA; PR source HEAD is `edb498ac7262c2bf63398fd1dd7905f28c394411`.
+
+Scope remains limited: AST scanning is not a complete runtime/network trace or proof of universal JIT mediation. Registry remains empty; Issue #23 OPEN; PR #29 OPEN/Draft/UNMERGED. Hosted Development remains last documented at W65; W66–W80 NOT APPLIED. Production NOT APPROVED. No hosted database, Supabase Main/Production, DNS/billing, provider side effects, or production deployment was touched.
