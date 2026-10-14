@@ -244,3 +244,18 @@ A standalone, pure mapper has now been added at `apps/web/lib/mission-authority/
 The accompanying test `apps/web/test/mission-authority-reason-code.test.mjs` discovers the migrations from the repository, inventories SQL exception codes and explicit gateway reason strings, and fails when any new value lacks a mapping. On source/test head `90694c7af88ececadcac56fcc82bf32b1ff0cb10`, Web Unit passed **364/364** and Web CI (static authorization, TypeScript and production build) plus Flutter CI passed. W21 run [38626086075](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38626086075) has passed PG17/pgTAP, Mission Authority and AI quota/workspace security, the four ledger races, and W72 fake-provider gateway integration; browser E2E and teardown are still running at the time of this note.
 
 This helper is intentionally **not imported by a production route or gateway yet**. It preserves existing SQL strings and does not normalize or change production responses. It currently inventories SQL/gateway codes, not every local reason emitted by the separate in-memory controlled-adapter model. The conflicting decision/status vocabulary, `RETRYABLE_NOT_SENT` semantics, and combined `APPROVAL_REQUIRED_OR_SCOPE_CHANGED` meaning must be reviewed before any live-path integration. No migration, RPC, hosted schema or provider was changed.
+
+
+## Exact-head implementation checkpoint — 2026-10-14 — `2874d087983c2b2acd3b5a4b049b15a80b585e0a`
+
+The canonical reason-code mapper is now covered by an exact-source inventory test across W68–W80 SQL exception strings, the persistent worker gateway, and the local `controlled-adapter.mjs` model. It normalizes **158 exact source-code entries to 75 canonical outputs**, treats `ALLOW` as a decision rather than a reason code, handles `MISSING_<field>` as a constrained validation family, and maps unknown/malformed/raw error text to `DECISION_DEPENDENCY_UNAVAILABLE`. It remains a pure helper, not imported by the live route/gateway; current production responses are unchanged.
+
+Exact-head validation:
+- Web Unit: **364 passed / 0 failed**, including the actual Next.js worker route under Docker `--network none` and the reason-code inventory — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38627396852
+- Web CI / static authorization / TypeScript / production build: **SUCCESS** — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38627396644
+- Flutter CI: **SUCCESS** — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38627396687
+- W21 Local Launch Gate: **SUCCESS on this exact head** — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38627385823
+
+W21 passed the disposable PostgreSQL 17 migration replay and pgTAP gate; Mission Authority and AI quota/workspace security; actual-ledger idempotency, atomic budget, one-time dispatch-claim and reconciliation-claim race tests; W72 persistent gateway integration with fake providers; full browser E2E; disposable-stack cleanup and cleanup verification; and evidence upload. Artifacts: `zavqera-w21-evidence` and `zavqera-w21-browser-diagnostics`.
+
+This checkpoint **does not** establish universal outbound-network mediation across all production execution paths or real-provider receipt/reconciliation. The provider registry remains empty and the interface/normalizer are not integrated into production responses. W21 used only disposable local PostgreSQL 17/Supabase and fake providers; it did not prove hosted Development schema parity and did not modify any hosted database.

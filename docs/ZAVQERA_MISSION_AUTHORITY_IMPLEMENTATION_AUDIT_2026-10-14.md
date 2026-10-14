@@ -72,3 +72,18 @@ Remaining acceptance work, in order:
 5. Keep universal egress mediation and production enforcement **NOT ESTABLISHED** until independently reproducible acceptance evidence exists.
 
 This audit is source-and-test based. It does not claim a runtime trace of production infrastructure or provider delivery.
+
+
+## Exact-head implementation checkpoint — 2026-10-14 — `2874d087983c2b2acd3b5a4b049b15a80b585e0a`
+
+The canonical reason-code mapper is now covered by an exact-source inventory test across W68–W80 SQL exception strings, the persistent worker gateway, and the local `controlled-adapter.mjs` model. It normalizes **158 exact source-code entries to 75 canonical outputs**, treats `ALLOW` as a decision rather than a reason code, handles `MISSING_<field>` as a constrained validation family, and maps unknown/malformed/raw error text to `DECISION_DEPENDENCY_UNAVAILABLE`. It remains a pure helper, not imported by the live route/gateway; current production responses are unchanged.
+
+Exact-head validation:
+- Web Unit: **364 passed / 0 failed**, including the actual Next.js worker route under Docker `--network none` and the reason-code inventory — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38627396852
+- Web CI / static authorization / TypeScript / production build: **SUCCESS** — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38627396644
+- Flutter CI: **SUCCESS** — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38627396687
+- W21 Local Launch Gate: **SUCCESS on this exact head** — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38627385823
+
+W21 passed the disposable PostgreSQL 17 migration replay and pgTAP gate; Mission Authority and AI quota/workspace security; actual-ledger idempotency, atomic budget, one-time dispatch-claim and reconciliation-claim race tests; W72 persistent gateway integration with fake providers; full browser E2E; disposable-stack cleanup and cleanup verification; and evidence upload. Artifacts: `zavqera-w21-evidence` and `zavqera-w21-browser-diagnostics`.
+
+This checkpoint **does not** establish universal outbound-network mediation across all production execution paths or real-provider receipt/reconciliation. The provider registry remains empty and the interface/normalizer are not integrated into production responses. W21 used only disposable local PostgreSQL 17/Supabase and fake providers; it did not prove hosted Development schema parity and did not modify any hosted database.
