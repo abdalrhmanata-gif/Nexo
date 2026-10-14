@@ -1,4 +1,4 @@
-# ZAVQERA W66–W80 hosted Development rollout preflight and recovery plan
+# ZAVQERA W66–W82 hosted Development rollout preflight and recovery plan
 
 **Prepared:** 2026-10-13  
 **Reviewed branch:** `zavqera/ai-planner-integration`  
@@ -101,7 +101,7 @@ This section supersedes any assumption that the 2026-10-13 snapshot alone is suf
 
 - `public.mission_authority_budgets` and `public.mission_authority_budget_reservations` are absent.
 - `public.agent_executions` is missing the W69 dispatch-claim quartet: `dispatch_claimed_at`, `dispatch_claim_authority_hash`, `dispatch_claim_request_hash`, `dispatch_claim_budget_revision`.
-- It is missing the W70 reconciliation quartet fields queried in the repository contract: `reconciliation_claimed_at`, `reconciliation_lease_expires_at`, `reconciliation_claim_token`; and all W81 research-claim fields: `research_claimed_at`, `research_claim_request_hash`, `research_claim_authority_hash`, `research_claim_mission_version`.
+- It is missing the three W70 reconciliation-claim fields queried in the repository contract: `reconciliation_claimed_at`, `reconciliation_lease_expires_at`, `reconciliation_claim_token`; and all W81 research-claim fields: `research_claimed_at`, `research_claim_request_hash`, `research_claim_authority_hash`, `research_claim_mission_version`.
 - `public.ai_usage_reservations` exists with RLS enabled and a deny-direct-access policy, but the W82 identity columns `generation_kind` and `request_hash` are absent.
 - The W81 `claim_read_only_research_execution(uuid, uuid, text)` signature was not found. The W82 `reserve_ai_generation(text, text, text)` signature was not found.
 
