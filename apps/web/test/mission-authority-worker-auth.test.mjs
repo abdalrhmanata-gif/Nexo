@@ -670,7 +670,12 @@ function readAstOutboundMarkers(source, filePath = "source.mjs") {
           const property = element.propertyName || element.name;
           const propertyName = ts.isIdentifier(property) || ts.isStringLiteral(property) ? property.text : null;
           const localName = element.name.getText(sourceFile);
-          if (GLOBAL_OBJECT_PATHS.has(base) && ["fetch", "WebSocket", "XMLHttpRequest", "EventSource", "require", "eval", "Function"].includes(propertyName)) {
+          const globalCapabilities = ["fetch", "WebSocket", "XMLHttpRequest", "EventSource", "require", "eval", "Function"];
+          const processCapabilities = ["binding", "_linkedBinding", "dlopen", "getBuiltinModule", "mainModule"];
+          if (GLOBAL_OBJECT_PATHS.has(base) && (
+            globalCapabilities.includes(propertyName)
+            || (base === "process" && processCapabilities.includes(propertyName))
+          )) {
             add(element, `destructured global transport/codegen (${propertyName})`);
             aliases.set(localName, `${base}.${propertyName}`);
           } else if (base === "Reflect" && propertyName === "get") {
@@ -846,6 +851,12 @@ test("AST outbound analysis catches aliases and computed transport calls without
     'require(resolveProviderPackageName());',
     'const localRequire = createRequire(import.meta.url);',
     'const load = require; load(resolveProviderPackageName());',
+    'const { binding: bindInternal } = process; bindInternal("tcp_wrap");',
+    'const { _linkedBinding: loadInternal } = process; loadInternal("http2");',
+    'const { dlopen: loadNative } = process; loadNative(module, nativeAddonPath);',
+    'const { getBuiltinModule } = process; getBuiltinModule("http");',
+    'const { mainModule } = process; mainModule.require("node:http");',
+    'const { mainModule: main } = process; main.require("node:https");',
     'const { require: load } = globalThis; load(providerPackageName);',
     'module.require(resolveProviderPackageName());',
     'process.mainModule.require("node:http");',
