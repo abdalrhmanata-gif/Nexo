@@ -52,6 +52,7 @@ declare
   v_used integer;
   v_existing_kind text;
   v_existing_hash text;
+  v_existing_state text;
   v_reservation_id uuid;
 begin
   if v_user_id is null then
