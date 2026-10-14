@@ -657,3 +657,30 @@ W21's internal `git_sha=84e2e327293e5dece5106d900af79700b2fa3f27` is the disposa
 
 ### Remaining limits / guardrails
 This is stronger static source-analysis coverage, not a complete transitive dependency audit or instrumented runtime network trace. Issue #23 remains OPEN: universal Mission Authority JIT mediation across all relevant side effects is NOT PROVEN, and the provider adapter registry remains empty. PR #29 remains OPEN / Draft / UNMERGED. Hosted Development remains last documented at W65; W66–W80 are NOT APPLIED, so hosted Research remains blocked. No hosted database writes, Supabase Main/Production changes, provider side effects, DNS/billing changes or production deployment occurred.
+
+
+## Superseding current checkpoint — 2026-10-14 — code/test HEAD `b9ab8c523485e7463f81ae924f27c5219a12c6e6`
+
+This entry supersedes the prior checkpoint; recheck GitHub before a later write.
+
+### Imported Node process capability blocked
+The Mission Action route-graph source guard now treats both `process` and `node:process` imports as restricted runtime capabilities, alongside `node:module`, `child_process`, `vm`, `worker_threads`, `cluster`, `dns` and `inspector`. The regression fixture covers ESM named-import aliasing (`getBuiltinModule as loadBuiltin`) and CommonJS `require("process")`. This closes a static allow-list omission where an imported, renamed process loader could avoid checks that previously recognized the global `process` identifier.
+
+This is **test-only/static source-guard hardening**. No runtime handler, SQL migration, database, adapter registry or deployment configuration was changed in this step.
+
+### Exact code/test-head gates — all SUCCESS
+- W21: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144060
+- W25: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144662
+- Web Unit: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144296 — 344 passed, 0 failed
+- Web CI / production build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144023
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144152
+- Netlify preview verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144108
+
+W21 artifacts were downloaded and inspected:
+- Evidence/cleanup: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144060/artifacts/11879672775 — `result=success`, repo migrations, PostgreSQL 17, disposable project stopped with exit code 0, no remaining labeled containers or volumes, `cleanup_verified=true`.
+- Browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144060/artifacts/11879752789 — no-adapter path HTTP 503 / `unregistered_adapter_denied` / `providerCall=not_attempted`; Browser E2E 2 passed (2.3m); cleanup verified.
+
+W21 artifact `git_sha=46f5ebf941b78c08ee58f216b497a26f279b2c7c` is GitHub's synthetic PR merge-test SHA, not the PR source head. The PR source head is `b9ab8c523485e7463f81ae924f27c5219a12c6e6`.
+
+### Guardrails remain unchanged
+PR #29 OPEN / Draft / UNMERGED. Issue #23 OPEN. Provider registry intentionally empty. The growing static capability scanner is a regression control, not an instrumented runtime network trace or proof of universal JIT mediation; production remains NOT APPROVED. Hosted Development is still last documented at W65; W66–W80 remain NOT APPLIED, so hosted Research stays blocked. No hosted DB writes, Supabase Main/Production changes, real provider side effects, DNS/billing changes or production deployment occurred.

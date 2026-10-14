@@ -398,3 +398,14 @@ The outbound-effect AST test now tracks destructured helper aliases from aliased
 Exact-head validation: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513206042), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513205944), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513205938), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513205957), [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513205985); W21 [evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513206042/artifacts/11871205079) and [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513206042/artifacts/11870623964).
 
 Scope limit unchanged: static source analysis is not an instrumented runtime network trace and does not prove universal JIT mediation. Registry remains empty; Issue #23 OPEN; production NOT APPROVED.
+
+
+---
+
+## Node process module added to restricted capability imports — 2026-10-14
+
+Both `process` and `node:process` are now in the restricted runtime capability import set used by the Mission Action route-source guard. This prevents imported aliases of `process.getBuiltinModule`, `process.binding`, and related loader/runtime APIs from relying on global-identifier detection alone. The test fixture explicitly includes ESM named import aliasing and CommonJS `require("process")`.
+
+Exact code/test-head validations passed: [Web Unit 344/344](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144296), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144023), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144152), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144662), [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144060), [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144108). W21 artifacts: [evidence/cleanup](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144060/artifacts/11879672775), [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144060/artifacts/11879752789).
+
+This is a static-source guard, not a complete runtime or transitive dependency trace. Registry remains empty; Issue #23 open; universal JIT mediation not proven; production not approved.

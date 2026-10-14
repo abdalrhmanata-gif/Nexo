@@ -1147,3 +1147,16 @@ All six PR-head gates passed: [W21](https://github.com/abdalrhmanata-gif/Nexo/ac
 W21 evidence: [cleanup/PostgreSQL 17](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513206042/artifacts/11871205079); [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513206042/artifacts/11870623964). Diagnostics report HTTP 503 `unregistered_adapter_denied`, `providerCall=not_attempted`, 2 E2E tests passed and cleanup verified.
 
 The AST outbound-source detector now tracks destructured aliases from global objects and Node runtime capabilities, with six new negative cases; this increases static-analysis coverage but is not universal mediation proof. Issue #23 remains OPEN, registry empty, production NOT APPROVED, PR #29 OPEN/Draft/UNMERGED. Hosted Development remains documented at W65; W66–W80 not applied.
+
+
+---
+
+## Exact-head evidence — 2026-10-14 — `b9ab8c523485e7463f81ae924f27c5219a12c6e6`
+
+The latest source-guard revision blocks `process` and `node:process` imports in the Mission Action route graph, including aliased ESM `getBuiltinModule` and CommonJS `require("process")` fixtures. It is test/source scanning only; no production runtime or SQL changed.
+
+All six workflows passed on this source/test HEAD: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144060), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144662), [Web Unit 344/344](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144296), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144023), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144152), [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144108).
+
+W21 evidence: [cleanup](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144060/artifacts/11879672775) and [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144060/artifacts/11879752789): PostgreSQL 17, repository migrations, cleanup verified, unregistered adapter denied with HTTP 503 and no provider call, Browser E2E 2/2.
+
+Synthetic merge SHA in W21 artifact: `46f5ebf941b78c08ee58f216b497a26f279b2c7c`; PR source head: `b9ab8c523485e7463f81ae924f27c5219a12c6e6`. Keep these identifiers distinct. PR #29 OPEN/Draft/UNMERGED; Issue #23 OPEN; registry empty; universal JIT proof outstanding.

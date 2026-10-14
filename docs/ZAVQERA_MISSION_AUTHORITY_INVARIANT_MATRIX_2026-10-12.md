@@ -361,3 +361,12 @@ Static/AST scanning is not a complete runtime/network trace or proof of universa
 The AST regression now tracks destructured aliases from aliased global objects and helper APIs (`Reflect.get`, `Object.getOwnPropertyDescriptor(s)`) and explicitly rejects destructured Node runtime capability patterns (`process.binding`, `process._linkedBinding`, `process.dlopen`, `process.getBuiltinModule`, `process.mainModule.require`). Web Unit passed 344/344. Exact-head gates: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513206042), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513205944), [Web Unit](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513206048), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513205938), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513205957), [Netlify](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38513205985).
 
 This strengthens the static guard only. It does not prove transitive dependency behavior or instrumented runtime network mediation. Issue #23 remains OPEN; provider registry empty; production NOT APPROVED.
+
+
+---
+
+## Process-module capability guard — 2026-10-14 — source/test HEAD `b9ab8c523485e7463f81ae924f27c5219a12c6e6`
+
+The statically reachable Mission Action route scan now rejects imports of both `process` and `node:process`, preventing a renamed imported `getBuiltinModule` or related internal loader from bypassing checks that only recognized the global `process` object. Regression assertions cover named ESM imports and CommonJS require forms.
+
+Validation on exact source/test HEAD: Web Unit 344/344, Web CI, Flutter CI, W25, W21 and Netlify preview all passed. W21 artifacts prove only fail-closed behavior for an unregistered adapter (HTTP 503, provider call not attempted) plus disposable test-environment cleanup. This is not universal runtime mediation proof. Registry empty; Issue #23 OPEN; production not approved.
