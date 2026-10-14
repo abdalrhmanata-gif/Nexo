@@ -1,8 +1,7 @@
 -- W80 invitation helper EXECUTE contract.
--- The public RPC wrappers are SECURITY INVOKER, so the authenticated caller
--- must also be able to invoke their private SECURITY DEFINER implementations.
--- get_workspace_invitation is the sole anon exception because the public GET
--- endpoint accepts a high-entropy invitation token and returns limited metadata.
+-- Public mutation RPCs are SECURITY INVOKER and delegate to guarded private helpers.
+-- The token-gated public GET is the sole SECURITY DEFINER wrapper exception so anon
+-- can use it without private-schema USAGE; it returns limited metadata only.
 begin;
 create extension if not exists pgtap;
 
@@ -31,28 +30,28 @@ select is(has_function_privilege(role_name, signature, 'EXECUTE'), expected, des
 from (values
   ('anon','public.create_workspace_invitation(uuid,text,text,text,timestamp with time zone)',false,'anon cannot execute public invitation create'),
   ('authenticated','public.create_workspace_invitation(uuid,text,text,text,timestamp with time zone)',true,'authenticated can use public invitation create'),
-  ('service_role','public.create_workspace_invitation(uuid,text,text,text,timestamp with time zone)',true,'service_role inherits effective EXECUTE; explicit direct grants are checked separately'),
+  ('service_role','public.create_workspace_invitation(uuid,text,text,text,timestamp with time zone)',false,'service_role cannot execute public invitation create'),
   ('anon','public.get_workspace_invitation(text)',true,'anon can use token-gated public invitation lookup'),
   ('authenticated','public.get_workspace_invitation(text)',true,'authenticated can use public invitation lookup'),
-  ('service_role','public.get_workspace_invitation(text)',true,'service_role inherits effective EXECUTE; explicit direct grants are checked separately'),
+  ('service_role','public.get_workspace_invitation(text)',false,'service_role cannot execute public invitation lookup'),
   ('anon','public.accept_workspace_invitation(text)',false,'anon cannot accept invitations'),
   ('authenticated','public.accept_workspace_invitation(text)',true,'authenticated can accept invitations'),
-  ('service_role','public.accept_workspace_invitation(text)',true,'service_role inherits effective EXECUTE; explicit direct grants are checked separately'),
+  ('service_role','public.accept_workspace_invitation(text)',false,'service_role cannot execute public invitation accept'),
   ('anon','public.revoke_workspace_invitation(uuid)',false,'anon cannot revoke invitations'),
   ('authenticated','public.revoke_workspace_invitation(uuid)',true,'authenticated can revoke invitations'),
-  ('service_role','public.revoke_workspace_invitation(uuid)',true,'service_role inherits effective EXECUTE; explicit direct grants are checked separately'),
+  ('service_role','public.revoke_workspace_invitation(uuid)',false,'service_role cannot execute public invitation revoke'),
   ('anon','private.create_workspace_invitation(uuid,text,text,text,timestamp with time zone)',false,'anon cannot execute privileged private create helper'),
   ('authenticated','private.create_workspace_invitation(uuid,text,text,text,timestamp with time zone)',true,'authenticated wrapper caller can execute guarded private create helper'),
-  ('service_role','private.create_workspace_invitation(uuid,text,text,text,timestamp with time zone)',true,'service_role inherits effective EXECUTE; explicit direct grants are checked separately'),
+  ('service_role','private.create_workspace_invitation(uuid,text,text,text,timestamp with time zone)',false,'service_role cannot execute private create helper'),
   ('anon','private.get_workspace_invitation(text)',true,'anon exception is limited to the token-lookup helper explicitly used by public GET'),
   ('authenticated','private.get_workspace_invitation(text)',true,'authenticated wrapper caller can execute private lookup helper'),
-  ('service_role','private.get_workspace_invitation(text)',true,'service_role inherits effective EXECUTE; explicit direct grants are checked separately'),
+  ('service_role','private.get_workspace_invitation(text)',false,'service_role cannot execute private lookup helper'),
   ('anon','private.accept_workspace_invitation(text)',false,'anon cannot execute privileged private accept helper'),
   ('authenticated','private.accept_workspace_invitation(text)',true,'authenticated wrapper caller can execute guarded private accept helper'),
-  ('service_role','private.accept_workspace_invitation(text)',true,'service_role inherits effective EXECUTE; explicit direct grants are checked separately'),
+  ('service_role','private.accept_workspace_invitation(text)',false,'service_role cannot execute private accept helper'),
   ('anon','private.revoke_workspace_invitation(uuid)',false,'anon cannot execute privileged private revoke helper'),
   ('authenticated','private.revoke_workspace_invitation(uuid)',true,'authenticated wrapper caller can execute guarded private revoke helper'),
-  ('service_role','private.revoke_workspace_invitation(uuid)',true,'service_role inherits effective EXECUTE; explicit direct grants are checked separately')
+  ('service_role','private.revoke_workspace_invitation(uuid)',false,'service_role cannot execute private revoke helper')
 ) as expected(role_name, signature, expected, description);
 
 -- Assert exact non-owner EXECUTE ACL grantees, not only effective role checks:
@@ -105,11 +104,11 @@ select ok((select not p.prosecdef
              and p.proconfig = array['search_path=pg_catalog, public']::text[]
             from pg_proc p where p.oid = 'public.create_workspace_invitation(uuid,text,text,text,timestamptz)'::regprocedure),
   'public create wrapper is postgres-owned SECURITY INVOKER with pinned search_path');
-select ok((select not p.prosecdef
+select ok((select p.prosecdef
              and pg_get_userbyid(p.proowner) = 'postgres'
              and p.proconfig = array['search_path=pg_catalog, public']::text[]
             from pg_proc p where p.oid = 'public.get_workspace_invitation(text)'::regprocedure),
-  'public lookup wrapper is postgres-owned SECURITY INVOKER with pinned search_path');
+  'public token lookup wrapper is postgres-owned SECURITY DEFINER with pinned search_path');
 select ok((select not p.prosecdef
              and pg_get_userbyid(p.proowner) = 'postgres'
              and p.proconfig = array['search_path=pg_catalog, public']::text[]
