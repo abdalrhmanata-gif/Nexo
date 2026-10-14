@@ -1092,6 +1092,42 @@ test("every non-Mission outbound API route is explicitly classified in the outbo
   const observed = [];
   const violations = [];
 
+  // Every inventory row must carry an explicit review rationale. This keeps
+  // shared-helper/callback effects reviewable without pretending a route-graph
+  // scanner can prove runtime mediation. A classification alone is not enough.
+  const classificationEvidence = new Map([
+    ["ai/diagnostics/route.ts", {
+      effect: "OPENAI_MODEL_DIAGNOSTICS",
+      rationale: "Explicit non-mutating provider connectivity/model lookup; not Mission Action dispatch.",
+    }],
+    ["ai/plan/route.ts", {
+      effect: "OPENAI_AUTHENTICATED_PLANNING",
+      rationale: "Authenticated AI draft generation with quota controls; does not execute a Mission Action.",
+    }],
+    ["ai/plan/anonymous/route.ts", {
+      effect: "OPENAI_ANONYMOUS_PLANNING_AND_QUOTA_RPC",
+      rationale: "Anonymous draft generation and quota accounting; external provider spend is separate from Mission Action dispatch.",
+    }],
+    ["auth/password-policy/route.ts", {
+      effect: "PWNED_PASSWORDS_RANGE_LOOKUP",
+      rationale: "Password-compromise range lookup transmits only a SHA-1 prefix; read-only security lookup, not Mission Action dispatch.",
+    }],
+    ["business/invitations/route.ts", {
+      effect: "RESEND_WORKSPACE_INVITATION_EMAIL",
+      rationale: "Workspace-admin invitation email is a separately authorized email workflow, outside Mission Action dispatch.",
+    }],
+    ["missions/[id]/research/route.ts", {
+      effect: "BOUNDED_READ_ONLY_RESEARCH_AND_TRUSTED_WORKER",
+      rationale: "Bounded read-only Research provider request plus authenticated internal worker callbacks; neither grants external Mission Action authority.",
+    }],
+  ]);
+
+  assert.deepEqual(
+    [...classifications.entries()].sort(([a], [b]) => a.localeCompare(b)),
+    [...classificationEvidence.entries()].map(([route, evidence]) => [route, evidence.effect]).sort(([a], [b]) => a.localeCompare(b)),
+    "each inventoried route must have exactly one explicit effect classification and reviewed rationale; stale, missing, or unexplained inventory entries must fail",
+  );
+
   for (const routeFile of routeFiles) {
     const route = relative(apiRoot, routeFile).replace(/\\/g, "/");
     const isMissionActionRoute = route.startsWith("agent-executions/")
@@ -1143,7 +1179,7 @@ test("every non-Mission outbound API route is explicitly classified in the outbo
   assert.deepEqual(
     observed.filter((route) => !classifications.has(route)).sort(),
     [],
-    "every directly detectable outbound effect in a non-Mission Action API graph must match the reviewed inventory; some inventoried effects are mediated by shared services/callbacks and need not contain direct transport syntax in the route graph",
+    "every directly detectable outbound effect in a non-Mission Action API graph must match an evidence-backed inventory entry; inventory entries for shared-helper/callback effects require an explicit effect classification and rationale, but this source scan is not runtime mediation proof",
   );
   assert.deepEqual(violations, []);
 });
