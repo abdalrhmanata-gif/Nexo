@@ -27,14 +27,39 @@ export async function parseTrustedWorkerRequest(request, expectedToken) {
     return { ok: false, status: 413, body: { error: "Worker request is too large." } };
   }
 
-  let rawBody;
-  try {
-    rawBody = await request.text();
-  } catch {
-    return { ok: false, status: 400, body: { error: "A valid worker operation is required." } };
-  }
-  if (new TextEncoder().encode(rawBody).byteLength > MAX_INTERNAL_BODY_BYTES) {
-    return { ok: false, status: 413, body: { error: "Worker request is too large." } };
+  let rawBody = "";
+  if (request.body) {
+    const reader = request.body.getReader();
+    const chunks = [];
+    let totalBytes = 0;
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (!(value instanceof Uint8Array)) {
+          await reader.cancel("Invalid request body chunk").catch(() => undefined);
+          return { ok: false, status: 400, body: { error: "A valid worker operation is required." } };
+        }
+        if (totalBytes + value.byteLength > MAX_INTERNAL_BODY_BYTES) {
+          // Stop consuming a streamed/chunked body as soon as the byte ceiling is crossed.
+          await reader.cancel("Worker request exceeds the body limit").catch(() => undefined);
+          return { ok: false, status: 413, body: { error: "Worker request is too large." } };
+        }
+        chunks.push(value);
+        totalBytes += value.byteLength;
+      }
+    } catch {
+      return { ok: false, status: 400, body: { error: "A valid worker operation is required." } };
+    } finally {
+      try { reader.releaseLock(); } catch { /* A cancelled stream can already be detached. */ }
+    }
+    const bytes = new Uint8Array(totalBytes);
+    let offset = 0;
+    for (const chunk of chunks) {
+      bytes.set(chunk, offset);
+      offset += chunk.byteLength;
+    }
+    rawBody = new TextDecoder().decode(bytes);
   }
 
   let body;

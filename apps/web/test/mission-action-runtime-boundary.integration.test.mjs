@@ -305,6 +305,38 @@ async function startHttpHarness({ operationHandler }) {
   };
 }
 
+test("shared trusted-worker parser stops reading a streamed body immediately after crossing the byte ceiling", async () => {
+  let pulls = 0;
+  let cancelled = false;
+  const body = new ReadableStream({
+    pull(controller) {
+      pulls += 1;
+      if (pulls <= 2) {
+        controller.enqueue(new Uint8Array(100_000));
+        return;
+      }
+      controller.enqueue(new Uint8Array(100_000));
+    },
+    cancel() {
+      cancelled = true;
+    },
+  });
+  const request = new Request("http://127.0.0.1/internal-worker", {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${WORKER_TOKEN}`,
+      "content-type": "application/json",
+    },
+    body,
+    duplex: "half",
+  });
+  const result = await parseTrustedWorkerRequest(request, WORKER_TOKEN);
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.equal(result.status, 413);
+  assert.ok(pulls <= 3, `parser should stop at the first oversized chunk, observed ${pulls} pulls`);
+  assert.equal(cancelled, true, "the oversized stream must be cancelled instead of fully consumed");
+});
+
 test("shared trusted-worker parser rejects oversized content length and oversized body before operation handling", async () => {
   const declaredOversize = new Request("http://127.0.0.1/internal-worker", {
     method: "POST",

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import http from "node:http";
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
 import { setTimeout as delay } from "node:timers/promises";
@@ -109,6 +110,38 @@ async function postJson(origin, {
   });
 }
 
+async function postChunkedOversizedBody(origin) {
+  const target = new URL(`/api/internal/agent-executions/${executionId}`, origin);
+  return new Promise((resolve, reject) => {
+    let responseStarted = false;
+    const request = http.request(target, {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${workerToken}`,
+        "content-type": "application/json",
+      },
+    }, (response) => {
+      responseStarted = true;
+      let responseBody = "";
+      response.setEncoding("utf8");
+      response.on("data", (chunk) => { responseBody = (responseBody + chunk).slice(0, 4_000); });
+      response.on("end", () => resolve({
+        status: response.statusCode,
+        headers: response.headers,
+        body: responseBody,
+      }));
+    });
+    request.on("error", (error) => {
+      if (!responseStarted) reject(error);
+    });
+    request.write(`{"operation":"dispatch","audience":"${unregisteredAudience}","padding":"`);
+    const chunk = "x".repeat(8_192);
+    // No Content-Length is set: Node must send a chunked request body.
+    for (let sent = 0; sent < 24; sent += 1) request.write(chunk);
+    request.end('"}');
+  });
+}
+
 test("actual Next.js POST route enforces the trusted worker HTTP gate without external credentials", {
   timeout: 120_000,
 }, async () => {
@@ -178,6 +211,10 @@ test("actual Next.js POST route enforces the trusted worker HTTP gate without ex
     assert.equal(oversized.status, 413);
     await oversized.arrayBuffer();
 
+    const chunkedOversized = await postChunkedOversizedBody(origin);
+    assert.equal(chunkedOversized.status, 413, "chunked requests without Content-Length must be stopped at the streamed byte limit");
+    assert.equal(chunkedOversized.headers["cache-control"], "no-store");
+    assert.match(chunkedOversized.body, /Worker request is too large/);
 
     // These valid research operation shapes must fail closed when trusted DB
     // credentials are deliberately absent, including under --network none.
