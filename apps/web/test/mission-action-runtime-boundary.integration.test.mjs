@@ -375,6 +375,7 @@ test("trusted worker HTTP path enforces auth, JIT ordering, denial, UNKNOWN reco
     });
     assert.equal(wrongAudience.status, 503);
     assert.equal(clientCreations, 0, "unregistered audiences must fail before privileged client creation");
+    events.length = 0;
 
     const success = await globalThis.fetch(harness.url, {
       method: "POST",
