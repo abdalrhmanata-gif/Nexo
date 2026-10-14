@@ -459,6 +459,20 @@ const REVIEWED_NON_PROVIDER_ROUTE_IMPORTS = new Set([
 const NODE_BUILTIN_NAMES = new Set(builtinModules.map((name) => name.replace(/^node:/, "")));
 const NODE_BUILTIN_ROOTS = new Set([...NODE_BUILTIN_NAMES].map((name) => name.split("/")[0]));
 
+const RESTRICTED_RUNTIME_CAPABILITY_ROOTS = new Set(
+  [...RESTRICTED_RUNTIME_CAPABILITY_IMPORTS]
+    .map((specifier) => specifier.replace(/^node:/, "").split("/")[0]),
+);
+
+function isRestrictedRuntimeCapabilityImport(specifier) {
+  const normalized = specifier.replace(/^node:/, "");
+  const root = normalized.split("/")[0];
+  // Block the root and every subpath, with or without the node: prefix.
+  return RESTRICTED_RUNTIME_CAPABILITY_IMPORTS.has(specifier)
+    || RESTRICTED_RUNTIME_CAPABILITY_IMPORTS.has(normalized)
+    || RESTRICTED_RUNTIME_CAPABILITY_ROOTS.has(root);
+}
+
 function isNodeBuiltinSpecifier(specifier) {
   const normalized = specifier.replace(/^node:/, "");
   return NODE_BUILTIN_NAMES.has(normalized)
@@ -928,6 +942,44 @@ test("AST outbound analysis catches aliases and computed transport calls without
   }
 });
 
+test("restricted runtime capability imports deny every subpath with or without node: prefix", () => {
+  for (const specifier of [
+    "process",
+    "node:process",
+    "process/promises",
+    "node:process/promises",
+    "module",
+    "node:module",
+    "module/internal",
+    "node:module/internal",
+    "child_process",
+    "node:child_process",
+    "child_process/promises",
+    "node:child_process/promises",
+    "inspector",
+    "node:inspector",
+    "inspector/promises",
+    "node:inspector/promises",
+    "dns/promises",
+    "node:dns/promises",
+    "worker_threads",
+    "node:worker_threads",
+  ]) {
+    assert.equal(isRestrictedRuntimeCapabilityImport(specifier), true, specifier);
+  }
+
+  for (const specifier of [
+    "crypto",
+    "node:crypto",
+    "fs/promises",
+    "node:fs/promises",
+    "path",
+    "node:path",
+  ]) {
+    assert.equal(isRestrictedRuntimeCapabilityImport(specifier), false, specifier);
+  }
+});
+
 test("Mission Action dependency policy allows reviewed public entrypoints, not package-private subpaths", () => {
   for (const specifier of [
     "@supabase/supabase-js",
@@ -987,7 +1039,7 @@ test("Mission Action API dependency graphs cannot bypass the trusted external-ef
         if (EXPLICIT_HTTP_IMPORTS.test(specifier)) {
           violations.push({ route, module: moduleName, marker: `transport import: ${specifier}` });
         }
-        if (RESTRICTED_RUNTIME_CAPABILITY_IMPORTS.has(specifier)) {
+        if (isRestrictedRuntimeCapabilityImport(specifier)) {
           violations.push({ route, module: moduleName, marker: `restricted runtime capability import: ${specifier}` });
         }
         if (EXPLICIT_PROVIDER_SDK_IMPORTS.has(specifier)) {
