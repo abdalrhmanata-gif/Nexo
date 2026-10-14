@@ -67,7 +67,50 @@ jobs:
           path.write_text("\n".join(lines) + "\n", encoding="utf-8")
           PY
 
+          # Match the known historical bootstrap used by the disposable W21 replay.
+          # This fixture is local-only test scaffolding, not a hosted migration.
+          mkdir -p "${workdir}/volumes/db/init"
+          cat > "${workdir}/volumes/db/init/00_private_schema.sql" <<'SQL'
+          create schema if not exists private;
+          SQL
+
           migration_source="${GITHUB_WORKSPACE}/supabase/migrations"
+          mkdir -p "${workdir}/supabase/migrations"
+          cat > "${workdir}/supabase/migrations/20260921180005_e2e_historical_auth_compat.sql" <<'SQL'
+          create schema if not exists private;
+          create or replace function private.handle_new_user_profile()
+          returns trigger
+          language plpgsql
+          security definer
+          set search_path = pg_catalog, public
+          as $body$
+          begin
+            insert into public.profiles (id)
+            values (new.id)
+            on conflict (id) do nothing;
+            return new;
+          end;
+          $body$;
+          revoke all privileges on function private.handle_new_user_profile() from public, anon, authenticated;
+          create or replace function public.handle_new_user_profile()
+          returns trigger
+          language plpgsql
+          security definer
+          set search_path = pg_catalog, public
+          as $body$
+          begin
+            insert into public.profiles (id)
+            values (new.id)
+            on conflict (id) do nothing;
+            return new;
+          end;
+          $body$;
+          revoke all privileges on function public.handle_new_user_profile() from public, anon, authenticated;
+          drop trigger if exists on_auth_user_created on auth.users;
+          create trigger on_auth_user_created
+          after insert on auth.users
+          for each row execute function private.handle_new_user_profile();
+          SQL
           mkdir -p "${RUNNER_TEMP}/w80-all-migrations"
           cp -R "${migration_source}/." "${RUNNER_TEMP}/w80-all-migrations/"
           export LC_ALL=C
@@ -90,11 +133,12 @@ jobs:
             echo "postgres_major=17"
             echo "migration_source=checked-in supabase/migrations files"
             echo "migration_file_count=$(find "${GITHUB_WORKSPACE}/supabase/migrations" -maxdepth 1 -type f -name '*.sql' | wc -l | tr -d ' ')"
-            echo "application_schema_bootstrap=none; all application schema comes from checked-in migrations"
+            echo "application_schema_bootstrap=local-only private schema and historical auth-trigger compatibility fixture"
+            echo "compatibility_fixture=20260921180005_e2e_historical_auth_compat.sql (not a hosted migration)"
             echo "database_source=brand-new local Supabase stack"
           } > "${RUNNER_TEMP}/W80_EVIDENCE.txt"
 
-      - name: Replay checked-in migrations through W80 on disposable PostgreSQL 17
+      - name: Replay checked-in migrations plus recorded local compatibility fixture through W80
         id: replay
         shell: bash
         run: |
@@ -108,7 +152,7 @@ jobs:
           status="${PIPESTATUS[0]}"
           set -e
           echo "migration_replay_through_w80_exit_code=${status}" >> "${RUNNER_TEMP}/W80_EVIDENCE.txt"
-          echo "migration_replay_order=Supabase CLI timestamp order, from checked-in files only" >> "${RUNNER_TEMP}/W80_EVIDENCE.txt"
+          echo "migration_replay_order=Supabase CLI timestamp order; checked-in migrations plus documented local-only historical compatibility fixture" >> "${RUNNER_TEMP}/W80_EVIDENCE.txt"
           exit "${status}"
 
       - name: Run W80 pgTAP at its dependency point and replay later migrations
@@ -119,7 +163,7 @@ jobs:
           workdir="$(cat "${RUNNER_TEMP}/w80-workdir")"
           log="${RUNNER_TEMP}/W80_PGTAP_OUTPUT.txt"
           set +e
-          (cd "${workdir}" && timeout 10m supabase test db \
+          (cd "${workdir}" && timeout 10m supabase test db --local \
             supabase/tests/w80_invitation_helper_privileges.sql) 2>&1 | tee "${log}"
           status="${PIPESTATUS[0]}"
           set -e
