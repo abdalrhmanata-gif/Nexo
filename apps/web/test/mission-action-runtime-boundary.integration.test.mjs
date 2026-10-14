@@ -11,6 +11,7 @@ import {
   createMissionActionWorkerOperationHandler,
   parseTrustedWorkerRequest,
 } from "../lib/mission-authority/trusted-worker-http.mjs";
+import { isTrustedExecutionWorkerRequest } from "../lib/mission-authority/worker-auth.mjs";
 import {
   dispatchThroughJitClaim,
   reconcileThroughTrustedClaim,
@@ -304,6 +305,34 @@ async function startHttpHarness({ operationHandler }) {
   };
 }
 
+test("shared trusted-worker parser rejects oversized content length and oversized body before operation handling", async () => {
+  const declaredOversize = new Request("http://127.0.0.1/internal-worker", {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${WORKER_TOKEN}`,
+      "content-type": "application/json",
+      "content-length": "165000",
+    },
+    body: JSON.stringify({ operation: "dispatch", audience: AUDIENCE }),
+  });
+  const declaredResult = await parseTrustedWorkerRequest(declaredOversize, WORKER_TOKEN);
+  assert.equal(declaredResult.ok, false);
+  if (!declaredResult.ok) assert.equal(declaredResult.status, 413);
+
+  const actualOversize = new Request("http://127.0.0.1/internal-worker", {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${WORKER_TOKEN}`,
+      "content-type": "application/json",
+      "content-length": "1",
+    },
+    body: JSON.stringify({ operation: "dispatch", audience: AUDIENCE, padding: "x".repeat(165_000) }),
+  });
+  const actualResult = await parseTrustedWorkerRequest(actualOversize, WORKER_TOKEN);
+  assert.equal(actualResult.ok, false);
+  if (!actualResult.ok) assert.equal(actualResult.status, 413);
+});
+
 test("trusted worker HTTP path enforces auth, JIT ordering, denial, UNKNOWN recovery and outbound egress fence", async () => {
   const events = [];
   let activeClient = createFakeClient();
@@ -454,16 +483,6 @@ test("trusted worker HTTP path enforces auth, JIT ordering, denial, UNKNOWN reco
         "reconcile_agent_execution_outcome",
       ],
     );
-    const clientsBeforeOversizedRequest = clientCreations;
-    const oversized = await globalThis.fetch(harness.url, {
-      method: "POST",
-      headers: { "content-type": "application/json", authorization: `Bearer ${WORKER_TOKEN}` },
-      body: JSON.stringify({ operation: "dispatch", audience: AUDIENCE, padding: "x".repeat(165_000) }),
-    });
-    assert.equal(oversized.status, 413);
-    assert.equal(clientCreations, clientsBeforeOversizedRequest,
-      "oversized requests must be rejected before additional adapter/client selection");
-
     assert.equal(guard.blockedAttempts.length, 0, "no unapproved external network attempt may be made");
     assert.ok(guard.localHttpCalls.length >= 6, "the HTTP harness itself exercised the local loopback listener");
   } finally {
