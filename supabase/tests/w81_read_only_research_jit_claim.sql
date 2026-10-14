@@ -2,7 +2,7 @@
 -- claim that binds the exact requester, live Mission content and read-only Agent.
 begin;
 create extension if not exists pgtap;
-select plan(20);
+select plan(21);
 
 select ok(to_regprocedure('public.claim_read_only_research_execution(uuid,uuid,text)') is not null,
   'the trusted research JIT claim RPC exists');
@@ -21,11 +21,13 @@ select ok((select prosecdef from pg_proc where oid = 'private.claim_read_only_re
   and coalesce(array_to_string((select proconfig from pg_proc where oid = 'private.claim_read_only_research_execution(uuid,uuid,text)'::regprocedure), '|'), '')
     like '%search_path=pg_catalog, public, private, extensions%',
   'the private research claim pins its security-definer search path');
-select ok((select prosecdef from pg_proc where oid = 'public.claim_read_only_research_execution(uuid,uuid,text)'::regprocedure),
-  'the public PostgREST wrapper is a trusted security-definer entry point');
+select ok(not (select prosecdef from pg_proc where oid = 'public.claim_read_only_research_execution(uuid,uuid,text)'::regprocedure),
+  'the public claim wrapper stays SECURITY INVOKER and relies on its explicit service-role grant');
 select ok(not has_function_privilege('service_role',
   'private.claim_read_only_research_execution(uuid,uuid,text)', 'EXECUTE'),
   'the service role cannot bypass the public guarded wrapper');
+select ok(not (select prosecdef from pg_proc where oid = 'public.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)'::regprocedure),
+  'the public completion wrapper stays SECURITY INVOKER and delegates to the guarded private function');
 select ok((select count(*) = 4 from information_schema.columns
   where table_schema = 'public' and table_name = 'agent_executions'
     and column_name in ('research_claimed_at','research_claim_request_hash','research_claim_authority_hash','research_claim_mission_version')),

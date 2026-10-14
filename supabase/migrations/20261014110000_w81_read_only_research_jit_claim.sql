@@ -161,7 +161,7 @@ create or replace function public.claim_read_only_research_execution(
   p_request_id text
 ) returns jsonb
 language sql
-security definer
+security invoker
 set search_path = pg_catalog, public
 as $function$
   select private.claim_read_only_research_execution(p_requested_by, p_execution_id, p_request_id);
@@ -187,7 +187,7 @@ create or replace function public.complete_read_only_research_execution(
   p_error_message text default null
 ) returns public.agent_executions
 language plpgsql
-security definer
+security invoker
 set search_path = pg_catalog, public, private
 as $function$
 declare
