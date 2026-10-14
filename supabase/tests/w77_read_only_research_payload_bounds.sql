@@ -77,6 +77,8 @@ begin
   perform set_config('request.jwt.claims',
     jsonb_build_object('sub', v_owner, 'role', 'service_role')::text, true);
 
+  perform public.claim_read_only_research_execution(v_owner, v_execution.id, 'w77-request-id-0001');
+
   v_caught := false;
   begin
     perform public.complete_read_only_research_execution(
