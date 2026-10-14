@@ -160,11 +160,16 @@ create or replace function public.claim_read_only_research_execution(
   p_execution_id uuid,
   p_request_id text
 ) returns jsonb
-language sql
-security invoker
+language plpgsql
+security definer
 set search_path = pg_catalog, public
 as $function$
-  select private.claim_read_only_research_execution(p_requested_by, p_execution_id, p_request_id);
+begin
+  if coalesce(auth.role(), '') <> 'service_role' then
+    raise exception 'TRUSTED_EXECUTOR_REQUIRED' using errcode = '42501';
+  end if;
+  return private.claim_read_only_research_execution(p_requested_by, p_execution_id, p_request_id);
+end;
 $function$;
 
 revoke all on function private.claim_read_only_research_execution(uuid, uuid, text)

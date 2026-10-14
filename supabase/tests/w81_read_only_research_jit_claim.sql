@@ -21,8 +21,12 @@ select ok((select prosecdef from pg_proc where oid = 'private.claim_read_only_re
   and coalesce(array_to_string((select proconfig from pg_proc where oid = 'private.claim_read_only_research_execution(uuid,uuid,text)'::regprocedure), '|'), '')
     like '%search_path=pg_catalog, public, private, extensions%',
   'the private research claim pins its security-definer search path');
-select ok(not (select prosecdef from pg_proc where oid = 'public.claim_read_only_research_execution(uuid,uuid,text)'::regprocedure),
-  'the public claim wrapper stays SECURITY INVOKER and relies on its explicit service-role grant');
+select ok((select prosecdef from pg_proc where oid = 'public.claim_read_only_research_execution(uuid,uuid,text)'::regprocedure)
+  and coalesce(array_to_string((select proconfig from pg_proc where oid = 'public.claim_read_only_research_execution(uuid,uuid,text)'::regprocedure), '|'), '')
+    like '%search_path=pg_catalog, public%'
+  and lower(pg_get_functiondef('public.claim_read_only_research_execution(uuid,uuid,text)'::regprocedure))
+    like '%trusted_executor_required%',
+  'the public claim wrapper is pinned SECURITY DEFINER with an explicit trusted-role guard');
 select ok(not has_function_privilege('service_role',
   'private.claim_read_only_research_execution(uuid,uuid,text)', 'EXECUTE'),
   'the service role cannot bypass the public guarded wrapper');
