@@ -123,6 +123,8 @@ The read-only catalog query confirmed RLS is disabled and found **no direct SELE
 
 Do **not** blindly enable RLS without a reviewed policy/access design: enabling it with no policies may break intended internal operations. No remediation was applied.
 
+A follow-up read-only function-call/ACL query at **2026-10-14 17:56:42.503374+00** found the public `reserve_anonymous_ai_generation`, `consume_anonymous_ai_generation`, and `release_anonymous_ai_generation` wrappers are SECURITY DEFINER but executable only by `service_role` (`anon=false`, `authenticated=false`). Their private helper implementations are not executable by those API roles either, and the catalog search found no other SQL function body calling these helpers. Therefore this catalog snapshot did **not** establish a callable anon/authenticated path into these tables. Keep the CRITICAL RLS advisory open as a defense-in-depth/configuration issue and investigate the Data API/application path before deciding on a policy change; this nuance is not a license to disregard the advisor.
+
 Supabase Auth also currently reports `auth_leaked_password_protection` / **Leaked Password Protection Disabled** (WARN). The performance advisor lists 15 unused indexes; this is informational and should be judged against actual workload before any removal.
 
 ### Final required sequence additions
