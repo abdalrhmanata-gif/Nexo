@@ -454,13 +454,15 @@ test("trusted worker HTTP path enforces auth, JIT ordering, denial, UNKNOWN reco
         "reconcile_agent_execution_outcome",
       ],
     );
+    const clientsBeforeOversizedRequest = clientCreations;
     const oversized = await globalThis.fetch(harness.url, {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${WORKER_TOKEN}` },
       body: JSON.stringify({ operation: "dispatch", audience: AUDIENCE, padding: "x".repeat(165_000) }),
     });
     assert.equal(oversized.status, 413);
-    assert.equal(clientCreations, 0, "oversized requests must be rejected before adapter/client selection");
+    assert.equal(clientCreations, clientsBeforeOversizedRequest,
+      "oversized requests must be rejected before additional adapter/client selection");
 
     assert.equal(guard.blockedAttempts.length, 0, "no unapproved external network attempt may be made");
     assert.ok(guard.localHttpCalls.length >= 6, "the HTTP harness itself exercised the local loopback listener");
