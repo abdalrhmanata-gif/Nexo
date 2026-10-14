@@ -33,6 +33,12 @@ The candidate now has a real Next.js HTTP test for the protected Mission Action 
 | Production authority passport signing, key rotation, replay/nonce lifecycle and live revocation service | **NOT ESTABLISHED by this candidate** | v0.1 contract describes these requirements and notes development HMAC is not production trust; no corresponding live provider flow is tested here | Must be separately designed/reviewed if required by the provider integration. |
 | Hosted Development schema parity | **NOT VERIFIED / BLOCKED from this workflow** | Disposable W21 run on the candidate source head; historical read-only schema reconciliation notes in `docs/ZAVQERA_MISSION_AUTHORITY_DEVELOPMENT_SCHEMA_RECONCILIATION_2026-10-01.md` | W21 uses a disposable local stack and must not be represented as hosted schema parity. No hosted changes were made. |
 
+## Next design gate — provider-neutral decision interface
+
+The companion proposal `docs/ZAVQERA_MISSION_AUTHORITY_DECISION_INTERFACE_v0.1.md` separates authorization decision, execution status and recovery classification; records the mismatch between the `controlled-adapter` and `persistent-dispatch-gateway` vocabularies; and proposes canonical reason codes mapped to the currently observed SQL/gateway values.
+
+This remains **design only**, not integrated code. In particular, `APPROVAL_REQUIRED_OR_SCOPE_CHANGED` is ambiguous and must not be silently normalized into ALLOW or an approval-only state. The existing v0.1 `RETRYABLE_NOT_SENT` semantics must be reconciled explicitly before implementation. No migration/RPC or hosted schema change is proposed by that document.
+
 ## Exact-head evidence
 
 - Web Unit **361/361 passed** — [run 38623432225](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38623432225)
