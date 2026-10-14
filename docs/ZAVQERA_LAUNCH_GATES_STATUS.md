@@ -1236,3 +1236,21 @@ Then documentation-only commit `0ff243620b37423febcefa1a86ff8ff4e92b34e1` append
 Results on exact HEAD `0ff243620b37423febcefa1a86ff8ff4e92b34e1` at the last poll: Web Unit, Web CI, W25 and Netlify all SUCCESS. W21 and Flutter CI were still running; do not claim all gates green until they finish. Netlify did not deploy production and did not execute optional live provider steps.
 
 Scope limits remain: current scanner is static AST/source-graph coverage; no universal runtime/network trace has been established. Universal Mission Authority JIT enforcement remains NOT PROVEN; real adapter registration is intentionally blocked; hosted Development migration parity W66-W80 remains NOT VERIFIED/NOT APPLIED according to prior audit; Issue #23 open; Production NOT APPROVED.
+
+
+## Exact-head six-gate verification — 2026-10-14 — source HEAD `0677a0eb09615e20254b6faf128ebd8b7173ddf7`
+
+All six PR-head validation gates completed successfully on exact source HEAD `0677a0eb09615e20254b6faf128ebd8b7173ddf7`:
+- [W21 Local Launch Gate](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38545568005) — SUCCESS. [Evidence artifact](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38545568005/artifacts/11884711496), [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38545568005/artifacts/11884756361).
+- [W25 Isolated PostgreSQL Atomic Fence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38545567940) — SUCCESS.
+- [Web Unit](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38545568051) — SUCCESS.
+- [Web CI/build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38545567934) — SUCCESS.
+- [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38545567928) — SUCCESS.
+- [Netlify Deploy Preview verification](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38545567913) — SUCCESS; production deploy job skipped by design and optional live provider tests skipped because no explicit live-test marker was authorized.
+
+W21 artifact review:
+- Browser diagnostics: preflight READY, base URL `http://127.0.0.1:3210`; `missionActionWorkerRoute=FAIL_CLOSED_VERIFIED`; HTTP 503, `unregistered_adapter_denied`, `providerCall=not_attempted`; Browser E2E 2/2 passed in 2.1 minutes; fixture cleanup VERIFIED.
+- Evidence: `result=success`; synthetic integration checkout SHA `0f30eb751b0d91504eb6799a17e60c3391a6c4c6`; migration source `repo-migrations`; PostgreSQL 17; stop exit code 0; no remaining containers/volumes; `cleanup_verified=true`.
+- Keep source HEAD `0677a0eb09615e20254b6faf128ebd8b7173ddf7` distinct from synthetic integration checkout SHA `0f30eb751b0d91504eb6799a17e60c3391a6c4c6`.
+
+Status/limits: PR #29 remains OPEN / Draft / UNMERGED; Issue #23 remains OPEN; adapter registry remains intentionally empty. These gates prove repository migrations and isolated PostgreSQL/fake-adapter/browser scenarios plus static source-graph checks. They do not prove universal runtime/network mediation or certify a real provider. Hosted Development W66-W80 parity remains NOT VERIFIED / NOT APPLIED per prior audit; production is NOT APPROVED. No hosted database, real provider effect, DNS/billing, or production deployment was changed.
