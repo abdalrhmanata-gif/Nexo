@@ -170,7 +170,7 @@ function getTarget(args, protocol) {
 
 function isAllowedLoopbackTarget(target, allowedPort) {
   const hostname = String(target.hostname || "").replace(/^\[|\]$/g, "").toLowerCase();
-  return target.protocol === "http:"
+  return (target.protocol === "http:" || target.protocol === "tcp:")
     && target.port === allowedPort
     && ["127.0.0.1", "localhost", "::1"].includes(hostname);
 }
