@@ -1194,3 +1194,23 @@ The static Mission Action route scanner now:
 2. blocks subpaths of restricted Node capability roots with and without the `node:` prefix.
 
 This improves static source coverage only; it is not proof of universal runtime mediation. Registry empty, Issue #23 OPEN, production NOT APPROVED.
+
+---
+
+## Windows source-graph test fix and exact-head evidence — 2026-10-14 — `dd98c6c410e24b2e31f2ab14ce8c89c1314fe4d6`
+
+The outbound-effect inventory test and trusted-worker transitive-import test used path separator assumptions that failed on Windows. Normalized route paths with the platform separator and made the local-import root boundary platform-aware. This is test-only; application runtime and SQL are unchanged.
+
+Local verification on Windows: both focused source-graph tests pass and Web Unit passes **347/347**.
+
+All six PR gates completed successfully on exact source HEAD `dd98c6c410e24b2e31f2ab14ce8c89c1314fe4d6`:
+- [W21 Local Launch Gate](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38543163685) — PASS; [evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38543163685/artifacts/11883387601), [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38543163685/artifacts/11883472274).
+- [W25 isolated PostgreSQL atomic fence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38543163773) — PASS.
+- [Web Unit](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38543163488) — PASS.
+- [Web CI/build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38543163610) — PASS.
+- [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38543163634) — PASS.
+- [Netlify preview verification](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38543163669) — PASS; deploy and Supabase Preview jobs were skipped.
+
+W21 artifacts were downloaded and inspected: PostgreSQL 17, repository migration replay, stop exit code 0, no remaining disposable containers/volumes, `cleanup_verified=true`; browser preflight READY; the unregistered adapter returned HTTP 503 / `unregistered_adapter_denied` / `providerCall=not_attempted`; Browser E2E **2 passed (2.7m)** and fixture cleanup VERIFIED. The W21 evidence records synthetic merge-test SHA `7d85ff2565b82e3b20dce48d547f4514eb276c9f`; PR source HEAD is `dd98c6c410e24b2e31f2ab14ce8c89c1314fe4d6`.
+
+These results prove the disposable PostgreSQL/fake-provider/browser scenarios and static source-graph checks only. They do not prove universal runtime mediation or certify a real provider. PR #29 remains OPEN/Draft/UNMERGED; Issue #23 remains OPEN; adapter registry stays empty; hosted Development W66–W80 remain unapplied; production remains NOT APPROVED.
