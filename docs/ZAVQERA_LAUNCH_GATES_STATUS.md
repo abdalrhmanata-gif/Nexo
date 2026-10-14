@@ -1160,3 +1160,18 @@ All six workflows passed on this source/test HEAD: [W21](https://github.com/abda
 W21 evidence: [cleanup](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144060/artifacts/11879672775) and [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144060/artifacts/11879752789): PostgreSQL 17, repository migrations, cleanup verified, unregistered adapter denied with HTTP 503 and no provider call, Browser E2E 2/2.
 
 Synthetic merge SHA in W21 artifact: `46f5ebf941b78c08ee58f216b497a26f279b2c7c`; PR source head: `b9ab8c523485e7463f81ae924f27c5219a12c6e6`. Keep these identifiers distinct. PR #29 OPEN/Draft/UNMERGED; Issue #23 OPEN; registry empty; universal JIT proof outstanding.
+
+
+---
+
+## Exact-head result — package import deny-by-default — 2026-10-14 — `162530a059f474639df4c63f41af0aaa49c8075b`
+
+All six code/test gates passed on the exact PR source/test HEAD:
+- [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272772) — [cleanup evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272772/artifacts/11880127845), [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272772/artifacts/11880626067)
+- [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272741)
+- [Web Unit 345/345](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272750)
+- [Web CI/build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272818)
+- [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272748)
+- [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272730)
+
+The Mission Action static-source scan now requires third-party npm imports to come from a small reviewed infrastructure allowlist, in addition to blocking specific provider SDKs and transport/dynamic-loader capabilities. Unknown third-party package roots fail closed. `process` and `node:process` remain restricted capabilities. This is static regression coverage, not runtime sandboxing or universal JIT proof.

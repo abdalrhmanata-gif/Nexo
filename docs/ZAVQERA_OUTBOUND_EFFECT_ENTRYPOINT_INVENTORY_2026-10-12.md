@@ -409,3 +409,14 @@ Both `process` and `node:process` are now in the restricted runtime capability i
 Exact code/test-head validations passed: [Web Unit 344/344](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144296), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144023), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144152), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144662), [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144060), [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144108). W21 artifacts: [evidence/cleanup](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144060/artifacts/11879672775), [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38534144060/artifacts/11879752789).
 
 This is a static-source guard, not a complete runtime or transitive dependency trace. Registry remains empty; Issue #23 open; universal JIT mediation not proven; production not approved.
+
+
+---
+
+## Third-party package imports now require explicit review — 2026-10-14
+
+The statically reachable Mission Action source graph now fails closed for unreviewed third-party package roots. Current reviewed non-provider infrastructure roots: `@supabase/ssr`, `@supabase/supabase-js`, `next`, `react`, `react-dom`, and `server-only`. Node built-ins are distinguished from npm packages; restricted built-ins (including `process` and `node:process`) and known provider SDKs remain blocked. Regression fixtures reject OpenAI, Anthropic, Resend, Axios, Undici, unknown provider SDKs, unresolved local aliases and unknown `node:` specifiers.
+
+All six exact code/test-head gates passed: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272772), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272741), [Web Unit 345/345](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272750), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272818), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272748), [Netlify Preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272730). W21 artifacts: [cleanup](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272772/artifacts/11880127845) and [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272772/artifacts/11880626067).
+
+This is static source scanning, not a runtime sandbox or complete dynamic dependency/network trace. Provider registry empty; Issue #23 open; production not approved.

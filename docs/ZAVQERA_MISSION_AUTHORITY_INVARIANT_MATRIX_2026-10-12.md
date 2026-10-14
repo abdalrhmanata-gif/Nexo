@@ -370,3 +370,12 @@ This strengthens the static guard only. It does not prove transitive dependency 
 The statically reachable Mission Action route scan now rejects imports of both `process` and `node:process`, preventing a renamed imported `getBuiltinModule` or related internal loader from bypassing checks that only recognized the global `process` object. Regression assertions cover named ESM imports and CommonJS require forms.
 
 Validation on exact source/test HEAD: Web Unit 344/344, Web CI, Flutter CI, W25, W21 and Netlify preview all passed. W21 artifacts prove only fail-closed behavior for an unregistered adapter (HTTP 503, provider call not attempted) plus disposable test-environment cleanup. This is not universal runtime mediation proof. Registry empty; Issue #23 OPEN; production not approved.
+
+
+---
+
+## Deny-by-default third-party package policy — 2026-10-14 — `162530a059f474639df4c63f41af0aaa49c8075b`
+
+Mission Action API route source graphs now allow only the reviewed infrastructure package roots `@supabase/ssr`, `@supabase/supabase-js`, `next`, `react`, `react-dom`, and `server-only`; Node built-ins are classified separately and restricted capabilities remain blocked. Tests assert known provider SDKs and an unknown provider package fail the external package policy. Web Unit passed 345/345; W21, W25, Web CI, Flutter CI and Netlify preview also passed. W21 demonstrates fail-closed no-adapter behavior and verified disposable cleanup.
+
+This is a static build-time regression control, not runtime mediation. Issue #23 stays open; registry remains empty; production NOT approved.

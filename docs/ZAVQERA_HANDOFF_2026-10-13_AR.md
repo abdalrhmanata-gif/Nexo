@@ -684,3 +684,32 @@ W21 artifact `git_sha=46f5ebf941b78c08ee58f216b497a26f279b2c7c` is GitHub's synt
 
 ### Guardrails remain unchanged
 PR #29 OPEN / Draft / UNMERGED. Issue #23 OPEN. Provider registry intentionally empty. The growing static capability scanner is a regression control, not an instrumented runtime network trace or proof of universal JIT mediation; production remains NOT APPROVED. Hosted Development is still last documented at W65; W66–W80 remain NOT APPLIED, so hosted Research stays blocked. No hosted DB writes, Supabase Main/Production changes, real provider side effects, DNS/billing changes or production deployment occurred.
+
+
+## Superseding checkpoint — 2026-10-14 — code/test HEAD `162530a059f474639df4c63f41af0aaa49c8075b`
+
+This entry supersedes prior source-guard checkpoints. Current PR #29 source/test head is `162530a…`; the following commit is documentation-only.
+
+### Mission Action external package imports are now deny-by-default
+The statically reachable Mission Action API source graph now allowlists only the reviewed non-provider package roots `@supabase/ssr`, `@supabase/supabase-js`, `next`, `react`, `react-dom`, and `server-only`. It distinguishes Node built-ins from npm packages and rejects any unreviewed third-party import. A new test covers the allowed infrastructure imports and deny-by-default behavior for OpenAI, Anthropic, Resend, Axios, Undici, an unknown provider SDK, an unresolved local alias and an unknown `node:` specifier. This works alongside the existing explicit blocks for known provider SDKs, HTTP transports, dynamic loaders and restricted Node capabilities.
+
+The previous step also added `process` and `node:process` to the restricted runtime capability import set, covering ESM aliasing of `getBuiltinModule` and CommonJS `require("process")`.
+
+**Scope limit:** both controls are test-time static source guards over the statically reachable Mission Action API graph. They are not runtime sandboxing or a complete dynamic-import, package-internal or network-trace proof. No runtime route, migration, hosted database, adapter registry or deployment configuration changed in the package-policy commit.
+
+### All six workflows passed on exact code/test HEAD
+- W21: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272772
+- W25: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272741
+- Web Unit: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272750 — **345 passed, 0 failed**
+- Web CI / production build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272818
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272748
+- Netlify preview verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272730
+
+W21 artifacts were downloaded and inspected:
+- Evidence/cleanup: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272772/artifacts/11880127845 — `result=success`, repository migrations replayed on PostgreSQL 17, disposable Supabase stop exit code 0, no remaining labeled containers or volumes, `cleanup_verified=true`.
+- Browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272772/artifacts/11880626067 — the unregistered adapter was denied by HTTP 503 / `unregistered_adapter_denied` / `providerCall=not_attempted`; Browser E2E **2 passed (2.0m)**; cleanup verified.
+
+W21 artifact `git_sha=b277e2efa996d4f145c540d2d8e6b9b190c8b317` is GitHub's synthetic merge-test SHA, distinct from PR source/test head `162530a059f474639df4c63f41af0aaa49c8075b`.
+
+### Security and launch decisions unchanged
+PR #29 OPEN / Draft / UNMERGED. Issue #23 OPEN. Provider adapter registry intentionally empty. Universal JIT mediation and real-provider certification remain NOT PROVEN. Hosted Development remains last documented at W65; W66–W80 are NOT APPLIED, so hosted Research stays blocked. No hosted DB changes, Supabase Main/Production changes, provider side effects, DNS/billing edits or production deployment occurred.
