@@ -1,0 +1,213 @@
+name: ZAVQERA W80 Isolated PostgreSQL 17 pgTAP
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zavqera-w80-isolated-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  w80-pgtap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout verification revision
+        uses: actions/checkout@v4
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v3
+        with:
+          version: latest
+
+      - name: Prepare clean local PostgreSQL 17 project
+        id: prepare
+        shell: bash
+        run: |
+          set -euo pipefail
+          workdir="${RUNNER_TEMP}/zavqera-w80-local"
+          mkdir -p "${workdir}"
+          supabase init --workdir "${workdir}"
+
+          python3 - "${workdir}/supabase/config.toml" <<'PY'
+          from pathlib import Path
+          import socket
+          import sys
+
+          path = Path(sys.argv[1])
+          lines = path.read_text(encoding="utf-8").splitlines()
+          for i, line in enumerate(lines):
+              if line.startswith("project_id"):
+                  lines[i] = 'project_id = "zavqera-w80-local"'
+                  break
+
+          def set_value(section, key, value):
+              header = f"[{section}]"
+              start = next((i for i, line in enumerate(lines) if line.strip() == header), None)
+              if start is None:
+                  lines.extend(["", header, f"{key} = {value}"])
+                  return
+              end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("[")), len(lines))
+              for i in range(start + 1, end):
+                  if lines[i].lstrip().startswith(f"{key} ="):
+                      lines[i] = f"{key} = {value}"
+                      return
+              lines.insert(start + 1, f"{key} = {value}")
+
+          with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+              listener.bind(("127.0.0.1", 0))
+              db_port = listener.getsockname()[1]
+          set_value("db", "major_version", "17")
+          set_value("db", "port", str(db_port))
+          path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+
+          # The checked-in migrations create private themselves; this only makes
+          # that schema available before migration replay for earlier dependencies.
+          mkdir -p "${workdir}/volumes/db/init"
+          cat > "${workdir}/volumes/db/init/00_private_schema.sql" <<'SQL'
+          create schema if not exists private;
+          SQL
+
+          migration_source="${GITHUB_WORKSPACE}/supabase/migrations"
+          mkdir -p "${RUNNER_TEMP}/w80-all-migrations"
+          cp -R "${migration_source}/." "${RUNNER_TEMP}/w80-all-migrations/"
+          for migration in "${migration_source}"/*.sql; do
+            name="$(basename "${migration}")"
+            cp "${migration}" "${workdir}/supabase/migrations/${name}"
+            if [ "${name}" = "20261013100000_w80_fail_closed_workspace_role_checks.sql" ]; then
+              break
+            fi
+          done
+          if [ ! -f "${workdir}/supabase/migrations/20261013100000_w80_fail_closed_workspace_role_checks.sql" ]; then
+            echo "::error::W80 migration was not found in the checked-in migration chain."
+            exit 1
+          fi
+          cp "${GITHUB_WORKSPACE}/supabase/tests/w80_invitation_helper_privileges.sql" \
+            "${workdir}/supabase/tests/w80_invitation_helper_privileges.sql"
+          printf '%s\n' 'zavqera-w80-local' > "${workdir}/ZAVQERA_W80_DISPOSABLE"
+          printf '%s\n' "${workdir}" > "${RUNNER_TEMP}/w80-workdir"
+          {
+            echo "postgres_major=17"
+            echo "migration_source=checked-in supabase/migrations files"
+            echo "migration_file_count=$(find "${GITHUB_WORKSPACE}/supabase/migrations" -maxdepth 1 -type f -name '*.sql' | wc -l | tr -d ' ')"
+            echo "bootstrap=repository workflow creates empty private schema only"
+            echo "database_source=brand-new local Supabase stack"
+          } > "${RUNNER_TEMP}/W80_EVIDENCE.txt"
+
+      - name: Replay checked-in migrations through W80 on disposable PostgreSQL 17
+        id: replay
+        shell: bash
+        run: |
+          set -uo pipefail
+          workdir="$(cat "${RUNNER_TEMP}/w80-workdir")"
+          log="${RUNNER_TEMP}/W80_MIGRATION_REPLAY.txt"
+          set +e
+          supabase start --ignore-health-check \
+            -x "studio,imgproxy,realtime,storage-api,postgres-meta,edge-runtime,logflare,vector,supavisor" \
+            --workdir "${workdir}" 2>&1 | tee "${log}"
+          status="${PIPESTATUS[0]}"
+          set -e
+          echo "migration_replay_through_w80_exit_code=${status}" >> "${RUNNER_TEMP}/W80_EVIDENCE.txt"
+          echo "migration_replay_order=Supabase CLI timestamp order, from checked-in files only" >> "${RUNNER_TEMP}/W80_EVIDENCE.txt"
+          exit "${status}"
+
+      - name: Run W80 pgTAP at its dependency point and replay later migrations
+        id: test_and_remainder
+        shell: bash
+        run: |
+          set -uo pipefail
+          workdir="$(cat "${RUNNER_TEMP}/w80-workdir")"
+          log="${RUNNER_TEMP}/W80_PGTAP_OUTPUT.txt"
+          set +e
+          (cd "${workdir}" && timeout 10m supabase test db \
+            supabase/tests/w80_invitation_helper_privileges.sql) 2>&1 | tee "${log}"
+          status="${PIPESTATUS[0]}"
+          set -e
+          planned="$(sed -n 's/^1\.\.\([0-9][0-9]*\)$/\1/p' "${log}" | tail -n 1)"
+          passed="$(grep -Ec '^(ok|not ok) [0-9]+' "${log}" || true)"
+          failed="$(grep -Ec '^not ok [0-9]+' "${log}" || true)"
+          {
+            echo "w80_pg_tap_exit_code=${status}"
+            echo "w80_assertions_planned=${planned:-not-reported}"
+            echo "w80_assertions_reported=${passed}"
+            echo "w80_assertions_failed=${failed}"
+          } >> "${RUNNER_TEMP}/W80_EVIDENCE.txt"
+
+          test_status="${status}"
+          if [ "${planned}" != 49 ] || [ "${passed}" -ne 49 ] || [ "${failed}" -ne 0 ]; then
+            echo "::error::W80 TAP output did not report exactly 49 passing assertions."
+            test_status=1
+          fi
+
+          # Apply every later checked-in migration only after W80 has been tested.
+          # This preserves the tested dependency point and still reports full-chain drift.
+          cp -R "${RUNNER_TEMP}/w80-all-migrations/." "${workdir}/supabase/migrations/"
+          replay_log="${RUNNER_TEMP}/W80_MIGRATION_REPLAY.txt"
+          set +e
+          supabase migration up --local --workdir "${workdir}" 2>&1 | tee -a "${replay_log}"
+          later_status="${PIPESTATUS[0]}"
+          set -e
+          echo "migration_replay_after_w80_exit_code=${later_status}" >> "${RUNNER_TEMP}/W80_EVIDENCE.txt"
+          if [ "${later_status}" -ne 0 ]; then
+            echo "::error::The remaining checked-in migration chain failed after W80."
+          fi
+          if [ "${test_status}" -ne 0 ] || [ "${later_status}" -ne 0 ]; then exit 1; fi
+
+      - name: Stop and prove disposable resource cleanup
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          proof="${RUNNER_TEMP}/W80_CLEANUP_PROOF.txt"
+          workdir="${RUNNER_TEMP}/zavqera-w80-local"
+          {
+            echo "cleanup_started=true"
+            echo "project_id=zavqera-w80-local"
+            if [ -d "${workdir}" ] && command -v supabase >/dev/null 2>&1; then
+              supabase stop --no-backup --workdir "${workdir}" >/tmp/w80-stop.log 2>&1
+              stop_status=$?
+              cat /tmp/w80-stop.log
+              echo "supabase_stop_exit_code=${stop_status}"
+            else
+              stop_status=0
+              echo "supabase_stop=not_started_or_cli_unavailable"
+            fi
+            if command -v docker >/dev/null 2>&1; then
+              labelled_containers="$(docker ps -aq --filter label=com.supabase.cli.project=zavqera-w80-local 2>/dev/null)"
+              named_containers="$(docker ps -aq --filter name=zavqera-w80-local 2>/dev/null)"
+              containers="$(printf '%s\n%s\n' "${labelled_containers}" "${named_containers}" | sed '/^$/d' | sort -u)"
+              labelled_volumes="$(docker volume ls -q --filter label=com.supabase.cli.project=zavqera-w80-local 2>/dev/null)"
+              named_volumes="$(docker volume ls -q --filter name=zavqera-w80-local 2>/dev/null)"
+              volumes="$(printf '%s\n%s\n' "${labelled_volumes}" "${named_volumes}" | sed '/^$/d' | sort -u)"
+              echo "remaining_project_containers=${containers:-none}"
+              echo "remaining_project_volumes=${volumes:-none}"
+              if [ -z "${containers}" ] && [ -z "${volumes}" ] && [ "${stop_status}" -eq 0 ]; then
+                echo "cleanup=VERIFIED"
+              else
+                echo "cleanup=NOT_VERIFIED"
+                exit_code=1
+              fi
+            else
+              echo "docker_inventory=unavailable"
+              echo "cleanup=NOT_VERIFIED"
+              exit_code=1
+            fi
+            exit "${exit_code:-0}"
+          } > "${proof}" 2>&1
+
+      - name: Upload W80 isolated verification artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zavqera-w80-isolated-pgtap-${{ github.sha }}
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/W80_EVIDENCE.txt
+            ${{ runner.temp }}/W80_MIGRATION_REPLAY.txt
+            ${{ runner.temp }}/W80_PGTAP_OUTPUT.txt
+            ${{ runner.temp }}/W80_CLEANUP_PROOF.txt
