@@ -433,3 +433,20 @@ Two bypass classes are now covered by regressions in `mission-authority-worker-a
 These guardrails are static source checks on Mission Action API route graphs. Package internals and dynamic runtime behavior are still outside the scanner's proof boundary. No runtime handler, migration, hosted database or deployment changed. Evidence: [Web Unit 346/346](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359177), [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359300), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359140), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359158), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359288), [Netlify](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359129).
 
 Universal JIT mediation remains **NOT PROVEN**. Issue #23 remains OPEN; provider registry empty; production NOT APPROVED.
+
+
+## Outbound inventory evidence-rationale regression — 2026-10-14 — code/test HEAD `b695d9afd622fe0d98a20b3625a09ffbc8c6d8f0`
+
+The source test now requires exact parity between the six reviewed non-Mission outbound route classifications and a separate `classificationEvidence` map. Each entry includes a human-readable rationale explaining the effect, its boundary, and why it is not Mission Action dispatch. Missing, stale, unexplained, or mismatched entries fail the test. This retains the original one-way scanner assertion (every observed outbound-capable route must be classified) and the route-existence assertion.
+
+This closes the specific gap where a classification could remain in the inventory without any reviewed rationale. It does **not** establish that a shared-helper effect was dynamically traced: the route graph scanner remains static and an attestation/rationale is reviewer-maintained evidence, not runtime enforcement. Shared-helper dependencies and dynamic behavior continue to require source/runtime review. The trusted provider registry remains empty; Issue #23 is still OPEN; universal Mission Authority JIT mediation and production readiness remain NOT PROVEN / NOT APPROVED.
+
+Validation on this exact HEAD is running:
+- Web Unit: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38545195418
+- Web CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38545195517
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38545195513
+- W25: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38545195489
+- W21: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38545195307
+- Netlify Deploy Preview verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38545195298 (passed; deployment job skipped).
+
+No application runtime code, SQL/migrations, provider registry, hosted database, or production deployment was changed by this regression.
