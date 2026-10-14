@@ -615,6 +615,15 @@ function readAstOutboundMarkers(source, filePath = "source.mjs") {
           add(node, `property descriptor exposes global transport/codegen capability (${keyName})`);
         }
       }
+
+      // The plural form returns every own descriptor, including hidden global
+      // transports and loaders, so it is sensitive even without a named key.
+      if (callPath === "Object.getOwnPropertyDescriptors" && node.arguments.length >= 1) {
+        const target = resolveAliasedExpressionPath(node.arguments[0], aliases);
+        if (GLOBAL_OBJECT_PATHS.has(target)) {
+          add(node, "all global property descriptors expose transport/codegen capabilities");
+        }
+      }
       if (callPath && /^(?:globalThis|global|self|window)\.(?:fetch|WebSocket|XMLHttpRequest|EventSource)$/.test(callPath)) {
         add(node, "global transport call");
       }
@@ -800,6 +809,8 @@ test("AST outbound analysis catches aliases and computed transport calls without
     'const runtimeGlobal = globalThis; const descriptor = Object.getOwnPropertyDescriptor(runtimeGlobal, "require"); descriptor.value(providerPackageName);',
     'const reflectApi = Reflect; const request = reflectApi.get(globalThis, "fetch"); await request("/outbound");',
     'const objectApi = Object; const descriptor = objectApi.getOwnPropertyDescriptor(globalThis, "require"); descriptor.value(providerPackageName);',
+    'const descriptors = Object.getOwnPropertyDescriptors(globalThis); descriptors.fetch.value("/outbound");',
+    'const objectApi = Object; const descriptors = objectApi.getOwnPropertyDescriptors(globalThis); descriptors.require.value(providerPackageName);',
     'const request = globalThis.fetch; await request("/outbound");',
     'const request = globalThis["fetch"]; await request("/outbound");',
     'const { fetch: request } = globalThis; await request("/outbound");',
