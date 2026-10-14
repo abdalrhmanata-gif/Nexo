@@ -109,6 +109,56 @@ test("OpenAI redirect and provider failures fail closed without exposing respons
   }), /UPSTREAM_OUTCOME_UNKNOWN/);
 });
 
+test("planner provider is unreachable when quota is denied or settlement fails before dispatch", async () => {
+  for (const reserveResult of [
+    { allowed: false, reservation_id: null },
+    { allowed: true, reservation_id: null },
+  ]) {
+    let providerCalls = 0;
+    const outcome = await runAiGeneration({
+      requestId: "planner-idempotency-runtime-0001",
+      reserve: async () => reserveResult,
+      generate: async () => {
+        providerCalls += 1;
+        return requestMissionResearch(mission, { apiKey: "fake", fetchImpl: async () => new Response("{}") });
+      },
+      consume: async () => {},
+      release: async () => {},
+    });
+    assert.equal(outcome.kind, "quota");
+    assert.equal(providerCalls, 0);
+  }
+});
+
+test("planner provider is unreachable when the idempotency/quota claim is uncertain", async () => {
+  let providerCalls = 0;
+  await assert.rejects(runAiGeneration({
+    requestId: "planner-idempotency-runtime-0002",
+    reserve: async () => { throw new Error("AI_USAGE_UNAVAILABLE"); },
+    generate: async () => {
+      providerCalls += 1;
+      return requestMissionResearch(mission, { apiKey: "fake", fetchImpl: async () => new Response("{}") });
+    },
+    consume: async () => {},
+    release: async () => {},
+  }), /AI_USAGE_UNAVAILABLE/);
+  assert.equal(providerCalls, 0);
+});
+
+test("a duplicate request reservation is reported as handled and never redispatched", async () => {
+  let providerCalls = 0;
+  const outcome = await runAiGeneration({
+    requestId: "planner-idempotency-runtime-0003",
+    reserve: async () => ({ allowed: false, reservation_id: null, reason: "duplicate_request" }),
+    generate: async () => { providerCalls += 1; return {}; },
+    consume: async () => {},
+    release: async () => {},
+  });
+  assert.equal(outcome.kind, "quota");
+  assert.equal(outcome.reservation.reason, "duplicate_request");
+  assert.equal(providerCalls, 0);
+});
+
 test("Business invitation Resend call has a stable idempotency key and rejects redirects", async () => {
   let request;
   const result = await sendWorkspaceInvitationEmail({

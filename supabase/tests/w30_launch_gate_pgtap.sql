@@ -165,7 +165,7 @@ select ok((
 select ok(not has_schema_privilege('anon', 'private', 'USAGE'), 'anon cannot access private RPC schema');
 select ok(exists(select 1 from pg_constraint where conname='ai_usage_monthly_pkey'), 'monthly quota primary key exists');
 select ok(pg_get_functiondef('private.get_ai_usage()'::regprocedure) like '%coalesce(v_limit, 5)%', 'Free AI quota fallback is five');
-select ok(pg_get_functiondef('private.reserve_ai_generation(text)'::regprocedure) like '%coalesce(v_limit, 5)%', 'reservation enforcement uses five for Free tier');
+select ok(pg_get_functiondef('private.reserve_ai_generation(text, text, text)'::regprocedure) like '%coalesce(v_limit, 5)%', 'reservation enforcement uses five for Free tier');
 select ok(not has_table_privilege('anon','public.ai_entitlements','SELECT'), 'anon has no entitlement table SELECT');
 select ok(not has_table_privilege('authenticated','public.ai_entitlements','SELECT'), 'authenticated has no direct entitlement table SELECT');
 

@@ -53,7 +53,7 @@ export async function POST(request: Request) {
   try {
     const result = await runAiGeneration({
       requestId,
-      reserve: reserveAiGeneration,
+      reserve: (id) => reserveAiGeneration(id, "planner", { goal: goal.trim() }),
       generate: () => providerMode === "mock"
         ? Promise.resolve(buildMockMissionPlan(goal.trim()))
         : requestMissionPlan(goal.trim(), {
@@ -66,6 +66,9 @@ export async function POST(request: Request) {
     });
 
     if (result.kind === AI_GENERATION_OUTCOMES.QUOTA) {
+      if (result.reservation?.reason === "duplicate_request") {
+        return NextResponse.json({ error: "This plan request was already handled. Start a new request to generate another plan." }, { status: 409 });
+      }
       return NextResponse.json(
         {
           error: "Monthly AI limit reached.",

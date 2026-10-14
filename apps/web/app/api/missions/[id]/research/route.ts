@@ -299,7 +299,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     let claimedResearchMission: { name: string; intent: string; criteria: string[] } | null = null;
     const result = await runAiGeneration({
       requestId,
-      reserve: reserveAiGeneration,
+      reserve: (id) => reserveAiGeneration(id, "research", { missionId: mission.id, requestId: id }),
       prepare: async () => {
         // The execution/approval gate must succeed before any data is sent to
         // the external AI provider. This callback runs after quota reservation
@@ -346,6 +346,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     });
 
     if (result.kind === AI_GENERATION_OUTCOMES.QUOTA) {
+      if (result.reservation?.reason === "duplicate_request") {
+        return NextResponse.json({ error: "This research request was already handled. Start a new request to run research again." }, { status: 409 });
+      }
       return NextResponse.json({ error: "Monthly AI limit reached." }, { status: 429 });
     }
 

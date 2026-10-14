@@ -34,7 +34,7 @@ begin
   if plus_usage.plan <> 'plus' or plus_usage.monthly_limit <> 50 then
     raise exception 'TEST_FAILED: Plus contract is %, %',plus_usage.plan,plus_usage.monthly_limit;
   end if;
-  select * into reservation from public.reserve_ai_generation('w36-plus-request-000001');
+  select * into reservation from public.reserve_ai_generation('w36-plus-request-000001','planner',repeat('a',64));
   if not reservation.allowed or reservation.reservation_id is null
      or reservation.monthly_limit <> 50 or reservation.remaining <> 49 then
     raise exception 'TEST_FAILED: Plus reservation contract is %, %, %',
@@ -47,7 +47,7 @@ begin
   if pro_usage.plan <> 'pro' or pro_usage.monthly_limit <> 300 then
     raise exception 'TEST_FAILED: Pro contract is %, %',pro_usage.plan,pro_usage.monthly_limit;
   end if;
-  select * into reservation from public.reserve_ai_generation('w36-pro-request-000001');
+  select * into reservation from public.reserve_ai_generation('w36-pro-request-000001','planner',repeat('b',64));
   if not reservation.allowed or reservation.reservation_id is null
      or reservation.monthly_limit <> 300 or reservation.remaining <> 299 then
     raise exception 'TEST_FAILED: Pro reservation contract is %, %, %',

@@ -16,7 +16,7 @@ const integratedForm = readFileSync(path.join(root, "components/mission-create-f
 
 test("AI route authenticates before invoking the provider service and keeps the key server-side", () => {
   assert.ok(route.indexOf("getAuthenticatedUser()") < route.indexOf("runAiGeneration("));
-  assert.ok(route.includes("reserve: reserveAiGeneration"));
+  assert.match(route, /reserve:\s*\(id\)\s*=>\s*reserveAiGeneration\(id,\s*"planner"/);
   assert.ok(route.includes("consume: consumeAiGeneration"));
   assert.ok(route.includes("release: releaseAiGeneration"));
   assert.ok(route.includes("process.env.OPENAI_API_KEY"));

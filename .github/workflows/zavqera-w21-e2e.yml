@@ -133,6 +133,7 @@ jobs:
           cp "$GITHUB_WORKSPACE/supabase/tests/w77_read_only_research_payload_bounds.sql" "$workdir/supabase/tests/w77_read_only_research_payload_bounds.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w78_research_history_event_binding.sql" "$workdir/supabase/tests/w78_research_history_event_binding.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w79_trusted_research_completion.sql" "$workdir/supabase/tests/w79_trusted_research_completion.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w82_ai_generation_reservation_identity.sql" "$workdir/supabase/tests/w82_ai_generation_reservation_identity.sql"
           cat > "$workdir/supabase/migrations/20260921180005_e2e_historical_auth_compat.sql" <<'SQL'
           create schema if not exists private;
           create or replace function private.handle_new_user_profile()
@@ -206,6 +207,7 @@ jobs:
             supabase/tests/w77_read_only_research_payload_bounds.sql \
             supabase/tests/w78_research_history_event_binding.sql \
             supabase/tests/w79_trusted_research_completion.sql
+            supabase/tests/w82_ai_generation_reservation_identity.sql
           do
             echo "Running Mission Authority regression: $test_file"
             timeout 10m supabase test db "$test_file"
@@ -218,6 +220,7 @@ jobs:
             cd "$ZAVQERA_E2E_SUPABASE_WORKDIR"
             supabase test db supabase/tests/w29_ai_usage_quota_smoke.sql
             supabase test db supabase/tests/w36_ai_plan_smoke.sql
+            supabase test db supabase/tests/w82_ai_generation_reservation_identity.sql
             supabase test db supabase/tests/w44_workspace_invitations.sql
             supabase test db supabase/tests/w45_workspace_member_management.sql
             supabase test db supabase/tests/w46_workspace_activity.sql
