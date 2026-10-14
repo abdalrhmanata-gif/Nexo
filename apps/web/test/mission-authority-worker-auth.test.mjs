@@ -1103,6 +1103,43 @@ test("Mission Action API dependency graphs cannot bypass the trusted external-ef
 });
 
 
+
+async function listRuntimeSourceFiles(directory) {
+  const ignoredDirectories = new Set(["node_modules", ".next", ".git", "test", "tests", "coverage", "dist", "build"]);
+  const entries = await readdir(directory, { withFileTypes: true });
+  const nested = await Promise.all(entries.map(async (entry) => {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) {
+      if (ignoredDirectories.has(entry.name)) return [];
+      return listRuntimeSourceFiles(path);
+    }
+    return entry.isFile() && LOCAL_SOURCE_EXTENSIONS.some((extension) => entry.name.endsWith(extension))
+      ? [path]
+      : [];
+  }));
+  return nested.flat();
+}
+
+test("no unreviewed Next.js server-action entrypoint exists outside the API route inventory", async () => {
+  const sourceFiles = await listRuntimeSourceFiles(webRoot);
+  const serverActionEntrypoints = [];
+
+  for (const sourceFile of sourceFiles) {
+    const source = await readFile(sourceFile, "utf8");
+    // Match only a standalone directive line, not arbitrary identifiers or comments.
+    // This covers both module-level and inline function-level Next.js server actions.
+    if (/^\\s*["']use server["'];?\\s*(?:\\/\\/.*)?$/m.test(source)) {
+      serverActionEntrypoints.push(relative(webRoot, sourceFile).replace(/\\\\/g, "/"));
+    }
+  }
+
+  assert.deepEqual(
+    serverActionEntrypoints.sort(),
+    [],
+    "a new 'use server' entrypoint must be explicitly inventoried and reviewed for authentication, tenant binding, authorization, and outbound-effect mediation before it is accepted",
+  );
+});
+
 test("every non-Mission outbound API route is explicitly classified in the outbound-effect inventory", async () => {
   const apiRoot = join(webRoot, "app", "api");
   const routeFiles = await listApiRouteFiles(apiRoot);
