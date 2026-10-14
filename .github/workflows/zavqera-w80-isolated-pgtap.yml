@@ -145,6 +145,8 @@ jobs:
             echo "verification_source_commit=$(git -C "${GITHUB_WORKSPACE}" rev-parse HEAD)"
             echo "w80_migration_blob=$(git -C "${GITHUB_WORKSPACE}" rev-parse HEAD:supabase/migrations/20261013100000_w80_fail_closed_workspace_role_checks.sql)"
             echo "w80_test_blob=$(git -C "${GITHUB_WORKSPACE}" rev-parse HEAD:supabase/tests/w80_invitation_helper_privileges.sql)"
+            echo "expected_w80_pgtap_assertions=49"
+            echo "verification_source_branch=codex/w80-pgtap-verification-20261014"
             echo "application_schema_bootstrap=local-only private schema and historical auth-trigger compatibility fixture"
             echo "compatibility_fixture=20260921180005_e2e_historical_auth_compat.sql (not a hosted migration)"
             echo "database_source=brand-new local Supabase stack"
