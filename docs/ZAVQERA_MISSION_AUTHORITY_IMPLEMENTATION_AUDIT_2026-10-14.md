@@ -39,6 +39,14 @@ The companion proposal `docs/ZAVQERA_MISSION_AUTHORITY_DECISION_INTERFACE_v0.1.m
 
 This remains **design only**, not integrated code. In particular, `APPROVAL_REQUIRED_OR_SCOPE_CHANGED` is ambiguous and must not be silently normalized into ALLOW or an approval-only state. The existing v0.1 `RETRYABLE_NOT_SENT` semantics must be reconciled explicitly before implementation. No migration/RPC or hosted schema change is proposed by that document.
 
+## Pure reason-code mapper checkpoint — 2026-10-14 — source/test HEAD `90694c7af88ececadcac56fcc82bf32b1ff0cb10`
+
+- Added `apps/web/lib/mission-authority/reason-code.mjs` as a pure exact-code normalizer; unknown inputs fail closed to `DECISION_DEPENDENCY_UNAVAILABLE`.
+- Added `apps/web/test/mission-authority-reason-code.test.mjs` to enumerate every SQL `raise exception` in W68–W80 plus the current gateway's known denial codes and explicit reason literals. Test proves all collected source values map to the frozen canonical set; it intentionally fails CI for unreviewed new codes.
+- Exact-head Web Unit: 364/364; Web CI/typecheck/build and Flutter CI passed. W21 run `38626086075` has passed PG17/pgTAP, Mission Authority regressions, quota/workspace tests, ledger races and W72 integration; E2E and cleanup remain pending at this note.
+- The normalizer is **not wired into the actual route/gateway**: this avoids silently changing existing production response semantics before resolving the legacy decision/state vocabulary and ambiguous approval code. No schema/RPC/hosted change was made.
+- Scope limitation: source inventory currently covers candidate W68–W80 exception strings and persistent-gateway reason codes, not all local error codes from `controlled-adapter.mjs`.
+
 ## Exact-head evidence
 
 - Web Unit **361/361 passed** — [run 38623432225](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38623432225)

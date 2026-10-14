@@ -150,8 +150,89 @@ Before runtime adoption, a test must enumerate **all** candidate gateway reason 
 5. Compare candidate and hosted DB/RPC signatures read-only before any separately reviewed migration. This document does not justify a table/RPC by itself.
 6. Keep the provider registry empty until timeout-after-send, idempotency, receipt correlation/authenticity, authoritative lookup, no-send proof, and fresh-JIT retry tests pass.
 
+
+
+### Complete canonical output set (code-backed)
+
+The table above highlights main enforcement reasons. The complete frozen output set exported by `MISSION_AUTHORITY_REASON_CODES` is:
+
+- `ALREADY_RECONCILED`
+- `APPROVAL_ALREADY_DECIDED`
+- `APPROVAL_DECISION_INVALID`
+- `APPROVAL_EXPIRED_REQUIRES_REAPPROVAL`
+- `APPROVAL_OR_SIDE_EFFECT_SCOPE_REQUIRED`
+- `APPROVAL_REQUIRED_OR_SCOPE_CHANGED`
+- `AUTHENTICATION_REQUIRED`
+- `AUTHORITATIVE_LOOKUP_EVIDENCE_REQUIRED`
+- `AUTHORITY_BINDING_CHANGED`
+- `AUTHORITY_BUDGET_ACCOUNTING_MISMATCH`
+- `AUTHORITY_BUDGET_BINDING_MISMATCH`
+- `AUTHORITY_BUDGET_EXHAUSTED`
+- `AUTHORITY_BUDGET_INVALID`
+- `AUTHORITY_BUDGET_MISSING_OR_INACTIVE`
+- `AUTHORITY_BUDGET_OUTSIDE_VALIDITY_WINDOW`
+- `AUTHORITY_BUDGET_RESERVATION_CONFLICT`
+- `BUDGET_RESERVATION_MISSING`
+- `BUDGET_RESERVATION_NOT_HELD_UNKNOWN`
+- `BUDGET_RESERVATION_NOT_OPEN`
+- `CLAIM_OUTCOME_UNKNOWN`
+- `DECISION_DEPENDENCY_UNAVAILABLE`
+- `DISPATCH_ALREADY_CLAIMED`
+- `EXECUTION_BUDGET_NOT_RELEASED_FOR_RETRY`
+- `EXECUTION_CANCELLED`
+- `EXECUTION_REQUEST_OR_RESULT_INVALID`
+- `EXECUTION_STATE_NOT_ELIGIBLE`
+- `IDEMPOTENCY_OR_REPLAY_DENIED`
+- `INVITATION_ALREADY_PENDING`
+- `INVITATION_INVALID`
+- `INVITATION_NOT_FOUND_OR_NOT_PENDING`
+- `LEASE_EXPIRED_RECONCILIATION_REQUIRED`
+- `LEASE_NOT_EXPIRED`
+- `MISSION_CLOSED_OR_NOT_FOUND`
+- `MISSION_EVENT_ALREADY_RECORDED`
+- `MISSION_EVENT_INVALID`
+- `PERSISTENCE_UNCONFIRMED`
+- `PROVIDER_AUDIENCE_MISMATCH`
+- `PROVIDER_CHARGE_INVALID`
+- `PROVIDER_CONFIRMED_NOT_SENT`
+- `PROVIDER_NO_SEND_PROOF_REQUIRED`
+- `PROVIDER_NO_SEND_RECONCILED`
+- `PROVIDER_OUTCOME_UNKNOWN`
+- `PROVIDER_RECEIPT_MISSING_OR_UNUSABLE`
+- `PROVIDER_RECEIPT_RECORDED`
+- `PROVIDER_RECEIPT_REQUIRED`
+- `PROVIDER_RECEIPT_UNCORRELATABLE`
+- `PROVIDER_RECONCILIATION_UNAVAILABLE`
+- `PROVIDER_RESULT_UNVERIFIED`
+- `PROVIDER_SUCCESS_RECONCILED`
+- `RECONCILIATION_ALREADY_CLAIMED`
+- `RECONCILIATION_CLAIM_INVALID`
+- `RECONCILIATION_CLAIM_INVALID_OR_EXPIRED`
+- `RECONCILIATION_EVIDENCE_INVALID`
+- `REQUEST_INVALID`
+- `RESEARCH_COMPLETION_EVENT_REQUIRED`
+- `RESEARCH_EXECUTION_INVALID`
+- `RESEARCH_HISTORY_BINDING_INVALID`
+- `RESEARCH_RESULT_MUST_REMAIN_UNVERIFIED`
+- `RESOURCE_NOT_FOUND_OR_FORBIDDEN`
+- `SIDE_EFFECT_SCOPE_REQUIRED`
+- `SYSTEM_EVENT_INVALID`
+- `TRUSTED_EXECUTOR_REQUIRED`
+- `VERIFICATION_REQUIRED`
+- `WORKSPACE_ADMIN_REQUIRED`
+- `WORKSPACE_MEMBER_ALREADY_EXISTS`
+
 ## 7. Decision
 
 **PROPOSED / NOT INTEGRATED.** Web Unit 361/361, Web CI/typecheck/build, Flutter CI and W21 disposable PostgreSQL 17/browser/cleanup passed on validated runtime source head `1713ce57a09b092bdcc5c28d3c2be39776972c26`. The documentation-only head `84700b64a5e0cbc5d6f6d7b5909c554e54b8d9c3` also passed Web Unit, Web CI and Flutter CI. This evidence is not hosted Development parity or live-provider evidence.
 
 Keep PR #39 Draft/unmerged, PR #29 unchanged, Issue #23 OPEN and the provider registry empty. Universal production egress mediation remains **NOT ESTABLISHED**; launch remains **NO-GO**.
+
+
+## Implementation checkpoint — pure reason normalizer and inventory test — 2026-10-14
+
+A standalone, pure mapper has now been added at `apps/web/lib/mission-authority/reason-code.mjs`. It maps the exact source reason codes observed in W68–W80 SQL exceptions, the persistent gateway denial allow-list, and the gateway's explicit `reasonCode` literals to **65 canonical output codes**. Unknown, malformed or raw-message input returns `DECISION_DEPENDENCY_UNAVAILABLE` without reflecting the input.
+
+The accompanying test `apps/web/test/mission-authority-reason-code.test.mjs` discovers the migrations from the repository, inventories SQL exception codes and explicit gateway reason strings, and fails when any new value lacks a mapping. On source/test head `90694c7af88ececadcac56fcc82bf32b1ff0cb10`, Web Unit passed **364/364** and Web CI (static authorization, TypeScript and production build) plus Flutter CI passed. W21 run [38626086075](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38626086075) has passed PG17/pgTAP, Mission Authority and AI quota/workspace security, the four ledger races, and W72 fake-provider gateway integration; browser E2E and teardown are still running at the time of this note.
+
+This helper is intentionally **not imported by a production route or gateway yet**. It preserves existing SQL strings and does not normalize or change production responses. It currently inventories SQL/gateway codes, not every local reason emitted by the separate in-memory controlled-adapter model. The conflicting decision/status vocabulary, `RETRYABLE_NOT_SENT` semantics, and combined `APPROVAL_REQUIRED_OR_SCOPE_CHANGED` meaning must be reviewed before any live-path integration. No migration, RPC, hosted schema or provider was changed.
