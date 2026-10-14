@@ -324,3 +324,17 @@ Exact-head gates all completed SUCCESS:
 W21 evidence records PostgreSQL 17, repository migrations, successful disposable Supabase shutdown, no remaining labeled containers/volumes and `cleanup_verified=true`. Browser diagnostics record HTTP 503 / `unregistered_adapter_denied` / `providerCall=not_attempted`, Browser E2E 2 passed (2.7m), and verified fixture/container cleanup. The artifact's internal `git_sha=0f2fc1c7004bb4cfc9a503daa9ade62e8ede525f` is the synthetic merge-test checkout SHA; PR source HEAD is `edb498ac7262c2bf63398fd1dd7905f28c394411`.
 
 Scope remains limited: AST scanning is not a complete runtime/network trace or proof of universal JIT mediation. Registry remains empty; Issue #23 OPEN; PR #29 OPEN/Draft/UNMERGED. Hosted Development remains last documented at W65; W66–W80 NOT APPLIED. Production NOT APPROVED. No hosted database, Supabase Main/Production, DNS/billing, provider side effects, or production deployment was touched.
+
+
+## Superseding AST capability-escape checkpoint — 2026-10-14 — source HEAD `39749f008b9a50cc8e46651df110a6b6830460b8`
+
+The outbound-effect AST guard now detects three global capability-retrieval patterns: `Reflect.get(globalThis, "fetch")`, `Object.getOwnPropertyDescriptor(globalThis, "fetch").value`, and `Object.getOwnPropertyDescriptors(globalThis).fetch.value`. Alias propagation follows local aliases of `Reflect`, `Object`, and the global object, so these helper indirections are covered. Four concrete negative examples were added across descriptor/alias cases. This remains test-only/static-analysis hardening; no application runtime route, SQL migration, hosted database, provider registry or deployment behavior changed.
+
+Exact current-head checks:
+- [Web Unit](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38507737579) — **344 passed, 0 failed**
+- [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38507737670) — success
+- [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38507737611) — success
+
+The immediately preceding runtime-code HEAD `edb498ac7262c2bf63398fd1dd7905f28c394411` also passed [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913259), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913320), and [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913348). The commits since that runtime-code HEAD only extend test/documentation files; application code and SQL are unchanged. W21 evidence [11868571697](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913259/artifacts/11868571697) confirms PostgreSQL 17, repository migrations and verified cleanup; browser diagnostics [11868028850](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913259/artifacts/11868028850) confirms HTTP 503, `unregistered_adapter_denied`, `providerCall=not_attempted`, and Browser E2E 2/2.
+
+**Limits and launch status:** AST scanning is not a complete runtime/network trace or proof of universal JIT mediation. Provider registry remains empty; Issue #23 OPEN; PR #29 OPEN/Draft/UNMERGED. Hosted Development remains last documented at W65; W66–W80 NOT APPLIED. Production NOT APPROVED. No hosted database, Supabase Main/Production, DNS/billing, real provider, or production deployment was changed.
