@@ -58,18 +58,18 @@ test("internal worker schema probe is token-protected, read-only, and fail-close
     "the schema probe branch must terminate before the dispatch/reconciliation runtime boundary");
 
   const preflightBranch = trustedWorkerRoute.slice(preflightStart, completionStart);
-  assert.match(preflightBranch, /new Set\\(\\["operation", "requestedBy"\\]\\)/,
+  assert.ok(preflightBranch.includes('new Set(["operation", "requestedBy"])'),
     "the probe accepts only the operation and a validated requester id");
-  assert.match(preflightBranch, /RESEARCH_COMPLETION_SCHEMA_PROBE_UUID/,
+  assert.ok(preflightBranch.includes("RESEARCH_COMPLETION_SCHEMA_PROBE_UUID"),
     "the probe must use the deliberately malformed, non-row-targeting UUID");
-  assert.match(preflightBranch, /client\\.rpc\\("complete_read_only_research_execution"/,
+  assert.ok(preflightBranch.includes('client.rpc("complete_read_only_research_execution"'),
     "the probe resolves the exact trusted-completion RPC by its expected name");
-  assert.match(preflightBranch, /p_requested_by: workerBody\\.requestedBy/);
-  assert.match(preflightBranch, /isResearchCompletionSchemaProbeError\\(probe\\.error\\)/,
+  assert.ok(preflightBranch.includes("p_requested_by: workerBody.requestedBy"));
+  assert.ok(preflightBranch.includes("isResearchCompletionSchemaProbeError(probe.error)"),
     "only the expected UUID-cast error is evidence that the signature resolved");
-  assert.match(preflightBranch, /\\{ status: 503, headers: NO_STORE \\}/,
+  assert.ok(preflightBranch.includes("{ status: 503, headers: NO_STORE }"),
     "unexpected errors fail closed");
-  assert.doesNotMatch(preflightBranch, /\\.(?:insert|update|upsert|delete)\\s*\\(/,
+  assert.doesNotMatch(preflightBranch, /\.(?:insert|update|upsert|delete)\s*\(/,
     "the schema preflight must not directly mutate tables");
   assert.doesNotMatch(preflightBranch, /dispatchThroughJitClaim|reconcileThroughTrustedClaim/,
     "the schema preflight must not dispatch or reconcile external execution");
