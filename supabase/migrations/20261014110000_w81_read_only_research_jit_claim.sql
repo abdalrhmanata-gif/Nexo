@@ -187,7 +187,7 @@ create or replace function public.complete_read_only_research_execution(
   p_error_message text default null
 ) returns public.agent_executions
 language plpgsql
-security invoker
+security definer
 set search_path = pg_catalog, public, private
 as $function$
 declare

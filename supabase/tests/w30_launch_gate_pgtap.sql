@@ -50,7 +50,8 @@ select ok(not exists(
     and p.proname not in (
       'guard_mission_action_insert','handle_new_user_profile',
       'prevent_mission_action_delete_with_history','prevent_action_delete_with_history',
-      'prevent_mission_action_reparent','complete_read_only_research_execution'
+      'prevent_mission_action_reparent','complete_read_only_research_execution',
+      'claim_read_only_research_execution'
     )
 ), 'public application SECURITY DEFINER runtime functions bind to auth.uid');
 
