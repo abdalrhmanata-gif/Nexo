@@ -1254,3 +1254,15 @@ W21 artifact review:
 - Keep source HEAD `0677a0eb09615e20254b6faf128ebd8b7173ddf7` distinct from synthetic integration checkout SHA `0f30eb751b0d91504eb6799a17e60c3391a6c4c6`.
 
 Status/limits: PR #29 remains OPEN / Draft / UNMERGED; Issue #23 remains OPEN; adapter registry remains intentionally empty. These gates prove repository migrations and isolated PostgreSQL/fake-adapter/browser scenarios plus static source-graph checks. They do not prove universal runtime/network mediation or certify a real provider. Hosted Development W66-W80 parity remains NOT VERIFIED / NOT APPLIED per prior audit; production is NOT APPROVED. No hosted database, real provider effect, DNS/billing, or production deployment was changed.
+
+## Superseding exact-head checkpoint — inventory rationale and six gates — 2026-10-14 — `81293181e1192a1817bcc30965a3d512d9735077`
+
+The current code/test change relative to the previously verified `5c1d093…` is `b695d9a`: the outbound effect inventory test now requires a one-to-one classification/effect rationale map for all six inventoried API routes, while continuing to reject unclassified detected effects and classifications for missing routes. This remains test-only source evidence, not runtime mediation proof. Local Windows verification: rationale assertion passed and Web Unit **347/347** passed.
+
+All six workflows are confirmed SUCCESS on exact source HEAD `81293181e1192a1817bcc30965a3d512d9735077`:
+- [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38546391319) — [evidence](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38546391319/artifacts/11885101264), [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38546391319/artifacts/11884468616).
+- [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38546391248), [Web Unit](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38546391256), [Web CI/build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38546391353), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38546391336), [Netlify preview verification](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38546391357). Netlify production deployment and optional live-provider steps were skipped.
+
+Inspected W21 evidence records repo migrations, PostgreSQL 17, stop exit code 0, no remaining containers/volumes, `cleanup_verified=true`; diagnostics show HTTP 503 / `unregistered_adapter_denied` / `providerCall=not_attempted`, Browser E2E 2/2, and fixture cleanup VERIFIED. Synthetic integration checkout SHA is `2f55ca9ac807ea5bccf1aeba909e2baa35c3d92f`, distinct from source HEAD `8129318…`.
+
+No new universal enforcement evidence: no reviewed adapter is registered; hosted Development W66-W80 parity remains unverified/unapplied; Issue #23 OPEN; PR #29 OPEN/Draft/UNMERGED; production NOT APPROVED.

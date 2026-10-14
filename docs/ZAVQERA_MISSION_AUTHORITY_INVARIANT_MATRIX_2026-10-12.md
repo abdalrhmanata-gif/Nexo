@@ -428,3 +428,9 @@ W21 artifact review:
 - Keep source HEAD `0677a0eb09615e20254b6faf128ebd8b7173ddf7` distinct from synthetic integration checkout SHA `0f30eb751b0d91504eb6799a17e60c3391a6c4c6`.
 
 Status/limits: PR #29 remains OPEN / Draft / UNMERGED; Issue #23 remains OPEN; adapter registry remains intentionally empty. These gates prove repository migrations and isolated PostgreSQL/fake-adapter/browser scenarios plus static source-graph checks. They do not prove universal runtime/network mediation or certify a real provider. Hosted Development W66-W80 parity remains NOT VERIFIED / NOT APPLIED per prior audit; production is NOT APPROVED. No hosted database, real provider effect, DNS/billing, or production deployment was changed.
+
+## Exact-head reassessment — 2026-10-14 — source `81293181e1192a1817bcc30965a3d512d9735077`
+
+The only code/test delta since source head `5c1d093…` is `b695d9a`: outbound API inventory routes now require exact classification/effect/rationale parity. Local Web Unit passes **347/347**. All six required gates pass on `8129318…` (W21 `38546391319`, W25 `38546391248`, Web Unit `38546391256`, Web CI `38546391353`, Flutter `38546391336`, Netlify preview `38546391357`). W21 artifacts verify isolated PostgreSQL 17, migrations, cleanup, 2/2 browser tests, and fail-closed unregistered-adapter response with no provider call; artifact checkout SHA `2f55ca9…` is synthetic and distinct from source HEAD.
+
+Authority assessment does not change: SQL JIT checks are integration-tested against disposable PostgreSQL and fake adapters; the empty registry means no real provider execution path is certified. Static source checks and CI do not prove universal runtime/network mediation. Keep Issue #23 OPEN and PR #29 OPEN/Draft/UNMERGED; hosted Development W66-W80 remain unapplied/unverified and Production NOT APPROVED.
