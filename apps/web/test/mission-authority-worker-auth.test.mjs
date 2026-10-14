@@ -1,4 +1,5 @@
 import { readFile, readdir, stat } from "node:fs/promises";
+import { builtinModules } from "node:module";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
@@ -442,6 +443,40 @@ const EXPLICIT_PROVIDER_SDK_IMPORTS = new Set([
   "googleapis",
   "@microsoft/microsoft-graph-client",
 ]);
+
+// Mission Action route graphs are deny-by-default for third-party runtime
+// packages. Only the current application infrastructure dependencies are
+// reviewed here; adding a new package to these routes requires explicit review.
+const REVIEWED_NON_PROVIDER_ROUTE_PACKAGES = new Set([
+  "@supabase/ssr",
+  "@supabase/supabase-js",
+  "next",
+  "react",
+  "react-dom",
+  "server-only",
+]);
+const NODE_BUILTIN_NAMES = new Set(builtinModules.map((name) => name.replace(/^node:/, "")));
+const NODE_BUILTIN_ROOTS = new Set([...NODE_BUILTIN_NAMES].map((name) => name.split("/")[0]));
+
+function isNodeBuiltinSpecifier(specifier) {
+  const normalized = specifier.replace(/^node:/, "");
+  return NODE_BUILTIN_NAMES.has(normalized)
+    || NODE_BUILTIN_ROOTS.has(normalized.split("/")[0]);
+}
+
+function externalPackageName(specifier) {
+  if (specifier.startsWith("./") || specifier.startsWith("../")) return null;
+  if (isNodeBuiltinSpecifier(specifier)) return null;
+  if (specifier.startsWith("@/")) return specifier; // unresolved local alias: fail closed
+  if (specifier.startsWith("node:")) return specifier; // unknown node: specifier: fail closed
+  const parts = specifier.split("/");
+  return specifier.startsWith("@") ? parts.slice(0, 2).join("/") : parts[0];
+}
+
+function isReviewedNonProviderImport(specifier) {
+  const packageName = externalPackageName(specifier);
+  return packageName === null || REVIEWED_NON_PROVIDER_ROUTE_PACKAGES.has(packageName);
+}
 
 const GLOBAL_FETCH_PATHS = new Set([
   "fetch",
@@ -892,6 +927,28 @@ test("AST outbound analysis catches aliases and computed transport calls without
   }
 });
 
+test("Mission Action dependency policy is allowlisted and denies new third-party packages by default", () => {
+  assert.equal(isReviewedNonProviderImport("@supabase/supabase-js"), true);
+  assert.equal(isReviewedNonProviderImport("@supabase/ssr"), true);
+  assert.equal(isReviewedNonProviderImport("next/server"), true);
+  assert.equal(isReviewedNonProviderImport("react"), true);
+  assert.equal(isReviewedNonProviderImport("node:fs/promises"), true);
+  assert.equal(isReviewedNonProviderImport("fs/promises"), true);
+
+  for (const specifier of [
+    "openai",
+    "@anthropic-ai/sdk",
+    "resend",
+    "axios",
+    "undici",
+    "some-unknown-provider-sdk",
+    "@/lib/not-found-module",
+    "node:not-a-real-builtin",
+  ]) {
+    assert.equal(isReviewedNonProviderImport(specifier), false, specifier);
+  }
+});
+
 test("Mission Action API dependency graphs cannot bypass the trusted external-effect boundary", async () => {
   const apiRoot = join(webRoot, "app", "api");
   const routeFiles = await listApiRouteFiles(apiRoot);
@@ -920,6 +977,16 @@ test("Mission Action API dependency graphs cannot bypass the trusted external-ef
         }
         if (EXPLICIT_PROVIDER_SDK_IMPORTS.has(specifier)) {
           violations.push({ route, module: moduleName, marker: `provider SDK import: ${specifier}` });
+        }
+        const resolvedLocalImport = await resolveLocalSourceImport(specifier, modulePath);
+        const packageName = externalPackageName(specifier);
+        if (!resolvedLocalImport && packageName !== null
+            && !REVIEWED_NON_PROVIDER_ROUTE_PACKAGES.has(packageName)) {
+          violations.push({
+            route,
+            module: moduleName,
+            marker: `unreviewed third-party package import: ${specifier}`,
+          });
         }
       }
 
