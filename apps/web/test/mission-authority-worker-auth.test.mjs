@@ -228,6 +228,26 @@ test("mission-action HTTP operation validates body and execution binding before 
 });
 
 
+test("injectable trusted-worker HTTP/JIT factory is imported only by the protected worker route", async () => {
+  const apiRoot = join(webRoot, "app", "api");
+  const routeFiles = await listApiRouteFiles(apiRoot);
+  const consumers = [];
+
+  for (const routeFile of routeFiles) {
+    const source = await readFile(routeFile, "utf8");
+    if (/from\\s+["'][^"']*mission-authority\\/trusted-worker-http(?:\\.mjs)?["']/.test(source)) {
+      consumers.push(relative(apiRoot, routeFile).replace(/\\\\/g, "/"));
+    }
+  }
+
+  assert.deepEqual(
+    consumers,
+    ["internal/agent-executions/[executionId]/route.ts"],
+    "only the authenticated internal worker route may instantiate the dependency-injected HTTP/JIT handler",
+  );
+});
+
+
 test("Mission Action execution boundary is directly referenced only by the trusted internal worker route", async () => {
   const apiRoot = join(webRoot, "app", "api");
   const routeFiles = await listApiRouteFiles(apiRoot);
