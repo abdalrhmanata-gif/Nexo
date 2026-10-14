@@ -133,6 +133,7 @@ jobs:
             echo "::error::W80 migration was not found in the checked-in migration chain."
             exit 1
           fi
+          mkdir -p "${workdir}/supabase/tests"
           cp "${GITHUB_WORKSPACE}/supabase/tests/w80_invitation_helper_privileges.sql" \
             "${workdir}/supabase/tests/w80_invitation_helper_privileges.sql"
           printf '%s\n' 'zavqera-w80-local' > "${workdir}/ZAVQERA_W80_DISPOSABLE"
