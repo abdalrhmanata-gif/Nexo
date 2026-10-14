@@ -585,6 +585,21 @@ function readAstOutboundMarkers(source, filePath = "source.mjs") {
       const callPath = resolveAliasedExpressionPath(node.expression, aliases);
       const reason = outboundExpressionReason(node.expression, aliases);
       if (reason) add(node, reason);
+
+      // Reflect.get can recover transport and loader capabilities without a
+      // property-access AST node (for example Reflect.get(globalThis, "fetch")).
+      // Treat this as a capability escape even when the result is later aliased.
+      if (callPath === "Reflect.get" && node.arguments.length >= 2) {
+        const target = resolveAliasedExpressionPath(node.arguments[0], aliases);
+        const key = node.arguments[1];
+        const keyName = staticString(key) ? key.text : null;
+        if (GLOBAL_OBJECT_PATHS.has(target) && [
+          "fetch", "WebSocket", "XMLHttpRequest", "EventSource",
+          "require", "createRequire", "eval", "Function",
+        ].includes(keyName)) {
+          add(node, `Reflect.get global transport/codegen capability (${keyName})`);
+        }
+      }
       if (callPath && /^(?:globalThis|global|self|window)\.(?:fetch|WebSocket|XMLHttpRequest|EventSource)$/.test(callPath)) {
         add(node, "global transport call");
       }
@@ -758,6 +773,10 @@ test("AST outbound analysis follows aliases of global objects, transports and dy
 
 test("AST outbound analysis catches aliases and computed transport calls without flagging ordinary database RPCs", () => {
   const blockedExamples = [
+    'const request = Reflect.get(globalThis, "fetch"); await request("/outbound");',
+    'const runtimeGlobal = globalThis; const request = Reflect["get"](runtimeGlobal, "fetch"); await request("/outbound");',
+    'const loader = Reflect.get(globalThis, "require"); loader(providerPackageName);',
+    'const compile = Reflect.get(globalThis, "Function"); compile("return 1")();',
     'const request = globalThis.fetch; await request("/outbound");',
     'const request = globalThis["fetch"]; await request("/outbound");',
     'const { fetch: request } = globalThis; await request("/outbound");',
