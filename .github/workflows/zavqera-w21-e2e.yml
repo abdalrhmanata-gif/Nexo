@@ -2,6 +2,14 @@ name: ZAVQERA W21 Local Launch Gate
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - "codex/mission-action-runtime-seam-test-20261014"
+    paths:
+      - ".github/workflows/zavqera-w21-e2e.yml"
+      - "apps/web/**"
+      - "supabase/**"
+      - "tool/**"
   pull_request:
     branches:
       - "zavqera/alternative-web-deployment"
