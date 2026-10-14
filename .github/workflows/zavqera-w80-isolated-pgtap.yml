@@ -63,15 +63,9 @@ jobs:
               db_port = listener.getsockname()[1]
           set_value("db", "major_version", "17")
           set_value("db", "port", str(db_port))
+          set_value("db.seed", "enabled", "false")
           path.write_text("\n".join(lines) + "\n", encoding="utf-8")
           PY
-
-          # The checked-in migrations create private themselves; this only makes
-          # that schema available before migration replay for earlier dependencies.
-          mkdir -p "${workdir}/volumes/db/init"
-          cat > "${workdir}/volumes/db/init/00_private_schema.sql" <<'SQL'
-          create schema if not exists private;
-          SQL
 
           migration_source="${GITHUB_WORKSPACE}/supabase/migrations"
           mkdir -p "${RUNNER_TEMP}/w80-all-migrations"
@@ -95,7 +89,7 @@ jobs:
             echo "postgres_major=17"
             echo "migration_source=checked-in supabase/migrations files"
             echo "migration_file_count=$(find "${GITHUB_WORKSPACE}/supabase/migrations" -maxdepth 1 -type f -name '*.sql' | wc -l | tr -d ' ')"
-            echo "bootstrap=repository workflow creates empty private schema only"
+            echo "application_schema_bootstrap=none; all application schema comes from checked-in migrations"
             echo "database_source=brand-new local Supabase stack"
           } > "${RUNNER_TEMP}/W80_EVIDENCE.txt"
 
