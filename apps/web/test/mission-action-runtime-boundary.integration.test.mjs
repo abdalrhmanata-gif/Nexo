@@ -118,7 +118,7 @@ function createTestAdapter({ events, transportResult, lookupResult }) {
         assert.ok(claim.requestHash);
 
         // This is the only simulated outbound boundary. It is a local function,
-        // not fetch(), a socket, an SDK or a real provider request.
+        // not a network API, socket, SDK or real provider request.
         events.push("fake-transport");
         fakeOutboundCalls += 1;
         return transportResult;
