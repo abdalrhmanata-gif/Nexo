@@ -3,11 +3,8 @@ import { createSupabaseAdminClient } from "../../../../../lib/supabase/admin";
 import {
   dispatchThroughJitClaim,
   reconcileThroughTrustedClaim,
-  PERSISTENT_DISPATCH_DECISIONS,
 } from "../../../../../lib/mission-authority/persistent-dispatch-gateway.mjs";
 import { resolveTrustedDispatchAdapter } from "../../../../../lib/mission-authority/provider-adapter-registry.mjs";
-import { runMissionActionWorker } from "../../../../../lib/mission-authority/mission-action-worker-boundary.mjs";
-import { isTrustedExecutionWorkerRequest } from "../../../../../lib/mission-authority/worker-auth.mjs";
 import {
   createMissionActionWorkerOperationHandler,
   parseTrustedWorkerRequest,
