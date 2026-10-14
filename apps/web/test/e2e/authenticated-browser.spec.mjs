@@ -240,7 +240,8 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
         data: { goal: "Create one reversible next step for the same test mission." },
         timeout: 20_000,
       });
-      expect(second.status()).toBe(429);
+      expect(second.status()).toBe(409);
+      expect(await second.text()).toContain("already handled");
 
       const finalResponse = await page.request.get("/api/ai/usage");
       expect(finalResponse.status()).toBe(200);

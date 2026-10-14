@@ -321,7 +321,8 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
         timeout: 20_000,
       });
       expect(first.status()).toBe(200);
-      expect(second.status()).toBe(429);
+      expect(second.status()).toBe(409);
+      expect(await second.text()).toContain("already handled");
 
       const final = await (await pageA.request.get("/api/ai/usage", { timeout: 20_000 })).json();
       expect(final).toMatchObject({ monthly_limit: 5, generations_used: 2, remaining: 3 });
