@@ -23,43 +23,44 @@ select is((
                        'accept_workspace_invitation','revoke_workspace_invitation')
 ), 4, 'private invitation API has exactly the four reviewed signatures (no overload bypass)');
 
--- Expected effective EXECUTE matrix. This catches direct grants and inherited
--- grants (including PUBLIC); authenticated helper access is required by the
--- invoker wrappers, and anon access is allowed only for token-based lookup.
+-- Expected effective EXECUTE matrix, including membership/inheritance from
+-- other roles. Exact non-owner ACL grantees (direct grants and PUBLIC) are
+-- asserted separately below. Authenticated helper access is required by the
+-- invoker wrappers; anon access is allowed only for token-based lookup.
 select is(has_function_privilege(role_name, signature, 'EXECUTE'), expected, description)
 from (values
   ('anon','public.create_workspace_invitation(uuid,text,text,text,timestamp with time zone)',false,'anon cannot execute public invitation create'),
   ('authenticated','public.create_workspace_invitation(uuid,text,text,text,timestamp with time zone)',true,'authenticated can use public invitation create'),
-  ('service_role','public.create_workspace_invitation(uuid,text,text,text,timestamp with time zone)',false,'service_role has no direct invitation-create RPC grant'),
+  ('service_role','public.create_workspace_invitation(uuid,text,text,text,timestamp with time zone)',true,'service_role inherits effective EXECUTE; explicit direct grants are checked separately'),
   ('anon','public.get_workspace_invitation(text)',true,'anon can use token-gated public invitation lookup'),
   ('authenticated','public.get_workspace_invitation(text)',true,'authenticated can use public invitation lookup'),
-  ('service_role','public.get_workspace_invitation(text)',false,'service_role has no direct invitation-lookup RPC grant'),
+  ('service_role','public.get_workspace_invitation(text)',true,'service_role inherits effective EXECUTE; explicit direct grants are checked separately'),
   ('anon','public.accept_workspace_invitation(text)',false,'anon cannot accept invitations'),
   ('authenticated','public.accept_workspace_invitation(text)',true,'authenticated can accept invitations'),
-  ('service_role','public.accept_workspace_invitation(text)',false,'service_role has no direct invitation-accept RPC grant'),
+  ('service_role','public.accept_workspace_invitation(text)',true,'service_role inherits effective EXECUTE; explicit direct grants are checked separately'),
   ('anon','public.revoke_workspace_invitation(uuid)',false,'anon cannot revoke invitations'),
   ('authenticated','public.revoke_workspace_invitation(uuid)',true,'authenticated can revoke invitations'),
-  ('service_role','public.revoke_workspace_invitation(uuid)',false,'service_role has no direct invitation-revoke RPC grant'),
+  ('service_role','public.revoke_workspace_invitation(uuid)',true,'service_role inherits effective EXECUTE; explicit direct grants are checked separately'),
   ('anon','private.create_workspace_invitation(uuid,text,text,text,timestamp with time zone)',false,'anon cannot execute privileged private create helper'),
   ('authenticated','private.create_workspace_invitation(uuid,text,text,text,timestamp with time zone)',true,'authenticated wrapper caller can execute guarded private create helper'),
-  ('service_role','private.create_workspace_invitation(uuid,text,text,text,timestamp with time zone)',false,'service_role has no direct private create-helper grant'),
+  ('service_role','private.create_workspace_invitation(uuid,text,text,text,timestamp with time zone)',true,'service_role inherits effective EXECUTE; explicit direct grants are checked separately'),
   ('anon','private.get_workspace_invitation(text)',true,'anon exception is limited to the token-lookup helper explicitly used by public GET'),
   ('authenticated','private.get_workspace_invitation(text)',true,'authenticated wrapper caller can execute private lookup helper'),
-  ('service_role','private.get_workspace_invitation(text)',false,'service_role has no direct private lookup-helper grant'),
+  ('service_role','private.get_workspace_invitation(text)',true,'service_role inherits effective EXECUTE; explicit direct grants are checked separately'),
   ('anon','private.accept_workspace_invitation(text)',false,'anon cannot execute privileged private accept helper'),
   ('authenticated','private.accept_workspace_invitation(text)',true,'authenticated wrapper caller can execute guarded private accept helper'),
-  ('service_role','private.accept_workspace_invitation(text)',false,'service_role has no direct private accept-helper grant'),
+  ('service_role','private.accept_workspace_invitation(text)',true,'service_role inherits effective EXECUTE; explicit direct grants are checked separately'),
   ('anon','private.revoke_workspace_invitation(uuid)',false,'anon cannot execute privileged private revoke helper'),
   ('authenticated','private.revoke_workspace_invitation(uuid)',true,'authenticated wrapper caller can execute guarded private revoke helper'),
-  ('service_role','private.revoke_workspace_invitation(uuid)',false,'service_role has no direct private revoke-helper grant')
+  ('service_role','private.revoke_workspace_invitation(uuid)',true,'service_role inherits effective EXECUTE; explicit direct grants are checked separately')
 ) as expected(role_name, signature, expected, description);
 
 -- Assert exact non-owner EXECUTE ACL grantees, not only effective role checks:
 -- PUBLIC grants or an unexpected role grant fail even if the current role matrix
 -- does not happen to inherit that grant.
 select is((
-  select array_agg(case when x.grantee = 0 then 'PUBLIC' else r.rolname end order by
-                   case when x.grantee = 0 then 'PUBLIC' else r.rolname end)
+  select array_agg((case when x.grantee = 0 then 'PUBLIC' else r.rolname::text end) order by
+                   case when x.grantee = 0 then 'PUBLIC' else r.rolname::text end)
     from pg_proc p
     cross join lateral aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) x
     left join pg_roles r on r.oid = x.grantee
