@@ -447,12 +447,13 @@ const EXPLICIT_PROVIDER_SDK_IMPORTS = new Set([
 // Mission Action route graphs are deny-by-default for third-party runtime
 // packages. Only the current application infrastructure dependencies are
 // reviewed here; adding a new package to these routes requires explicit review.
-const REVIEWED_NON_PROVIDER_ROUTE_PACKAGES = new Set([
+const REVIEWED_NON_PROVIDER_ROUTE_IMPORTS = new Set([
+  // Exact public entrypoints observed in the Mission Action API dependency graph.
+  // Do not permit arbitrary private subpaths merely because a package root is reviewed.
   "@supabase/ssr",
   "@supabase/supabase-js",
-  "next",
-  "react",
-  "react-dom",
+  "next/server",
+  "next/headers",
   "server-only",
 ]);
 const NODE_BUILTIN_NAMES = new Set(builtinModules.map((name) => name.replace(/^node:/, "")));
@@ -475,7 +476,7 @@ function externalPackageName(specifier) {
 
 function isReviewedNonProviderImport(specifier) {
   const packageName = externalPackageName(specifier);
-  return packageName === null || REVIEWED_NON_PROVIDER_ROUTE_PACKAGES.has(packageName);
+  return packageName === null || REVIEWED_NON_PROVIDER_ROUTE_IMPORTS.has(specifier);
 }
 
 const GLOBAL_FETCH_PATHS = new Set([
@@ -927,15 +928,29 @@ test("AST outbound analysis catches aliases and computed transport calls without
   }
 });
 
-test("Mission Action dependency policy is allowlisted and denies new third-party packages by default", () => {
-  assert.equal(isReviewedNonProviderImport("@supabase/supabase-js"), true);
-  assert.equal(isReviewedNonProviderImport("@supabase/ssr"), true);
-  assert.equal(isReviewedNonProviderImport("next/server"), true);
-  assert.equal(isReviewedNonProviderImport("react"), true);
-  assert.equal(isReviewedNonProviderImport("node:fs/promises"), true);
-  assert.equal(isReviewedNonProviderImport("fs/promises"), true);
+test("Mission Action dependency policy allows reviewed public entrypoints, not package-private subpaths", () => {
+  for (const specifier of [
+    "@supabase/supabase-js",
+    "@supabase/ssr",
+    "next/server",
+    "next/headers",
+    "server-only",
+    "node:fs/promises",
+    "fs/promises",
+    "node:crypto",
+  ]) {
+    assert.equal(isReviewedNonProviderImport(specifier), true, specifier);
+  }
 
   for (const specifier of [
+    "next",
+    "react",
+    "react-dom",
+    "next/dist/compiled/undici",
+    "next/dist/server/web/spec-extension/request",
+    "@supabase/supabase-js/dist/module/index.js",
+    "@supabase/ssr/dist/main/index.js",
+    "react-dom/cjs/react-dom-server.node.production.js",
     "openai",
     "@anthropic-ai/sdk",
     "resend",
@@ -981,7 +996,7 @@ test("Mission Action API dependency graphs cannot bypass the trusted external-ef
         const resolvedLocalImport = await resolveLocalSourceImport(specifier, modulePath);
         const packageName = externalPackageName(specifier);
         if (!resolvedLocalImport && packageName !== null
-            && !REVIEWED_NON_PROVIDER_ROUTE_PACKAGES.has(packageName)) {
+            && !REVIEWED_NON_PROVIDER_ROUTE_IMPORTS.has(specifier)) {
           violations.push({
             route,
             module: moduleName,
