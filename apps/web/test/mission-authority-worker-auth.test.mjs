@@ -418,6 +418,7 @@ const DIRECT_OUTBOUND_PATTERNS = [
 const EXPLICIT_HTTP_IMPORTS = /^(?:node:)?(?:http|https|http2|net|tls|dgram|axios|got|undici|ws|websocket|eventsource|xhr2)$/;
 const RESTRICTED_RUNTIME_CAPABILITY_IMPORTS = new Set([
   "module", "node:module",
+  "process", "node:process",
   "child_process", "node:child_process",
   "vm", "node:vm",
   "worker_threads", "node:worker_threads",
@@ -746,6 +747,7 @@ test("outbound-source detectors recognize representative transport and dynamic-l
   assert.equal(EXPLICIT_HTTP_IMPORTS.test("node:fs"), false);
   for (const specifier of [
     "module", "node:module",
+    "process", "node:process",
     "child_process", "node:child_process",
     "vm", "node:vm",
     "worker_threads", "node:worker_threads",
@@ -762,11 +764,13 @@ test("outbound-source detectors recognize representative transport and dynamic-l
       + 'import vm from "node:vm";\n'
       + 'import dns from "node:dns/promises";\n'
       + 'const inspector = require("node:inspector");\n'
-      + 'import cluster from "node:cluster";',
+      + 'import cluster from "node:cluster";\n'
+      + 'import { getBuiltinModule as loadBuiltin } from "node:process";\n'
+      + 'const runtimeProcess = require("process");',
   );
   assert.deepEqual(
     restrictedSpecifiers.filter((specifier) => RESTRICTED_RUNTIME_CAPABILITY_IMPORTS.has(specifier)).sort(),
-    ["node:child_process", "node:cluster", "node:dns/promises", "node:inspector", "node:module", "node:vm"],
+    ["node:child_process", "node:cluster", "node:dns/promises", "node:inspector", "node:module", "node:process", "node:vm", "process"],
     "aliased imports and CommonJS module loading must surface restricted runtime capabilities",
   );
   const specifiers = readStaticLocalImportSpecifiers(
