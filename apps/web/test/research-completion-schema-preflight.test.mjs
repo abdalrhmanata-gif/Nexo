@@ -42,14 +42,14 @@ const trustedWorkerHttp = readFileSync(
 
 test("internal worker schema probe is token-protected, read-only, and fail-closed", () => {
   const authGate = trustedWorkerHttp.indexOf("isTrustedExecutionWorkerRequest(");
-  const bodyRead = trustedWorkerHttp.indexOf("rawBody = await request.text()");
+  const bodyRead = trustedWorkerHttp.indexOf("const reader = request.body.getReader()");
   const requestGate = trustedWorkerRoute.indexOf("parseTrustedWorkerRequest(");
   const preflightStart = trustedWorkerRoute.indexOf('if (workerBody.operation === "preflight_read_only_research")');
   const completionStart = trustedWorkerRoute.indexOf('if (workerBody.operation === "complete_read_only_research")');
   const dispatchBoundary = trustedWorkerRoute.indexOf("handleMissionActionWorkerOperation({ workerBody, executionId })");
 
   assert.ok(authGate >= 0 && bodyRead > authGate,
-    "worker bearer authorization must be enforced before reading the request body");
+    "worker bearer authorization must be enforced before opening the streamed request body");
   assert.ok(requestGate >= 0 && requestGate < preflightStart,
     "the production route must pass through the shared authenticated request gate before any operation");
   assert.ok(preflightStart >= 0 && completionStart > preflightStart,
