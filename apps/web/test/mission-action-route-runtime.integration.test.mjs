@@ -177,6 +177,49 @@ test("actual Next.js POST route enforces the trusted worker HTTP gate without ex
     });
     assert.equal(oversized.status, 413);
     await oversized.arrayBuffer();
+
+
+    // These valid research operation shapes must fail closed when trusted DB
+    // credentials are deliberately absent, including under --network none.
+    const researchPreflight = await postJson(origin, {
+      body: {
+        operation: "preflight_read_only_research",
+        requestedBy: executionId,
+      },
+    });
+    assert.equal(researchPreflight.status, 503);
+    assert.equal(researchPreflight.headers.get("cache-control"), "no-store");
+    assert.equal((await researchPreflight.json()).ready, false);
+
+    const researchClaim = await postJson(origin, {
+      body: {
+        operation: "claim_read_only_research",
+        requestedBy: executionId,
+        requestId: "network-isolated-claim-request-0001",
+      },
+    });
+    assert.equal(researchClaim.status, 503);
+    assert.equal(researchClaim.headers.get("cache-control"), "no-store");
+    assert.match((await researchClaim.json()).error, /claim could not be confirmed/);
+
+    const researchCompletion = await postJson(origin, {
+      body: {
+        operation: "complete_read_only_research",
+        requestedBy: executionId,
+        status: "UNKNOWN",
+        result: { reason: "NETWORK_ISOLATED_TEST" },
+        evidence: {
+          outcome: "UNKNOWN",
+          verified: false,
+          request_id: "network-isolated-test",
+        },
+        errorCode: null,
+        errorMessage: null,
+      },
+    });
+    assert.equal(researchCompletion.status, 503);
+    assert.equal(researchCompletion.headers.get("cache-control"), "no-store");
+    assert.match((await researchCompletion.json()).error, /completion could not be confirmed/);
   } finally {
     if (child.exitCode === null && child.signalCode === null) {
       child.kill("SIGTERM");
