@@ -269,7 +269,7 @@ async function startHttpHarness({ operationHandler }) {
         return;
       }
 
-      const match = /^\/api\/internal\/agent-executions\/([0-9a-f-]+)$/i.exec(incoming.url || "");
+      const match = /^\/api\/internal\/agent-executions\/([^/]+)$/i.exec(incoming.url || "");
       if (incoming.method !== "POST" || !match) {
         outgoing.writeHead(404, { "content-type": "application/json", "cache-control": "no-store" });
         outgoing.end(JSON.stringify({ error: "Not found." }));
@@ -351,6 +351,22 @@ test("trusted worker HTTP path enforces auth, JIT ordering, denial, UNKNOWN reco
     });
     assert.equal(malformed.status, 400);
     assert.equal(clientCreations, 0, "extra request fields must not reach trusted dependency selection");
+
+    const invalidExecution = await globalThis.fetch(`http://127.0.0.1:${harness.port}/api/internal/agent-executions/not-a-uuid`, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${WORKER_TOKEN}` },
+      body: JSON.stringify({ operation: "dispatch", audience: AUDIENCE }),
+    });
+    assert.equal(invalidExecution.status, 400);
+    assert.equal(clientCreations, 0, "invalid execution ids must be rejected before client creation");
+
+    const oversized = await globalThis.fetch(harness.url, {
+      method: "POST",
+      headers: { "content-type": "application/json", authorization: `Bearer ${WORKER_TOKEN}` },
+      body: JSON.stringify({ operation: "dispatch", audience: AUDIENCE, padding: "x".repeat(165_000) }),
+    });
+    assert.equal(oversized.status, 413);
+    assert.equal(clientCreations, 0, "oversized requests must be rejected before adapter/client selection");
 
     const wrongAudience = await globalThis.fetch(harness.url, {
       method: "POST",
