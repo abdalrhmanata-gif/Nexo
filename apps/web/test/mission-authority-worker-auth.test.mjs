@@ -45,7 +45,7 @@ async function resolveLocalSourceImport(specifier, importer) {
   ];
 
   for (const candidate of candidates) {
-    if (candidate !== webRoot && !candidate.startsWith(`${webRoot}/`)) continue;
+    if (candidate !== webRoot && !candidate.startsWith(`${webRoot}${process.platform === "win32" ? "\\" : "/"}`)) continue;
     try {
       if ((await stat(candidate)).isFile()) return candidate;
     } catch {
@@ -385,8 +385,8 @@ test("only the trusted internal worker route transitively reaches Mission Action
     const chain = await findReachableSensitiveModule(routeFile, sensitiveModules);
     if (!chain) continue;
     reachableRoutes.push({
-      route: relative(apiRoot, routeFile).replace(/\\\\/g, "/"),
-      target: relative(webRoot, chain.at(-1)).replace(/\\\\/g, "/"),
+      route: relative(apiRoot, routeFile).replace(/\\/g, "/"),
+      target: relative(webRoot, chain.at(-1)).replace(/\\/g, "/"),
     });
   }
 
@@ -1132,7 +1132,7 @@ test("every non-Mission outbound API route is explicitly classified in the outbo
   }
 
   const actualApiRoutes = new Set(routeFiles.map((routeFile) =>
-    relative(apiRoot, routeFile).replace(/\\\\/g, "/")
+    relative(apiRoot, routeFile).replace(/\\/g, "/")
   ));
   for (const route of classifications.keys()) {
     if (!actualApiRoutes.has(route)) {
