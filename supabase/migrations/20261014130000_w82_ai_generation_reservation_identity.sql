@@ -71,7 +71,7 @@ begin
 
   insert into public.ai_usage_monthly(user_id, period_start, plan, monthly_limit)
   values (v_user_id, v_period_start, v_plan, v_limit)
-  on conflict (user_id, period_start) do nothing;
+  on conflict on constraint ai_usage_monthly_pkey do nothing;
   select u.generations_used into v_used
     from public.ai_usage_monthly u
    where u.user_id = v_user_id and u.period_start = v_period_start for update;
