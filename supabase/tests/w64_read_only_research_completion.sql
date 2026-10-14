@@ -103,8 +103,6 @@ begin
   select * into v_bad_verified from public.agent_executions where idempotency_key='w64-verified-execution-key-0001';
   select * into v_bad_request from public.agent_executions where idempotency_key='w64-mismatch-execution-key-0001';
   select * into v_expired from public.agent_executions where idempotency_key='w64-expired-execution-key-0001';
-  update public.agent_executions set lease_expires_at = clock_timestamp() - interval '1 second' where id = v_expired.id;
-
   perform set_config('request.jwt.claim.sub', v_owner::text, true);
   perform set_config('request.jwt.claim.role', 'authenticated', true);
   perform set_config('request.jwt.claims',
@@ -145,7 +143,7 @@ begin
       v_owner, v_generic.id, 'SUCCEEDED', v_result, v_evidence, null, null
     );
   exception when sqlstate '42501' then
-    if sqlerrm = 'READ_ONLY_RESEARCH_EXECUTION_REQUIRED' then v_caught := true; else raise; end if;
+    if sqlerrm = 'RESEARCH_JIT_CLAIM_REQUIRED' then v_caught := true; else raise; end if;
   end;
   insert into w64_behavior_results values ('generic_agent_denied', v_caught);
 
@@ -163,6 +161,7 @@ begin
 
   v_caught := false;
   begin
+    perform public.claim_read_only_research_execution(v_owner, v_bad_verified.id, 'w64-request-id-verified');
     perform public.complete_read_only_research_execution(
       v_owner, v_bad_verified.id, 'SUCCEEDED', v_result,
       '{"outcome":"SUCCEEDED","verified":true,"request_id":"w64-request-id-verified","sources":[{"title":"Example source","url":"https://example.com/"}]}'::jsonb,
@@ -175,6 +174,7 @@ begin
 
   v_caught := false;
   begin
+    perform public.claim_read_only_research_execution(v_owner, v_bad_request.id, 'w64-request-id-mismatch');
     perform public.complete_read_only_research_execution(
       v_owner, v_bad_request.id, 'SUCCEEDED', v_result,
       '{"outcome":"SUCCEEDED","verified":false,"request_id":"different-request-id","sources":[{"title":"Example source","url":"https://example.com/"}]}'::jsonb,
@@ -187,6 +187,8 @@ begin
 
   v_caught := false;
   begin
+    perform public.claim_read_only_research_execution(v_owner, v_expired.id, 'w64-request-id-expired');
+    update public.agent_executions set lease_expires_at = clock_timestamp() - interval '1 second' where id = v_expired.id;
     perform public.complete_read_only_research_execution(
       v_owner, v_expired.id, 'SUCCEEDED', v_result,
       '{"outcome":"SUCCEEDED","verified":false,"request_id":"w64-request-id-expired","sources":[{"title":"Example source","url":"https://example.com/"}]}'::jsonb,
