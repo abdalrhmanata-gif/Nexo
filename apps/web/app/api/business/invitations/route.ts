@@ -3,19 +3,13 @@ import crypto from "node:crypto";
 import { createSupabaseMissionRepository } from "../../../../lib/supabase/mission-repository";
 import { isSupabaseConfigured } from "../../../../lib/supabase/config";
 import { resolveInvitationConfiguredUrl } from "../../../../lib/invitation-origin.mjs";
+import { sendWorkspaceInvitationEmail } from "../../../../lib/workspace-invitation-email.mjs";
 
 const ROLES = ["admin", "member", "viewer"] as const;
 type InvitationRole = (typeof ROLES)[number];
 
 function isRole(value: unknown): value is InvitationRole {
   return typeof value === "string" && (ROLES as readonly string[]).includes(value);
-}
-
-function escapeHtml(value: string) {
-  const entities: Record<string, string> = {
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  };
-  return value.replace(/[&<>"']/g, (character) => entities[character] ?? character);
 }
 
 function getTrustedSiteOrigin(request: NextRequest) {
@@ -47,35 +41,6 @@ function getTrustedSiteOrigin(request: NextRequest) {
     throw new Error("SITE_URL_MUST_USE_HTTPS");
   }
   return parsed.origin;
-}
-
-async function sendInvitationEmail(input: { email: string; role: InvitationRole; inviteUrl: string; expiresAt: string; idempotencyKey: string }) {
-  const apiKey = process.env.RESEND_API_KEY?.trim();
-  const from = process.env.RESEND_FROM_EMAIL?.trim();
-  if (!apiKey || !from) return { ok: false as const, reason: "EMAIL_NOT_CONFIGURED" as const };
-
-  const recipient = escapeHtml(input.email);
-  const role = escapeHtml(input.role);
-  const link = escapeHtml(input.inviteUrl);
-  const expiry = new Date(input.expiresAt).toUTCString();
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", "Idempotency-Key": input.idempotencyKey },
-    body: JSON.stringify({
-      from,
-      to: [input.email],
-      subject: "You’ve been invited to a ZAVQERA workspace",
-      text: `You have been invited to join a ZAVQERA workspace as ${input.role}. Accept the invitation: ${input.inviteUrl}\n\nThis secure link expires on ${expiry}. If you were not expecting this invitation, you can ignore this email.`,
-      html: `<!doctype html><html><body style="margin:0;background:#f6f8fa;font-family:Arial,Helvetica,sans-serif;color:#17212b"><div style="max-width:560px;margin:32px auto;padding:32px;background:#fff;border:1px solid #dbe2e8;border-radius:12px"><p style="font-size:12px;letter-spacing:2px;font-weight:bold;color:#087f78">ZAVQERA · WORKSPACE INVITATION</p><h1 style="font-size:28px;color:#16324f">Work better together.</h1><p>You’ve been invited to join a ZAVQERA workspace as <strong>${role}</strong>.</p><p>Accept the invitation using the secure link below. You must sign in with the invited email address (${recipient}).</p><p style="margin:28px 0"><a href="${link}" style="display:inline-block;background:#16324f;color:#fff;text-decoration:none;padding:13px 20px;border-radius:6px;font-weight:bold">Accept invitation</a></p><p style="font-size:13px;color:#65717c">This link expires on ${escapeHtml(expiry)}. If you weren’t expecting this invitation, you can ignore this email.</p><p style="font-size:12px;color:#65717c">ZAVQERA keeps AI work, permissions, and outcomes in one place.</p></div></body></html>`,
-    }),
-    cache: "no-store",
-    signal: AbortSignal.timeout(10000),
-  });
-  if (!response.ok) {
-    // Keep provider response details private; do not log recipient or token.
-    return { ok: false as const, reason: "EMAIL_PROVIDER_REJECTED" as const };
-  }
-  return { ok: true as const };
 }
 
 export async function POST(request: NextRequest) {
@@ -127,7 +92,10 @@ export async function POST(request: NextRequest) {
 
     const inviteUrl = new URL(`/invite/${token}`, siteOrigin).toString();
     try {
-      const emailResult = await sendInvitationEmail({ email, role, inviteUrl, expiresAt, idempotencyKey: "workspace-invitation/" + invitation.id });
+      const emailResult = await sendWorkspaceInvitationEmail(
+        { email, role, inviteUrl, expiresAt, idempotencyKey: "workspace-invitation/" + invitation.id },
+        { apiKey: process.env.RESEND_API_KEY, from: process.env.RESEND_FROM_EMAIL },
+      );
       if (!emailResult.ok) {
         let revoked = false;
         try {

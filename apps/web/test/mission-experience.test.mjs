@@ -203,7 +203,7 @@ test("mission detail exposes bounded, read-only research execution", () => {
   const detail = read("app/app/missions/[id]/page.tsx");
   const panel = read("components/mission-research-panel.tsx");
   const route = read("app/api/missions/[id]/research/route.ts");
-  const research = read("lib/ai-research.ts");
+  const research = read("lib/ai-research.ts") + read("lib/ai-research-provider.mjs");
   assert.ok(detail.includes("MissionResearchPanel"));
   assert.ok(panel.includes("Run this mission safely"));
   assert.ok(panel.includes("will not buy, book, contact anyone"));

@@ -7,16 +7,20 @@ import test from "node:test";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (path) => readFileSync(join(root, path), "utf8");
 const route = read("app/api/business/invitations/route.ts");
+const sender = read("lib/workspace-invitation-email.mjs");
 const form = read("app/app/business/invite/page.tsx");
 const env = read(".env.example");
 
 test("workspace invitation delivery uses server-side Resend configuration", () => {
   assert.match(route, /process\.env\.RESEND_API_KEY/);
   assert.match(route, /process\.env\.RESEND_FROM_EMAIL/);
-  assert.match(route, /https:\/\/api\.resend\.com\/emails/);
-  assert.match(route, /You’ve been invited to join a ZAVQERA workspace/);
+  assert.match(route, /sendWorkspaceInvitationEmail/);
+  assert.match(sender, /https:\/\/api\.resend\.com\/emails/);
+  assert.match(sender, /You’ve been invited to join a ZAVQERA workspace/);
   assert.match(route, /revokeWorkspaceInvitation\(invitation\.id\)/);
-  assert.match(route, /Idempotency-Key/);
+  assert.match(sender, /Idempotency-Key/);
+  assert.match(sender, /redirect: "error"/);
+  assert.match(sender, /AbortSignal\.timeout\(10_000\)/);
   assert.match(route, /DEPLOY_PRIME_URL/);
   assert.match(route, /request\.nextUrl\.origin/);
   assert.match(env, /^RESEND_API_KEY=/m);

@@ -203,7 +203,8 @@ test("trusted research completion is a narrow worker operation behind the authen
   assert.match(route, /p_execution_id: RESEARCH_COMPLETION_SCHEMA_PROBE_UUID/);
   assert.match(route, /ready: true/);
   assert.match(route, /workerBody\.operation === "complete_read_only_research"/);
-  assert.match(route, /permittedKeys = new Set\(\["operation", "requestedBy", "status", "result", "evidence"\]\)/);
+  assert.match(route, /permittedKeys = new Set\(\["operation", "requestedBy", "status", "result", "evidence", "errorCode", "errorMessage"\]\)/);
+  assert.match(route, /p_error_code: typeof workerBody\.errorCode === "string" \? workerBody\.errorCode : null/);
   assert.match(route, /!UUID_PATTERN\.test\(workerBody\.requestedBy\)/);
   assert.match(route, /MAX_INTERNAL_BODY_BYTES/);
   assert.match(route, /p_requested_by: workerBody\.requestedBy/);

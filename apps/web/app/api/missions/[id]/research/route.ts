@@ -3,6 +3,7 @@ import { getAuthenticatedUser, createSupabaseServerClient } from "../../../../..
 import { resolveTrustedWorkerOrigin } from "../../../../../lib/mission-authority/trusted-worker-origin.mjs";
 import { createSupabaseMissionRepository } from "../../../../../lib/supabase/mission-repository";
 import { buildMockMissionResearch, requestMissionResearch, type MissionResearch } from "../../../../../lib/ai-research";
+import { parseMissionObjective } from "../../../../../lib/mission-content.mjs";
 import { runAiGeneration, AI_GENERATION_OUTCOMES } from "../../../../../lib/ai-generation-service";
 import { reserveAiGeneration, consumeAiGeneration, releaseAiGeneration } from "../../../../../lib/ai-usage";
 
@@ -65,6 +66,8 @@ async function completeReadOnlyResearchExecution(request: Request, input: {
   status: ResearchCompletionStatus;
   result: Record<string, unknown>;
   evidence: Record<string, unknown>;
+  errorCode?: string;
+  errorMessage?: string;
 }) {
   const workerToken = process.env.ZAVQERA_EXECUTION_WORKER_TOKEN;
   if (!workerToken || !/^[A-Za-z0-9._~-]{32,512}$/.test(workerToken)) {
@@ -98,6 +101,8 @@ async function completeReadOnlyResearchExecution(request: Request, input: {
         status: input.status,
         result: input.result,
         evidence: input.evidence,
+        errorCode: input.errorCode ?? null,
+        errorMessage: input.errorMessage ?? null,
       }),
       cache: "no-store",
       redirect: "error",
@@ -119,6 +124,70 @@ async function completeReadOnlyResearchExecution(request: Request, input: {
   } catch {
     return { data: null, error: { message: "TRUSTED_RESEARCH_COMPLETION_UNCONFIRMED" } };
   }
+}
+
+async function claimReadOnlyResearchExecution(request: Request, input: {
+  requestedBy: string;
+  executionId: string;
+  requestId: string;
+}): Promise<{ mission: { name: string; intent: string; criteria: string[] } }> {
+  const workerToken = process.env.ZAVQERA_EXECUTION_WORKER_TOKEN;
+  if (!workerToken || !/^[A-Za-z0-9._~-]{32,512}$/.test(workerToken)) {
+    throw new Error("AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED");
+  }
+  const origin = resolveTrustedWorkerOrigin({
+    nodeEnv: process.env.NODE_ENV,
+    e2eRuntimeBaseUrl: process.env.ZAVQERA_E2E_RUNTIME_BASE_URL,
+    deployPrimeUrl: process.env.DEPLOY_PRIME_URL,
+    deployUrl: process.env.DEPLOY_URL,
+    siteUrl: process.env.URL,
+    publicSiteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+    requestUrl: request.url,
+  });
+  if (!origin) throw new Error("AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED");
+
+  let response: Response;
+  try {
+    response = await fetch(new URL(`/api/internal/agent-executions/${encodeURIComponent(input.executionId)}`, origin), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${workerToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        operation: "claim_read_only_research",
+        requestedBy: input.requestedBy,
+        requestId: input.requestId,
+      }),
+      cache: "no-store",
+      redirect: "error",
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch {
+    throw new Error("AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED");
+  }
+  if (response.status === 409) throw new Error("AGENT_RESEARCH_JIT_CLAIM_DENIED");
+  if (!response.ok) throw new Error("AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED");
+
+  const payload: unknown = await response.json().catch(() => null);
+  const claim = payload && typeof payload === "object" && !Array.isArray(payload)
+    ? (payload as { claim?: unknown }).claim
+    : null;
+  if (!claim || typeof claim !== "object" || Array.isArray(claim)) {
+    throw new Error("AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED");
+  }
+  const row = claim as Record<string, unknown>;
+  if (row.execution_id !== input.executionId
+      || row.requested_by !== input.requestedBy
+      || row.request_id !== input.requestId
+      || typeof row.mission_objective !== "string"
+      || !Number.isSafeInteger(row.mission_version)
+      || typeof row.request_hash !== "string" || !/^[0-9a-f]{64}$/.test(row.request_hash)
+      || typeof row.authority_hash !== "string" || !/^[0-9a-f]{64}$/.test(row.authority_hash)
+      || typeof row.claimed_at !== "string") {
+    throw new Error("AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED");
+  }
+  return { mission: parseMissionObjective(row.mission_objective) };
 }
 
 function normaliseRequestId(request: Request) {
@@ -217,6 +286,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
 
     let executionId: string | null = null;
+    let claimedResearchMission: { name: string; intent: string; criteria: string[] } | null = null;
     const result = await runAiGeneration({
       requestId,
       reserve: reserveAiGeneration,
@@ -240,14 +310,27 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           }
           throw new Error("AGENT_EXECUTION_START_FAILED");
         }
-        executionId = (execution.data as { id: string }).id;
+        const startedId = (execution.data as { id?: unknown } | null)?.id;
+        if (typeof startedId !== "string" || !/^[0-9a-f-]{36}$/i.test(startedId)) {
+          throw new Error("AGENT_EXECUTION_START_FAILED");
+        }
+        executionId = startedId;
+        const claim = await claimReadOnlyResearchExecution(request, {
+          requestedBy: user.id,
+          executionId: startedId,
+          requestId,
+        });
+        claimedResearchMission = claim.mission;
       },
-      generate: () => providerMode === "mock"
-        ? Promise.resolve(buildMockMissionResearch({ name: mission.name, intent: mission.intent, criteria: mission.criteria }))
-        : requestMissionResearch(
-          { name: mission.name, intent: mission.intent, criteria: mission.criteria },
+      generate: () => {
+        if (!claimedResearchMission) throw new Error("AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED");
+        return providerMode === "mock"
+          ? Promise.resolve(buildMockMissionResearch(claimedResearchMission))
+          : requestMissionResearch(
+          claimedResearchMission,
           { apiKey: apiKey as string, model: process.env.OPENAI_MODEL || "gpt-6-luna", requestId },
-        ),
+        );
+      },
       consume: consumeAiGeneration,
       release: releaseAiGeneration,
     });
@@ -282,6 +365,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           status: executionStatus,
           result: { reason: result.code },
           evidence: { outcome: executionStatus, verified: false, request_id: requestId },
+          errorCode: result.code,
         });
         if (completion.error) {
           return NextResponse.json({ error: "The research attempt could not be safely reconciled. Inspect execution history before retrying." }, { status: 503 });
@@ -295,6 +379,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       }
       if (result.code === "AGENT_EXECUTION_START_FAILED") {
         return NextResponse.json({ error: "The agent execution boundary could not be opened." }, { status: 503 });
+      }
+      if (result.code === "AGENT_RESEARCH_JIT_CLAIM_DENIED") {
+        return NextResponse.json({ error: "Mission Research authorization changed before the provider request." }, { status: 409 });
+      }
+      if (result.code === "AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED") {
+        return NextResponse.json({ error: "Mission Research authorization could not be confirmed. Inspect execution history before retrying." }, { status: 503 });
       }
       if (result.code === "RATE_LIMITED") return NextResponse.json({ error: "AI usage is temporarily limited. Please try again later." }, { status: 429 });
       if (result.disposition === "hold") return NextResponse.json({ error: "The research result is uncertain; please retry after reconciliation." }, { status: 504 });

@@ -16,6 +16,7 @@ async function callRpc<T>(name: string, body: Record<string, unknown>) {
     },
     body: JSON.stringify(body),
     cache: "no-store",
+    redirect: "error",
   });
   if (!response.ok) throw new Error("ANONYMOUS_AI_GUARD_UNAVAILABLE");
   return await response.json() as T;

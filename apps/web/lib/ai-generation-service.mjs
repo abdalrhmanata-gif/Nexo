@@ -16,6 +16,8 @@ const KNOWN_PROVIDER_FAILURES = new Map([
   ["AGENT_APPROVAL_REQUIRED", { kind: "definite", status: 409 }],
   ["AGENT_EXECUTION_ALREADY_EXISTS", { kind: "unknown", status: 409 }],
   ["AGENT_EXECUTION_START_FAILED", { kind: "definite", status: 503 }],
+  ["AGENT_RESEARCH_JIT_CLAIM_DENIED", { kind: "definite", status: 409 }],
+  ["AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED", { kind: "unknown", status: 504 }],
 ]);
 
 export function classifyProviderFailure(error) {

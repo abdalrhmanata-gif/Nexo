@@ -36,6 +36,7 @@ export async function GET() {
         },
         cache: "no-store",
         signal: AbortSignal.timeout(8_000),
+        redirect: "error",
       },
     );
 

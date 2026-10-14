@@ -9,6 +9,7 @@ const script = readFileSync(join(root, "test/e2e/live-preview-research.mjs"), "u
 const workflow = readFileSync(join(root, "../../.github/workflows/web-deploy-netlify.yml"), "utf8");
 const readme = readFileSync(join(root, "README.md"), "utf8");
 const researchRoute = readFileSync(join(root, "app/api/missions/[id]/research/route.ts"), "utf8");
+const researchProvider = readFileSync(join(root, "lib/ai-research-provider.mjs"), "utf8");
 const executionGuardMigration = readFileSync(join(root, "../../supabase/migrations/20261010125620_w56_agent_execution_duplicate_dispatch_guard.sql"), "utf8");
 const researchCompletionMigration = readFileSync(join(root, "../../supabase/migrations/20261012180000_w79_trusted_research_completion.sql"), "utf8");
 const trustedWorkerRoute = readFileSync(join(root, "app/api/internal/agent-executions/[executionId]/route.ts"), "utf8");
@@ -69,6 +70,7 @@ test("hosted Research is fail-closed until schema, trusted-worker token, and pre
   assert.ok(schemaPreflight > apiKeyCheck && schemaPreflight < quotaAndProviderFlow,
     "the exact hosted completion RPC signature must be probed after key checks and before quota/provider execution");
   assert.match(researchRoute, /operation: "preflight_read_only_research"/);
+  assert.match(researchRoute, /operation: "claim_read_only_research"/);
   assert.match(researchRoute, /Mission Research is temporarily unavailable on this environment/);
   assert.match(envExample, /^ZAVQERA_TRUSTED_RESEARCH_COMPLETION_ENABLED=false$/m);
   assert.match(envExample, /^ZAVQERA_TRUSTED_RESEARCH_DEPLOY_CONTEXT=$/m);
@@ -88,18 +90,35 @@ test("Mission research refuses agents whose authoritative settings are not expli
   assert.match(researchRoute, /agent\.name === "ZAVQERA Research Agent"/);
 });
 
-test("Mission research opens the server-side agent/approval gate before calling the external AI provider", () => {
+test("Mission research opens the server-side agent and JIT gate before calling the external AI provider", () => {
   const prepare = researchRoute.indexOf("prepare: async () =>");
   const startExecution = researchRoute.indexOf('supabase.rpc("start_agent_execution"');
   const generate = researchRoute.indexOf("generate: () =>");
   const providerRequest = researchRoute.indexOf("requestMissionResearch(");
+  const jitClaim = researchRoute.indexOf("const claim = await claimReadOnlyResearchExecution(request");
   assert.ok(prepare >= 0, "quota service must expose a pre-dispatch preparation hook");
   assert.ok(startExecution > prepare, "agent execution gate must run inside preparation");
+  assert.ok(jitClaim > startExecution && jitClaim < generate, "the trusted one-time research claim must finish before the provider call");
   assert.ok(generate > startExecution, "provider generation must follow authorization");
   assert.ok(providerRequest > generate, "OpenAI research request must happen after the execution gate");
   assert.match(researchRoute, /throw new Error\("AGENT_APPROVAL_REQUIRED"\)/);
+  assert.match(researchRoute, /claimedResearchMission = claim\.mission/);
+  assert.match(researchRoute, /if \(!claimedResearchMission\) throw new Error\("AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED"\)/);
+  assert.match(researchProvider, /redirect: "error"/);
   assert.match(researchRoute, /status: executionStatus/);
   assert.match(researchRoute, /result\.disposition === "hold" \? "UNKNOWN" : "FAILED"/);
+});
+
+test("the trusted research claim is single-use, service-role-only, and binds the current mission snapshot", () => {
+  const migration = readFileSync(join(root, "../../supabase/migrations/20261014110000_w81_read_only_research_jit_claim.sql"), "utf8");
+  assert.match(trustedWorkerRoute, /workerBody\.operation === "claim_read_only_research"/);
+  assert.match(migration, /v_agent\.authority ->> 'mode' is distinct from 'read_only'/);
+  assert.match(migration, /v_agent\.authority -> 'external_side_effects' is distinct from 'false'::jsonb/);
+  assert.match(migration, /research_claimed_at is null/);
+  assert.match(migration, /mission_objective', v_mission\.objective/);
+  assert.match(migration, /mission_version', v_mission\.version/);
+  assert.match(migration, /RESEARCH_JIT_CLAIM_REQUIRED/);
+  assert.match(migration, /from public, anon, authenticated, service_role/);
 });
 
 
@@ -112,6 +131,8 @@ test("read-only research completion uses the token-protected internal worker rou
   assert.match(researchRoute, /operation: "complete_read_only_research"/);
   assert.match(trustedWorkerRoute, /isTrustedExecutionWorkerRequest/);
   assert.match(trustedWorkerRoute, /workerBody\.operation === "complete_read_only_research"/);
+  assert.match(trustedWorkerRoute, /p_error_code: typeof workerBody\.errorCode === "string" \? workerBody\.errorCode : null/);
+  assert.match(researchRoute, /errorCode: result\.code/);
   assert.match(trustedWorkerRoute, /p_requested_by: workerBody\.requestedBy/);
   assert.match(trustedWorkerRoute, /p_execution_id: executionId/);
   assert.match(trustedWorkerRoute, /createSupabaseAdminClient/);

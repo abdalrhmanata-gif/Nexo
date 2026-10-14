@@ -116,6 +116,7 @@ export async function requestMissionPlan(
     }),
     signal: AbortSignal.timeout(24_000),
     cache: "no-store",
+    redirect: "error",
   });
 
   if (!response.ok) {

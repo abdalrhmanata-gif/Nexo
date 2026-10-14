@@ -109,6 +109,9 @@ begin
   end;
   insert into w79_results values ('wrong_requester_blocked', v_caught);
 
+  perform public.claim_read_only_research_execution(
+    v_owner, v_execution.id, 'w79-read-only-request-0001'
+  );
   select * into v_completed
     from public.complete_read_only_research_execution(
       v_owner, v_execution.id, 'SUCCEEDED',
