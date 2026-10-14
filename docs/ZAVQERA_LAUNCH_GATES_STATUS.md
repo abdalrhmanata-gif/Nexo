@@ -1175,3 +1175,22 @@ All six code/test gates passed on the exact PR source/test HEAD:
 - [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272730)
 
 The Mission Action static-source scan now requires third-party npm imports to come from a small reviewed infrastructure allowlist, in addition to blocking specific provider SDKs and transport/dynamic-loader capabilities. Unknown third-party package roots fail closed. `process` and `node:process` remain restricted capabilities. This is static regression coverage, not runtime sandboxing or universal JIT proof.
+
+
+---
+
+## Exact-source-head gate checkpoint — 2026-10-14 — `223d690a558c78a5e894d5c797c29f37f091f931`
+
+All six workflows succeeded:
+- [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359300) — [evidence/cleanup](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359300/artifacts/11882155748), [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359300/artifacts/11881572569)
+- [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359140)
+- [Web Unit 346/346](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359177)
+- [Web CI/build](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359158)
+- [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359288)
+- [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359129)
+
+The static Mission Action route scanner now:
+1. allows only exact reviewed public package entrypoints rather than every subpath of a reviewed package;
+2. blocks subpaths of restricted Node capability roots with and without the `node:` prefix.
+
+This improves static source coverage only; it is not proof of universal runtime mediation. Registry empty, Issue #23 OPEN, production NOT APPROVED.

@@ -379,3 +379,14 @@ Validation on exact source/test HEAD: Web Unit 344/344, Web CI, Flutter CI, W25,
 Mission Action API route source graphs now allow only the reviewed infrastructure package roots `@supabase/ssr`, `@supabase/supabase-js`, `next`, `react`, `react-dom`, and `server-only`; Node built-ins are classified separately and restricted capabilities remain blocked. Tests assert known provider SDKs and an unknown provider package fail the external package policy. Web Unit passed 345/345; W21, W25, Web CI, Flutter CI and Netlify preview also passed. W21 demonstrates fail-closed no-adapter behavior and verified disposable cleanup.
 
 This is a static build-time regression control, not runtime mediation. Issue #23 stays open; registry remains empty; production NOT approved.
+
+
+---
+
+## Public import path and Node capability-subpath guard — 2026-10-14 — `223d690a558c78a5e894d5c797c29f37f091f931`
+
+The Mission Action API static source guard now checks exact reviewed entrypoints rather than package roots. Public imports in active use are `@supabase/ssr`, `@supabase/supabase-js`, `next/server`, `next/headers` and `server-only`. Deep/private subpaths of these packages are denied unless individually reviewed. The test suite also rejects subpaths of restricted Node capability roots (for example `node:inspector/promises`, `node:child_process/promises` and `node:process/promises`) regardless of the `node:` prefix.
+
+Web Unit: **346/346 passed**. All gates passed on exact source HEAD: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359300), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359140), [Web Unit](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359177), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359158), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359288), and [Netlify](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359129).
+
+W21 evidence confirms disposable PostgreSQL 17 cleanup and HTTP 503 / `providerCall=not_attempted` on the unregistered-adapter path. The scan remains static and bounded; it is not runtime mediation proof.

@@ -713,3 +713,31 @@ W21 artifact `git_sha=b277e2efa996d4f145c540d2d8e6b9b190c8b317` is GitHub's synt
 
 ### Security and launch decisions unchanged
 PR #29 OPEN / Draft / UNMERGED. Issue #23 OPEN. Provider adapter registry intentionally empty. Universal JIT mediation and real-provider certification remain NOT PROVEN. Hosted Development remains last documented at W65; W66–W80 are NOT APPLIED, so hosted Research stays blocked. No hosted DB changes, Supabase Main/Production changes, provider side effects, DNS/billing edits or production deployment occurred.
+
+
+## Superseding checkpoint — 2026-10-14 — code/test HEAD `223d690a558c78a5e894d5c797c29f37f091f931`
+
+This entry supersedes prior scanner checkpoints. The latest two commits after `8ed4585a02cc878f12f507cbde42339149b87ca2` modify only `apps/web/test/mission-authority-worker-auth.test.mjs`; no runtime route, SQL migration, registry or deployment setting changed.
+
+### Exact public package-entrypoint allowlist
+The Mission Action route-graph guard no longer approves packages by root name. It now allows only the public import specifiers observed in the current Mission Action graph: `@supabase/ssr`, `@supabase/supabase-js`, `next/server`, `next/headers`, and `server-only`. New regressions deny private or deep imports such as `next/dist/compiled/undici`, `next/dist/server/web/spec-extension/request`, `@supabase/supabase-js/dist/module/index.js`, and `react-dom/cjs/react-dom-server.node.production.js`. This closes a false allowance where a private subpath inherited approval from an allowlisted package root.
+
+### Restricted Node capability roots
+The route-graph guard now rejects every subpath of restricted Node capability roots, with or without the `node:` prefix. Tests cover `process/promises`, `module/internal`, `child_process/promises`, `inspector/promises`, `dns/promises` and worker-thread roots, while allowing ordinary `node:crypto`, `node:fs/promises` and `node:path`. This closes the gap where exact import-string matching did not block a subpath of an otherwise restricted built-in.
+
+### Exact-source-head gates — all SUCCESS
+- W21: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359300
+- W25: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359140
+- Web Unit: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359177 — **346 passed, 0 failed**
+- Web CI / production build: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359158
+- Flutter CI: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359288
+- Netlify preview verification: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359129
+
+W21 artifacts were downloaded and inspected:
+- Evidence/cleanup: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359300/artifacts/11882155748 — result success, PostgreSQL 17, repository migrations, disposable project stop exit code 0, no remaining containers or volumes, `cleanup_verified=true`.
+- Browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359300/artifacts/11881572569 — fail-closed unregistered adapter response HTTP 503, `unregistered_adapter_denied`, `providerCall=not_attempted`; Browser E2E **2 passed (2.3m)**; cleanup verified.
+
+W21's artifact records synthetic merge-test SHA `1c249d51288a450783a481039249cf31e25e64e5`, not the PR source HEAD. PR source HEAD remains `223d690a558c78a5e894d5c797c29f37f091f931`.
+
+### Launch/security state unchanged
+PR #29 remains OPEN / Draft / UNMERGED; Issue #23 remains OPEN. Provider registry intentionally empty. This static regression guard does not analyze arbitrary runtime-generated imports or package internals and is not a runtime sandbox, network trace, or proof of universal JIT mediation. Hosted Development remains last documented at W65; W66–W80 are NOT APPLIED, so hosted Research remains blocked. No hosted DB changes, Supabase Main/Production changes, DNS/billing changes, real provider side effect, or production deployment occurred.

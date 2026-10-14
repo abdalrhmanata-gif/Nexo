@@ -420,3 +420,16 @@ The statically reachable Mission Action source graph now fails closed for unrevi
 All six exact code/test-head gates passed: [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272772), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272741), [Web Unit 345/345](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272750), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272818), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272748), [Netlify Preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272730). W21 artifacts: [cleanup](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272772/artifacts/11880127845) and [browser diagnostics](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38536272772/artifacts/11880626067).
 
 This is static source scanning, not a runtime sandbox or complete dynamic dependency/network trace. Provider registry empty; Issue #23 open; production not approved.
+
+
+---
+
+## Entry-point precision and restricted built-in subpaths — 2026-10-14 — `223d690a558c78a5e894d5c797c29f37f091f931`
+
+Two bypass classes are now covered by regressions in `mission-authority-worker-auth.test.mjs`:
+- import allowlisting applies to exact reviewed public entrypoints, denying package-private subpaths even where the root package is permitted;
+- restricted built-in names are normalized to their root so subpaths such as `inspector/promises`, `process/promises`, `module/internal`, and `child_process/promises` are denied with or without `node:`.
+
+These guardrails are static source checks on Mission Action API route graphs. Package internals and dynamic runtime behavior are still outside the scanner's proof boundary. No runtime handler, migration, hosted database or deployment changed. Evidence: [Web Unit 346/346](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359177), [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359300), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359140), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359158), [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359288), [Netlify](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38539359129).
+
+Universal JIT mediation remains **NOT PROVEN**. Issue #23 remains OPEN; provider registry empty; production NOT APPROVED.
