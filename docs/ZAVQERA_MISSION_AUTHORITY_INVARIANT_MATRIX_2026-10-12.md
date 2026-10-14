@@ -338,3 +338,17 @@ Exact current-head checks:
 The immediately preceding runtime-code HEAD `edb498ac7262c2bf63398fd1dd7905f28c394411` also passed [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913259), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913320), and [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913348). The commits since that runtime-code HEAD only extend test/documentation files; application code and SQL are unchanged. W21 evidence [11868571697](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913259/artifacts/11868571697) confirms PostgreSQL 17, repository migrations and verified cleanup; browser diagnostics [11868028850](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38506913259/artifacts/11868028850) confirms HTTP 503, `unregistered_adapter_denied`, `providerCall=not_attempted`, and Browser E2E 2/2.
 
 **Limits and launch status:** AST scanning is not a complete runtime/network trace or proof of universal JIT mediation. Provider registry remains empty; Issue #23 OPEN; PR #29 OPEN/Draft/UNMERGED. Hosted Development remains last documented at W65; W66–W80 NOT APPLIED. Production NOT APPROVED. No hosted database, Supabase Main/Production, DNS/billing, real provider, or production deployment was changed.
+
+
+## Superseding computed-key capability guard — 2026-10-14 — tested source HEAD `ee20f6777e1599b6148b1a64a71b39deb02c4701`
+
+The Mission Authority outbound-effect AST scanner now fails closed when `Reflect.get` or `Object.getOwnPropertyDescriptor` targets a global object with a **computed/dynamic property key**, in addition to direct and aliased `Reflect`/`Object` helper calls, singular property descriptors, and bulk descriptors. Two new negative examples construct transport/loader property names dynamically. This remains test-only static-analysis hardening; no runtime route, adapter, SQL migration, hosted database, or deployment behavior changed.
+
+Exact current-head checks:
+- [Web Unit](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38508549891) — **344 passed, 0 failed**
+- [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38508549847) — success
+- [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38508549857) — success
+
+The immediately preceding test/documentation-only source HEAD `7e556f17d046af4eb79e99d216d935922ea585ff` passed [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38507901867), [W25](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38507901873), and [Netlify preview](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38507901912); application code and SQL remain unchanged on `ee20f67`. W21 evidence [11868368648](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38507901867/artifacts/11868368648) verifies PostgreSQL 17 repository migrations and cleanup. Browser diagnostics [11868189197](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38507901867/artifacts/11868189197) report HTTP 503 / `unregistered_adapter_denied` / `providerCall=not_attempted`, Browser E2E 2/2, and cleanup verified.
+
+Static/AST scanning is not a complete runtime/network trace or proof of universal JIT mediation. Provider registry empty; Issue #23 OPEN; PR #29 OPEN/Draft/UNMERGED. Hosted Development remains last documented at W65; W66–W80 NOT APPLIED. Production NOT APPROVED. No hosted database, Supabase Main/Production, DNS/billing, real provider, or production deployment changed.
