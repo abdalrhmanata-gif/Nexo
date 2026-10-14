@@ -1128,7 +1128,7 @@ test("no unreviewed Next.js server-action entrypoint exists outside the API rout
     const source = await readFile(sourceFile, "utf8");
     // Match only a standalone directive line, not arbitrary identifiers or comments.
     // This covers both module-level and inline function-level Next.js server actions.
-    if (/^\\s*["']use server["'];?\\s*(?:\\/\\/.*)?$/m.test(source)) {
+    if (/^\s*["']use server["'];?\s*(?:\/\/.*)?$/m.test(source)) {
       serverActionEntrypoints.push(relative(webRoot, sourceFile).replace(/\\\\/g, "/"));
     }
   }
