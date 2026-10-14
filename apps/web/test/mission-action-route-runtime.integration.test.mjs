@@ -13,6 +13,38 @@ const executionId = "11111111-1111-4111-8111-111111111111";
 const workerToken = "test-only-worker-token-never-use-outside-local-test-2026";
 const unregisteredAudience = "provider.unreviewed.runtime-test.v1";
 
+async function assertOutboundNetworkUnavailable() {
+  const signal = AbortSignal.timeout(5_000);
+  await assert.rejects(
+    fetch("https://example.com/", { signal }),
+    (error) => {
+      const seen = new Set();
+      const codes = [];
+      let current = error;
+      while (current && typeof current === "object" && !seen.has(current) && codes.length < 8) {
+        seen.add(current);
+        if (typeof current.code === "string") codes.push(current.code);
+        current = current.cause;
+      }
+      const blockedCodes = new Set([
+        "EACCES",
+        "EPERM",
+        "ENETUNREACH",
+        "EHOSTUNREACH",
+        "ECONNREFUSED",
+        "ENOTFOUND",
+        "EAI_AGAIN",
+      ]);
+      assert.ok(
+        codes.some((code) => blockedCodes.has(code)),
+        `Expected OS-level egress denial; observed error codes: ${codes.join(",") || "none"}`,
+      );
+      return true;
+    },
+    "outbound HTTPS must be unavailable in the isolated container",
+  );
+}
+
 async function reserveLocalPort() {
   const server = createServer();
   await new Promise((resolve, reject) => {
@@ -80,6 +112,9 @@ async function postJson(origin, {
 test("actual Next.js POST route enforces the trusted worker HTTP gate without external credentials", {
   timeout: 120_000,
 }, async () => {
+  if (process.env.ZAVQERA_TEST_NETWORK_ISOLATED === "1") {
+    await assertOutboundNetworkUnavailable();
+  }
   const port = await reserveLocalPort();
   const origin = `http://127.0.0.1:${port}`;
   const child = spawn(
