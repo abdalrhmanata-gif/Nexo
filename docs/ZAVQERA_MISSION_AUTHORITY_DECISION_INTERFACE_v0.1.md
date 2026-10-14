@@ -130,7 +130,7 @@ Canonical codes are provider-neutral upper snake case and should remain stable a
 | `UNKNOWN_OUTCOME_REQUIRES_RECONCILIATION` | conservative fallback for unresolved outcome | gateway fallback code |
 | `PRE_DISPATCH_BLOCK_SETTLEMENT_UNCONFIRMED` | denial/block could not be durably recorded; remain fail-closed | gateway code of same name |
 
-Before runtime adoption, a test must enumerate **all** candidate gateway reason strings and SQL exception strings in W68–W80 and prove each maps explicitly. Unknown codes must fail closed to `DECISION_DEPENDENCY_UNAVAILABLE` without exposing raw details. Do not rename SQL/audit codes blindly.
+The inventory test now covers **all** candidate gateway reason strings, the local controlled-adapter model's explicit reasons, and SQL exception strings in W68–W80. Dynamic `MISSING_<field>` reasons map to `REQUEST_INVALID` through one constrained family rule. Before runtime adoption, this coverage must be extended to any additional production execution path and provider adapter. Unknown codes must fail closed to `DECISION_DEPENDENCY_UNAVAILABLE` without exposing raw details. Do not rename SQL/audit codes blindly.
 
 ## 5. Normalization and audit rules
 
@@ -221,6 +221,14 @@ The table above highlights main enforcement reasons. The complete frozen output 
 - `VERIFICATION_REQUIRED`
 - `WORKSPACE_ADMIN_REQUIRED`
 - `WORKSPACE_MEMBER_ALREADY_EXISTS`
+
+
+
+## Implementation checkpoint — controlled-adapter reason inventory expanded — 2026-10-14
+
+The pure mapper now includes explicit source-code mappings from W68–W80 SQL exceptions, the persistent worker gateway and the local `controlled-adapter.mjs` model. It also handles that model's generated `MISSING_<field>` validation code through a constrained pattern. It deliberately treats `ALLOW` as a decision rather than a reason, and maps it to the generic fail-closed fallback if mistakenly supplied as a reason code.
+
+This is **not** production integration: the current API route and gateway continue to return their existing code/status shapes. The new inventory test checks the named SQL/gateway/adapter source values, preserves the ambiguous `APPROVAL_REQUIRED_OR_SCOPE_CHANGED` code, and fails closed on unknown/raw error text. The source/test expansion at HEAD `73dad0e49a2d834ae764ef12f17729ae5f81c549` is pending fresh exact-head CI/W21.
 
 ## 7. Decision
 

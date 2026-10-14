@@ -47,6 +47,10 @@ This remains **design only**, not integrated code. In particular, `APPROVAL_REQU
 - The normalizer is **not wired into the actual route/gateway**: this avoids silently changing existing production response semantics before resolving the legacy decision/state vocabulary and ambiguous approval code. No schema/RPC/hosted change was made.
 - Scope limitation: source inventory currently covers candidate W68–W80 exception strings and persistent-gateway reason codes, not all local error codes from `controlled-adapter.mjs`.
 
+## Controlled-adapter source-code inventory expansion — 2026-10-14
+
+The pure reason mapper and inventory test are being expanded to include explicit reasons from `apps/web/lib/mission-authority/controlled-adapter.mjs`, alongside W68–W80 SQL exceptions and persistent-gateway reasons. The mapper intentionally excludes `ALLOW` as a reason because it is a decision, and groups `MISSING_<field>` into a constrained validation family. This is a pre-integration test helper; the actual route/gateway response shapes are unchanged. Fresh exact-head CI/W21 is required before considering this checkpoint validated.
+
 ## Exact-head evidence
 
 - Web Unit **361/361 passed** — [run 38623432225](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38623432225)
