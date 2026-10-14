@@ -42,7 +42,7 @@ function validClaim(overrides = {}) {
   };
 }
 
-function createFakeClient({ firstDispatchClaimError = null } = {}) {
+function createFakeClient({ firstDispatchClaimError = null, events = [] } = {}) {
   const calls = [];
   let dispatchClaimCount = 0;
 
@@ -50,6 +50,7 @@ function createFakeClient({ firstDispatchClaimError = null } = {}) {
     calls,
     async rpc(name, args) {
       calls.push({ name, args });
+      events.push("rpc:" + name);
 
       if (name === "claim_agent_execution_dispatch") {
         dispatchClaimCount += 1;
@@ -156,7 +157,7 @@ async function invokeWorker({ operation, adapter, client, events }) {
 
 test("composed worker gate calls only the fake transport, and only after a valid persisted JIT claim", async () => {
   const events = [];
-  const client = createFakeClient();
+  const client = createFakeClient({ events });
   const testAdapter = createTestAdapter({
     events,
     transportResult: {
@@ -180,22 +181,17 @@ test("composed worker gate calls only the fake transport, and only after a valid
   assert.deepEqual(events, [
     "worker:resolve-adapter",
     "worker:create-client",
+    "rpc:claim_agent_execution_dispatch",
     "adapter:dispatch",
     "fake-transport",
+    "rpc:complete_agent_execution",
   ]);
-  assert.deepEqual(client.calls.map((call) => call.name), [
-    "claim_agent_execution_dispatch",
-    "complete_agent_execution",
-  ]);
-  assert.ok(
-    events.indexOf("fake-transport") > events.indexOf("worker:create-client"),
-    "the fake transport is reachable only through the validated worker/gateway path",
-  );
 });
 
 test("a JIT denial prevents adapter dispatch and leaves the fake outbound counter at zero", async () => {
   const events = [];
   const client = createFakeClient({
+    events,
     firstDispatchClaimError: {
       code: "42501",
       message: "APPROVAL_REQUIRED_OR_SCOPE_CHANGED",
@@ -217,12 +213,16 @@ test("a JIT denial prevents adapter dispatch and leaves the fake outbound counte
   assert.notEqual(result.result.decision, PERSISTENT_DISPATCH_DECISIONS.DISPATCHED);
   assert.equal(testAdapter.counts().dispatchCalls, 0);
   assert.equal(testAdapter.counts().fakeOutboundCalls, 0);
-  assert.deepEqual(client.calls.map((call) => call.name), ["claim_agent_execution_dispatch"]);
+  assert.deepEqual(events, [
+    "worker:resolve-adapter",
+    "worker:create-client",
+    "rpc:claim_agent_execution_dispatch",
+  ]);
 });
 
 test("UNKNOWN cannot trigger a second dispatch; reconciliation performs lookup only", async () => {
   const events = [];
-  const client = createFakeClient();
+  const client = createFakeClient({ events });
   const testAdapter = createTestAdapter({
     events,
     transportResult: { state: "UNKNOWN" },
@@ -273,8 +273,14 @@ test("UNKNOWN cannot trigger a second dispatch; reconciliation performs lookup o
     "claim_agent_execution_reconciliation",
     "reconcile_agent_execution_outcome",
   ]);
-  assert.ok(
-    events.indexOf("adapter:reconcile") > events.indexOf("worker:create-client"),
-    "reconciliation must enter through the trusted worker seam",
-  );
+
+  const firstOutbound = events.indexOf("fake-transport");
+  const firstClaim = events.indexOf("rpc:claim_agent_execution_dispatch");
+  const reconciliationClaim = events.indexOf("rpc:claim_agent_execution_reconciliation");
+  const lookup = events.indexOf("adapter:reconcile");
+  const persistedReconciliation = events.indexOf("rpc:reconcile_agent_execution_outcome");
+  assert.ok(firstClaim >= 0 && firstClaim < firstOutbound);
+  assert.ok(reconciliationClaim >= 0 && reconciliationClaim < lookup);
+  assert.ok(lookup < persistedReconciliation);
+  assert.equal(events.filter((event) => event === "fake-transport").length, 1);
 });
