@@ -386,12 +386,12 @@ test("trusted worker HTTP path enforces auth, JIT ordering, denial, UNKNOWN reco
     const successBody = await success.json();
     assert.equal(successBody.decision, PERSISTENT_DISPATCH_DECISIONS.DISPATCHED);
     assert.equal(activeAdapter.counts().fakeTransportCalls, 1);
-    assert.deepEqual(events.slice(-5), [
+    assert.deepEqual(events, [
       "worker:resolve-adapter",
       "worker:create-client",
       "adapter:dispatch",
       "fake-transport",
-    ].slice(-5));
+    ], "the approved HTTP request must resolve one adapter and make one fake dispatch only");
     assert.equal(success.headers.get("cache-control"), "no-store");
 
     events.length = 0;
@@ -409,6 +409,7 @@ test("trusted worker HTTP path enforces auth, JIT ordering, denial, UNKNOWN reco
     });
     assert.equal(denied.status, 409);
     assert.equal((await denied.json()).decision, PERSISTENT_DISPATCH_DECISIONS.DENY);
+    assert.equal(denied.headers.get("cache-control"), "no-store");
     assert.equal(activeAdapter.counts().fakeTransportCalls, 0, "JIT denial must block the fake transport");
 
     events.length = 0;
