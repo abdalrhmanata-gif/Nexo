@@ -59,6 +59,7 @@ declare
   v_evidence jsonb := '{"outcome":"SUCCEEDED","verified":false,"request_id":"w64-request-id-0001","sources":[{"title":"Example source","url":"https://example.com/"}]}'::jsonb;
   v_done public.agent_executions;
   v_caught boolean;
+  v_claim jsonb;
 begin
   insert into auth.users(id) values (v_owner), (v_other);
   insert into public.workspaces(id, owner_id, name)
@@ -122,6 +123,9 @@ begin
   perform set_config('request.jwt.claim.role', 'service_role', true);
   perform set_config('request.jwt.claims',
     jsonb_build_object('sub', v_owner, 'role', 'service_role')::text, true);
+
+  select public.claim_read_only_research_execution(v_owner, v_good.id, 'w64-request-id-0001')
+    into v_claim;
 
   select * into v_done from public.complete_read_only_research_execution(
     v_owner, v_good.id, 'SUCCEEDED', v_result, v_evidence, null, null

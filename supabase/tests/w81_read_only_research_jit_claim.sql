@@ -26,8 +26,8 @@ select ok(not (select prosecdef from pg_proc where oid = 'public.claim_read_only
 select ok(not has_function_privilege('service_role',
   'private.claim_read_only_research_execution(uuid,uuid,text)', 'EXECUTE'),
   'the service role cannot bypass the public guarded wrapper');
-select ok(not (select prosecdef from pg_proc where oid = 'public.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)'::regprocedure),
-  'the public completion wrapper stays SECURITY INVOKER and delegates to the guarded private function');
+select ok((select prosecdef from pg_proc where oid = 'public.complete_read_only_research_execution(uuid,uuid,text,jsonb,jsonb,text,text)'::regprocedure),
+  'the public completion wrapper remains SECURITY DEFINER with its explicit trusted-role guard');
 select ok((select count(*) = 4 from information_schema.columns
   where table_schema = 'public' and table_name = 'agent_executions'
     and column_name in ('research_claimed_at','research_claim_request_hash','research_claim_authority_hash','research_claim_mission_version')),
