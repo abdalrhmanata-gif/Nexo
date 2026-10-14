@@ -35,33 +35,41 @@ const trustedWorkerRoute = readFileSync(
   new URL("../app/api/internal/agent-executions/[executionId]/route.ts", import.meta.url),
   "utf8",
 );
+const trustedWorkerHttp = readFileSync(
+  new URL("../lib/mission-authority/trusted-worker-http.mjs", import.meta.url),
+  "utf8",
+);
 
 test("internal worker schema probe is token-protected, read-only, and fail-closed", () => {
-  const authGate = trustedWorkerRoute.indexOf("if (!isTrustedExecutionWorkerRequest(");
+  const authGate = trustedWorkerHttp.indexOf("isTrustedExecutionWorkerRequest(");
+  const bodyRead = trustedWorkerHttp.indexOf("rawBody = await request.text()");
+  const requestGate = trustedWorkerRoute.indexOf("parseTrustedWorkerRequest(");
   const preflightStart = trustedWorkerRoute.indexOf('if (workerBody.operation === "preflight_read_only_research")');
   const completionStart = trustedWorkerRoute.indexOf('if (workerBody.operation === "complete_read_only_research")');
-  const dispatchBoundary = trustedWorkerRoute.indexOf("runMissionActionWorker({");
+  const dispatchBoundary = trustedWorkerRoute.indexOf("handleMissionActionWorkerOperation({ workerBody, executionId })");
 
-  assert.ok(authGate >= 0 && authGate < preflightStart,
-    "worker bearer authorization must be enforced before the probe operation");
+  assert.ok(authGate >= 0 && bodyRead > authGate,
+    "worker bearer authorization must be enforced before reading the request body");
+  assert.ok(requestGate >= 0 && requestGate < preflightStart,
+    "the production route must pass through the shared authenticated request gate before any operation");
   assert.ok(preflightStart >= 0 && completionStart > preflightStart,
     "preflight must be handled in its own operation branch");
   assert.ok(dispatchBoundary > completionStart,
     "the schema probe branch must terminate before the dispatch/reconciliation runtime boundary");
 
   const preflightBranch = trustedWorkerRoute.slice(preflightStart, completionStart);
-  assert.match(preflightBranch, /new Set\(\["operation", "requestedBy"\]\)/,
+  assert.match(preflightBranch, /new Set\\(\\["operation", "requestedBy"\\]\\)/,
     "the probe accepts only the operation and a validated requester id");
   assert.match(preflightBranch, /RESEARCH_COMPLETION_SCHEMA_PROBE_UUID/,
     "the probe must use the deliberately malformed, non-row-targeting UUID");
-  assert.match(preflightBranch, /client\.rpc\("complete_read_only_research_execution"/,
+  assert.match(preflightBranch, /client\\.rpc\\("complete_read_only_research_execution"/,
     "the probe resolves the exact trusted-completion RPC by its expected name");
-  assert.match(preflightBranch, /p_requested_by: workerBody\.requestedBy/);
-  assert.match(preflightBranch, /isResearchCompletionSchemaProbeError\(probe\.error\)/,
+  assert.match(preflightBranch, /p_requested_by: workerBody\\.requestedBy/);
+  assert.match(preflightBranch, /isResearchCompletionSchemaProbeError\\(probe\\.error\\)/,
     "only the expected UUID-cast error is evidence that the signature resolved");
-  assert.match(preflightBranch, /\{ status: 503, headers: NO_STORE \}/,
+  assert.match(preflightBranch, /\\{ status: 503, headers: NO_STORE \\}/,
     "unexpected errors fail closed");
-  assert.doesNotMatch(preflightBranch, /\.(?:insert|update|upsert|delete)\s*\(/,
+  assert.doesNotMatch(preflightBranch, /\\.(?:insert|update|upsert|delete)\\s*\\(/,
     "the schema preflight must not directly mutate tables");
   assert.doesNotMatch(preflightBranch, /dispatchThroughJitClaim|reconcileThroughTrustedClaim/,
     "the schema preflight must not dispatch or reconcile external execution");
