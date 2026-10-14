@@ -206,6 +206,40 @@ as $function$
   select private.revoke_workspace_invitation(p_invitation_id);
 $function$;
 
+-- W44's OUT parameter named "status" shadows the table column inside PL/pgSQL.
+-- Qualify the target columns so token lookup works without ambiguous references.
+create or replace function private.get_workspace_invitation(p_token_hash text)
+returns table(
+  id uuid,
+  email text,
+  role text,
+  status text,
+  expires_at timestamptz,
+  created_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $function$
+begin
+  if p_token_hash is null or char_length(p_token_hash) <> 64 then
+    raise exception 'INVALID_INVITATION_TOKEN' using errcode = '22023';
+  end if;
+
+  update public.workspace_invitations as wi
+     set status = 'EXPIRED'
+   where wi.token_hash = p_token_hash
+     and wi.status = 'PENDING'
+     and wi.expires_at <= timezone('utc', now());
+
+  return query
+  select wi.id, wi.email, wi.role, wi.status, wi.expires_at, wi.created_at
+    from public.workspace_invitations as wi
+   where wi.token_hash = p_token_hash
+   limit 1;
+end;
+$function$;
+
 -- The public GET is the only SECURITY DEFINER wrapper: anon must reach the
 -- tightly scoped, token-gated private lookup without receiving private-schema USAGE.
 create or replace function public.get_workspace_invitation(p_token_hash text)
