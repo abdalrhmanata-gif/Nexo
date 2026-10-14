@@ -1,5 +1,7 @@
 # ZAVQERA Development migration rollout plan — W66 through W79
 
+> **Superseded for baseline and rollout sequencing:** use [the 2026-10-14 historical migration reconciliation](ZAVQERA_HISTORICAL_MIGRATION_RECONCILIATION_2026-10-14.md). This earlier plan predates the read-only reconciliation; it is not rollout authorization. Development rollout remains **NO-GO** until the new report's history, W80 validation, and owner-authorization blockers are resolved.
+
 Status: **PREPARED FOR REVIEW — NOT AUTHORIZATION TO APPLY**
 
 Date: 2026-10-12  

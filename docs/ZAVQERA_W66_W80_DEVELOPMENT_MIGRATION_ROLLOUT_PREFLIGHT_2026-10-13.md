@@ -1,5 +1,7 @@
 # ZAVQERA W66–W80 hosted Development rollout preflight and recovery plan
 
+> **Superseded for baseline and rollout sequencing:** use [the 2026-10-14 historical migration reconciliation](ZAVQERA_HISTORICAL_MIGRATION_RECONCILIATION_2026-10-14.md). This earlier plan predates the read-only reconciliation; it is not rollout authorization. Development rollout remains **NO-GO** until the new report's history, W80 validation, and owner-authorization blockers are resolved.
+
 **Prepared:** 2026-10-13  
 **Reviewed branch:** `zavqera/ai-planner-integration`  
 **Code/test candidate reviewed:** `be8b96bb7d5448125d0c4134fb6275f02950ff53`  
