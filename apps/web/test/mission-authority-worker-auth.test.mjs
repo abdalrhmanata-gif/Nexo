@@ -1076,3 +1076,68 @@ test("Mission Action API dependency graphs cannot bypass the trusted external-ef
     "Mission Action routes must not add direct outbound calls, provider SDKs, dynamic loaders, child processes, dynamic code or worker capabilities in their statically reachable local source graph; provider I/O belongs behind the trusted JIT adapter. Read-only Research is inventoried separately.",
   );
 });
+
+
+test("every non-Mission outbound API route is explicitly classified in the outbound-effect inventory", async () => {
+  const apiRoot = join(webRoot, "app", "api");
+  const routeFiles = await listApiRouteFiles(apiRoot);
+  const classifications = new Map([
+    ["ai/diagnostics/route.ts", "OPENAI_MODEL_DIAGNOSTICS"],
+    ["ai/plan/route.ts", "OPENAI_AUTHENTICATED_PLANNING"],
+    ["ai/plan/anonymous/route.ts", "OPENAI_ANONYMOUS_PLANNING_AND_QUOTA_RPC"],
+    ["auth/password-policy/route.ts", "PWNED_PASSWORDS_RANGE_LOOKUP"],
+    ["business/invitations/route.ts", "RESEND_WORKSPACE_INVITATION_EMAIL"],
+    ["missions/[id]/research/route.ts", "BOUNDED_READ_ONLY_RESEARCH_AND_TRUSTED_WORKER"],
+  ]);
+  const observed = [];
+  const violations = [];
+
+  for (const routeFile of routeFiles) {
+    const route = relative(apiRoot, routeFile).replace(/\\/g, "/");
+    const isMissionActionRoute = route.startsWith("agent-executions/")
+      || route.startsWith("internal/agent-executions/")
+      || (route.startsWith("missions/") && !route.startsWith("missions/[id]/research/"));
+    if (isMissionActionRoute) continue; // governed by the stricter JIT source-graph test
+
+    const reachable = await collectReachableLocalSourceModules(routeFile);
+    const markers = [];
+
+    for (const modulePath of reachable) {
+      const source = await readFile(modulePath, "utf8");
+      const moduleName = relative(webRoot, modulePath).replace(/\\/g, "/");
+
+      for (const { name, pattern } of DIRECT_OUTBOUND_PATTERNS) {
+        for (const match of findDirectOutboundMatches(source, pattern)) {
+          const line = source.slice(0, match.index).split("\n").length;
+          markers.push(`${name} in ${moduleName}:${line}`);
+        }
+      }
+
+      for (const marker of readAstOutboundMarkers(source, modulePath)) {
+        markers.push(`AST ${marker} in ${moduleName}`);
+      }
+
+      for (const specifier of readStaticLocalImportSpecifiers(source)) {
+        if (EXPLICIT_HTTP_IMPORTS.test(specifier)) markers.push(`transport import ${specifier} in ${moduleName}`);
+        if (EXPLICIT_PROVIDER_SDK_IMPORTS.has(specifier)) markers.push(`provider SDK import ${specifier} in ${moduleName}`);
+      }
+    }
+
+    const isClassified = classifications.has(route);
+    if (markers.length > 0) {
+      observed.push(route);
+      if (!isClassified) {
+        violations.push({ route, reason: "outbound-capable source graph has no explicit inventory classification", markers });
+      }
+    } else if (isClassified) {
+      violations.push({ route, reason: `stale inventory classification ${classifications.get(route)} has no detected source signal` });
+    }
+  }
+
+  assert.deepEqual(
+    observed.sort(),
+    [...classifications.keys()].sort(),
+    "every directly detectable outbound effect in a non-Mission Action API graph must match the reviewed inventory; Mission Action routes are checked by the dedicated JIT guard",
+  );
+  assert.deepEqual(violations, []);
+});
