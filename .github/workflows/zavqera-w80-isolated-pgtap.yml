@@ -2,6 +2,12 @@ name: ZAVQERA W80 Isolated PostgreSQL 17 pgTAP
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+    paths:
+      - ".github/workflows/zavqera-w80-isolated-pgtap.yml"
 
 permissions:
   contents: read
@@ -16,8 +22,10 @@ jobs:
     timeout-minutes: 60
 
     steps:
-      - name: Checkout verification revision
+      - name: Checkout W80 source revision
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && 'codex/w80-pgtap-verification-20261014' || github.ref }}
 
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@v3
