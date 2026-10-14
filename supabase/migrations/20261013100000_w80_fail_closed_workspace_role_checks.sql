@@ -206,11 +206,38 @@ as $function$
   select private.revoke_workspace_invitation(p_invitation_id);
 $function$;
 
-revoke all on function public.revoke_workspace_invitation(uuid) from public, anon;
+-- The public GET is the only SECURITY DEFINER wrapper: anon must reach the
+-- tightly scoped, token-gated private lookup without receiving private-schema USAGE.
+create or replace function public.get_workspace_invitation(p_token_hash text)
+returns table(
+  id uuid,
+  email text,
+  role text,
+  status text,
+  expires_at timestamptz,
+  created_at timestamptz
+)
+language sql
+security definer
+set search_path = pg_catalog, public
+as $function$
+  select * from private.get_workspace_invitation(p_token_hash);
+$function$;
+
+-- Remove Supabase's direct service_role EXECUTE grants from the public RPCs.
+-- Exact direct grantees are separately asserted in W80 pgTAP.
+revoke all on function public.create_workspace_invitation(uuid,text,text,text,timestamptz) from public, anon, service_role;
+grant execute on function public.create_workspace_invitation(uuid,text,text,text,timestamptz) to authenticated;
+revoke all on function public.get_workspace_invitation(text) from public, service_role;
+grant execute on function public.get_workspace_invitation(text) to anon, authenticated;
+revoke all on function public.accept_workspace_invitation(text) from public, anon, service_role;
+grant execute on function public.accept_workspace_invitation(text) to authenticated;
+revoke all on function public.revoke_workspace_invitation(uuid) from public, anon, service_role;
 grant execute on function public.revoke_workspace_invitation(uuid) to authenticated;
 
--- Keep all public invitation RPCs SECURITY INVOKER. Their internal SECURITY
--- DEFINER helpers are callable only by the roles allowed to use each wrapper.
+-- Public mutation invitation RPCs remain SECURITY INVOKER. The token-only GET
+-- is the narrow SECURITY DEFINER bridge; it delegates to a private helper whose
+-- body validates the high-entropy token and returns only limited invitation metadata.
 revoke all on function private.create_workspace_invitation(uuid,text,text,text,timestamptz) from public, anon, authenticated;
 grant execute on function private.create_workspace_invitation(uuid,text,text,text,timestamptz) to authenticated;
 revoke all on function private.get_workspace_invitation(text) from public, anon, authenticated;
