@@ -666,14 +666,17 @@ function readAstOutboundMarkers(source, filePath = "source.mjs") {
         )) aliases.set(node.name.text, initialPath);
       } else if (ts.isObjectBindingPattern(node.name)) {
         const base = resolveAliasedExpressionPath(node.initializer, aliases);
-        if (GLOBAL_OBJECT_PATHS.has(base)) {
-          for (const element of node.name.elements) {
-            const property = element.propertyName || element.name;
-            const propertyName = ts.isIdentifier(property) || ts.isStringLiteral(property) ? property.text : null;
-            if (["fetch", "WebSocket", "XMLHttpRequest", "EventSource", "require", "eval", "Function"].includes(propertyName)) {
-              add(element, `destructured global transport/codegen (${propertyName})`);
-              aliases.set(element.name.getText(sourceFile), `${base}.${propertyName}`);
-            }
+        for (const element of node.name.elements) {
+          const property = element.propertyName || element.name;
+          const propertyName = ts.isIdentifier(property) || ts.isStringLiteral(property) ? property.text : null;
+          const localName = element.name.getText(sourceFile);
+          if (GLOBAL_OBJECT_PATHS.has(base) && ["fetch", "WebSocket", "XMLHttpRequest", "EventSource", "require", "eval", "Function"].includes(propertyName)) {
+            add(element, `destructured global transport/codegen (${propertyName})`);
+            aliases.set(localName, `${base}.${propertyName}`);
+          } else if (base === "Reflect" && propertyName === "get") {
+            aliases.set(localName, "Reflect.get");
+          } else if (base === "Object" && ["getOwnPropertyDescriptor", "getOwnPropertyDescriptors"].includes(propertyName)) {
+            aliases.set(localName, `Object.${propertyName}`);
           }
         }
       }
@@ -817,6 +820,9 @@ test("AST outbound analysis catches aliases and computed transport calls without
     'const objectApi = Object; const descriptors = objectApi.getOwnPropertyDescriptors(globalThis); descriptors.require.value(providerPackageName);',
     'const key = ["fe", "tch"].join(""); const request = Reflect.get(globalThis, key); await request("/outbound");',
     'const key = ["re", "quire"].join(""); const descriptor = Object.getOwnPropertyDescriptor(globalThis, key); descriptor.value(providerPackageName);',
+    'const { get: reflectGet } = Reflect; const request = reflectGet(globalThis, "fetch"); await request("/outbound");',
+    'const { getOwnPropertyDescriptor: getDescriptor } = Object; const descriptor = getDescriptor(globalThis, "require"); descriptor.value(providerPackageName);',
+    'const { getOwnPropertyDescriptors: getDescriptors } = Object; getDescriptors(globalThis).fetch.value("/outbound");',
     'const request = globalThis.fetch; await request("/outbound");',
     'const request = globalThis["fetch"]; await request("/outbound");',
     'const { fetch: request } = globalThis; await request("/outbound");',
