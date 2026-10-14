@@ -70,6 +70,7 @@ jobs:
           migration_source="${GITHUB_WORKSPACE}/supabase/migrations"
           mkdir -p "${RUNNER_TEMP}/w80-all-migrations"
           cp -R "${migration_source}/." "${RUNNER_TEMP}/w80-all-migrations/"
+          export LC_ALL=C
           for migration in "${migration_source}"/*.sql; do
             name="$(basename "${migration}")"
             cp "${migration}" "${workdir}/supabase/migrations/${name}"
