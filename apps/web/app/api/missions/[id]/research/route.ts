@@ -6,6 +6,7 @@ import { buildMockMissionResearch, requestMissionResearch, type MissionResearch 
 import { parseMissionObjective } from "../../../../../lib/mission-content.mjs";
 import { runAiGeneration, AI_GENERATION_OUTCOMES } from "../../../../../lib/ai-generation-service";
 import { reserveAiGeneration, consumeAiGeneration, releaseAiGeneration } from "../../../../../lib/ai-usage";
+import { buildResearchClaimFailureCompletion } from "../../../../../lib/research-claim-failure.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 35;
@@ -358,14 +359,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     if (result.kind === AI_GENERATION_OUTCOMES.PROVIDER_ERROR) {
       if (startedExecutionId) {
-        const executionStatus = result.disposition === "hold" ? "UNKNOWN" : "FAILED";
+        const claimFailure = buildResearchClaimFailureCompletion(result.code, requestId);
+        const executionStatus = claimFailure?.status ?? (result.disposition === "hold" ? "UNKNOWN" : "FAILED");
         const completion = await completeReadOnlyResearchExecution(request, {
           requestedBy: user.id,
           executionId: startedExecutionId,
           status: executionStatus,
-          result: { reason: result.code },
-          evidence: { outcome: executionStatus, verified: false, request_id: requestId },
-          errorCode: result.code,
+          result: claimFailure?.result ?? { reason: result.code },
+          evidence: claimFailure?.evidence ?? { outcome: executionStatus, verified: false, request_id: requestId },
+          errorCode: claimFailure?.errorCode ?? result.code,
         });
         if (completion.error) {
           return NextResponse.json({ error: "The research attempt could not be safely reconciled. Inspect execution history before retrying." }, { status: 503 });

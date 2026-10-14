@@ -3,6 +3,7 @@ import test from "node:test";
 import { requestMissionResearch } from "../lib/ai-research-provider.mjs";
 import { runAiGeneration } from "../lib/ai-generation-service.mjs";
 import { sendWorkspaceInvitationEmail } from "../lib/workspace-invitation-email.mjs";
+import { buildResearchClaimFailureCompletion } from "../lib/research-claim-failure.mjs";
 
 const mission = { name: "Research objective", intent: "Find public information only", criteria: ["Cite sources"] };
 
@@ -50,19 +51,32 @@ test("Mission Research sends only after JIT preparation and uses a redirect-bloc
 });
 
 test("Research authorization denial or uncertainty never reaches the OpenAI transport", async () => {
-  for (const [errorCode, expectedKind, shouldRelease] of [
-    ["AGENT_RESEARCH_JIT_CLAIM_DENIED", "provider_error", true],
-    ["AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED", "provider_error", false],
+  for (const [errorCode, expectedKind, shouldRelease, expectedCompletion] of [
+    ["AGENT_RESEARCH_JIT_CLAIM_DENIED", "provider_error", true, {
+      status: "FAILED",
+      result: { reason: "RESEARCH_JIT_CLAIM_DENIED" },
+      evidence: { outcome: "FAILED", verified: false, request_id: "research-agent_research_jit_claim_denied-0001" },
+      errorCode: "RESEARCH_JIT_CLAIM_DENIED",
+    }],
+    ["AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED", "provider_error", false, {
+      status: "UNKNOWN",
+      result: { reason: "AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED" },
+      evidence: { outcome: "UNKNOWN", verified: false, request_id: "research-agent_research_jit_claim_unconfirmed-0001" },
+      errorCode: "AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED",
+    }],
   ]) {
     let providerCalls = 0;
     let releases = 0;
+    const requestId = `research-${errorCode.toLowerCase()}-0001`;
     const outcome = await runAiGeneration({
-      requestId: `research-${errorCode.toLowerCase()}-0001`,
+      requestId,
       reserve: async () => ({ allowed: true, reservation_id: "reservation-2" }),
       prepare: async () => { throw new Error(errorCode); },
       generate: async () => {
-        providerCalls += 1;
-        return requestMissionResearch(mission, { apiKey: "test-only", fetchImpl: async () => new Response("{}") });
+        return requestMissionResearch(mission, { apiKey: "test-only", fetchImpl: async () => {
+          providerCalls += 1;
+          return new Response("{}");
+        } });
       },
       consume: async () => {},
       release: async () => { releases += 1; },
@@ -70,6 +84,12 @@ test("Research authorization denial or uncertainty never reaches the OpenAI tran
     assert.equal(outcome.kind, expectedKind);
     assert.equal(providerCalls, 0, `${errorCode} must block the OpenAI call`);
     assert.equal(releases, shouldRelease ? 1 : 0);
+
+    const completion = buildResearchClaimFailureCompletion(errorCode, requestId);
+    assert.deepEqual(completion, expectedCompletion);
+    assert.equal(completion.evidence.outcome, completion.status);
+    assert.equal(completion.evidence.verified, false);
+    assert.equal(completion.evidence.request_id, requestId);
   }
 });
 

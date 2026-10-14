@@ -132,7 +132,8 @@ test("read-only research completion uses the token-protected internal worker rou
   assert.match(trustedWorkerRoute, /isTrustedExecutionWorkerRequest/);
   assert.match(trustedWorkerRoute, /workerBody\.operation === "complete_read_only_research"/);
   assert.match(trustedWorkerRoute, /p_error_code: typeof workerBody\.errorCode === "string" \? workerBody\.errorCode : null/);
-  assert.match(researchRoute, /errorCode: result\.code/);
+  assert.match(researchRoute, /buildResearchClaimFailureCompletion\(result\.code, requestId\)/);
+  assert.match(researchRoute, /errorCode: claimFailure\?\.errorCode \?\? result\.code/);
   assert.match(trustedWorkerRoute, /p_requested_by: workerBody\.requestedBy/);
   assert.match(trustedWorkerRoute, /p_execution_id: executionId/);
   assert.match(trustedWorkerRoute, /createSupabaseAdminClient/);

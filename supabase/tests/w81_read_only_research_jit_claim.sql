@@ -2,7 +2,7 @@
 -- claim that binds the exact requester, live Mission content and read-only Agent.
 begin;
 create extension if not exists pgtap;
-select plan(21);
+select plan(23);
 
 select ok(to_regprocedure('public.claim_read_only_research_execution(uuid,uuid,text)') is not null,
   'the trusted research JIT claim RPC exists');
@@ -51,6 +51,8 @@ declare
   v_agent uuid := gen_random_uuid();
   v_execution uuid := gen_random_uuid();
   v_execution2 uuid;
+  v_execution_unknown uuid := gen_random_uuid();
+  v_done public.agent_executions;
   v_claim jsonb;
   v_caught boolean := false;
   v_request_id text := 'w81-research-request-0001';
@@ -168,6 +170,28 @@ begin
   exception when sqlstate '42501' then v_caught := true;
   end;
   insert into w81_behavior_results values ('unclaimed_denial_reason_is_exact', v_caught);
+
+  select * into v_done from public.complete_read_only_research_execution(v_owner, v_execution, 'FAILED',
+    '{"reason":"RESEARCH_JIT_CLAIM_DENIED"}'::jsonb,
+    jsonb_build_object('outcome','FAILED','verified',false,'request_id','w81-unclaimed-request-0001'),
+    'RESEARCH_JIT_CLAIM_DENIED', null);
+  insert into w81_behavior_results values ('canonical_denial_persists_as_failed',
+    v_done.status = 'FAILED' and v_done.error_code = 'RESEARCH_JIT_CLAIM_DENIED'
+      and v_done.result = '{"reason":"RESEARCH_JIT_CLAIM_DENIED"}'::jsonb);
+
+  insert into public.agent_executions(id, workspace_id, mission_id, agent_id, requested_by,
+    idempotency_key, status, authority_snapshot, request)
+  values (v_execution_unknown, v_workspace, v_mission, v_agent, v_owner,
+    'w81-research-unconfirmed-idempotency-0001', 'RUNNING',
+    '{"mode":"read_only","external_side_effects":false,"requires_approval":false}'::jsonb,
+    jsonb_build_object('type','read_only_research','request_id','w81-unconfirmed-request-0001'));
+  select * into v_done from public.complete_read_only_research_execution(v_owner, v_execution_unknown, 'UNKNOWN',
+    '{"reason":"AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED"}'::jsonb,
+    jsonb_build_object('outcome','UNKNOWN','verified',false,'request_id','w81-unconfirmed-request-0001'),
+    'AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED', null);
+  insert into w81_behavior_results values ('unconfirmed_claim_persists_as_unknown',
+    v_done.status = 'UNKNOWN' and v_done.error_code = 'AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED'
+      and v_done.result = '{"reason":"AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED"}'::jsonb);
 end;
 $behavior$;
 
@@ -189,6 +213,10 @@ select ok((select passed from w81_behavior_results where name = 'completion_with
   'a successful research completion cannot be recorded before the provider boundary claim');
 select ok((select passed from w81_behavior_results where name = 'unclaimed_denial_reason_is_exact'),
   'unclaimed failures can only close on the exact trusted pre-dispatch denial evidence');
+select ok((select passed from w81_behavior_results where name = 'canonical_denial_persists_as_failed'),
+  'the canonical claim denial code persists as a truthful terminal failure');
+select ok((select passed from w81_behavior_results where name = 'unconfirmed_claim_persists_as_unknown'),
+  'an unconfirmed claim persists as unknown instead of implying provider completion');
 
 select * from finish();
 rollback;
