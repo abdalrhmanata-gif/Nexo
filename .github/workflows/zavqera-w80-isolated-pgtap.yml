@@ -142,6 +142,7 @@ jobs:
             echo "postgres_major=17"
             echo "migration_source=checked-in supabase/migrations files"
             echo "migration_file_count=$(find "${GITHUB_WORKSPACE}/supabase/migrations" -maxdepth 1 -type f -name '*.sql' | wc -l | tr -d ' ')"
+            echo "verification_source_commit=$(git -C "${GITHUB_WORKSPACE}" rev-parse HEAD)"
             echo "application_schema_bootstrap=local-only private schema and historical auth-trigger compatibility fixture"
             echo "compatibility_fixture=20260921180005_e2e_historical_auth_compat.sql (not a hosted migration)"
             echo "database_source=brand-new local Supabase stack"
