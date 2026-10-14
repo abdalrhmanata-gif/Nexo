@@ -136,24 +136,27 @@ test("dispatch adapter registry remains fail-closed until a provider is reviewed
   assert.equal(resolveTrustedDispatchAdapter(""), null);
 });
 
-test("privileged worker route uses server-only credentials and the runtime boundary", async () => {
+test("privileged worker route uses server-only credentials and the shared runtime HTTP/JIT gate", async () => {
   const admin = await readFile(join(webRoot, "lib", "supabase", "admin.ts"), "utf8");
   const route = await readFile(join(webRoot, "app", "api", "internal", "agent-executions", "[executionId]", "route.ts"), "utf8");
+  const workerHttp = await readFile(join(webRoot, "lib", "mission-authority", "trusted-worker-http.mjs"), "utf8");
   assert.match(admin, /import ["']server-only["']/);
   assert.match(admin, /SUPABASE_SERVICE_ROLE_KEY/);
   assert.match(route, /ZAVQERA_EXECUTION_WORKER_TOKEN/);
-  assert.match(route, /isTrustedExecutionWorkerRequest/);
+  assert.match(route, /parseTrustedWorkerRequest/);
+  assert.match(workerHttp, /isTrustedExecutionWorkerRequest/);
   assert.match(route, /resolveTrustedDispatchAdapter/);
-  assert.match(route, /runMissionActionWorker/);
-  assert.ok(route.includes("No reviewed provider adapter is registered. No provider call occurred."));
-  assert.ok(route.includes("The registered provider adapter has no reviewed dispatch implementation."));
+  assert.match(route, /createMissionActionWorkerOperationHandler/);
+  assert.match(workerHttp, /runMissionActionWorker\(\{/);
+  assert.ok(workerHttp.includes("No reviewed provider adapter is registered. No provider call occurred."));
+  assert.ok(workerHttp.includes("The registered provider adapter has no reviewed dispatch implementation."));
   assert.match(route, /dispatchThroughJitClaim/);
   assert.match(route, /reconcileThroughTrustedClaim/);
-  assert.match(route, /Only a valid operation and provider audience are accepted/);
-  const operationValidation = route.indexOf('if (bodyKeys.some((key) => key !== "operation" && key !== "audience")');
-  const executionValidation = route.indexOf("if (!UUID_PATTERN.test(executionId))", operationValidation);
-  const boundaryCall = route.indexOf("runMissionActionWorker({", executionValidation);
-  assert.ok(operationValidation >= 0 && executionValidation > operationValidation && boundaryCall > executionValidation);
+  assert.match(workerHttp, /Only a valid operation and provider audience are accepted/);
+  const parseCall = route.indexOf("parseTrustedWorkerRequest(");
+  const researchHandler = route.indexOf('if (workerBody.operation === "preflight_read_only_research")');
+  const operationHandler = route.indexOf("handleMissionActionWorkerOperation({ workerBody, executionId })");
+  assert.ok(parseCall >= 0 && researchHandler > parseCall && operationHandler > researchHandler);
 });
 
 
@@ -195,9 +198,10 @@ test("trusted worker origin rejects attacker request URLs, insecure external tar
   }), null);
 });
 
-test("trusted research completion is a narrow worker operation behind the authenticated route", async () => {
+test("trusted research completion is a narrow worker operation behind the shared authenticated request gate", async () => {
   const route = await readFile(join(webRoot, "app", "api", "internal", "agent-executions", "[executionId]", "route.ts"), "utf8");
-  assert.match(route, /isTrustedExecutionWorkerRequest/);
+  const workerHttp = await readFile(join(webRoot, "lib", "mission-authority", "trusted-worker-http.mjs"), "utf8");
+  assert.match(workerHttp, /isTrustedExecutionWorkerRequest/);
   assert.match(route, /workerBody\.operation === "preflight_read_only_research"/);
   assert.match(route, /isResearchCompletionSchemaProbeError\(probe\.error\)/);
   assert.match(route, /p_execution_id: RESEARCH_COMPLETION_SCHEMA_PROBE_UUID/);
@@ -206,18 +210,18 @@ test("trusted research completion is a narrow worker operation behind the authen
   assert.match(route, /permittedKeys = new Set\(\["operation", "requestedBy", "status", "result", "evidence", "errorCode", "errorMessage"\]\)/);
   assert.match(route, /p_error_code: typeof workerBody\.errorCode === "string" \? workerBody\.errorCode : null/);
   assert.match(route, /!UUID_PATTERN\.test\(workerBody\.requestedBy\)/);
-  assert.match(route, /MAX_INTERNAL_BODY_BYTES/);
+  assert.match(workerHttp, /MAX_INTERNAL_BODY_BYTES/);
   assert.match(route, /p_requested_by: workerBody\.requestedBy/);
   assert.match(route, /completion\.data\.id !== executionId/);
   assert.match(route, /completion\.data\.status !== workerBody\.status/);
 });
 
 
-test("mission-action worker route validates input before invoking the runtime boundary", async () => {
-  const route = await readFile(join(webRoot, "app", "api", "internal", "agent-executions", "[executionId]", "route.ts"), "utf8");
-  const dispatchInputValidation = route.indexOf('if (bodyKeys.some((key) => key !== "operation" && key !== "audience")');
-  const executionValidation = route.indexOf("if (!UUID_PATTERN.test(executionId))", dispatchInputValidation);
-  const boundaryCall = route.indexOf("runMissionActionWorker({", executionValidation);
+test("mission-action HTTP operation validates body and execution binding before the runtime boundary", async () => {
+  const workerHttp = await readFile(join(webRoot, "lib", "mission-authority", "trusted-worker-http.mjs"), "utf8");
+  const dispatchInputValidation = workerHttp.indexOf('if (bodyKeys.some((key) => key !== "operation" && key !== "audience")');
+  const executionValidation = workerHttp.indexOf('if (typeof executionId !== "string" || !UUID_PATTERN.test(executionId))', dispatchInputValidation);
+  const boundaryCall = workerHttp.indexOf("runMissionActionWorker({", executionValidation);
   assert.ok(dispatchInputValidation >= 0, "dispatch/reconciliation input validation must be present");
   assert.ok(executionValidation > dispatchInputValidation, "execution id must be validated after the operation shape");
   assert.ok(boundaryCall > executionValidation, "only validated requests may reach the runtime boundary");
