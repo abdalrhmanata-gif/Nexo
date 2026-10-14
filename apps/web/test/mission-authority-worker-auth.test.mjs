@@ -646,7 +646,11 @@ function readAstOutboundMarkers(source, filePath = "source.mjs") {
         if (initialPath && DYNAMIC_LOADER_OR_CODE_PATHS.has(initialPath)) {
           add(node, `dynamic loader/codegen alias (${initialPath})`);
         }
-        if (initialPath && isSensitiveAliasPath(initialPath)) aliases.set(node.name.text, initialPath);
+        if (initialPath && (
+          isSensitiveAliasPath(initialPath)
+          || initialPath === "Reflect"
+          || initialPath === "Object"
+        )) aliases.set(node.name.text, initialPath);
       } else if (ts.isObjectBindingPattern(node.name)) {
         const base = resolveAliasedExpressionPath(node.initializer, aliases);
         if (GLOBAL_OBJECT_PATHS.has(base)) {
@@ -794,6 +798,8 @@ test("AST outbound analysis catches aliases and computed transport calls without
     'const compile = Reflect.get(globalThis, "Function"); compile("return 1")();',
     'const request = Object.getOwnPropertyDescriptor(globalThis, "fetch").value; await request("/outbound");',
     'const runtimeGlobal = globalThis; const descriptor = Object.getOwnPropertyDescriptor(runtimeGlobal, "require"); descriptor.value(providerPackageName);',
+    'const reflectApi = Reflect; const request = reflectApi.get(globalThis, "fetch"); await request("/outbound");',
+    'const objectApi = Object; const descriptor = objectApi.getOwnPropertyDescriptor(globalThis, "require"); descriptor.value(providerPackageName);',
     'const request = globalThis.fetch; await request("/outbound");',
     'const request = globalThis["fetch"]; await request("/outbound");',
     'const { fetch: request } = globalThis; await request("/outbound");',
