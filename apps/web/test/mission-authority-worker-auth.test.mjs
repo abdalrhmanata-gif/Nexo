@@ -1120,23 +1120,68 @@ async function listRuntimeSourceFiles(directory) {
   return nested.flat();
 }
 
-test("no unreviewed Next.js server-action entrypoint exists outside the API route inventory", async () => {
+test("server-action entrypoints are explicitly inventoried and workspace creation cannot bypass JIT dispatch", async () => {
   const sourceFiles = await listRuntimeSourceFiles(webRoot);
   const serverActionEntrypoints = [];
-
   for (const sourceFile of sourceFiles) {
     const source = await readFile(sourceFile, "utf8");
-    // Match only a standalone directive line, not arbitrary identifiers or comments.
-    // This covers both module-level and inline function-level Next.js server actions.
     if (/^\s*["']use server["'];?\s*(?:\/\/.*)?$/m.test(source)) {
-      serverActionEntrypoints.push(relative(webRoot, sourceFile).replace(/\\\\/g, "/"));
+      serverActionEntrypoints.push(relative(webRoot, sourceFile).replace(/\\/g, "/"));
     }
   }
 
+  const reviewedServerActionInventory = new Map([
+    ["app/app/missions/new/page.tsx", {
+      effect: "AUTHENTICATED_MISSION_CREATION_RPC",
+      rationale: "Creates a mission through a user-session Supabase client and the atomic create_mission_with_actions RPC. This is workspace data mutation, not external Mission Action dispatch.",
+    }],
+  ]);
   assert.deepEqual(
     serverActionEntrypoints.sort(),
+    [...reviewedServerActionInventory.keys()].sort(),
+    "every new Next.js server action must be classified and reviewed before it can enter the source tree",
+  );
+
+  const missionCreatePagePath = join(webRoot, "app", "app", "missions", "new", "page.tsx");
+  const page = await readFile(missionCreatePagePath, "utf8");
+  const repositoryPath = join(webRoot, "lib", "supabase", "mission-repository.ts");
+  const serverClientPath = join(webRoot, "lib", "supabase", "server.ts");
+  const migrationPath = join(webRoot, "..", "..", "supabase", "migrations", "20261002114358_w26_atomic_mission_creation.sql");
+  const [repository, serverClient, migration] = await Promise.all([
+    readFile(repositoryPath, "utf8"),
+    readFile(serverClientPath, "utf8"),
+    readFile(migrationPath, "utf8"),
+  ]);
+
+  assert.match(page, /async function createMission\(formData: FormData\)/);
+  assert.match(page, /"use server"/);
+  assert.match(page, /createSupabaseMissionRepository\(\)/);
+  assert.match(page, /repository\.createMission!\(/);
+  assert.match(repository, /await supabase\.auth\.getUser\(\)/,
+    "mission creation must derive identity from the authenticated cookie-bound session");
+  assert.match(repository, /const workspaceId = await ownedWorkspace\(supabase, user\.id\)/,
+    "the mission repository must derive the workspace from the authenticated user");
+  assert.match(repository, /supabase\.rpc\("create_mission_with_actions"/,
+    "mission and its initial actions must be created through the atomic RPC");
+  assert.match(serverClient, /createServerClient\(supabaseUrl, supabasePublishableKey/);
+  assert.doesNotMatch(serverClient, /SUPABASE_SERVICE_ROLE_KEY/,
+    "the workspace mission-create action must not use the privileged service-role client");
+  assert.match(migration, /v_user_id uuid := auth\.uid\(\)/);
+  assert.match(migration, /where w\.id = p_workspace_id\s+and w\.owner_id = v_user_id/,
+    "the RPC must bind the submitted workspace to the authenticated owner");
+  assert.match(migration, /revoke all on function public\.create_mission_with_actions[\s\S]*?from public, anon/i);
+  assert.match(migration, /grant execute on function public\.create_mission_with_actions[\s\S]*?to authenticated/i);
+
+  const reachable = await collectReachableLocalSourceModules(missionCreatePagePath);
+  const dispatchOnlyModules = new Set([
+    join(webRoot, "lib", "mission-authority", "persistent-dispatch-gateway.mjs"),
+    join(webRoot, "lib", "mission-authority", "mission-action-worker-boundary.mjs"),
+    join(webRoot, "lib", "mission-authority", "provider-adapter-registry.mjs"),
+  ]);
+  assert.deepEqual(
+    [...reachable].filter((modulePath) => dispatchOnlyModules.has(modulePath)).map((modulePath) => relative(webRoot, modulePath).replace(/\\/g, "/")),
     [],
-    "a new 'use server' entrypoint must be explicitly inventoried and reviewed for authentication, tenant binding, authorization, and outbound-effect mediation before it is accepted",
+    "workspace mission creation is not a Mission Action dispatch path and may not import the JIT dispatcher/provider registry",
   );
 });
 
