@@ -151,3 +151,28 @@ Two intermediate test-development commits failed W21 because of defects in the n
 - No real provider or credential enabled; no hosted Supabase, Production, deployment, secrets, billing, or DNS changed.
 - Universal production egress mediation, deployed executor/network policy, credential separation, real-provider idempotency/receipt authenticity/authoritative reconciliation, and hosted Development schema parity remain unproven.
 - Launch remains **NO-GO**. A fake-provider `NOT_FOUND` is not proof of `NOT_SENT`; never automatically retry an unknown external outcome without authoritative provider-specific evidence.
+
+
+## 10. Verified UDP and HTTP/2 egress coverage — 2026-10-15
+
+**Exact code/test SHA:** `5dc99d6dfb3ba37ced235482fa7e6a461489b0ae`.
+
+The disposable fake-provider topology now adds two distinct outbound-transport probes:
+- **HTTP/2:** the executor attempts a direct HTTP/2 connection to the actual fake-provider container IPv4 address. Establishing the connection is a hard test failure; only a recognized network-denial outcome passes.
+- **UDP:** the fake provider binds a UDP canary before its HTTP health endpoint becomes ready. The executor submits a datagram to the actual provider IP and the test orchestrator then reads the provider's private in-container metrics. The assertion requires `udpProbeCount === 0`; local `send()` callback success is not treated as proof of network delivery or denial.
+
+Files changed for this checkpoint: `tool/mission-executor/fake-provider.mjs`, `tool/mission-executor/isolated-executor-smoke.mjs`, and `tool/mission-executor/egress-isolation-smoke.sh`.
+
+### Exact-SHA validation — all PASS
+
+- Web Unit: [run 38706603498](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38706603498) — SUCCESS.
+- Web CI: [run 38706603331](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38706603331) — SUCCESS.
+- Flutter CI: [run 38706597163](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38706597163) — SUCCESS.
+- Full W21 Local Launch Gate: [run 38706597203](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38706597203) — SUCCESS on the same SHA.
+
+W21 completed the HTTP/2 and UDP isolation probes; disposable PostgreSQL 17/pgTAP; Mission Authority security regressions; quota/workspace security; actual-ledger idempotency, budget, dispatch-claim and reconciliation-claim races; W72 fake-provider integration; browser E2E; disposable stack cleanup and cleanup verification; and evidence uploads.
+
+- W21 evidence: [artifact 11958244046](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38706597203/artifacts/11958244046).
+- Browser diagnostics: [artifact 11958393754](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38706597203/artifacts/11958393754).
+
+These remain local/disposable fake-provider results. They do not establish production egress enforcement, native/transitive dependency behavior in every runtime, deployed credential separation, or any real-provider contract. The registry remains empty and launch remains **NO-GO**.

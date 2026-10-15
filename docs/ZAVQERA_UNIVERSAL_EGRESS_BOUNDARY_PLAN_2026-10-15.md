@@ -174,3 +174,20 @@ The confirmed full W21 pass remains [run 38697454403](https://github.com/abdalrh
 - PR #39: Draft/open/unmerged. Issue #23: OPEN.
 - Launch: **NO-GO**.
 
+
+
+## Exact-source/test checkpoint — UDP and HTTP/2 — 2026-10-15
+
+**Code/test SHA:** `5dc99d6dfb3ba37ced235482fa7e6a461489b0ae`.
+
+The disposable topology now verifies a direct HTTP/2 connection attempt to the actual fake-provider IPv4 address is denied and that a UDP datagram submitted by the isolated executor is not received by a bound fake-provider UDP canary (`udpProbeCount === 0`). The provider's UDP endpoint is bound before HTTP readiness is exposed, avoiding a false pass from probing an unbound destination.
+
+Exact-SHA results:
+- Web Unit — [38706603498](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38706603498) — SUCCESS.
+- Web CI — [38706603331](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38706603331) — SUCCESS.
+- Flutter CI — [38706597163](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38706597163) — SUCCESS.
+- Full W21 — [38706597203](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38706597203) — SUCCESS.
+
+Artifacts: [W21 evidence 11958244046](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38706597203/artifacts/11958244046), [browser diagnostics 11958393754](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38706597203/artifacts/11958393754).
+
+This closes only the new test-fixture coverage gap. Universal production egress mediation, the production executor/gateway and network policy, production credential separation, real-provider idempotency and authoritative reconciliation, and hosted Development schema parity remain unproven. Launch stays **NO-GO**.
