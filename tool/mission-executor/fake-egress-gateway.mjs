@@ -10,6 +10,10 @@ const FAKE_PROVIDER_RECONCILE_URL = "http://fake-provider:9090/v1/reconcile";
 const EXPECTED_KEYS = ["audience", "executionId", "expiresAt", "idempotencyKey", "payload", "payloadDigest"];
 const EXPECTED_RECONCILE_KEYS = ["audience", "executionId", "idempotencyKey", "payloadDigest"];
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const GATEWAY_TOKEN = process.env.ZAVQERA_FAKE_GATEWAY_TOKEN ?? "";
+if (!/^[a-f0-9]{64}$/.test(GATEWAY_TOKEN)) {
+  throw new Error("A fresh test-only gateway token is required.");
+}
 
 function send(response, status, body) {
   response.writeHead(status, {
@@ -18,6 +22,13 @@ function send(response, status, body) {
     "x-content-type-options": "nosniff",
   });
   response.end(JSON.stringify(body));
+}
+
+function hasAuthenticatedExecutor(request) {
+  const authorization = request.headers.authorization;
+  if (typeof authorization !== "string" || !authorization.startsWith("Bearer ")) return false;
+  const suppliedToken = authorization.slice("Bearer ".length);
+  return /^[a-f0-9]{64}$/.test(suppliedToken) && suppliedToken === GATEWAY_TOKEN;
 }
 
 async function readJson(request) {
@@ -121,6 +132,16 @@ async function reconcile(envelope, response) {
 const server = http.createServer(async (request, response) => {
   if (request.method === "GET" && request.url === "/health") {
     send(response, 200, { ok: true, mode: "fake-only" });
+    return;
+  }
+
+  if (
+    request.method === "POST"
+    && (request.url === "/v1/execute" || request.url === "/v1/reconcile")
+    && !hasAuthenticatedExecutor(request)
+  ) {
+    // Local test-only shared token; this is not the production identity contract.
+    send(response, 401, { error: "authenticated executor required" });
     return;
   }
 
