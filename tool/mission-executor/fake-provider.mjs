@@ -1,7 +1,10 @@
 import { createHash } from "node:crypto";
 import http from "node:http";
+import * as dgram from "node:dgram";
 
 const PORT = 9090;
+const UDP_PROBE_PORT = 9091;
+let udpProbeCount = 0;
 const MAX_BODY_BYTES = 16 * 1024;
 const EXPECTED_AUDIENCE = "fake.external.v1";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -124,6 +127,7 @@ const server = http.createServer(async (request, response) => {
   if (request.method === "GET" && request.url === "/__test/metrics") {
     send(response, 200, {
       requestCount: [...requestsByScenario.values()].reduce((sum, count) => sum + count, 0),
+      udpProbeCount,
       receiptCount: receiptsByIdempotencyKey.size,
       requestsByScenario: Object.fromEntries([...requestsByScenario.entries()].sort(([a], [b]) => a.localeCompare(b))),
       reconciliationCount: [...reconciliationsByIdempotencyKey.values()].reduce((sum, count) => sum + count, 0),
@@ -244,10 +248,20 @@ const server = http.createServer(async (request, response) => {
   }
 });
 
-server.listen(PORT, "0.0.0.0", () => {
-  process.stdout.write("fake provider listening on " + PORT + "\n");
+const udpProbeServer = dgram.createSocket("udp4");
+udpProbeServer.on("message", () => {
+  // Count only; never log attacker-controlled datagram contents.
+  udpProbeCount += 1;
+});
+
+// Do not expose HTTP readiness until the UDP canary is also bound. The smoke
+// harness must know the canary is listening before it treats a zero count as proof.
+udpProbeServer.bind(UDP_PROBE_PORT, "0.0.0.0", () => {
+  server.listen(PORT, "0.0.0.0", () => {
+    process.stdout.write("fake provider listening on " + PORT + " and UDP canary on " + UDP_PROBE_PORT + "\n");
+  });
 });
 
 for (const signal of ["SIGTERM", "SIGINT"]) {
-  process.on(signal, () => server.close(() => process.exit(0)));
+  process.on(signal, () => udpProbeServer.close(() => server.close(() => process.exit(0))));
 }

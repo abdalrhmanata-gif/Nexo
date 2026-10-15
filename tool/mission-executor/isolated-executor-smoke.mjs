@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import dns from "node:dns/promises";
 import net from "node:net";
+import * as dgram from "node:dgram";
+import * as http2 from "node:http2";
 
 const GATEWAY_TOKEN = process.env.ZAVQERA_FAKE_GATEWAY_TOKEN ?? "";
 const FAKE_PROVIDER_IP = process.env.ZAVQERA_FAKE_PROVIDER_IP ?? "";
@@ -186,8 +188,63 @@ async function assertWorkerThreadDirectProviderIpBlocked() {
   });
 }
 
+async function assertHttp2DirectProviderConnectionBlocked() {
+  assert.equal(net.isIP(FAKE_PROVIDER_IP), 4, "HTTP/2 probe requires the actual fake provider IPv4 address");
+  await new Promise((resolve, reject) => {
+    let settled = false;
+    let timer;
+    const session = http2.connect("http://" + FAKE_PROVIDER_IP + ":9090");
+    const finish = (kind, error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      session.destroy();
+      if (kind === "blocked") resolve();
+      else if (kind === "connected") reject(new Error("HTTP/2 transport established a direct connection to the fake provider"));
+      else reject(new Error("HTTP/2 direct-egress probe failed without a classified network denial: " + (error?.code ?? error?.message ?? kind)));
+    };
+    timer = setTimeout(() => finish("blocked"), 1_800);
+    session.once("connect", () => finish("connected"));
+    session.once("error", (error) => {
+      if (codesOf(error).some((code) => blockedCodes.has(code))) finish("blocked");
+      else finish("error", error);
+    });
+  });
+}
+
+async function submitDirectUdpProviderProbe() {
+  assert.equal(net.isIP(FAKE_PROVIDER_IP), 4, "UDP probe requires the actual fake provider IPv4 address");
+  const socket = dgram.createSocket("udp4");
+  let outcome;
+  try {
+    outcome = await new Promise((resolve) => {
+      let settled = false;
+      const finish = (value) => {
+        if (settled) return;
+        settled = true;
+        resolve(value);
+      };
+      socket.once("error", (error) => finish({ kind: "error", error }));
+      socket.send(Buffer.from("zavqera-direct-egress-probe-v1"), 9091, FAKE_PROVIDER_IP, (error) => {
+        finish(error ? { kind: "error", error } : { kind: "submitted" });
+      });
+    });
+  } finally {
+    try { socket.close(); } catch {}
+  }
+  if (outcome.kind === "error") {
+    assert.ok(blockedCodes.has(outcome.error?.code), "UDP direct-egress probe returned an unclassified error: " + (outcome.error?.code ?? outcome.error?.message));
+    return;
+  }
+  // UDP has no connection handshake. The harness must assert that the listening
+  // fake-provider canary counted zero datagrams after this process exits.
+  process.stdout.write("UDP direct-egress datagram submitted locally; provider delivery is checked by the harness.\n");
+}
+
 async function assertDirectEgressBlocked() {
   await assertDirectProviderIpBlocked();
+  await assertHttp2DirectProviderConnectionBlocked();
+  await submitDirectUdpProviderProbe();
   await assert.rejects(
     fetch("https://example.com/", { signal: AbortSignal.timeout(2_000) }),
     (error) => {
@@ -473,7 +530,7 @@ async function main() {
   assert.equal(quickLookup.state, "NOT_FOUND", "concurrent no-record lookup must not receive the other execution's receipt");
   assert.equal(quickLookup.receipt, undefined);
 
-  process.stdout.write("PASS: isolated executor egress denied across static, dynamic, CommonJS and child-process transports; UNKNOWN resolved by lookup; receipt and no-retry cases passed.\n");
+  process.stdout.write("PASS: isolated executor egress denied across static/dynamic Node, CommonJS/ESM child processes, worker threads, HTTP/2 and TCP; UDP delivery is independently checked by the fake-provider canary; UNKNOWN recovery and no-retry cases passed.\n");
 }
 
 main().catch((error) => {

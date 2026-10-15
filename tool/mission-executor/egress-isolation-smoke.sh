@@ -134,6 +134,7 @@ assert.deepEqual(metrics.reconciliationsByIdempotencyKey, expectedReconciliation
 assert.equal(metrics.requestCount, 12, "dispatches must not be retried internally");
 assert.equal(metrics.reconciliationCount, 11, "expected only explicit reconciliation requests");
 assert.equal(metrics.receiptCount, 8, "failure-before-acceptance scenarios must not create receipts");
+assert.equal(metrics.udpProbeCount, 0, "isolated executor UDP probe must not reach the listening fake-provider canary");
 process.stdout.write("PASS: exact dispatch/reconciliation counts; no hidden retries; receipt ledger consistent.\n");
 '
 
