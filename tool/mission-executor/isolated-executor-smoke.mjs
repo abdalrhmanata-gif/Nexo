@@ -4,6 +4,7 @@ import dns from "node:dns/promises";
 import net from "node:net";
 
 const GATEWAY_TOKEN = process.env.ZAVQERA_FAKE_GATEWAY_TOKEN ?? "";
+const FAKE_PROVIDER_IP = process.env.ZAVQERA_FAKE_PROVIDER_IP ?? "";
 
 const blockedCodes = new Set([
   "EACCES", "EPERM", "ENETUNREACH", "EHOSTUNREACH", "ECONNREFUSED",
@@ -108,7 +109,24 @@ async function assertDynamicLoaderAndProcessEgressBlocked() {
   assert.equal(child.status, 0, "fresh child process must not bypass the executor network boundary; stdout=" + child.stdout + " stderr=" + child.stderr);
 }
 
+async function assertDirectProviderIpBlocked() {
+  assert.equal(net.isIP(FAKE_PROVIDER_IP), 4, "smoke harness must pass the ready fake provider's IPv4 address");
+  await new Promise((resolve, reject) => {
+    const socket = net.connect({ host: FAKE_PROVIDER_IP, port: 9090, timeout: 1_500 });
+    socket.once("connect", () => {
+      socket.destroy();
+      reject(new Error("isolated executor connected directly to the fake provider IP instead of using the gateway"));
+    });
+    socket.once("error", (error) => {
+      if (blockedCodes.has(error.code)) resolve();
+      else reject(new Error("direct fake-provider IP probe produced an unclassified result: " + (error.code ?? error.message)));
+    });
+    socket.once("timeout", () => socket.destroy(Object.assign(new Error("timeout"), { code: "ETIMEDOUT" })));
+  });
+}
+
 async function assertDirectEgressBlocked() {
+  await assertDirectProviderIpBlocked();
   await assert.rejects(
     fetch("https://example.com/", { signal: AbortSignal.timeout(2_000) }),
     (error) => {
