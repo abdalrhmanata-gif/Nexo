@@ -120,7 +120,7 @@ async function assertDynamicLoaderAndProcessEgressBlocked() {
     'socket.once("error", (error) => process.exit(blocked.has(error.code) ? 0 : 43));',
     'socket.once("timeout", () => socket.destroy(Object.assign(new Error("timeout"), { code: "ETIMEDOUT" })));',
   ].join("\n");
-  const esmChild = spawnSync(process.execPath, ["--input-type=module", "-e", esmChildScript], {
+  const esmChild = childProcess.spawnSync(process.execPath, ["--input-type=module", "-e", esmChildScript], {
     encoding: "utf8",
     timeout: 2_500,
     env: { PATH: process.env.PATH ?? "", ZAVQERA_TEST_PROVIDER_IP: FAKE_PROVIDER_IP },
