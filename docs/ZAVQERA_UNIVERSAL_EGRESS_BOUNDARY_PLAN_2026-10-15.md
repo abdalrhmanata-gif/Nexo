@@ -75,3 +75,36 @@ Target flow:
 3. Extend the local topology prototype to cover dynamic loaders and transitive/native dependency paths; current probes cover selected Node network APIs and one child process only.
 4. Expand fake-provider contract tests for timeout boundaries, malformed receipts, receipt-binding mismatch, provider 429/5xx, cancellation races, and reconciliation after `UNKNOWN`.
 5. Only then design the production executor/control-plane integration; keep it separate from the public web process and do not deploy or register a real provider.
+
+## Exact source/test checkpoint — 2026-10-15 — `f146b11914b81f68ed025ac96d99befb0c2c8362`
+
+This checkpoint supersedes the older running-status statements above.
+
+### Exact-head CI
+
+All three workflows passed on code/test SHA `f146b11914b81f68ed025ac96d99befb0c2c8362`:
+- Web Unit: [run 38697461636](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38697461636) — SUCCESS.
+- Web CI: [run 38697461610](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38697461610) — SUCCESS.
+- Flutter CI: [run 38697461393](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38697461393) — SUCCESS.
+
+### New disposable executor/gateway contract probes
+
+The topology under `tool/mission-executor/` remains test-only; no production runtime or deployment configuration was changed. The isolated-network step in [W21 run 38697454403](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38697454403) passed on this exact SHA, with these cases:
+- Direct egress denial using static Node networking APIs, ESM dynamic imports, CommonJS `createRequire`, HTTP/HTTPS/TLS, and a fresh child process.
+- Fixed-destination gateway dispatch to the fake provider with request-supplied destinations rejected.
+- Stable replay/idempotency binding and exact provider request counters to detect hidden retries.
+- Simulated accepted-then-lost response, missing/malformed/mismatched receipts, 429/500 responses, client cancellation, and reconciliation through a separate fixed-destination lookup endpoint.
+- Reconciliation receipt-binding mismatch rejection, exact expected dispatch/reconciliation counts, and cleanup verification in the smoke-script trap.
+
+The full W21 run on `f146b11914b81f68ed025ac96d99befb0c2c8362` had also passed the disposable PostgreSQL 17/pgTAP gate, Mission Authority execution security regressions, AI quota/plan/workspace security, actual-ledger concurrent idempotency, atomic budget, dispatch-claim and reconciliation-claim races, and W72 persistent fake-provider gateway integration. At the time this checkpoint was written, the browser E2E step was still running; cleanup verification and evidence upload were not yet confirmed. Do not mark the full W21 gate successful until the run concludes successfully.
+
+The reconciliation endpoint is a fake-provider contract test, not a production service. Its `NOT_FOUND` response is not treated as proof that an external effect was never sent. The executor smoke test does not automatically retry dispatch after an unknown result. The test harness's fake provider stores receipts in process memory; this proves only the explicit test scenario, not provider-side durability or real provider semantics.
+
+### Current release disposition
+
+- `TRUSTED_DISPATCH_ADAPTERS` remains empty; no real provider is registered or enabled.
+- Hosted Supabase Development schema parity remains unverified, and no hosted project was modified.
+- Production-deployed network policy, provider credential separation, real-provider idempotency, receipt authenticity, authoritative reconciliation and proven `NOT_SENT` semantics remain unverified.
+- Universal outbound-effect mediation across every production entrypoint remains **NOT ESTABLISHED**.
+- PR #39 remains Draft/open/unmerged; Issue #23 remains OPEN.
+- Launch remains **NO-GO**.
