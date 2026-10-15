@@ -205,3 +205,20 @@ Exact-SHA CI passed:
 W21 [run 38708716869](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38708716869) was still running its browser E2E at the time of this update; no full-gate claim is made on `c50b9db` yet. The previous completed W21 pass on parent source/test SHA `3e4f6a573e3be3df86b7fa5d6035b2a7eb989e92` is [run 38707978336](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38707978336), with [evidence artifact 11959556889](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38707978336/artifacts/11959556889) and [browser diagnostics 11959343783](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38707978336/artifacts/11959343783).
 
 Static source reachability remains a regression detector, not universal runtime egress proof. Production network enforcement, native/transitive runtime coverage, deployed credential separation, real-provider contract evidence, and hosted Development schema parity remain open. Release stays **NO-GO**.
+
+
+## Completed W21 checkpoint — production-entrypoint graph guard — 2026-10-15
+
+**Exact source/test SHA:** `c50b9db5610f483f63abdb1504465711c8e3b74e`.
+
+All exact-SHA gates passed:
+- Web Unit: [38708716964](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38708716964).
+- Web CI: [38708723357](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38708723357).
+- Flutter CI: [38708716868](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38708716868).
+- Full W21: [38708716869](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38708716869).
+
+W21 successfully completed browser E2E, disposable PostgreSQL 17/pgTAP, execution/authority regressions, quota/workspace checks, ledger races, W72 fake-provider integration, container cleanup verification and evidence uploads:
+- [Evidence artifact 11959867882](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38708716869/artifacts/11959867882)
+- [Browser diagnostics 11959932304](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38708716869/artifacts/11959932304)
+
+The expanded static entrypoint guard explicitly includes the root App Router page/layout. The guard is only source-reachability regression evidence; it does not establish universal runtime egress enforcement or production/provider certification. Production network policy, deployed credential separation, real-provider idempotency/receipt/reconciliation, and hosted Development parity remain unproven. Launch remains **NO-GO**.

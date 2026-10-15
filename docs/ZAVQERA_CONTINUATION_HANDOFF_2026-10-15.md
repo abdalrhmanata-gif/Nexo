@@ -208,3 +208,26 @@ This is an expanded static import-graph regression guard, not a full runtime tra
 Last completed full W21 PASS before this new root-entrypoint assertion was [run 38707978336](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38707978336) on source/test SHA `3e4f6a573e3be3df86b7fa5d6035b2a7eb989e92`, with evidence [artifact 11959556889](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38707978336/artifacts/11959556889) and browser diagnostics [artifact 11959343783](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38707978336/artifacts/11959343783).
 
 Provider registry remains empty/fail-closed. PR #39 remains OPEN / DRAFT / UNMERGED; Issue #23 remains OPEN. No hosted Supabase, Production, deployment settings, secrets, billing, DNS, or real-provider credentials changed. Launch remains **NO-GO**.
+
+
+## 12. W21 completion — production-entrypoint graph guard — 2026-10-15
+
+**Exact code/test SHA:** `c50b9db5610f483f63abdb1504465711c8e3b74e`.
+
+The root App Router addition was validated on this exact SHA:
+- Web Unit: [run 38708716964](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38708716964) — SUCCESS.
+- Web CI: [run 38708723357](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38708723357) — SUCCESS.
+- Flutter CI: [run 38708716868](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38708716868) — SUCCESS.
+- Full W21 Local Launch Gate: [run 38708716869](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38708716869) — SUCCESS on the same SHA.
+
+W21 completed the isolated egress topology; disposable PostgreSQL 17/pgTAP; Mission Authority security regressions; quota/workspace security; concurrent idempotency, atomic budget, dispatch-claim and reconciliation-claim races; W72 fake-provider PostgreSQL integration; browser E2E; disposable-stack cleanup and cleanup verification; and evidence uploads.
+
+Artifacts:
+- W21 evidence: [artifact 11959867882](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38708716869/artifacts/11959867882).
+- Browser diagnostics: [artifact 11959932304](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38708716869/artifacts/11959932304).
+
+Two intermediate commits in this entrypoint-graph workstream failed because of test-code regex/escaping defects; they were corrected before `c50b9db5610f483f63abdb1504465711c8e3b74e`. The PASS claims in this section apply only to `c50b9db5610f483f63abdb1504465711c8e3b74e`.
+
+The new regression includes root `app/page.tsx` and `app/layout.tsx`, nested pages/layouts/metadata, route handlers, middleware, instrumentation and detected Server Actions, and fails if an unreviewed background/worker/job/cron/queue/function path appears. This remains static source-graph evidence, not an instrumented runtime trace.
+
+**Disposition unchanged:** PR #39 OPEN / DRAFT / UNMERGED; Issue #23 OPEN; `TRUSTED_DISPATCH_ADAPTERS` empty/fail-closed; no real provider enabled; no hosted Supabase/Production/deployment/secrets changed; launch **NO-GO**.
