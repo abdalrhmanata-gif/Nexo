@@ -119,7 +119,7 @@ async function assertDynamicLoaderAndProcessEgressBlocked() {
     'socket.once("connect", () => { socket.destroy(); process.exit(42); });',
     'socket.once("error", (error) => process.exit(blocked.has(error.code) ? 0 : 43));',
     'socket.once("timeout", () => socket.destroy(Object.assign(new Error("timeout"), { code: "ETIMEDOUT" })));',
-  ].join("\\n");
+  ].join("\n");
   const esmChild = spawnSync(process.execPath, ["--input-type=module", "-e", esmChildScript], {
     encoding: "utf8",
     timeout: 2_500,
@@ -158,7 +158,7 @@ async function assertWorkerThreadDirectProviderIpBlocked() {
     'socket.once("connect", () => finish(false, "CONNECTED"));',
     'socket.once("error", (error) => finish(blocked.has(error.code), error.code ?? "UNKNOWN"));',
     'socket.once("timeout", () => socket.destroy(Object.assign(new Error("timeout"), { code: "ETIMEDOUT" })));',
-  ].join("\\n");
+  ].join("\n");
   await new Promise((resolve, reject) => {
     const worker = new Worker(workerScript, { eval: true, workerData: { providerIp: FAKE_PROVIDER_IP } });
     let settled = false;
