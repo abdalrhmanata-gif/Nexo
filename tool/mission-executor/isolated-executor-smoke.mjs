@@ -160,6 +160,15 @@ function makeEnvelope(executionId, idempotencyKey, payload) {
   };
 }
 
+function makeReconciliationEnvelope(envelope) {
+  return {
+    executionId: envelope.executionId,
+    audience: envelope.audience,
+    idempotencyKey: envelope.idempotencyKey,
+    payloadDigest: envelope.payloadDigest,
+  };
+}
+
 async function postEnvelope(envelope, timeoutMs = 2_000, extraFields = {}) {
   return fetch("http://egress-gateway:8080/v1/execute", {
     method: "POST",
@@ -169,7 +178,28 @@ async function postEnvelope(envelope, timeoutMs = 2_000, extraFields = {}) {
   });
 }
 
-async function assertBadReceiptIsRejectedThenRecoverable({ scenario, executionId, idempotencyKey }) {
+async function postReconciliation(envelope) {
+  return fetch("http://egress-gateway:8080/v1/reconcile", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(makeReconciliationEnvelope(envelope)),
+    signal: AbortSignal.timeout(2_000),
+  });
+}
+
+async function assertFoundReceipt(response, envelope, label) {
+  assert.equal(response.status, 200, label + " must return a verified result");
+  const result = await response.json();
+  assert.equal(result.ok, true);
+  assert.equal(result.state, "FOUND");
+  assert.equal(result.receipt.executionId, envelope.executionId);
+  assert.equal(result.receipt.audience, envelope.audience);
+  assert.equal(result.receipt.idempotencyKey, envelope.idempotencyKey);
+  assert.equal(result.receipt.payloadDigest, envelope.payloadDigest);
+  return result.receipt;
+}
+
+async function assertBadReceiptIsRejectedThenReconciled({ scenario, executionId, idempotencyKey }) {
   const envelope = makeEnvelope(executionId, idempotencyKey, {
     __contractTestScenario: scenario,
     message: "receipt contract exercise",
@@ -179,14 +209,9 @@ async function assertBadReceiptIsRejectedThenRecoverable({ scenario, executionId
   const failed = await failedResponse.json();
   assert.match(failed.error, /receipt binding mismatch/i);
 
-  const replayResponse = await postEnvelope(envelope);
-  assert.equal(replayResponse.status, 200, scenario + " must leave the stored fake receipt available for exact replay");
-  const replay = await replayResponse.json();
-  assert.equal(replay.replayed, true);
-  assert.equal(replay.receipt.executionId, envelope.executionId);
-  assert.equal(replay.receipt.audience, envelope.audience);
-  assert.equal(replay.receipt.idempotencyKey, envelope.idempotencyKey);
-  assert.equal(replay.receipt.payloadDigest, envelope.payloadDigest);
+  const reconciledResponse = await postReconciliation(envelope);
+  const receipt = await assertFoundReceipt(reconciledResponse, envelope, scenario + " reconciliation");
+  assert.equal(receipt.externalId, "fake-" + envelope.idempotencyKey);
 }
 
 async function assertFailureIsNotRetriedInternally({ scenario, executionId, idempotencyKey }) {
@@ -198,6 +223,13 @@ async function assertFailureIsNotRetriedInternally({ scenario, executionId, idem
   assert.equal(response.status, 502, scenario + " must fail closed at the gateway");
   const result = await response.json();
   assert.match(result.error, /rejected the request/i);
+
+  const reconciliationResponse = await postReconciliation(envelope);
+  assert.equal(reconciliationResponse.status, 200);
+  const reconciliation = await reconciliationResponse.json();
+  assert.equal(reconciliation.ok, true);
+  assert.equal(reconciliation.state, "NOT_FOUND");
+  // The fake lookup result is not a generic proof of NOT_SENT for real providers.
 }
 
 async function main() {
@@ -243,23 +275,24 @@ async function main() {
   assert.equal(uncertainResponse.status, 502, "accepted work with a lost response must stay unknown");
   const uncertain = await uncertainResponse.json();
   assert.match(uncertain.error, /unknown.*reconciliation required/i);
-  const recoveredResponse = await postEnvelope(uncertainEnvelope);
-  assert.equal(recoveredResponse.status, 200, "exact replay can recover the provider's existing fake receipt");
-  const recovered = await recoveredResponse.json();
-  assert.equal(recovered.replayed, true);
-  assert.equal(recovered.receipt.externalId, "fake-" + uncertainEnvelope.idempotencyKey);
+  const recoveredReceipt = await assertFoundReceipt(
+    await postReconciliation(uncertainEnvelope),
+    uncertainEnvelope,
+    "UNKNOWN provider reconciliation",
+  );
+  assert.equal(recoveredReceipt.externalId, "fake-" + uncertainEnvelope.idempotencyKey);
 
-  await assertBadReceiptIsRejectedThenRecoverable({
+  await assertBadReceiptIsRejectedThenReconciled({
     scenario: "missing-receipt",
     executionId: "33333333-3333-4333-8333-333333333333",
     idempotencyKey: "smoke-missing-receipt",
   });
-  await assertBadReceiptIsRejectedThenRecoverable({
+  await assertBadReceiptIsRejectedThenReconciled({
     scenario: "malformed-receipt",
     executionId: "44444444-4444-4444-8444-444444444444",
     idempotencyKey: "smoke-malformed-receipt",
   });
-  await assertBadReceiptIsRejectedThenRecoverable({
+  await assertBadReceiptIsRejectedThenReconciled({
     scenario: "receipt-binding-mismatch",
     executionId: "55555555-5555-4555-8555-555555555555",
     idempotencyKey: "smoke-receipt-binding-mismatch",
@@ -276,8 +309,21 @@ async function main() {
     idempotencyKey: "smoke-provider-500",
   });
 
+  const inconsistentReconciliationEnvelope = makeEnvelope(
+    "99999999-9999-4999-8999-999999999999",
+    "smoke-reconcile-receipt-mismatch",
+    { __contractTestScenario: "reconcile-receipt-mismatch", message: "lookup receipt binding" },
+  );
+  const dispatchWithStoredReceipt = await postEnvelope(inconsistentReconciliationEnvelope);
+  assert.equal(dispatchWithStoredReceipt.status, 200);
+  const mismatchedReconciliation = await postReconciliation(inconsistentReconciliationEnvelope);
+  assert.equal(mismatchedReconciliation.status, 502, "reconciliation receipt with a different audience must be rejected");
+  const correctedReconciliation = await postReconciliation(inconsistentReconciliationEnvelope);
+  const correctedReceipt = await assertFoundReceipt(correctedReconciliation, inconsistentReconciliationEnvelope, "corrected reconciliation");
+  assert.equal(correctedReceipt.externalId, "fake-" + inconsistentReconciliationEnvelope.idempotencyKey);
+
   // A client timeout after accepted work must not imply cancellation at the provider.
-  // The test observes only the caller timeout; an exact replay checks duplicate safety.
+  // Reconciliation observes the stored result without sending a second dispatch.
   const cancelledEnvelope = makeEnvelope(
     "88888888-8888-4888-8888-888888888888",
     "smoke-client-cancel-after-accept",
@@ -285,13 +331,14 @@ async function main() {
   );
   await assert.rejects(postEnvelope(cancelledEnvelope, 150));
   await new Promise((resolve) => setTimeout(resolve, 800));
-  const cancelledReplayResponse = await postEnvelope(cancelledEnvelope);
-  assert.equal(cancelledReplayResponse.status, 200, "replay after caller timeout must return the one stored receipt");
-  const cancelledReplay = await cancelledReplayResponse.json();
-  assert.equal(cancelledReplay.replayed, true);
-  assert.equal(cancelledReplay.receipt.executionId, cancelledEnvelope.executionId);
+  const cancelledReceipt = await assertFoundReceipt(
+    await postReconciliation(cancelledEnvelope),
+    cancelledEnvelope,
+    "reconciliation after caller timeout",
+  );
+  assert.equal(cancelledReceipt.externalId, "fake-" + cancelledEnvelope.idempotencyKey);
 
-  process.stdout.write("PASS: isolated executor egress denied across static, dynamic, CommonJS and child-process transport paths; gateway UNKNOWN and provider receipt/failure cases exercised.\n");
+  process.stdout.write("PASS: isolated executor egress denied across static, dynamic, CommonJS and child-process transports; UNKNOWN resolved by lookup; receipt and no-retry cases passed.\n");
 }
 
 main().catch((error) => {
