@@ -3,11 +3,12 @@ import { createSupabaseAdminClient } from "../../../../../lib/supabase/admin";
 import {
   dispatchThroughJitClaim,
   reconcileThroughTrustedClaim,
-  PERSISTENT_DISPATCH_DECISIONS,
 } from "../../../../../lib/mission-authority/persistent-dispatch-gateway.mjs";
 import { resolveTrustedDispatchAdapter } from "../../../../../lib/mission-authority/provider-adapter-registry.mjs";
-import { runMissionActionWorker } from "../../../../../lib/mission-authority/mission-action-worker-boundary.mjs";
-import { isTrustedExecutionWorkerRequest } from "../../../../../lib/mission-authority/worker-auth.mjs";
+import {
+  createMissionActionWorkerOperationHandler,
+  parseTrustedWorkerRequest,
+} from "../../../../../lib/mission-authority/trusted-worker-http.mjs";
 import {
   isResearchCompletionSchemaProbeError,
   isResearchClaimSchemaProbeError,
@@ -19,9 +20,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const NO_STORE = { "Cache-Control": "no-store" };
-const TOKEN_PATTERN = /^[A-Za-z0-9._~-]{32,512}$/;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const MAX_INTERNAL_BODY_BYTES = 160_000;
 const RESEARCH_COMPLETION_STATUSES = new Set(["SUCCEEDED", "FAILED", "UNKNOWN"]);
 const RESEARCH_CLAIM_ERROR_CODES = new Set([
   "TRUSTED_EXECUTOR_REQUIRED",
@@ -38,37 +37,28 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+const handleMissionActionWorkerOperation = createMissionActionWorkerOperationHandler({
+  resolveAdapter: resolveTrustedDispatchAdapter,
+  createClient: createSupabaseAdminClient,
+  dispatch: dispatchThroughJitClaim,
+  reconcile: reconcileThroughTrustedClaim,
+});
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ executionId: string }> },
 ) {
-  const expectedToken = process.env.ZAVQERA_EXECUTION_WORKER_TOKEN;
-  if (!expectedToken || !TOKEN_PATTERN.test(expectedToken)) {
-    return NextResponse.json({ error: "Trusted execution worker is not configured." }, { status: 503, headers: NO_STORE });
+  const parsedRequest = await parseTrustedWorkerRequest(
+    request,
+    process.env.ZAVQERA_EXECUTION_WORKER_TOKEN,
+  );
+  if (!parsedRequest.ok) {
+    return NextResponse.json(parsedRequest.body, {
+      status: parsedRequest.status,
+      headers: NO_STORE,
+    });
   }
-  if (!isTrustedExecutionWorkerRequest(request.headers.get("authorization"), expectedToken)) {
-    return NextResponse.json({ error: "Trusted worker authorization required." }, { status: 401, headers: NO_STORE });
-  }
-
-  const declaredLength = Number(request.headers.get("content-length") ?? "0");
-  if (Number.isFinite(declaredLength) && declaredLength > MAX_INTERNAL_BODY_BYTES) {
-    return NextResponse.json({ error: "Worker request is too large." }, { status: 413, headers: NO_STORE });
-  }
-
-  let body: unknown;
-  try {
-    const rawBody = await request.text();
-    if (new TextEncoder().encode(rawBody).byteLength > MAX_INTERNAL_BODY_BYTES) {
-      return NextResponse.json({ error: "Worker request is too large." }, { status: 413, headers: NO_STORE });
-    }
-    body = JSON.parse(rawBody);
-  } catch {
-    return NextResponse.json({ error: "A valid worker operation is required." }, { status: 400, headers: NO_STORE });
-  }
-  if (!isRecord(body)) {
-    return NextResponse.json({ error: "A worker operation is required." }, { status: 400, headers: NO_STORE });
-  }
-  const workerBody = body as Record<string, unknown>;
+  const workerBody = parsedRequest.body as Record<string, unknown>;
   const bodyKeys = Object.keys(workerBody);
 
   if (workerBody.operation === "preflight_read_only_research") {
@@ -225,49 +215,10 @@ export async function POST(
     }
   }
 
-  if (bodyKeys.some((key) => key !== "operation" && key !== "audience")
-      || (workerBody.operation !== "dispatch" && workerBody.operation !== "reconcile")
-      || typeof workerBody.audience !== "string"
-      || !workerBody.audience.trim()
-      || workerBody.audience.length > 128) {
-    return NextResponse.json({ error: "Only a valid operation and provider audience are accepted." }, { status: 400, headers: NO_STORE });
-  }
-
   const { executionId } = await params;
-  if (!UUID_PATTERN.test(executionId)) {
-    return NextResponse.json({ error: "A valid execution id is required." }, { status: 400, headers: NO_STORE });
-  }
-
-  try {
-    const operation = await runMissionActionWorker({
-      audience: workerBody.audience,
-      operation: workerBody.operation,
-      executionId,
-      resolveAdapter: resolveTrustedDispatchAdapter,
-      createClient: createSupabaseAdminClient,
-      dispatch: dispatchThroughJitClaim,
-      reconcile: reconcileThroughTrustedClaim,
-    });
-    if (operation.kind === "missing_adapter") {
-      return NextResponse.json({ error: "No reviewed provider adapter is registered. No provider call occurred." }, { status: 503, headers: NO_STORE });
-    }
-    if (operation.kind === "missing_dispatch") {
-      return NextResponse.json({ error: "The registered provider adapter has no reviewed dispatch implementation." }, { status: 503, headers: NO_STORE });
-    }
-    if (operation.kind === "missing_reconciliation") {
-      return NextResponse.json({ error: "The registered provider adapter has no reviewed reconciliation implementation." }, { status: 503, headers: NO_STORE });
-    }
-    if (operation.kind !== "completed") {
-      return NextResponse.json({ error: "Only dispatch or reconciliation is accepted." }, { status: 400, headers: NO_STORE });
-    }
-
-    const result = operation.result;
-    const status = result.decision === PERSISTENT_DISPATCH_DECISIONS.DISPATCHED
-      || result.decision === PERSISTENT_DISPATCH_DECISIONS.RECONCILED
-      ? 200
-      : result.decision === PERSISTENT_DISPATCH_DECISIONS.DENY ? 409 : 202;
-    return NextResponse.json(result, { status, headers: NO_STORE });
-  } catch {
-    return NextResponse.json({ error: "Trusted worker operation could not be completed. Inspect the execution record before retrying." }, { status: 503, headers: NO_STORE });
-  }
+  const result = await handleMissionActionWorkerOperation({ workerBody, executionId });
+  return NextResponse.json(result.body, {
+    status: result.status,
+    headers: NO_STORE,
+  });
 }
