@@ -112,3 +112,42 @@ A fake reconciliation `NOT_FOUND` is not proof an external effect was never sent
 ## 8. Paste this instruction into the next chat
 
 “استأنف مشروع ZAVQERA من ملف الاستئناف هذا باعتباره نقطة البداية الحالية. تحقّق أولاً من الحالة الحية لـ PR #39 وIssue #23 ونتائج Actions على GitHub، ولا تعتمد على أرقام قديمة دون التحقق. تابع التنفيذ العملي بدقة وباختصار. ممنوع دمج أي PR أو تعديل Supabase Development/Main/Production أو النشر أو الأسرار أو إضافة مزود حقيقي. أبقِ سجل المزودات فارغاً وPR #39 Draft وIssue #23 مفتوحة. فرّق دائماً بين نجاح Web Unit/Web CI/Flutter CI وبين نجاح W21 الكامل؛ أحدث W21 مؤكد هنا على SHA أقدم من أحدث كود. أبقِ قرار الإطلاق NO-GO حتى إثبات حدود egress الشاملة وعقد المزود.” 
+
+
+## 9. Verified continuation update — 2026-10-15
+
+**Exact code/test SHA:** `1ff2eb66753575f6771c2acda9cfdfb6d9597c4b`.
+
+### New adversarial coverage
+
+Updated only `tool/mission-executor/isolated-executor-smoke.mjs` to add:
+- a fresh ESM child process that attempts a TCP connection to the actual listening fake-provider IP on port 9090; the probe must fail with a recognized network-denial result;
+- a Node `worker_threads` context making the same direct-provider-IP attempt; connection success, timeout without a classifiable denial, or unexpected exit fails the test.
+
+The W21 isolated executor/fake-gateway step passed with both probes on this exact SHA. This is test-only Docker/fake-provider evidence; it is not proof of a deployed production egress boundary.
+
+### Exact-SHA CI — PASS
+
+- Web Unit: [run 38704593127](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38704593127) — SUCCESS.
+- Web CI: [run 38704593180](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38704593180) — SUCCESS.
+- Flutter CI: [run 38704593035](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38704593035) — SUCCESS.
+
+### Full W21 — PASS on the same source/test SHA
+
+[W21 Local Launch Gate run 38704584466](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38704584466) — SUCCESS on `1ff2eb66753575f6771c2acda9cfdfb6d9597c4b`.
+
+Completed successfully: isolated executor/network topology including the ESM-child and worker-thread probes; disposable PostgreSQL 17/pgTAP; Mission Authority execution security; AI quota/workspace security; actual-ledger idempotency, budget, dispatch-claim and reconciliation-claim races; W72 persistent fake-provider integration; browser E2E; cleanup and cleanup verification; evidence uploads.
+
+- W21 evidence: [artifact 11957672919](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38704584466/artifacts/11957672919).
+- Browser diagnostics: [artifact 11957942588](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38704584466/artifacts/11957942588).
+
+Two intermediate test-development commits failed W21 because of defects in the newly added probe (newline escaping and an unqualified `spawnSync` reference). Those defects were corrected; use only the final passing SHA and run above as evidence for this change.
+
+### Disposition remains unchanged
+
+- PR #39: OPEN / DRAFT / UNMERGED.
+- Issue #23: OPEN.
+- `TRUSTED_DISPATCH_ADAPTERS`: empty / fail-closed.
+- No real provider or credential enabled; no hosted Supabase, Production, deployment, secrets, billing, or DNS changed.
+- Universal production egress mediation, deployed executor/network policy, credential separation, real-provider idempotency/receipt authenticity/authoritative reconciliation, and hosted Development schema parity remain unproven.
+- Launch remains **NO-GO**. A fake-provider `NOT_FOUND` is not proof of `NOT_SENT`; never automatically retry an unknown external outcome without authoritative provider-specific evidence.
