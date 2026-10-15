@@ -2,8 +2,14 @@
 
 **Status:** Source-and-test audit of the candidate branch; not a production security certification.  
 **Reviewed contract:** `docs/ZAVQERA_MISSION_AUTHORITY_CONTRACT_v0.1.md`.  
-**Current candidate head:** `43edddf6050ac56ad9d1d8f4120f9d389a333c8a` (PR #39, Draft / unmerged). Earlier checkpoint hashes below are historical evidence and must not be read as the current candidate head.  
+**Current candidate head:** `f2c13cc7ec26654f8950f193a5db598e3656707a` (PR #39, Draft / unmerged). The latest commit corrects assertions in the auth-egress inventory test; it does not change production runtime behavior.  
 **Database evidence:** W21 disposable local PostgreSQL 17 / Supabase replay, pgTAP, browser E2E and cleanup all passed on this source head. No hosted Supabase or production resource was used.
+
+## Latest exact-head CI checkpoint (2026-10-15)
+
+At source/test HEAD `f2c13cc7ec26654f8950f193a5db598e3656707a`, GitHub Actions reports Web CI **SUCCESS** ([run 38683747718](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38683747718)), Web Unit **SUCCESS** ([run 38683747712](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38683747712)), and Flutter CI **SUCCESS** ([run 38683747711](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38683747711)). The latest change is test-only: it fixes path-normalization and literal-match assertions in the inventory test for `/auth/callback`, `/auth/confirm`, and `middleware.ts`.
+
+**W21 evidence is still from ancestor code/test HEAD `43edddf6050ac56ad9d1d8f4120f9d389a333c8a`; it has not been rerun on `f2c13cc`.** Do not describe the latest head as having fresh W21 evidence. Hosted Development schema parity and universal outbound mediation remain unproven.
 
 ## Decision summary
 
