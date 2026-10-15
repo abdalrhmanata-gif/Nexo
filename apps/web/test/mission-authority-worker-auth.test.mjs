@@ -1290,3 +1290,53 @@ test("every non-Mission outbound API route is explicitly classified in the outbo
   );
   assert.deepEqual(violations, []);
 });
+
+
+test("non-API auth route handlers and middleware are explicitly inventoried as separate identity-provider effects", async () => {
+  const appRoot = join(webRoot, "app");
+  const allRouteFiles = await listApiRouteFiles(appRoot);
+  const nonApiRoutes = allRouteFiles
+    .filter((routeFile) => !relative(appRoot, routeFile).replace(/\\\\/g, "/").startsWith("api/"))
+    .map((routeFile) => relative(appRoot, routeFile).replace(/\\\\/g, "/"))
+    .sort();
+
+  const reviewedIdentityRouteInventory = new Map([
+    ["auth/callback/route.ts", "SUPABASE_AUTH_CODE_EXCHANGE_OR_OTP_VERIFICATION"],
+    ["auth/confirm/route.ts", "SUPABASE_AUTH_OTP_VERIFICATION"],
+  ]);
+  assert.deepEqual(
+    nonApiRoutes,
+    [...reviewedIdentityRouteInventory.keys()].sort(),
+    "new non-API Next.js route handlers must be explicitly inventoried before they can introduce an unreviewed runtime entrypoint",
+  );
+
+  const callback = await readFile(join(appRoot, "auth", "callback", "route.ts"), "utf8");
+  const confirm = await readFile(join(appRoot, "auth", "confirm", "route.ts"), "utf8");
+  const middleware = await readFile(join(webRoot, "middleware.ts"), "utf8");
+
+  assert.match(callback, /supabase\\.auth\\.exchangeCodeForSession\\(code\\)/,
+    "the callback's PKCE exchange is an external identity-provider effect");
+  assert.match(callback, /supabase\\.auth\\.verifyOtp\\(/,
+    "the callback's token-hash path is an external identity-provider effect");
+  assert.match(confirm, /supabase\\.auth\\.verifyOtp\\(/,
+    "the confirmation route's OTP verification is an external identity-provider effect");
+
+  assert.match(middleware, /export async function middleware\\(/);
+  assert.match(middleware, /supabase\\.auth\\.getUser\\(\\)/,
+    "middleware refreshes/verifies identity through Supabase Auth and is a runtime egress entrypoint");
+  assert.match(middleware, /matcher:\\s*\\[\\s*"\\/app\\/:path\\*",\\s*"\\/auth\\/:path\\*"\\s*\\]/,
+    "the reviewed middleware scope must remain explicit");
+  assert.doesNotMatch(middleware, /mission-authority\\/(?:persistent-dispatch-gateway|mission-action-worker-boundary|provider-adapter-registry)/,
+    "identity middleware must not become a Mission Action dispatch path");
+
+  // These are separate identity/session workflows, not Mission Action JIT
+  // dispatch. Their Supabase SDK transport is external and must not be counted
+  // as proof that universal outbound mediation has been established.
+  assert.deepEqual(
+    [...reviewedIdentityRouteInventory.entries()],
+    [
+      ["auth/callback/route.ts", "SUPABASE_AUTH_CODE_EXCHANGE_OR_OTP_VERIFICATION"],
+      ["auth/confirm/route.ts", "SUPABASE_AUTH_OTP_VERIFICATION"],
+    ],
+  );
+});
