@@ -2,19 +2,19 @@
 
 **Status:** Source-and-test audit of the candidate branch; not a production security certification.  
 **Reviewed contract:** `docs/ZAVQERA_MISSION_AUTHORITY_CONTRACT_v0.1.md`.  
-**Current candidate head:** `843855a75e7a1e5b1a06456b7e42347357969020` (PR #39, Draft / unmerged). This checkpoint adds adversarial OS-level egress probes; it does not change production runtime behavior.  
-**Database evidence:** W21 disposable local PostgreSQL 17 / Supabase replay, pgTAP, browser E2E and cleanup passed on ancestor code/test HEAD `43edddf6050ac56ad9d1d8f4120f9d389a333c8a`. W21 has not yet been confirmed on the current candidate head. No hosted Supabase or production resource was used.
+**Current source/test checkpoint:** `d97d2e97ca1f4f1d6e7a92ef788766ccb97a0562` (PR #39, Draft / unmerged; latest commit at this audit edit is documentation-only). It adds a disposable executor/gateway/fake-provider Docker network prototype; no production runtime behavior or hosted resource changed.  
+**Database evidence:** W21 passed on prior source/test HEAD `843855a75e7a1e5b1a06456b7e42347357969020` (run 38688482588). W21 on `d97d2e97ca1f4f1d6e7a92ef788766ccb97a0562` is still running; its new isolated-network step has passed. No hosted Supabase or production resource was used.
 
 ## Latest exact-head CI checkpoint (2026-10-15)
 
-At source/test HEAD `843855a75e7a1e5b1a06456b7e42347357969020`, all three workflows passed:
-- Web Unit **SUCCESS** — [run 38688489190](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38688489190)
-- Web CI **SUCCESS** — [run 38688489262](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38688489262)
-- Flutter CI **SUCCESS** — [run 38688489297](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38688489297)
+At source/test HEAD `d97d2e97ca1f4f1d6e7a92ef788766ccb97a0562`, all three CI workflows passed:
+- Web Unit **SUCCESS** — [run 38689619540](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38689619540)
+- Web CI **SUCCESS** — [run 38689619539](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38689619539)
+- Flutter CI **SUCCESS** — [run 38689619622](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38689619622)
 
-The Web Unit run includes the worker-route test and new adversarial egress probes inside Docker `--network none`. The new probes attempt direct `fetch`, Node HTTP/HTTPS, TCP/TLS sockets, DNS resolution, and a child-process socket attempt. They establish denial for those tested surfaces in that isolated test container only; they do not prove all dynamic/native/transitive paths or a deployed executor boundary.
+The Web Unit run includes the actual worker-route test and adversarial egress probes inside Docker `--network none`. The separate local topology prototype under `tool/mission-executor/` puts the executor on an internal-only network, the fake provider on a separate egress network, and the gateway on both. The gateway uses a fixed fake-provider URL; receipt binding, replay behavior, request-supplied destination rejection, direct executor egress denial, and cleanup are tested. The topology step passed in W21 run [38689614876](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38689614876).
 
-**W21 evidence remains from ancestor code/test HEAD `43edddf6050ac56ad9d1d8f4120f9d389a333c8a`; a successful W21 run on `843855a` is not yet confirmed.** Hosted Development schema parity and universal outbound mediation remain unproven.
+**W21 full gate on `d97d2e9` is still running.** W21 passed on prior source/test HEAD `843855a75e7a1e5b1a06456b7e42347357969020` ([run 38688482588](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38688482588)). Do not treat the current W21 as complete until the full gate, cleanup verification, and evidence upload pass. Hosted Development schema parity and universal production outbound mediation remain unproven.
 
 ## Decision summary
 
