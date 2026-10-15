@@ -8,9 +8,19 @@ external_network="zavqera-gateway-egress-${suffix}"
 gateway_container="zavqera-fake-gateway-${suffix}"
 provider_container="zavqera-fake-provider-${suffix}"
 cleanup() {
+  local status=$?
+  trap - EXIT
   docker rm -f "$gateway_container" "$provider_container" >/dev/null 2>&1 || true
   docker network rm "$internal_network" >/dev/null 2>&1 || true
   docker network rm "$external_network" >/dev/null 2>&1 || true
+  if docker container inspect "$gateway_container" >/dev/null 2>&1 \
+    || docker container inspect "$provider_container" >/dev/null 2>&1 \
+    || docker network inspect "$internal_network" >/dev/null 2>&1 \
+    || docker network inspect "$external_network" >/dev/null 2>&1; then
+    echo "Executor smoke test leaked a container or Docker network." >&2
+    status=1
+  fi
+  exit "$status"
 }
 trap cleanup EXIT
 
@@ -72,10 +82,4 @@ docker run --rm \
   node:22-bookworm-slim \
   node tool/mission-executor/isolated-executor-smoke.mjs
 
-cleanup
-trap - EXIT
-if docker network inspect "$internal_network" >/dev/null 2>&1 || docker network inspect "$external_network" >/dev/null 2>&1; then
-  echo "Executor smoke test left Docker networks behind." >&2
-  exit 1
-fi
-echo "PASS: temporary executor/gateway networks cleaned up."
+echo "PASS: executor direct egress denied; fixed gateway reached fake provider; idempotency binding enforced."
