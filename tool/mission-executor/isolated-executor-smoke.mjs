@@ -24,7 +24,7 @@ async function assertDirectEgressBlocked() {
   await assert.rejects(
     fetch("https://example.com/", { signal: AbortSignal.timeout(2_000) }),
     (error) => {
-      assert.ok(codesOf(error).some((code) => blockedCodes.has(code)), `fetch should be blocked: ${codesOf(error).join(",")}`);
+      assert.ok(codesOf(error).some((code) => blockedCodes.has(code)), "fetch should be blocked: " + codesOf(error).join(","));
       return true;
     },
   );
@@ -32,7 +32,7 @@ async function assertDirectEgressBlocked() {
   await assert.rejects(
     fetch("http://fake-provider:9090/health", { signal: AbortSignal.timeout(2_000) }),
     (error) => {
-      assert.ok(codesOf(error).some((code) => blockedCodes.has(code)), `executor must not reach provider network: ${codesOf(error).join(",")}`);
+      assert.ok(codesOf(error).some((code) => blockedCodes.has(code)), "executor must not reach provider network: " + codesOf(error).join(","));
       return true;
     },
   );
@@ -49,7 +49,7 @@ async function assertDirectEgressBlocked() {
       });
       socket.once("error", (error) => {
         if (blockedCodes.has(error.code)) resolve();
-        else reject(new Error(`unexpected DNS-resolved socket error: ${error.code ?? error.message}`));
+        else reject(new Error("unexpected DNS-resolved socket error: " + (error.code ?? error.message)));
       });
       socket.once("timeout", () => socket.destroy(Object.assign(new Error("timeout"), { code: "ETIMEDOUT" })));
     });
@@ -67,77 +67,158 @@ async function assertDirectEgressBlocked() {
     });
     socket.once("error", (error) => {
       if (blockedCodes.has(error.code)) resolve();
-      else reject(new Error(`unexpected socket error: ${error.code ?? error.message}`));
+      else reject(new Error("unexpected socket error: " + (error.code ?? error.message)));
     });
     socket.once("timeout", () => socket.destroy(Object.assign(new Error("timeout"), { code: "ETIMEDOUT" })));
   });
+}
+
+function makeEnvelope(executionId, idempotencyKey, payload) {
+  return {
+    executionId,
+    audience: "fake.external.v1",
+    idempotencyKey,
+    expiresAt: new Date(Date.now() + 60_000).toISOString(),
+    payload,
+    payloadDigest: createHash("sha256").update(JSON.stringify(payload)).digest("hex"),
+  };
+}
+
+async function postEnvelope(envelope, timeoutMs = 2_000, extraFields = {}) {
+  return fetch("http://egress-gateway:8080/v1/execute", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ ...envelope, ...extraFields }),
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+}
+
+async function assertBadReceiptIsRejectedThenRecoverable({ scenario, executionId, idempotencyKey }) {
+  const envelope = makeEnvelope(executionId, idempotencyKey, {
+    __contractTestScenario: scenario,
+    message: "receipt contract exercise",
+  });
+  const failedResponse = await postEnvelope(envelope);
+  assert.equal(failedResponse.status, 502, scenario + " must not be accepted as a successful dispatch");
+  const failed = await failedResponse.json();
+  assert.match(failed.error, /receipt binding mismatch/i);
+
+  const replayResponse = await postEnvelope(envelope);
+  assert.equal(replayResponse.status, 200, scenario + " must leave the stored fake receipt available for exact replay");
+  const replay = await replayResponse.json();
+  assert.equal(replay.replayed, true);
+  assert.equal(replay.receipt.executionId, envelope.executionId);
+  assert.equal(replay.receipt.audience, envelope.audience);
+  assert.equal(replay.receipt.idempotencyKey, envelope.idempotencyKey);
+  assert.equal(replay.receipt.payloadDigest, envelope.payloadDigest);
+}
+
+async function assertFailureIsNotRetriedInternally({ scenario, executionId, idempotencyKey }) {
+  const envelope = makeEnvelope(executionId, idempotencyKey, {
+    __contractTestScenario: scenario,
+    message: "failure must not trigger an implicit retry",
+  });
+  const response = await postEnvelope(envelope);
+  assert.equal(response.status, 502, scenario + " must fail closed at the gateway");
+  const result = await response.json();
+  assert.match(result.error, /rejected the request/i);
 }
 
 async function main() {
   await assertDirectEgressBlocked();
 
   const payload = { operation: "fake-send", message: "hello", count: 1 };
-  const payloadDigest = createHash("sha256").update(JSON.stringify(payload)).digest("hex");
-  const envelope = {
-    executionId: "11111111-1111-4111-8111-111111111111",
-    audience: "fake.external.v1",
-    idempotencyKey: "isolated-smoke-idem-001",
-    expiresAt: new Date(Date.now() + 60_000).toISOString(),
-    payload,
-    payloadDigest,
-  };
-  const gatewayUrl = "http://egress-gateway:8080/v1/execute";
-  const firstResponse = await fetch(gatewayUrl, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(envelope),
-    signal: AbortSignal.timeout(2_000),
-  });
+  const envelope = makeEnvelope("11111111-1111-4111-8111-111111111111", "isolated-smoke-idem-001", payload);
+
+  const firstResponse = await postEnvelope(envelope);
   assert.equal(firstResponse.status, 200, "approved gateway path must work");
   const first = await firstResponse.json();
   assert.equal(first.ok, true);
   assert.equal(first.replayed, false);
   assert.equal(first.receipt.executionId, envelope.executionId);
   assert.equal(first.receipt.audience, envelope.audience);
-  assert.equal(first.receipt.payloadDigest, payloadDigest);
+  assert.equal(first.receipt.payloadDigest, envelope.payloadDigest);
   assert.equal(first.receipt.provider, "fake-provider-only");
 
-  const duplicateResponse = await fetch(gatewayUrl, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(envelope),
-    signal: AbortSignal.timeout(2_000),
-  });
+  const duplicateResponse = await postEnvelope(envelope);
   assert.equal(duplicateResponse.status, 200);
   const duplicate = await duplicateResponse.json();
   assert.equal(duplicate.replayed, true);
   assert.equal(duplicate.receipt.externalId, first.receipt.externalId, "duplicate key must return the same fake receipt");
 
   const changedPayload = { ...payload, message: "changed after first dispatch" };
-  const reboundResponse = await fetch(gatewayUrl, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      ...envelope,
-      payload: changedPayload,
-      payloadDigest: createHash("sha256").update(JSON.stringify(changedPayload)).digest("hex"),
-    }),
-    signal: AbortSignal.timeout(2_000),
-  });
+  const changedEnvelope = {
+    ...envelope,
+    payload: changedPayload,
+    payloadDigest: createHash("sha256").update(JSON.stringify(changedPayload)).digest("hex"),
+  };
+  const reboundResponse = await postEnvelope(changedEnvelope);
   assert.equal(reboundResponse.status, 409, "provider must reject reusing an idempotency key with a different payload binding");
 
-  const untrustedDestinationResponse = await fetch(gatewayUrl, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ ...envelope, destination: "https://attacker.example/steal" }),
-    signal: AbortSignal.timeout(2_000),
-  });
+  const untrustedDestinationResponse = await postEnvelope(envelope, 2_000, { destination: "https://attacker.example/steal" });
   assert.equal(untrustedDestinationResponse.status, 400, "request-supplied destinations must be rejected");
 
-  process.stdout.write("PASS: executor direct egress blocked; fixed gateway reaches fake provider; replay binding and supplied-destination checks passed.\n");
+  const uncertainEnvelope = makeEnvelope(
+    "22222222-2222-4222-8222-222222222222",
+    "smoke-accepted-then-timeout",
+    { __contractTestScenario: "accepted-then-timeout", message: "accepted before response loss" },
+  );
+  const uncertainResponse = await postEnvelope(uncertainEnvelope);
+  assert.equal(uncertainResponse.status, 502, "accepted work with a lost response must stay unknown");
+  const uncertain = await uncertainResponse.json();
+  assert.match(uncertain.error, /unknown.*reconciliation required/i);
+  const recoveredResponse = await postEnvelope(uncertainEnvelope);
+  assert.equal(recoveredResponse.status, 200, "exact replay can recover the provider's existing fake receipt");
+  const recovered = await recoveredResponse.json();
+  assert.equal(recovered.replayed, true);
+  assert.equal(recovered.receipt.externalId, "fake-" + uncertainEnvelope.idempotencyKey);
+
+  await assertBadReceiptIsRejectedThenRecoverable({
+    scenario: "missing-receipt",
+    executionId: "33333333-3333-4333-8333-333333333333",
+    idempotencyKey: "smoke-missing-receipt",
+  });
+  await assertBadReceiptIsRejectedThenRecoverable({
+    scenario: "malformed-receipt",
+    executionId: "44444444-4444-4444-8444-444444444444",
+    idempotencyKey: "smoke-malformed-receipt",
+  });
+  await assertBadReceiptIsRejectedThenRecoverable({
+    scenario: "receipt-binding-mismatch",
+    executionId: "55555555-5555-4555-8555-555555555555",
+    idempotencyKey: "smoke-receipt-binding-mismatch",
+  });
+
+  await assertFailureIsNotRetriedInternally({
+    scenario: "provider-429",
+    executionId: "66666666-6666-4666-8666-666666666666",
+    idempotencyKey: "smoke-provider-429",
+  });
+  await assertFailureIsNotRetriedInternally({
+    scenario: "provider-500",
+    executionId: "77777777-7777-4777-8777-777777777777",
+    idempotencyKey: "smoke-provider-500",
+  });
+
+  // A client timeout after accepted work must not imply cancellation at the provider.
+  // The test observes only the caller timeout; an exact replay checks duplicate safety.
+  const cancelledEnvelope = makeEnvelope(
+    "88888888-8888-4888-8888-888888888888",
+    "smoke-client-cancel-after-accept",
+    { __contractTestScenario: "delayed-success", message: "caller stopped waiting" },
+  );
+  await assert.rejects(postEnvelope(cancelledEnvelope, 150));
+  await new Promise((resolve) => setTimeout(resolve, 800));
+  const cancelledReplayResponse = await postEnvelope(cancelledEnvelope);
+  assert.equal(cancelledReplayResponse.status, 200, "replay after caller timeout must return the one stored receipt");
+  const cancelledReplay = await cancelledReplayResponse.json();
+  assert.equal(cancelledReplay.replayed, true);
+  assert.equal(cancelledReplay.receipt.executionId, cancelledEnvelope.executionId);
+
+  process.stdout.write("PASS: isolated executor egress denied; fixed gateway path works; replay, UNKNOWN, receipt binding, provider failures, cancellation race, and exact replay exercised.\n");
 }
 
 main().catch((error) => {
-  process.stderr.write(`${error.stack ?? error}\n`);
+  process.stderr.write((error.stack ?? error) + "\n");
   process.exitCode = 1;
 });
