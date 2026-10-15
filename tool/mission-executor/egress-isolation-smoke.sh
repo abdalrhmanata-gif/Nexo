@@ -56,6 +56,14 @@ if [ "$provider_ready" -ne 1 ]; then
   exit 1
 fi
 
+# Capture the exact reachable fake-provider address so the isolated executor
+# must prove it cannot bypass the gateway using a hard-coded IP.
+provider_ip="$(docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$provider_container")"
+if [[ ! "$provider_ip" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+  echo "Unable to determine the fake provider IPv4 address." >&2
+  exit 1
+fi
+
 docker run --detach \
   --name "$gateway_container" \
   --network "$internal_network" \
@@ -85,6 +93,7 @@ fi
 docker run --rm \
   --network "$internal_network" \
   --env ZAVQERA_FAKE_GATEWAY_TOKEN="$gateway_token" \
+  --env ZAVQERA_FAKE_PROVIDER_IP="$provider_ip" \
   --volume "$repo_root:/workspace:ro" \
   --workdir /workspace \
   node:22-bookworm-slim \
