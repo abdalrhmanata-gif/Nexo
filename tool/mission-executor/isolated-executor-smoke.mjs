@@ -107,6 +107,26 @@ async function assertDynamicLoaderAndProcessEgressBlocked() {
   });
   assert.equal(child.error, undefined, "child-process probe must finish without spawn/timeout errors: " + (child.error?.message ?? ""));
   assert.equal(child.status, 0, "fresh child process must not bypass the executor network boundary; stdout=" + child.stdout + " stderr=" + child.stderr);
+
+  // Probe a fresh ESM child process against the actual listening fake-provider IP.
+  // This complements the CommonJS child probe above; the OS network boundary must
+  // remain effective regardless of the Node module loader selected by the child.
+  const esmChildScript = [
+    'import net from "node:net";',
+    'const ip = process.env.ZAVQERA_TEST_PROVIDER_IP;',
+    "const blocked = new Set(['EACCES','EPERM','ENETUNREACH','EHOSTUNREACH','ECONNREFUSED','ENOTFOUND','EAI_AGAIN','ESERVFAIL','ETIMEDOUT','ETIMEOUT']);",
+    'const socket = net.connect({ host: ip, port: 9090, timeout: 1200 });',
+    'socket.once("connect", () => { socket.destroy(); process.exit(42); });',
+    'socket.once("error", (error) => process.exit(blocked.has(error.code) ? 0 : 43));',
+    'socket.once("timeout", () => socket.destroy(Object.assign(new Error("timeout"), { code: "ETIMEDOUT" })));',
+  ].join("\\n");
+  const esmChild = spawnSync(process.execPath, ["--input-type=module", "-e", esmChildScript], {
+    encoding: "utf8",
+    timeout: 2_500,
+    env: { PATH: process.env.PATH ?? "", ZAVQERA_TEST_PROVIDER_IP: FAKE_PROVIDER_IP },
+  });
+  assert.equal(esmChild.error, undefined, "fresh ESM child process probe must finish: " + (esmChild.error?.message ?? ""));
+  assert.equal(esmChild.status, 0, "ESM child process must not reach the actual fake provider IP; stdout=" + esmChild.stdout + " stderr=" + esmChild.stderr);
 }
 
 async function assertDirectProviderIpBlocked() {
@@ -122,6 +142,47 @@ async function assertDirectProviderIpBlocked() {
       else reject(new Error("direct fake-provider IP probe produced an unclassified result: " + (error.code ?? error.message)));
     });
     socket.once("timeout", () => socket.destroy(Object.assign(new Error("timeout"), { code: "ETIMEDOUT" })));
+  });
+}
+
+async function assertWorkerThreadDirectProviderIpBlocked() {
+  assert.equal(net.isIP(FAKE_PROVIDER_IP), 4, "worker-thread probe requires the actual fake provider IPv4 address");
+  const { Worker } = await import("node:worker_threads");
+  const workerScript = [
+    'const { parentPort, workerData } = require("node:worker_threads");',
+    'const net = require("node:net");',
+    "const blocked = new Set(['EACCES','EPERM','ENETUNREACH','EHOSTUNREACH','ECONNREFUSED','ENOTFOUND','EAI_AGAIN','ESERVFAIL','ETIMEDOUT','ETIMEOUT']);",
+    'const socket = net.connect({ host: workerData.providerIp, port: 9090, timeout: 1200 });',
+    'let reported = false;',
+    'const finish = (ok, code) => { if (reported) return; reported = true; socket.destroy(); parentPort.postMessage({ ok, code }); };',
+    'socket.once("connect", () => finish(false, "CONNECTED"));',
+    'socket.once("error", (error) => finish(blocked.has(error.code), error.code ?? "UNKNOWN"));',
+    'socket.once("timeout", () => socket.destroy(Object.assign(new Error("timeout"), { code: "ETIMEDOUT" })));',
+  ].join("\\n");
+  await new Promise((resolve, reject) => {
+    const worker = new Worker(workerScript, { eval: true, workerData: { providerIp: FAKE_PROVIDER_IP } });
+    let settled = false;
+    let timer;
+    const finish = (error) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (error) {
+        void worker.terminate();
+        reject(error);
+      } else {
+        resolve();
+      }
+    };
+    timer = setTimeout(() => finish(new Error("worker-thread network probe timed out")), 3_000);
+    worker.once("message", (result) => {
+      if (result?.ok === true) finish();
+      else finish(new Error("worker thread reached or could not classify direct fake-provider connection: " + (result?.code ?? "no code")));
+    });
+    worker.once("error", (error) => finish(error));
+    worker.once("exit", (code) => {
+      if (!settled) finish(new Error("worker thread exited before reporting its network result (code " + code + ")"));
+    });
   });
 }
 
@@ -167,6 +228,7 @@ async function assertDirectEgressBlocked() {
 
   await assertSocketBlocked(net, "statically imported node:net");
   await assertDynamicLoaderAndProcessEgressBlocked();
+  await assertWorkerThreadDirectProviderIpBlocked();
 }
 
 function makeEnvelope(executionId, idempotencyKey, payload) {
