@@ -2,14 +2,14 @@
 
 **Status:** Source-and-test audit of the candidate branch; not a production security certification.  
 **Reviewed contract:** `docs/ZAVQERA_MISSION_AUTHORITY_CONTRACT_v0.1.md`.  
-**Candidate head:** `1713ce57a09b092bdcc5c28d3c2be39776972c26` (PR #39, Draft / unmerged).  
+**Current candidate head:** `43edddf6050ac56ad9d1d8f4120f9d389a333c8a` (PR #39, Draft / unmerged). Earlier checkpoint hashes below are historical evidence and must not be read as the current candidate head.  
 **Database evidence:** W21 disposable local PostgreSQL 17 / Supabase replay, pgTAP, browser E2E and cleanup all passed on this source head. No hosted Supabase or production resource was used.
 
 ## Decision summary
 
 The candidate now has a real Next.js HTTP test for the protected Mission Action worker route, a shared authenticated parser/operation handler, a streaming request-body ceiling, and disposable PostgreSQL 17 evidence for the current SQL claims and races. This is materially stronger than the original client-only/runtime-contract evidence.
 
-**The universal enforcement claim remains NOT ESTABLISHED.** The production adapter registry is intentionally empty; no live provider dispatch or provider-specific receipt/reconciliation has been exercised. The egress-isolated route test proves behavior for the tested worker route under Docker `--network none`, not that every possible production execution path is forced through one universal network boundary.
+**The universal enforcement claim remains NOT ESTABLISHED.** The production adapter registry is intentionally empty; no live provider dispatch or provider-specific receipt/reconciliation has been exercised. The source inventory now also detects and explicitly classifies the only Next.js server action (`app/app/missions/new/page.tsx`) as authenticated workspace mission creation, verifies cookie-bound identity and owner-bound atomic RPC grants, and confirms the action cannot reach the Mission Action dispatcher/provider registry. The egress-isolated route test proves behavior for the tested worker route under Docker `--network none`, not that every possible production execution path is forced through one universal network boundary.
 
 ## Invariant-by-invariant status
 
@@ -87,3 +87,18 @@ Exact-head validation:
 W21 passed the disposable PostgreSQL 17 migration replay and pgTAP gate; Mission Authority and AI quota/workspace security; actual-ledger idempotency, atomic budget, one-time dispatch-claim and reconciliation-claim race tests; W72 persistent gateway integration with fake providers; full browser E2E; disposable-stack cleanup and cleanup verification; and evidence upload. Artifacts: `zavqera-w21-evidence` and `zavqera-w21-browser-diagnostics`.
 
 This checkpoint **does not** establish universal outbound-network mediation across all production execution paths or real-provider receipt/reconciliation. The provider registry remains empty and the interface/normalizer are not integrated into production responses. W21 used only disposable local PostgreSQL 17/Supabase and fake providers; it did not prove hosted Development schema parity and did not modify any hosted database.
+
+
+## Current candidate checkpoint — exact HEAD `43edddf6050ac56ad9d1d8f4120f9d389a333c8a` — 2026-10-14
+
+**Current evidence supersedes earlier checkpoint totals in this document:**
+- Web Unit: **365 passed / 0 failed**, including actual Next.js worker-route HTTP tests under Docker `--network none`, canonical reason-code source inventory, and the Server Action inventory/authorization regression — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38629459765
+- Web CI / TypeScript / production build: **SUCCESS** — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38629474160
+- Flutter CI: **SUCCESS** — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38629474288
+- W21 Local Launch Gate: **SUCCESS on this exact HEAD** — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38629459754
+
+W21 completed disposable PostgreSQL 17 migration replay and pgTAP, Mission Authority and AI quota/workspace security checks, four actual-ledger race checks (idempotency, authority budget, dispatch claim, reconciliation claim), W72 fake-provider gateway integration, browser E2E, disposable-stack cleanup verification, and evidence upload. Uploaded artifacts: `zavqera-w21-evidence` and `zavqera-w21-browser-diagnostics`.
+
+The Server Action regression scans runtime source files for Next.js `"use server"` directives, requires exact inventory equality, and checks that the only current action uses the cookie-bound authenticated Supabase session, derives the workspace from the user, calls the atomic `create_mission_with_actions` RPC whose SQL binds `auth.uid()` to the workspace owner, uses the publishable-key server client rather than the service-role key, and cannot transitively import the JIT dispatch gateway, worker boundary, or provider registry.
+
+**Still not established:** universal egress mediation across every production route/worker/SDK/native transport; real-provider receipt authenticity/idempotency/authoritative reconciliation; hosted Development schema parity. Static source analysis and one route under network isolation are partial evidence, not universal proof. No hosted Supabase or production resource was changed. Registry stays empty; PR #39 remains Draft/unmerged; Issue #23 remains OPEN; launch remains NO-GO.
