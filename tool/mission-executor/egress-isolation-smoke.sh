@@ -98,9 +98,11 @@ const expectedDispatches = {
   "provider-500": 1,
   "receipt-binding-mismatch": 1,
   "reconcile-receipt-mismatch": 1,
+  "slow-reconcile": 1,
 };
 const expectedReconciliations = {
   "smoke-accepted-then-timeout": 1,
+  "smoke-concurrent-not-found": 1,
   "smoke-client-cancel-after-accept": 1,
   "smoke-malformed-receipt": 1,
   "smoke-missing-receipt": 1,
@@ -108,12 +110,13 @@ const expectedReconciliations = {
   "smoke-provider-500": 1,
   "smoke-reconcile-receipt-mismatch": 2,
   "smoke-receipt-binding-mismatch": 1,
+  "smoke-slow-reconcile": 1,
 };
 assert.deepEqual(metrics.requestsByScenario, expectedDispatches, "dispatch requests must match explicit caller submissions; the gateway must not retry invisibly");
 assert.deepEqual(metrics.reconciliationsByIdempotencyKey, expectedReconciliations, "UNKNOWN recovery must use the separate lookup path, not a second dispatch");
-assert.equal(metrics.requestCount, 11, "dispatches must not be retried internally");
-assert.equal(metrics.reconciliationCount, 9, "expected only explicit reconciliation requests");
-assert.equal(metrics.receiptCount, 7, "failure-before-acceptance scenarios must not create receipts");
+assert.equal(metrics.requestCount, 12, "dispatches must not be retried internally");
+assert.equal(metrics.reconciliationCount, 11, "expected only explicit reconciliation requests");
+assert.equal(metrics.receiptCount, 8, "failure-before-acceptance scenarios must not create receipts");
 process.stdout.write("PASS: exact dispatch/reconciliation counts; no hidden retries; receipt ledger consistent.\n");
 '
 

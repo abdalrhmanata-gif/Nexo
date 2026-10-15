@@ -338,6 +338,36 @@ async function main() {
   );
   assert.equal(cancelledReceipt.externalId, "fake-" + cancelledEnvelope.idempotencyKey);
 
+  // Race a delayed FOUND lookup against a quick NOT_FOUND lookup. Each HTTP response
+  // must stay bound to its own caller; no global response state may cross the streams.
+  const slowReconcileEnvelope = makeEnvelope(
+    "abababab-abab-4bab-8bab-abababababab",
+    "smoke-slow-reconcile",
+    { __contractTestScenario: "slow-reconcile", message: "known receipt with deliberately delayed lookup" },
+  );
+  const slowDispatch = await postEnvelope(slowReconcileEnvelope);
+  assert.equal(slowDispatch.status, 200);
+  const unknownConcurrentEnvelope = makeEnvelope(
+    "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    "smoke-concurrent-not-found",
+    { message: "no dispatch attempted for this identity" },
+  );
+  const [slowLookupResponse, quickLookupResponse] = await Promise.all([
+    postReconciliation(slowReconcileEnvelope),
+    postReconciliation(unknownConcurrentEnvelope),
+  ]);
+  const slowLookupReceipt = await assertFoundReceipt(
+    slowLookupResponse,
+    slowReconcileEnvelope,
+    "concurrent delayed FOUND lookup",
+  );
+  assert.equal(slowLookupReceipt.externalId, "fake-" + slowReconcileEnvelope.idempotencyKey);
+  assert.equal(quickLookupResponse.status, 200);
+  const quickLookup = await quickLookupResponse.json();
+  assert.equal(quickLookup.ok, true);
+  assert.equal(quickLookup.state, "NOT_FOUND", "concurrent no-record lookup must not receive the other execution's receipt");
+  assert.equal(quickLookup.receipt, undefined);
+
   process.stdout.write("PASS: isolated executor egress denied across static, dynamic, CommonJS and child-process transports; UNKNOWN resolved by lookup; receipt and no-retry cases passed.\n");
 }
 

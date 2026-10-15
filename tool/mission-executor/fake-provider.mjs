@@ -88,6 +88,11 @@ async function handleReconciliation(request, response) {
     envelope.idempotencyKey,
     (reconciliationsByIdempotencyKey.get(envelope.idempotencyKey) ?? 0) + 1,
   );
+  // Hold one fake lookup open so two different reconciliation responses overlap.
+  // This deliberately tests that the gateway does not keep a shared response writer.
+  if (scenarioByIdempotencyKey.get(envelope.idempotencyKey) === "slow-reconcile") {
+    await delay(500);
+  }
   const prior = receiptsByIdempotencyKey.get(envelope.idempotencyKey);
   if (!prior) {
     send(response, 200, { found: false, state: "NOT_FOUND" });
