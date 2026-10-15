@@ -4,6 +4,8 @@ import http from "node:http";
 const PORT = 8080;
 const MAX_BODY_BYTES = 16 * 1024;
 const EXPECTED_AUDIENCE = "fake.external.v1";
+// Fixed test-only upstream. Never derived from request data.
+const FAKE_PROVIDER_URL = "http://fake-provider:9090/v1/actions";
 const EXPECTED_KEYS = [
   "audience",
   "executionId",
@@ -12,7 +14,6 @@ const EXPECTED_KEYS = [
   "payload",
   "payloadDigest",
 ];
-const receiptsByIdempotencyKey = new Map();
 
 function send(response, status, body) {
   response.writeHead(status, {
@@ -42,6 +43,18 @@ function isSha256(value) {
   return typeof value === "string" && /^[a-f0-9]{64}$/.test(value);
 }
 
+function receiptMatches(receipt, envelope) {
+  return receipt
+    && receipt.provider === "fake-provider-only"
+    && receipt.providerAccount === "fake-account-v1"
+    && receipt.executionId === envelope.executionId
+    && receipt.audience === envelope.audience
+    && receipt.idempotencyKey === envelope.idempotencyKey
+    && receipt.payloadDigest === envelope.payloadDigest
+    && typeof receipt.externalId === "string"
+    && receipt.externalId.length > 0;
+}
+
 const server = http.createServer(async (request, response) => {
   if (request.method === "GET" && request.url === "/health") {
     send(response, 200, { ok: true, mode: "fake-only" });
@@ -60,7 +73,8 @@ const server = http.createServer(async (request, response) => {
       return;
     }
     const keys = Object.keys(envelope).sort();
-    if (keys.length !== EXPECTED_KEYS.length || keys.some((key, index) => key !== [...EXPECTED_KEYS].sort()[index])) {
+    const expectedKeys = [...EXPECTED_KEYS].sort();
+    if (keys.length !== expectedKeys.length || keys.some((key, index) => key !== expectedKeys[index])) {
       send(response, 400, { error: "unexpected envelope fields" });
       return;
     }
@@ -86,29 +100,54 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
-    const prior = receiptsByIdempotencyKey.get(envelope.idempotencyKey);
-    if (prior) {
-      if (prior.executionId !== envelope.executionId
-        || prior.audience !== envelope.audience
-        || prior.payloadDigest !== envelope.payloadDigest) {
-        send(response, 409, { error: "idempotency binding mismatch" });
-        return;
-      }
-      send(response, 200, { ok: true, replayed: true, receipt: prior });
+    let providerResponse;
+    try {
+      providerResponse = await fetch(FAKE_PROVIDER_URL, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          executionId: envelope.executionId,
+          audience: envelope.audience,
+          idempotencyKey: envelope.idempotencyKey,
+          payload: envelope.payload,
+          payloadDigest: envelope.payloadDigest,
+        }),
+        signal: AbortSignal.timeout(2_000),
+      });
+    } catch {
+      // In a real executor this is an UNKNOWN outcome requiring reconciliation.
+      send(response, 502, { error: "fake provider outcome unknown; reconciliation required" });
       return;
     }
 
-    const receipt = Object.freeze({
-      provider: "fake-provider-only",
-      providerAccount: "fake-account-v1",
-      externalId: `fake-${envelope.idempotencyKey}`,
-      executionId: envelope.executionId,
-      audience: envelope.audience,
-      idempotencyKey: envelope.idempotencyKey,
-      payloadDigest: envelope.payloadDigest,
+    if (providerResponse.status === 409) {
+      await providerResponse.arrayBuffer();
+      send(response, 409, { error: "provider idempotency binding mismatch" });
+      return;
+    }
+    if (!providerResponse.ok) {
+      await providerResponse.arrayBuffer();
+      send(response, 502, { error: "fake provider rejected the request" });
+      return;
+    }
+
+    let providerResult;
+    try {
+      providerResult = await providerResponse.json();
+    } catch {
+      send(response, 502, { error: "malformed fake provider response" });
+      return;
+    }
+    if (providerResult?.ok !== true || !receiptMatches(providerResult.receipt, envelope)) {
+      send(response, 502, { error: "fake provider receipt binding mismatch" });
+      return;
+    }
+
+    send(response, 200, {
+      ok: true,
+      replayed: providerResult.replayed === true,
+      receipt: providerResult.receipt,
     });
-    receiptsByIdempotencyKey.set(envelope.idempotencyKey, receipt);
-    send(response, 200, { ok: true, replayed: false, receipt });
   } catch (error) {
     send(response, Number.isInteger(error?.statusCode) ? error.statusCode : 400, {
       error: error?.statusCode === 413 ? "body too large" : "invalid request",
