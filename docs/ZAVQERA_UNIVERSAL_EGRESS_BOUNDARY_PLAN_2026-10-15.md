@@ -122,3 +122,30 @@ Artifacts:
 The three exact-head CI workflows also passed on `f146b11914b81f68ed025ac96d99befb0c2c8362` (Web Unit run 38697461636; Web CI run 38697461610; Flutter CI run 38697461393). A documentation-only commit was subsequently added to record this result; the full W21 result applies to the exact source/test SHA above, not to a newly tested production deployment.
 
 This is a local/disposable evidence pass, **not** production certification. No hosted Supabase schema parity, deployed network policy, real provider idempotency, real receipt authenticity or authoritative real-provider reconciliation was tested. `NOT_FOUND` is not equivalent to `NOT_SENT`; no automatic retry is permitted after an unknown outcome without stronger provider-specific evidence. The trusted provider registry remains empty and launch remains **NO-GO**.
+
+## Test-only gateway authentication follow-up — 2026-10-15
+
+**Source/test SHA:** `3527f31f795bfb2321627343f8f6fb25cbccc4bf`.
+
+The disposable Docker smoke harness now generates a fresh 256-bit random token for every run and passes it only to the isolated executor and the fake gateway. The fake gateway rejects `POST /v1/execute` and `POST /v1/reconcile` with HTTP 401 when the authorization header is absent or the token is invalid, before reading the request body or forwarding to the fake provider. The smoke test asserts all four denial cases. The provider's exact dispatch/reconciliation counters fail if those denied requests are forwarded.
+
+This is test-fixture authentication only. It is not the production identity/signature protocol, does not prove a caller's ledger authority, and is not evidence of production credential isolation. The token is per-run and is not forwarded to the fake provider.
+
+### CI on the authentication follow-up SHA
+
+All three GitHub Actions workflows passed on `3527f31f795bfb2321627343f8f6fb25cbccc4bf`:
+
+- Web Unit: [run 38700344037](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38700344037) — SUCCESS.
+- Web CI: [run 38700344198](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38700344198) — SUCCESS.
+- Flutter CI: [run 38700343936](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38700343936) — SUCCESS.
+
+The latest **confirmed full W21 pass remains** run 38697454403 on source/test SHA `f146b11914b81f68ed025ac96d99befb0c2c8362`. A full W21 result for the new authentication follow-up SHA is not confirmed in this checkpoint and must not be inferred from the three workflows above.
+
+### Updated disposition
+
+- Test-only gateway authentication: implemented in the disposable smoke harness and covered by Web Unit/Web CI/Flutter CI on SHA `3527f31`; full W21 on this exact SHA remains unconfirmed.
+- Production executor, production gateway identity, production network policy, live-provider behavior, and hosted schema parity: not established.
+- Provider registry: empty / fail-closed.
+- Issue #23: remains OPEN. PR #39: remains Draft/open/unmerged.
+- Launch: **NO-GO**.
+
