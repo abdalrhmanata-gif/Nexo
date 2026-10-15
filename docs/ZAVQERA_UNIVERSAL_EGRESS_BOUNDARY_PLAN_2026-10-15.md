@@ -149,3 +149,28 @@ The latest **confirmed full W21 pass remains** run 38697454403 on source/test SH
 - Issue #23: remains OPEN. PR #39: remains Draft/open/unmerged.
 - Launch: **NO-GO**.
 
+## Direct fake-provider IP isolation follow-up — 2026-10-15
+
+**Exact code/test SHA:** `b184b91540c80be8a07b455bddaeca9080fad4f0`.
+
+The disposable topology now discovers the running fake provider's actual IPv4 address and passes that address to the isolated executor test. Before testing normal gateway dispatch, the executor attempts a direct TCP connection to the discovered provider IP on port 9090; the test fails if the connection succeeds and passes only for a recognized network-denial error. The existing approved gateway path must still succeed afterward. This closes the weakness where a negative probe to a reserved TEST-NET address could fail even if the test did not prove isolation from the actual fake provider container.
+
+### Exact-SHA CI
+
+All three workflows passed on `b184b91540c80be8a07b455bddaeca9080fad4f0`:
+
+- Web Unit — PASS: [run 38701026107](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38701026107). The run includes the Docker `--network none` worker-route/adversarial-egress test step.
+- Web CI — PASS: [run 38701026169](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38701026169).
+- Flutter CI — PASS: [run 38701026080](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38701026080).
+
+The confirmed full W21 pass remains [run 38697454403](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38697454403) on earlier code/test SHA `f146b11914b81f68ed025ac96d99befb0c2c8362`. A full W21 result for `b184b91540c80be8a07b455bddaeca9080fad4f0` is not confirmed in this record and must not be inferred from the three workflows above.
+
+### Updated disposition
+
+- Test-only fake gateway authentication and direct-IP isolation probes: implemented and covered by exact-SHA CI above.
+- Production executor/gateway identity, deployed network policy, real-provider contract, provider credential separation, authoritative real-provider reconciliation, and hosted Development schema parity: not established.
+- Universal production egress mediation: **NOT ESTABLISHED**.
+- Provider registry: empty / fail-closed.
+- PR #39: Draft/open/unmerged. Issue #23: OPEN.
+- Launch: **NO-GO**.
+
