@@ -38,7 +38,7 @@ jobs:
       - name: Pull Node runtime for OS-level egress isolation
         run: docker pull node:22-bookworm-slim
 
-      - name: Run actual Next.js route test with container networking disabled
+      - name: Run worker route and adversarial egress tests with container networking disabled
         run: |
           set -euo pipefail
           docker run --rm --network none \
@@ -48,7 +48,7 @@ jobs:
             --env HOME=/tmp \
             --env ZAVQERA_TEST_NETWORK_ISOLATED=1 \
             node:22-bookworm-slim \
-            node --test test/mission-action-route-runtime.integration.test.mjs
+            node --test test/mission-action-route-runtime.integration.test.mjs test/mission-authority-egress-isolation.integration.test.mjs
 
       - name: Run Mission Authority controlled-adapter tests
         run: node --test test/mission-authority-controlled-adapter.test.mjs
