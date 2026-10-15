@@ -236,7 +236,7 @@ test("injectable trusted-worker HTTP/JIT factory is imported only by the protect
   for (const routeFile of routeFiles) {
     const source = await readFile(routeFile, "utf8");
     if (/from\s+["'][^"']*mission-authority\/trusted-worker-http(?:\.mjs)?["']/.test(source)) {
-      consumers.push(relative(apiRoot, routeFile).replace(/\\\\/g, "/"));
+      consumers.push(relative(apiRoot, routeFile).replace(/\\/g, "/"));
     }
   }
 
