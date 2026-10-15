@@ -6,7 +6,7 @@
 
 ## 1. Current evidence and its limit
 
-The current candidate has source-graph tests for Mission Action API routes, a deny-by-default trusted adapter registry, an authenticated internal worker route, a request-body ceiling, and an actual-route integration test under Docker `--network none`. Commit `843855a75e7a1e5b1a06456b7e42347357969020` adds an adversarial egress integration test, also run inside the same `--network none` container, probing direct `fetch`, Node HTTP/HTTPS, TCP/TLS sockets, DNS resolution, and a child-process socket attempt. Web Unit, Web CI, and Flutter CI all passed on this exact commit (runs 38688489190, 38688489262, and 38688489297 respectively). The current branch also inventories other network-capable app routes and identity/session entrypoints separately.
+The current candidate has source-graph tests for Mission Action API routes, a deny-by-default trusted adapter registry, an authenticated internal worker route, a request-body ceiling, and an actual-route integration test under Docker `--network none`. Commit `843855a75e7a1e5b1a06456b7e42347357969020` added adversarial egress probes under `--network none` for direct `fetch`, Node HTTP/HTTPS, TCP/TLS sockets, DNS resolution, and a child-process socket attempt; Web Unit, Web CI, Flutter CI and W21 passed on that source/test checkpoint (runs 38688489190, 38688489262, 38688489297, and 38688482588). The newer test-only topology prototype under `tool/mission-executor/` runs an executor only on an internal Docker network, a fake provider on a separate egress network, and a fixed-destination fake gateway on both. The new topology step passed in W21 run 38689614876; full W21 is still running on `d97d2e97ca1f4f1d6e7a92ef788766ccb97a0562`. Web Unit and Web CI passed on `d97d2e9`; Flutter CI was still running at this note. The current branch also inventories other network-capable app routes and identity/session entrypoints separately.
 
 These controls are useful defense-in-depth, but they do **not** establish a universal runtime egress boundary:
 - Static source analysis cannot prove the absence of every dynamically loaded, native, transitive dependency, or future runtime path.
@@ -63,7 +63,7 @@ Target flow:
 | Static Mission Action source-graph guard | Regression coverage exists; not universal runtime proof |
 | Adapter registry | Empty / fail-closed |
 | Real-provider idempotency and receipt contract | Not verified |
-| Separate network-restricted executor and enforced egress gateway | Not implemented/proven |
+| Separate network-restricted executor and enforced egress gateway | Production runtime not implemented/proven; disposable Docker topology prototype exists and its isolated-network step passed, with full W21 still running |
 | W21 on current branch head | Not yet confirmed for `843855a75e7a1e5b1a06456b7e42347357969020`; prior verified pass is on ancestor `43edddf6050ac56ad9d1d8f4120f9d389a333c8a` |
 | Hosted Development parity | Not established |
 | Launch | **NO-GO** |
@@ -71,7 +71,7 @@ Target flow:
 ## 5. Next concrete work order
 
 1. Preserve the empty registry and keep PR #39 Draft.
-2. Design and implement the executor/gateway in an isolated local test environment first; no hosted secrets or deployments.
-3. Extend adversarial testing to dynamic loaders and transitive/native dependency paths; current tests cover selected Node network APIs and one child process only.
-4. Add provider-contract tests using only a fake provider and a deterministic fake ledger for replay, timeout boundaries, malformed receipts, receipt-binding mismatch, 429/5xx, cancellation races, and reconciliation after `UNKNOWN`.
-5. Confirm W21 on one exact SHA and update this document with evidence links, not assumptions.
+2. Complete W21 on the current exact source/test SHA and retain the full evidence/cleanup artifact.
+3. Extend the local topology prototype to cover dynamic loaders and transitive/native dependency paths; current probes cover selected Node network APIs and one child process only.
+4. Expand fake-provider contract tests for timeout boundaries, malformed receipts, receipt-binding mismatch, provider 429/5xx, cancellation races, and reconciliation after `UNKNOWN`.
+5. Only then design the production executor/control-plane integration; keep it separate from the public web process and do not deploy or register a real provider.
