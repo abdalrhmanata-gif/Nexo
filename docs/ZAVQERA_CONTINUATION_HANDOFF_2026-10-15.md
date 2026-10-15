@@ -176,3 +176,35 @@ W21 completed the HTTP/2 and UDP isolation probes; disposable PostgreSQL 17/pgTA
 - Browser diagnostics: [artifact 11958393754](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38706597203/artifacts/11958393754).
 
 These remain local/disposable fake-provider results. They do not establish production egress enforcement, native/transitive dependency behavior in every runtime, deployed credential separation, or any real-provider contract. The registry remains empty and launch remains **NO-GO**.
+
+
+## 11. Full production-entrypoint graph guard — 2026-10-15
+
+**Exact source/test SHA:** `c50b9db5610f483f63abdb1504465711c8e3b74e`.
+
+Expanded `apps/web/test/mission-authority-worker-auth.test.mjs` so the Mission Action dispatch graph guard no longer treats API routes as its only roots. It now includes:
+- all App Router `route.ts` handlers;
+- nested and root App Router page/layout/template/default/loading/error/not-found/global-error and metadata entrypoints;
+- middleware and instrumentation entrypoints;
+- every module containing a Next.js `"use server"` directive;
+- conventional background/worker/job/cron/scheduled/task/queue/platform-function locations, with a fail-closed assertion that any such new source location must be explicitly reviewed and inventoried.
+
+The test asserts that root `app/page.tsx` and `app/layout.tsx` are actually included in the entrypoint set. For every discovered entrypoint it traverses statically declared local imports and permits reachability to the persistent Mission Action dispatch gateway / worker boundary / provider registry only from `app/api/internal/agent-executions/[executionId]/route.ts`.
+
+This is an expanded static import-graph regression guard, not a full runtime trace or proof of all transitive package/native/runtime behavior.
+
+### Exact-SHA CI — PASS
+
+- Web Unit: [run 38708716964](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38708716964) — SUCCESS.
+- Duplicate push Web Unit: [run 38708723370](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38708723370) — SUCCESS.
+- Web CI / typecheck / production build: [run 38708723357](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38708723357) — SUCCESS.
+- Flutter CI: [run 38708716868](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38708716868) — SUCCESS.
+- Duplicate pull-request Flutter CI: [run 38708723245](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38708723245) — SUCCESS.
+
+### W21 on this source/test SHA — IN PROGRESS at documentation time
+
+[W21 Local Launch Gate run 38708716869](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38708716869) is running on this exact SHA. Its executor/fake-gateway egress step, disposable PG17 preparation, and pgTAP plus Mission Authority/AI quota/ledger-race/fake-provider integration steps passed; browser E2E and subsequent disposable-stack cleanup/evidence steps have not yet been confirmed complete in this checkpoint. Do not infer a full W21 PASS until this run concludes.
+
+Last completed full W21 PASS before this new root-entrypoint assertion was [run 38707978336](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38707978336) on source/test SHA `3e4f6a573e3be3df86b7fa5d6035b2a7eb989e92`, with evidence [artifact 11959556889](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38707978336/artifacts/11959556889) and browser diagnostics [artifact 11959343783](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38707978336/artifacts/11959343783).
+
+Provider registry remains empty/fail-closed. PR #39 remains OPEN / DRAFT / UNMERGED; Issue #23 remains OPEN. No hosted Supabase, Production, deployment settings, secrets, billing, DNS, or real-provider credentials changed. Launch remains **NO-GO**.

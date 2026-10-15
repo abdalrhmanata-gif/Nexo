@@ -191,3 +191,17 @@ Exact-SHA results:
 Artifacts: [W21 evidence 11958244046](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38706597203/artifacts/11958244046), [browser diagnostics 11958393754](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38706597203/artifacts/11958393754).
 
 This closes only the new test-fixture coverage gap. Universal production egress mediation, the production executor/gateway and network policy, production credential separation, real-provider idempotency and authoritative reconciliation, and hosted Development schema parity remain unproven. Launch stays **NO-GO**.
+
+
+## Production entrypoint graph guard — exact source/test SHA `c50b9db5610f483f63abdb1504465711c8e3b74e`
+
+The local Mission Action dependency-graph test now treats App Router routes, root/nested page and layout/metadata handlers, middleware, instrumentation and every detected `"use server"` module as source roots. It additionally rejects new conventional background/worker/job/cron/scheduled/task/queue/platform-function paths until reviewed and inventoried. The regression explicitly asserts root `app/page.tsx` and `app/layout.tsx` are in the entrypoint set and that only the authenticated internal worker route can reach the persistent dispatch gateway/worker boundary/registry.
+
+Exact-SHA CI passed:
+- [Web Unit 38708716964](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38708716964)
+- [Web CI 38708723357](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38708723357)
+- [Flutter CI 38708716868](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38708716868)
+
+W21 [run 38708716869](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38708716869) was still running its browser E2E at the time of this update; no full-gate claim is made on `c50b9db` yet. The previous completed W21 pass on parent source/test SHA `3e4f6a573e3be3df86b7fa5d6035b2a7eb989e92` is [run 38707978336](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38707978336), with [evidence artifact 11959556889](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38707978336/artifacts/11959556889) and [browser diagnostics 11959343783](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38707978336/artifacts/11959343783).
+
+Static source reachability remains a regression detector, not universal runtime egress proof. Production network enforcement, native/transitive runtime coverage, deployed credential separation, real-provider contract evidence, and hosted Development schema parity remain open. Release stays **NO-GO**.
