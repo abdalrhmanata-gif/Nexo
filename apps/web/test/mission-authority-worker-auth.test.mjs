@@ -396,32 +396,66 @@ test("mission-action worker rejects unsupported operations before adapter resolu
 });
 
 
-test("only the trusted internal worker route transitively reaches Mission Action dispatch modules", async () => {
-  const apiRoot = join(webRoot, "app", "api");
-  const routeFiles = await listApiRouteFiles(apiRoot);
+test("only the trusted internal worker route reaches Mission Action dispatch modules from every production entrypoint graph", async () => {
+  const appRoot = join(webRoot, "app");
+  const sourceFiles = await listRuntimeSourceFiles(webRoot);
+  const routeFiles = await listApiRouteFiles(appRoot);
+  const entrypoints = new Set(routeFiles);
+
+  // Next.js server-rendered entrypoints can execute helper code too. Include
+  // pages/layouts/templates and metadata handlers, middleware, instrumentation,
+  // legacy/platform function roots, and every reviewed "use server" module.
+  const appRenderEntrypointPattern = /^app\\/.+\\/(?:page|layout|template|default|loading|error|not-found|global-error|opengraph-image|twitter-image|icon|apple-icon|sitemap|robots|manifest)\\.(?:ts|tsx|js|jsx)$/;
+  const infrastructureEntrypointPattern = /^(?:middleware|instrumentation|instrumentation-client)\\.(?:ts|tsx|js|jsx)$/;
+  const serverActionPattern = /^\\s*["']use server["'];?\\s*(?:\\/\\/.*)?$/m;
+  const backgroundEntrypointPattern = /(^|\\/)(?:workers?|jobs?|cron|scheduled|tasks?|queues?)(\\/|$)|^(?:functions|netlify\\/functions|pages\\/api)\\//i;
+
+  const backgroundEntrypoints = [];
+  for (const sourceFile of sourceFiles) {
+    const relativePath = relative(webRoot, sourceFile).replace(/\\\\/g, "/");
+    const source = await readFile(sourceFile, "utf8");
+    if (appRenderEntrypointPattern.test(relativePath)
+        || infrastructureEntrypointPattern.test(relativePath)
+        || serverActionPattern.test(source)
+        || backgroundEntrypointPattern.test(relativePath)) {
+      entrypoints.add(sourceFile);
+    }
+    if (backgroundEntrypointPattern.test(relativePath)) backgroundEntrypoints.push(relativePath);
+  }
+
+  // No scheduled/background/worker/function entrypoint exists in this web app
+  // today. A future one must be inventoried and reviewed explicitly before it
+  // can enter the runtime; test tooling under /tool is intentionally separate.
+  const reviewedBackgroundEntrypoints = [];
+  assert.deepEqual(
+    backgroundEntrypoints.sort(),
+    reviewedBackgroundEntrypoints,
+    "new worker/job/cron/scheduled/queue/platform-function entrypoints require explicit review and inventory",
+  );
+
   const sensitiveModules = new Set([
     join(webRoot, "lib", "mission-authority", "persistent-dispatch-gateway.mjs"),
     join(webRoot, "lib", "mission-authority", "mission-action-worker-boundary.mjs"),
     join(webRoot, "lib", "mission-authority", "provider-adapter-registry.mjs"),
   ]);
-  const reachableRoutes = [];
+  const reachableEntrypoints = [];
 
-  for (const routeFile of routeFiles) {
-    const chain = await findReachableSensitiveModule(routeFile, sensitiveModules);
+  for (const entrypoint of [...entrypoints].sort()) {
+    const chain = await findReachableSensitiveModule(entrypoint, sensitiveModules);
     if (!chain) continue;
-    reachableRoutes.push({
-      route: relative(apiRoot, routeFile).replace(/\\/g, "/"),
-      target: relative(webRoot, chain.at(-1)).replace(/\\/g, "/"),
+    reachableEntrypoints.push({
+      entrypoint: relative(webRoot, entrypoint).replace(/\\\\/g, "/"),
+      target: relative(webRoot, chain.at(-1)).replace(/\\\\/g, "/"),
     });
   }
 
   assert.deepEqual(
-    reachableRoutes,
+    reachableEntrypoints,
     [{
-      route: "internal/agent-executions/[executionId]/route.ts",
+      entrypoint: "app/api/internal/agent-executions/[executionId]/route.ts",
       target: "lib/mission-authority/persistent-dispatch-gateway.mjs",
     }],
-    "no other API route may reach Mission Action dispatch, worker-boundary or trusted-registry modules even through local static imports",
+    "only the trusted worker route may reach Mission Action dispatch, worker-boundary or trusted-registry modules from any statically discovered production entrypoint",
   );
 });
 
