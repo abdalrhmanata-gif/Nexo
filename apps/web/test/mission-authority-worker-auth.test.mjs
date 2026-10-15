@@ -405,14 +405,14 @@ test("only the trusted internal worker route reaches Mission Action dispatch mod
   // Next.js server-rendered entrypoints can execute helper code too. Include
   // pages/layouts/templates and metadata handlers, middleware, instrumentation,
   // legacy/platform function roots, and every reviewed "use server" module.
-  const appRenderEntrypointPattern = /^app\\/.+\\/(?:page|layout|template|default|loading|error|not-found|global-error|opengraph-image|twitter-image|icon|apple-icon|sitemap|robots|manifest)\\.(?:ts|tsx|js|jsx)$/;
-  const infrastructureEntrypointPattern = /^(?:middleware|instrumentation|instrumentation-client)\\.(?:ts|tsx|js|jsx)$/;
-  const serverActionPattern = /^\\s*["']use server["'];?\\s*(?:\\/\\/.*)?$/m;
-  const backgroundEntrypointPattern = /(^|\\/)(?:workers?|jobs?|cron|scheduled|tasks?|queues?)(\\/|$)|^(?:functions|netlify\\/functions|pages\\/api)\\//i;
+  const appRenderEntrypointPattern = /^app\/.+\/(?:page|layout|template|default|loading|error|not-found|global-error|opengraph-image|twitter-image|icon|apple-icon|sitemap|robots|manifest)\.(?:ts|tsx|js|jsx)$/;
+  const infrastructureEntrypointPattern = /^(?:middleware|instrumentation|instrumentation-client)\.(?:ts|tsx|js|jsx)$/;
+  const serverActionPattern = /^\s*["']use server["'];?\s*(?:\/\/.*)?$/m;
+  const backgroundEntrypointPattern = /(^|\/)(?:workers?|jobs?|cron|scheduled|tasks?|queues?)(\/|$)|^(?:functions|netlify\/functions|pages\/api)\//i;
 
   const backgroundEntrypoints = [];
   for (const sourceFile of sourceFiles) {
-    const relativePath = relative(webRoot, sourceFile).replace(/\\\\/g, "/");
+    const relativePath = relative(webRoot, sourceFile).replace(/\\/g, "/");
     const source = await readFile(sourceFile, "utf8");
     if (appRenderEntrypointPattern.test(relativePath)
         || infrastructureEntrypointPattern.test(relativePath)
@@ -444,8 +444,8 @@ test("only the trusted internal worker route reaches Mission Action dispatch mod
     const chain = await findReachableSensitiveModule(entrypoint, sensitiveModules);
     if (!chain) continue;
     reachableEntrypoints.push({
-      entrypoint: relative(webRoot, entrypoint).replace(/\\\\/g, "/"),
-      target: relative(webRoot, chain.at(-1)).replace(/\\\\/g, "/"),
+      entrypoint: relative(webRoot, entrypoint).replace(/\\/g, "/"),
+      target: relative(webRoot, chain.at(-1)).replace(/\\/g, "/"),
     });
   }
 
