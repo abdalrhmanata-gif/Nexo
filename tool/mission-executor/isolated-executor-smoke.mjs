@@ -20,6 +20,92 @@ function codesOf(error) {
   return codes;
 }
 
+function assertSocketBlocked(netApi, label) {
+  return new Promise((resolve, reject) => {
+    const socket = netApi.connect({ host: "203.0.113.1", port: 443, timeout: 1_200 });
+    socket.once("connect", () => {
+      socket.destroy();
+      reject(new Error(label + " unexpectedly established a TCP connection"));
+    });
+    socket.once("error", (error) => {
+      if (blockedCodes.has(error.code)) resolve();
+      else reject(new Error(label + " got an unclassified socket error: " + (error.code ?? error.message)));
+    });
+    socket.once("timeout", () => socket.destroy(Object.assign(new Error("timeout"), { code: "ETIMEDOUT" })));
+  });
+}
+
+function assertHttpTransportBlocked(httpApi, url, label) {
+  return new Promise((resolve, reject) => {
+    const request = httpApi.get(url, (response) => {
+      response.resume();
+      reject(new Error(label + " unexpectedly received an HTTP response"));
+    });
+    request.setTimeout(1_200, () => request.destroy(Object.assign(new Error("timeout"), { code: "ETIMEDOUT" })));
+    request.once("error", (error) => {
+      if (blockedCodes.has(error.code)) resolve();
+      else reject(new Error(label + " got an unclassified request error: " + (error.code ?? error.message)));
+    });
+  });
+}
+
+function assertTlsBlocked(tlsApi) {
+  return new Promise((resolve, reject) => {
+    const socket = tlsApi.connect({
+      host: "203.0.113.1",
+      port: 443,
+      servername: "example.com",
+      timeout: 1_200,
+    });
+    socket.once("secureConnect", () => {
+      socket.destroy();
+      reject(new Error("dynamically loaded TLS transport unexpectedly established a connection"));
+    });
+    socket.once("error", (error) => {
+      if (blockedCodes.has(error.code)) resolve();
+      else reject(new Error("dynamically loaded TLS got an unclassified error: " + (error.code ?? error.message)));
+    });
+    socket.once("timeout", () => socket.destroy(Object.assign(new Error("timeout"), { code: "ETIMEDOUT" })));
+  });
+}
+
+async function assertDynamicLoaderAndProcessEgressBlocked() {
+  // ESM dynamic imports and CommonJS createRequire must inherit the same OS network boundary.
+  const dynamicNet = await import("node:net");
+  await assertSocketBlocked(dynamicNet, "ESM dynamic import of node:net");
+
+  const moduleApi = await import("node:module");
+  const require = moduleApi.createRequire(import.meta.url);
+  const requiredNet = require("node:net");
+  await assertSocketBlocked(requiredNet, "createRequire loading node:net");
+
+  const dynamicHttp = await import("node:http");
+  await assertHttpTransportBlocked(dynamicHttp, "http://example.com/", "ESM dynamic import of node:http");
+
+  const dynamicHttps = await import("node:https");
+  await assertHttpTransportBlocked(dynamicHttps, "https://example.com/", "ESM dynamic import of node:https");
+
+  const dynamicTls = await import("node:tls");
+  await assertTlsBlocked(dynamicTls);
+
+  // Spawn a fresh Node process using the CommonJS loader to catch process-level bypass attempts.
+  const childProcess = await import("node:child_process");
+  const childScript = [
+    "const net = require('node:net');",
+    "const blocked = new Set(['EACCES','EPERM','ENETUNREACH','EHOSTUNREACH','ECONNREFUSED','ENOTFOUND','EAI_AGAIN','ESERVFAIL','ETIMEDOUT','ETIMEOUT']);",
+    "const socket = net.connect({ host: '203.0.113.1', port: 443, timeout: 1000 });",
+    "socket.once('connect', () => { socket.destroy(); process.exit(42); });",
+    "socket.once('error', (error) => process.exit(blocked.has(error.code) ? 0 : 43));",
+    "socket.once('timeout', () => socket.destroy(Object.assign(new Error('timeout'), { code: 'ETIMEDOUT' })));",
+  ].join("\n");
+  const child = childProcess.spawnSync(process.execPath, ["-e", childScript], {
+    encoding: "utf8",
+    timeout: 2_500,
+  });
+  assert.equal(child.error, undefined, "child-process probe must finish without spawn/timeout errors: " + (child.error?.message ?? ""));
+  assert.equal(child.status, 0, "fresh child process must not bypass the executor network boundary; stdout=" + child.stdout + " stderr=" + child.stderr);
+}
+
 async function assertDirectEgressBlocked() {
   await assert.rejects(
     fetch("https://example.com/", { signal: AbortSignal.timeout(2_000) }),
@@ -59,18 +145,8 @@ async function assertDirectEgressBlocked() {
     if (!codesOf(error).some((code) => blockedCodes.has(code))) throw error;
   }
 
-  await new Promise((resolve, reject) => {
-    const socket = net.connect({ host: "203.0.113.1", port: 443, timeout: 2_000 });
-    socket.once("connect", () => {
-      socket.destroy();
-      reject(new Error("direct TCP egress unexpectedly succeeded"));
-    });
-    socket.once("error", (error) => {
-      if (blockedCodes.has(error.code)) resolve();
-      else reject(new Error("unexpected socket error: " + (error.code ?? error.message)));
-    });
-    socket.once("timeout", () => socket.destroy(Object.assign(new Error("timeout"), { code: "ETIMEDOUT" })));
-  });
+  await assertSocketBlocked(net, "statically imported node:net");
+  await assertDynamicLoaderAndProcessEgressBlocked();
 }
 
 function makeEnvelope(executionId, idempotencyKey, payload) {
@@ -215,7 +291,7 @@ async function main() {
   assert.equal(cancelledReplay.replayed, true);
   assert.equal(cancelledReplay.receipt.executionId, cancelledEnvelope.executionId);
 
-  process.stdout.write("PASS: isolated executor egress denied; fixed gateway path works; replay, UNKNOWN, receipt binding, provider failures, cancellation race, and exact replay exercised.\n");
+  process.stdout.write("PASS: isolated executor egress denied across static, dynamic, CommonJS and child-process transport paths; gateway UNKNOWN and provider receipt/failure cases exercised.\n");
 }
 
 main().catch((error) => {
