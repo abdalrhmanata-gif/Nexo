@@ -48,6 +48,9 @@ jobs:
         working-directory: apps/web
         run: npm ci
 
+      - name: Verify isolated executor and fake egress gateway network boundary
+        run: bash "$GITHUB_WORKSPACE/tool/mission-executor/egress-isolation-smoke.sh"
+
       - name: Install Chromium
         working-directory: apps/web
         run: timeout 10m npx playwright install chromium
