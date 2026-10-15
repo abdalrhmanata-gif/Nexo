@@ -113,3 +113,29 @@ W21 completed disposable PostgreSQL 17 migration replay and pgTAP, Mission Autho
 The Server Action regression scans runtime source files for Next.js `"use server"` directives, requires exact inventory equality, and checks that the only current action uses the cookie-bound authenticated Supabase session, derives the workspace from the user, calls the atomic `create_mission_with_actions` RPC whose SQL binds `auth.uid()` to the workspace owner, uses the publishable-key server client rather than the service-role key, and cannot transitively import the JIT dispatch gateway, worker boundary, or provider registry.
 
 **Still not established:** universal egress mediation across every production route/worker/SDK/native transport; real-provider receipt authenticity/idempotency/authoritative reconciliation; hosted Development schema parity. Static source analysis and one route under network isolation are partial evidence, not universal proof. No hosted Supabase or production resource was changed. Registry stays empty; PR #39 remains Draft/unmerged; Issue #23 remains OPEN; launch remains NO-GO.
+
+
+## Latest source/test checkpoint — 2026-10-15 — `f146b11914b81f68ed025ac96d99befb0c2c8362`
+
+This section supersedes earlier statements in this historical audit that the current W21 gate was still running.
+
+### Exact-head evidence
+- Web Unit: **SUCCESS** — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38697461636
+- Web CI / typecheck / production build: **SUCCESS** — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38697461610
+- Flutter CI: **SUCCESS** — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38697461393
+- W21 Local Launch Gate: **SUCCESS on this exact source/test SHA** — https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38697454403
+- W21 evidence artifact: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38697454403/artifacts/11955043175
+- W21 browser diagnostics: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38697454403/artifacts/11954987983
+
+W21 completed the isolated Docker executor/gateway/fake-provider smoke test; disposable PostgreSQL 17 migration replay and pgTAP; Mission Authority execution security; AI quota/plan/workspace security; actual-ledger concurrent idempotency, atomic authority-budget, one-time dispatch-claim and one-time reconciliation-claim races; W72 persistent gateway integration with fake providers; browser E2E; cleanup and cleanup verification; and evidence uploads.
+
+The disposable topology is test-only. It tests static/dynamic Node network APIs, CommonJS `createRequire`, HTTP/HTTPS/TLS, a child process, fixed gateway destinations, idempotency/payload binding, accepted-then-lost response, invalid receipts, provider 429/500, client timeout, separate receipt lookup, exact request counters, and cleanup. The fake provider is in-memory and cannot establish real provider durability or authoritative `NOT_SENT` semantics.
+
+Documentation-only commits followed the tested source/test SHA to record the plan and W21 result. No runtime code change occurred in those docs-only commits. CI was triggered on the later docs-only PR head separately.
+
+### Final disposition remains unchanged
+
+- **Universal production egress enforcement: NOT ESTABLISHED.** Static inventories and a disposable Docker topology do not prove that every production route, worker, native module, dependency or effect is forced through this boundary.
+- **Real provider receipt authenticity/idempotency/reconciliation: NOT VERIFIED.** Provider registry remains empty.
+- **Hosted Development schema parity: NOT VERIFIED.** No hosted Supabase or production resource was touched.
+- **Launch: NO-GO.** PR #39 stays Draft/open/unmerged; Issue #23 stays OPEN; PRs #29/#36/#37 remain unchanged.
