@@ -405,7 +405,7 @@ test("only the trusted internal worker route reaches Mission Action dispatch mod
   // Next.js server-rendered entrypoints can execute helper code too. Include
   // pages/layouts/templates and metadata handlers, middleware, instrumentation,
   // legacy/platform function roots, and every reviewed "use server" module.
-  const appRenderEntrypointPattern = /^app\/.+\/(?:page|layout|template|default|loading|error|not-found|global-error|opengraph-image|twitter-image|icon|apple-icon|sitemap|robots|manifest)\.(?:ts|tsx|js|jsx)$/;
+  const appRenderEntrypointPattern = /^app\/(?:.+\/)?(?:page|layout|template|default|loading|error|not-found|global-error|opengraph-image|twitter-image|icon|apple-icon|sitemap|robots|manifest)\.(?:ts|tsx|js|jsx)$/;
   const infrastructureEntrypointPattern = /^(?:middleware|instrumentation|instrumentation-client)\.(?:ts|tsx|js|jsx)$/;
   const serverActionPattern = /^\s*["']use server["'];?\s*(?:\/\/.*)?$/m;
   const backgroundEntrypointPattern = /(^|\/)(?:workers?|jobs?|cron|scheduled|tasks?|queues?)(\/|$)|^(?:functions|netlify\/functions|pages\/api)\//i;
@@ -426,6 +426,10 @@ test("only the trusted internal worker route reaches Mission Action dispatch mod
   // No scheduled/background/worker/function entrypoint exists in this web app
   // today. A future one must be inventoried and reviewed explicitly before it
   // can enter the runtime; test tooling under /tool is intentionally separate.
+  const normalizedEntrypoints = new Set([...entrypoints].map((entrypoint) => relative(webRoot, entrypoint).replace(/\\/g, "/")));
+  assert.ok(normalizedEntrypoints.has("app/page.tsx"), "the root App Router page must be inventoried as a production entrypoint");
+  assert.ok(normalizedEntrypoints.has("app/layout.tsx"), "the root App Router layout must be inventoried as a production entrypoint");
+
   const reviewedBackgroundEntrypoints = [];
   assert.deepEqual(
     backgroundEntrypoints.sort(),
