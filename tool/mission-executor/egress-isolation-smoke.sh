@@ -82,4 +82,26 @@ docker run --rm \
   node:22-bookworm-slim \
   node tool/mission-executor/isolated-executor-smoke.mjs
 
-echo "PASS: executor direct egress denied; fixed gateway reached fake provider; idempotency binding enforced."
+# Inspect counters only through docker exec from the test orchestrator. The isolated
+# executor has no route to the provider container and never receives provider metrics.
+provider_metrics="$(docker exec "$provider_container" node -e 'fetch("http://127.0.0.1:9090/__test/metrics").then((r) => r.json()).then((value) => process.stdout.write(JSON.stringify(value))).catch(() => process.exit(1))')"
+PROVIDER_METRICS="$provider_metrics" node --input-type=module -e '
+import assert from "node:assert/strict";
+const metrics = JSON.parse(process.env.PROVIDER_METRICS ?? "null");
+const expected = {
+  "accepted-then-timeout": 2,
+  "delayed-success": 2,
+  "malformed-receipt": 2,
+  "missing-receipt": 2,
+  "normal": 3,
+  "provider-429": 1,
+  "provider-500": 1,
+  "receipt-binding-mismatch": 2,
+};
+assert.deepEqual(metrics.requestsByScenario, expected, "provider request counts must match explicit caller submissions; the gateway must not retry invisibly");
+assert.equal(metrics.requestCount, 15, "no implicit provider retries are permitted");
+assert.equal(metrics.receiptCount, 6, "failed-before-acceptance scenarios must not create receipts");
+process.stdout.write("PASS: exact fake-provider request counts; no hidden retries; receipt count remains consistent.\n");
+'
+
+echo "PASS: executor direct egress denied; gateway topology and fake-provider contract cases passed."
