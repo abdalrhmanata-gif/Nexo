@@ -3,6 +3,8 @@ import { createHash } from "node:crypto";
 import dns from "node:dns/promises";
 import net from "node:net";
 
+const GATEWAY_TOKEN = process.env.ZAVQERA_FAKE_GATEWAY_TOKEN ?? "";
+
 const blockedCodes = new Set([
   "EACCES", "EPERM", "ENETUNREACH", "EHOSTUNREACH", "ECONNREFUSED",
   "ENOTFOUND", "EAI_AGAIN", "ESERVFAIL", "ETIMEDOUT", "ETIMEOUT",
@@ -169,19 +171,31 @@ function makeReconciliationEnvelope(envelope) {
   };
 }
 
-async function postEnvelope(envelope, timeoutMs = 2_000, extraFields = {}) {
+async function postEnvelope(
+  envelope,
+  timeoutMs = 2_000,
+  extraFields = {},
+  authorization = `Bearer ${GATEWAY_TOKEN}`,
+) {
+  const headers = { "content-type": "application/json" };
+  if (typeof authorization === "string") headers.authorization = authorization;
   return fetch("http://egress-gateway:8080/v1/execute", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers,
     body: JSON.stringify({ ...envelope, ...extraFields }),
     signal: AbortSignal.timeout(timeoutMs),
   });
 }
 
-async function postReconciliation(envelope) {
+async function postReconciliation(
+  envelope,
+  authorization = `Bearer ${GATEWAY_TOKEN}`,
+) {
+  const headers = { "content-type": "application/json" };
+  if (typeof authorization === "string") headers.authorization = authorization;
   return fetch("http://egress-gateway:8080/v1/reconcile", {
     method: "POST",
-    headers: { "content-type": "application/json" },
+    headers,
     body: JSON.stringify(makeReconciliationEnvelope(envelope)),
     signal: AbortSignal.timeout(2_000),
   });
@@ -233,10 +247,21 @@ async function assertFailureIsNotRetriedInternally({ scenario, executionId, idem
 }
 
 async function main() {
+  assert.match(GATEWAY_TOKEN, /^[a-f0-9]{64}$/, "smoke harness must receive a fresh 256-bit fake-gateway token");
   await assertDirectEgressBlocked();
 
   const payload = { operation: "fake-send", message: "hello", count: 1 };
   const envelope = makeEnvelope("11111111-1111-4111-8111-111111111111", "isolated-smoke-idem-001", payload);
+
+  const badTokenValue = "0".repeat(64) === GATEWAY_TOKEN ? "1".repeat(64) : "0".repeat(64);
+  const deniedDispatch = await postEnvelope(envelope, 2_000, {}, null);
+  assert.equal(deniedDispatch.status, 401, "dispatch without executor authentication must be denied");
+  const forgedDispatch = await postEnvelope(envelope, 2_000, {}, `Bearer ${badTokenValue}`);
+  assert.equal(forgedDispatch.status, 401, "dispatch with an invalid executor token must be denied");
+  const deniedReconciliation = await postReconciliation(envelope, null);
+  assert.equal(deniedReconciliation.status, 401, "reconciliation without executor authentication must be denied");
+  const forgedReconciliation = await postReconciliation(envelope, `Bearer ${badTokenValue}`);
+  assert.equal(forgedReconciliation.status, 401, "reconciliation with an invalid executor token must be denied");
 
   const firstResponse = await postEnvelope(envelope);
   assert.equal(firstResponse.status, 200, "approved gateway path must work");
