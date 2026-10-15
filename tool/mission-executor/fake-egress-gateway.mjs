@@ -69,7 +69,7 @@ function validReconciliationEnvelope(value) {
     && isSha256(value.payloadDigest);
 }
 
-async function reconcile(envelope) {
+async function reconcile(envelope, response) {
   let providerResponse;
   try {
     providerResponse = await fetch(FAKE_PROVIDER_RECONCILE_URL, {
@@ -84,18 +84,18 @@ async function reconcile(envelope) {
       signal: AbortSignal.timeout(2_000),
     });
   } catch {
-    send(reconcile.response, 502, { error: "provider reconciliation outcome unknown; inspect before retrying" });
+    send(response, 502, { error: "provider reconciliation outcome unknown; inspect before retrying" });
     return;
   }
 
   if (providerResponse.status === 409) {
     await providerResponse.arrayBuffer();
-    send(reconcile.response, 409, { error: "provider reconciliation binding mismatch" });
+    send(response, 409, { error: "provider reconciliation binding mismatch" });
     return;
   }
   if (!providerResponse.ok) {
     await providerResponse.arrayBuffer();
-    send(reconcile.response, 502, { error: "provider reconciliation could not be verified" });
+    send(response, 502, { error: "provider reconciliation could not be verified" });
     return;
   }
 
@@ -103,19 +103,19 @@ async function reconcile(envelope) {
   try {
     providerResult = await providerResponse.json();
   } catch {
-    send(reconcile.response, 502, { error: "malformed provider reconciliation response" });
+    send(response, 502, { error: "malformed provider reconciliation response" });
     return;
   }
   if (providerResult?.found === false && providerResult.state === "NOT_FOUND") {
     // NOT_FOUND is not asserted as proof of NOT_SENT; no dispatch retry is performed here.
-    send(reconcile.response, 200, { ok: true, state: "NOT_FOUND" });
+    send(response, 200, { ok: true, state: "NOT_FOUND" });
     return;
   }
   if (providerResult?.found === true && receiptMatches(providerResult.receipt, envelope)) {
-    send(reconcile.response, 200, { ok: true, state: "FOUND", receipt: providerResult.receipt });
+    send(response, 200, { ok: true, state: "FOUND", receipt: providerResult.receipt });
     return;
   }
-  send(reconcile.response, 502, { error: "fake provider reconciliation receipt binding mismatch" });
+  send(response, 502, { error: "fake provider reconciliation receipt binding mismatch" });
 }
 
 const server = http.createServer(async (request, response) => {
@@ -138,14 +138,10 @@ const server = http.createServer(async (request, response) => {
       send(response, 400, { error: "only a valid, bound reconciliation request is accepted" });
       return;
     }
-    // Bind the response writer to this invocation without passing it to a provider.
-    reconcile.response = response;
     try {
-      await reconcile(envelope);
+      await reconcile(envelope, response);
     } catch {
-      send(response, 502, { error: "provider reconciliation could not be verified" });
-    } finally {
-      delete reconcile.response;
+      if (!response.headersSent) send(response, 502, { error: "provider reconciliation could not be verified" });
     }
     return;
   }
