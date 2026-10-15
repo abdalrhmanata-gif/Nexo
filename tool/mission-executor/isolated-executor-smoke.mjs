@@ -5,7 +5,7 @@ import net from "node:net";
 
 const blockedCodes = new Set([
   "EACCES", "EPERM", "ENETUNREACH", "EHOSTUNREACH", "ECONNREFUSED",
-  "ENOTFOUND", "EAI_AGAIN", "ETIMEDOUT", "ETIMEOUT",
+  "ENOTFOUND", "EAI_AGAIN", "ESERVFAIL", "ETIMEDOUT", "ETIMEOUT",
 ]);
 
 function codesOf(error) {
