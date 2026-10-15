@@ -24,6 +24,12 @@ cleanup() {
 }
 trap cleanup EXIT
 
+gateway_token="$(python3 -c 'import secrets; print(secrets.token_hex(32))')"
+if [[ ! "$gateway_token" =~ ^[0-9a-f]{64}$ ]]; then
+  echo "Failed to generate a fresh fake-gateway token." >&2
+  exit 1
+fi
+
 docker network create --internal "$internal_network" >/dev/null
 docker network create "$external_network" >/dev/null
 
@@ -54,6 +60,7 @@ docker run --detach \
   --name "$gateway_container" \
   --network "$internal_network" \
   --network-alias egress-gateway \
+  --env ZAVQERA_FAKE_GATEWAY_TOKEN="$gateway_token" \
   --volume "$repo_root:/workspace:ro" \
   --workdir /workspace \
   node:22-bookworm-slim \
@@ -77,6 +84,7 @@ fi
 
 docker run --rm \
   --network "$internal_network" \
+  --env ZAVQERA_FAKE_GATEWAY_TOKEN="$gateway_token" \
   --volume "$repo_root:/workspace:ro" \
   --workdir /workspace \
   node:22-bookworm-slim \
