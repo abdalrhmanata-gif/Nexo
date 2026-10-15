@@ -5,6 +5,8 @@ const PORT = 9090;
 const MAX_BODY_BYTES = 16 * 1024;
 const EXPECTED_AUDIENCE = "fake.external.v1";
 const receiptsByIdempotencyKey = new Map();
+const requestsByScenario = new Map();
+const acceptedTimeoutKeys = new Set();
 
 function send(response, status, body) {
   response.writeHead(status, {
@@ -30,11 +32,32 @@ async function readJson(request) {
   }
 }
 
+function delay(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+function scenarioOf(value) {
+  const scenario = value?.payload?.__contractTestScenario;
+  return typeof scenario === "string" ? scenario : "normal";
+}
+
 const server = http.createServer(async (request, response) => {
   if (request.method === "GET" && request.url === "/health") {
     send(response, 200, { ok: true, mode: "fake-provider-only" });
     return;
   }
+
+  // Private observability endpoint for the disposable test harness only.
+  // The isolated executor cannot reach this endpoint directly.
+  if (request.method === "GET" && request.url === "/__test/metrics") {
+    send(response, 200, {
+      requestCount: [...requestsByScenario.values()].reduce((sum, count) => sum + count, 0),
+      receiptCount: receiptsByIdempotencyKey.size,
+      requestsByScenario: Object.fromEntries([...requestsByScenario.entries()].sort(([a], [b]) => a.localeCompare(b))),
+    });
+    return;
+  }
+
   if (request.method !== "POST" || request.url !== "/v1/actions") {
     send(response, 404, { error: "not found" });
     return;
@@ -68,6 +91,9 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
+    const scenario = scenarioOf(value);
+    requestsByScenario.set(scenario, (requestsByScenario.get(scenario) ?? 0) + 1);
+
     const prior = receiptsByIdempotencyKey.get(value.idempotencyKey);
     if (prior) {
       if (prior.executionId !== value.executionId
@@ -80,16 +106,51 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
+    // Failure-before-acceptance scenarios are deliberately test-only.
+    if (scenario === "provider-429") {
+      send(response, 429, { error: "simulated provider rate limit" });
+      return;
+    }
+    if (scenario === "provider-500") {
+      send(response, 500, { error: "simulated provider failure" });
+      return;
+    }
+
     const receipt = Object.freeze({
       provider: "fake-provider-only",
       providerAccount: "fake-account-v1",
-      externalId: `fake-${value.idempotencyKey}`,
+      externalId: "fake-" + value.idempotencyKey,
       executionId: value.executionId,
       audience: value.audience,
       idempotencyKey: value.idempotencyKey,
       payloadDigest: value.payloadDigest,
     });
     receiptsByIdempotencyKey.set(value.idempotencyKey, receipt);
+
+    // Simulate accepted work whose response is lost. An exact replay can recover
+    // the already-recorded receipt; the fake provider must not create a second one.
+    if (scenario === "accepted-then-timeout" && !acceptedTimeoutKeys.has(value.idempotencyKey)) {
+      acceptedTimeoutKeys.add(value.idempotencyKey);
+      request.socket.destroy();
+      return;
+    }
+
+    if (scenario === "missing-receipt") {
+      send(response, 200, { ok: true, replayed: false });
+      return;
+    }
+    if (scenario === "malformed-receipt") {
+      send(response, 200, { ok: true, replayed: false, receipt: { provider: receipt.provider, externalId: receipt.externalId } });
+      return;
+    }
+    if (scenario === "receipt-binding-mismatch") {
+      send(response, 200, { ok: true, replayed: false, receipt: { ...receipt, audience: "fake.other.v1" } });
+      return;
+    }
+    if (scenario === "delayed-success") {
+      await delay(700);
+    }
+
     send(response, 200, { ok: true, replayed: false, receipt });
   } catch (error) {
     send(response, Number.isInteger(error?.statusCode) ? error.statusCode : 400, {
@@ -99,7 +160,7 @@ const server = http.createServer(async (request, response) => {
 });
 
 server.listen(PORT, "0.0.0.0", () => {
-  process.stdout.write(`fake provider listening on ${PORT}\n`);
+  process.stdout.write("fake provider listening on " + PORT + "\n");
 });
 
 for (const signal of ["SIGTERM", "SIGINT"]) {
