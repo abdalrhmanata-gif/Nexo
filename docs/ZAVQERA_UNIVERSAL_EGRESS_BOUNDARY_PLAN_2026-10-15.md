@@ -6,7 +6,7 @@
 
 ## 1. Current evidence and its limit
 
-The current candidate has source-graph tests for Mission Action API routes, a deny-by-default trusted adapter registry, an authenticated internal worker route, a request-body ceiling, and an actual-route integration test under Docker `--network none`. The current branch also inventories other network-capable app routes and identity/session entrypoints separately.
+The current candidate has source-graph tests for Mission Action API routes, a deny-by-default trusted adapter registry, an authenticated internal worker route, a request-body ceiling, and an actual-route integration test under Docker `--network none`. Commit `843855a75e7a1e5b1a06456b7e42347357969020` adds an adversarial egress integration test, also run inside the same `--network none` container, probing direct `fetch`, Node HTTP/HTTPS, TCP/TLS sockets, DNS resolution, and a child-process socket attempt. Web Unit, Web CI, and Flutter CI all passed on this exact commit (runs 38688489190, 38688489262, and 38688489297 respectively). The current branch also inventories other network-capable app routes and identity/session entrypoints separately.
 
 These controls are useful defense-in-depth, but they do **not** establish a universal runtime egress boundary:
 - Static source analysis cannot prove the absence of every dynamically loaded, native, transitive dependency, or future runtime path.
@@ -64,7 +64,7 @@ Target flow:
 | Adapter registry | Empty / fail-closed |
 | Real-provider idempotency and receipt contract | Not verified |
 | Separate network-restricted executor and enforced egress gateway | Not implemented/proven |
-| W21 on current branch head | Must be checked against the exact current SHA; earlier pass was on an ancestor code/test head |
+| W21 on current branch head | Not yet confirmed for `843855a75e7a1e5b1a06456b7e42347357969020`; prior verified pass is on ancestor `43edddf6050ac56ad9d1d8f4120f9d389a333c8a` |
 | Hosted Development parity | Not established |
 | Launch | **NO-GO** |
 
@@ -72,6 +72,6 @@ Target flow:
 
 1. Preserve the empty registry and keep PR #39 Draft.
 2. Design and implement the executor/gateway in an isolated local test environment first; no hosted secrets or deployments.
-3. Add adversarial network-denial tests for direct `fetch`, Node HTTP(S), sockets, DNS, child processes, dynamic loaders, and transitive dependencies.
-4. Add provider-contract tests using only a fake provider and a deterministic fake ledger.
-5. Run the complete gate set on one exact SHA and update this document with evidence links, not assumptions.
+3. Extend adversarial testing to dynamic loaders and transitive/native dependency paths; current tests cover selected Node network APIs and one child process only.
+4. Add provider-contract tests using only a fake provider and a deterministic fake ledger for replay, timeout boundaries, malformed receipts, receipt-binding mismatch, 429/5xx, cancellation races, and reconciliation after `UNKNOWN`.
+5. Confirm W21 on one exact SHA and update this document with evidence links, not assumptions.
