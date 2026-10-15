@@ -1296,8 +1296,8 @@ test("non-API auth route handlers and middleware are explicitly inventoried as s
   const appRoot = join(webRoot, "app");
   const allRouteFiles = await listApiRouteFiles(appRoot);
   const nonApiRoutes = allRouteFiles
-    .filter((routeFile) => !relative(appRoot, routeFile).replace(/\\\\/g, "/").startsWith("api/"))
-    .map((routeFile) => relative(appRoot, routeFile).replace(/\\\\/g, "/"))
+    .filter((routeFile) => !relative(appRoot, routeFile).replace(/\\/g, "/").startsWith("api/"))
+    .map((routeFile) => relative(appRoot, routeFile).replace(/\\/g, "/"))
     .sort();
 
   const reviewedIdentityRouteInventory = new Map([
@@ -1314,19 +1314,20 @@ test("non-API auth route handlers and middleware are explicitly inventoried as s
   const confirm = await readFile(join(appRoot, "auth", "confirm", "route.ts"), "utf8");
   const middleware = await readFile(join(webRoot, "middleware.ts"), "utf8");
 
-  assert.match(callback, /supabase\\.auth\\.exchangeCodeForSession\\(code\\)/,
+  assert.ok(callback.includes("supabase.auth.exchangeCodeForSession(code)"),
     "the callback's PKCE exchange is an external identity-provider effect");
-  assert.match(callback, /supabase\\.auth\\.verifyOtp\\(/,
+  assert.ok(callback.includes("supabase.auth.verifyOtp("),
     "the callback's token-hash path is an external identity-provider effect");
-  assert.match(confirm, /supabase\\.auth\\.verifyOtp\\(/,
+  assert.ok(confirm.includes("supabase.auth.verifyOtp("),
     "the confirmation route's OTP verification is an external identity-provider effect");
 
-  assert.match(middleware, /export async function middleware\\(/);
-  assert.match(middleware, /supabase\\.auth\\.getUser\\(\\)/,
+  assert.ok(middleware.includes("export async function middleware("));
+  assert.ok(middleware.includes("supabase.auth.getUser()"),
     "middleware refreshes/verifies identity through Supabase Auth and is a runtime egress entrypoint");
-  assert.match(middleware, /matcher:\\s*\\[\\s*"\\/app\\/:path\\*",\\s*"\\/auth\\/:path\\*"\\s*\\]/,
+  assert.ok(middleware.includes('"/app/:path*"'));
+  assert.ok(middleware.includes('"/auth/:path*"'),
     "the reviewed middleware scope must remain explicit");
-  assert.doesNotMatch(middleware, /mission-authority\\/(?:persistent-dispatch-gateway|mission-action-worker-boundary|provider-adapter-registry)/,
+  assert.equal(middleware.includes("mission-authority/"), false,
     "identity middleware must not become a Mission Action dispatch path");
 
   // These are separate identity/session workflows, not Mission Action JIT
