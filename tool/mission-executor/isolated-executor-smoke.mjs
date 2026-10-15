@@ -29,6 +29,14 @@ async function assertDirectEgressBlocked() {
     },
   );
 
+  await assert.rejects(
+    fetch("http://fake-provider:9090/health", { signal: AbortSignal.timeout(2_000) }),
+    (error) => {
+      assert.ok(codesOf(error).some((code) => blockedCodes.has(code)), `executor must not reach provider network: ${codesOf(error).join(",")}`);
+      return true;
+    },
+  );
+
   try {
     const addresses = await dns.resolve4("example.com");
     assert.ok(addresses.length > 0, "DNS response must contain at least one address when resolution is available");
@@ -105,6 +113,19 @@ async function main() {
   assert.equal(duplicate.replayed, true);
   assert.equal(duplicate.receipt.externalId, first.receipt.externalId, "duplicate key must return the same fake receipt");
 
+  const changedPayload = { ...payload, message: "changed after first dispatch" };
+  const reboundResponse = await fetch(gatewayUrl, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      ...envelope,
+      payload: changedPayload,
+      payloadDigest: createHash("sha256").update(JSON.stringify(changedPayload)).digest("hex"),
+    }),
+    signal: AbortSignal.timeout(2_000),
+  });
+  assert.equal(reboundResponse.status, 409, "provider must reject reusing an idempotency key with a different payload binding");
+
   const untrustedDestinationResponse = await fetch(gatewayUrl, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -113,7 +134,7 @@ async function main() {
   });
   assert.equal(untrustedDestinationResponse.status, 400, "request-supplied destinations must be rejected");
 
-  process.stdout.write("PASS: direct egress blocked; approved fake gateway works; duplicate is idempotent; supplied destination rejected.\n");
+  process.stdout.write("PASS: executor direct egress blocked; fixed gateway reaches fake provider; replay binding and supplied-destination checks passed.\n");
 }
 
 main().catch((error) => {
