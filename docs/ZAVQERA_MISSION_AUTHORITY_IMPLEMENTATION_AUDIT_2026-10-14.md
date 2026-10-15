@@ -2,14 +2,19 @@
 
 **Status:** Source-and-test audit of the candidate branch; not a production security certification.  
 **Reviewed contract:** `docs/ZAVQERA_MISSION_AUTHORITY_CONTRACT_v0.1.md`.  
-**Current candidate head:** `f2c13cc7ec26654f8950f193a5db598e3656707a` (PR #39, Draft / unmerged). The latest commit corrects assertions in the auth-egress inventory test; it does not change production runtime behavior.  
-**Database evidence:** W21 disposable local PostgreSQL 17 / Supabase replay, pgTAP, browser E2E and cleanup all passed on this source head. No hosted Supabase or production resource was used.
+**Current candidate head:** `843855a75e7a1e5b1a06456b7e42347357969020` (PR #39, Draft / unmerged). This checkpoint adds adversarial OS-level egress probes; it does not change production runtime behavior.  
+**Database evidence:** W21 disposable local PostgreSQL 17 / Supabase replay, pgTAP, browser E2E and cleanup passed on ancestor code/test HEAD `43edddf6050ac56ad9d1d8f4120f9d389a333c8a`. W21 has not yet been confirmed on the current candidate head. No hosted Supabase or production resource was used.
 
 ## Latest exact-head CI checkpoint (2026-10-15)
 
-At source/test HEAD `f2c13cc7ec26654f8950f193a5db598e3656707a`, GitHub Actions reports Web CI **SUCCESS** ([run 38683747718](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38683747718)), Web Unit **SUCCESS** ([run 38683747712](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38683747712)), and Flutter CI **SUCCESS** ([run 38683747711](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38683747711)). The latest change is test-only: it fixes path-normalization and literal-match assertions in the inventory test for `/auth/callback`, `/auth/confirm`, and `middleware.ts`.
+At source/test HEAD `843855a75e7a1e5b1a06456b7e42347357969020`, all three workflows passed:
+- Web Unit **SUCCESS** — [run 38688489190](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38688489190)
+- Web CI **SUCCESS** — [run 38688489262](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38688489262)
+- Flutter CI **SUCCESS** — [run 38688489297](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38688489297)
 
-**W21 evidence is still from ancestor code/test HEAD `43edddf6050ac56ad9d1d8f4120f9d389a333c8a`; it has not been rerun on `f2c13cc`.** Do not describe the latest head as having fresh W21 evidence. Hosted Development schema parity and universal outbound mediation remain unproven.
+The Web Unit run includes the worker-route test and new adversarial egress probes inside Docker `--network none`. The new probes attempt direct `fetch`, Node HTTP/HTTPS, TCP/TLS sockets, DNS resolution, and a child-process socket attempt. They establish denial for those tested surfaces in that isolated test container only; they do not prove all dynamic/native/transitive paths or a deployed executor boundary.
+
+**W21 evidence remains from ancestor code/test HEAD `43edddf6050ac56ad9d1d8f4120f9d389a333c8a`; a successful W21 run on `843855a` is not yet confirmed.** Hosted Development schema parity and universal outbound mediation remain unproven.
 
 ## Decision summary
 
