@@ -1,0 +1,114 @@
+# ZAVQERA — Continuation Handoff (2026-10-15)
+
+**Purpose:** Authoritative transfer note for the next ChatGPT conversation. Read this first, then verify live GitHub state before any action. This supplements the older `ci/CI_HANDOFF.md`; that file is not the complete/current Mission Authority checkpoint.
+
+## 1. Working rules — non-negotiable
+
+- Do not merge any PR automatically. Keep PR #39 Draft/open/unmerged.
+- Keep GitHub Issue #23 **OPEN**.
+- Do not modify hosted Supabase Development or Main/Production; no hosted migration, schema mutation, or write test.
+- Do not deploy, change Netlify configuration, alter secrets, add credentials, register/enable real providers, or change billing/DNS.
+- Keep `TRUSTED_DISPATCH_ADAPTERS` empty and fail-closed.
+- Do not spend paid-service/API credits or introduce external paid services. Prefer repository + local/disposable tests.
+- Be concise in Arabic and report concrete verified actions, not promises. Make no claims beyond exact SHA and evidence.
+- Launch decision remains **NO-GO** until universal outbound/effect enforcement and provider-contract evidence are proven.
+
+## 2. Product and architecture context
+
+ZAVQERA (repository name still Nexo) is an AI Mission Planner / Delegation Layer for personal and business workspaces from day one. A Mission is the unit of work and carries goal, authority/allowed and prohibited actions, budget, expiry, and evidence/outcome. Conceptual flow: User Goal → Intent → Identity → Authority → Policy → Authorization → Plan → Action → Execution → Evidence → Verification → Outcome.
+
+Core domain/application contracts must remain provider-, backend-, storage-, queue/worker-, UI-framework-, and vendor-neutral. Do not couple the core to Flutter, Supabase, PostgreSQL, OpenAI, or a specific external provider. Existing direction includes approval engine, workspace membership roles (Owner/Admin/Member/Viewer), Agent Registry, Mission Templates, and separate personal/business workspaces.
+
+Repository: https://github.com/abdalrhmanata-gif/Nexo  
+Current working deployment reported by user (Netlify): https://zavqera-alternative-web-deployment--unique-kringle-3ce321.netlify.app/app  
+Supabase Development was previously reported ACTIVE_HEALTHY (PostgreSQL 17, eu-west-1), but hosted Development schema parity with candidate migrations is **not verified**. Main/Production remains untouched.
+
+## 3. Exact live checkpoint verified 2026-10-15
+
+### PR #39 — current implementation/review focus
+
+PR: https://github.com/abdalrhmanata-gif/Nexo/pull/39  
+Title: `[Mission Authority] Compose worker/JIT boundary with fake transport`  
+State: **OPEN, DRAFT, NOT MERGED**.  
+Head branch: `codex/mission-action-runtime-seam-test-20261014`  
+Base branch: `codex/w80-sql-review-base-20261014` at `5e2094fd27c7de60496729956af562651de93137`.
+
+- Latest code/test checkpoint: `b184b91540c80be8a07b455bddaeca9080fad4f0`.
+- Latest docs-only PR head: `7fc9f6a114fa4736d3fa1287707f16f6f6908873` (commit records direct fake-provider-IP isolation evidence and release boundary).
+- Web Unit PASS on code/test SHA: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38701026107
+- Web CI PASS on code/test SHA: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38701026169
+- Flutter CI PASS on code/test SHA: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38701026080
+- Web Unit PASS on latest docs head: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38701277323
+- Web CI PASS on latest docs head: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38701277242
+- Flutter CI PASS on latest docs head: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38701277300
+- Latest confirmed **full W21 Local Launch Gate PASS**: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38697454403 — on older code/test SHA `f146b11914b81f68ed025ac96d99befb0c2c8362`. **W21 on `b184b91` is not confirmed.** Never treat Web Unit/Web CI/Flutter CI as a substitute for W21.
+
+The PR description at its current head contains additional technical evidence and links. Read it before continuing.
+
+### Other PRs — leave unchanged
+
+- PR #29: https://github.com/abdalrhmanata-gif/Nexo/pull/29 — OPEN/DRAFT/UNMERGED, `zavqera/ai-planner-integration` at `5e2094fd27c7de60496729956af562651de93137`, base `zavqera/alternative-web-deployment` at `46dc6029f084fb000ba511478d6e8aec3eb532b3`. AI Mission Planner; 281 changed files in prior recorded snapshot. Do not alter.
+- PR #36: https://github.com/abdalrhmanata-gif/Nexo/pull/36 — OPEN/DRAFT/UNMERGED; isolated W80 PostgreSQL 17 verification workflow, head `81ef820d160bfef04edbbab181fc562de203f7fa`, base `main` at `f64a87addb25a7455c6acde446b81bb3427d43cc`. Do not alter.
+- PR #37: https://github.com/abdalrhmanata-gif/Nexo/pull/37 — OPEN/DRAFT/UNMERGED; W80 invitation RPC grants/lookup boundary, head `2e7dcccf9679ecc78f2b522064a4b121135645c4`, base review branch at `5e2094fd27c7de60496729956af562651de93137`. Do not alter.
+- Issue #23: https://github.com/abdalrhmanata-gif/Nexo/issues/23 — “Implement and prove the Mission Authority JIT enforcement boundary”; verified OPEN. Keep open. A project-status comment was added earlier (comment ID `6185088230`).
+
+Re-query all statuses and SHAs at the start of the next conversation because GitHub may have changed since this snapshot.
+
+## 4. Candidate implementation evidence in PR #39
+
+- Shared authenticated worker HTTP gate/handler: `apps/web/lib/mission-authority/trusted-worker-http.mjs`; trusted dependencies are supplied statically by trusted caller.
+- Actual protected internal Next.js worker POST route tested. Cases include authorization; malformed/extra input; execution ID validation; unregistered audience rejected before privileged-client creation; oversized/chunked request bodies without `Content-Length`; Research preflight/claim/completion failing closed without trusted DB credentials.
+- Streaming body parser caps request body at 160 KB and cancels when exceeded.
+- Route test runs under Docker `--network none`; selected direct Node networking, HTTP(S)/TLS/socket, DNS and child-process egress probes are denied in that test environment.
+- Recursive Server Action inventory currently identifies `apps/web/app/app/missions/new/page.tsx` as authenticated workspace mission creation; verifies cookie-bound session, workspace owner binding/atomic RPC and no import path to dispatcher/registry.
+- Outbound-effect inventory separately classifies AI planning/research, password-range lookup, invitation email and identity/session routes; do **not** claim all of these are Mission Action dispatch or already universally mediated.
+- Pure reason-code inventory covers 158 exact source entries → 75 canonical outputs. It is not a production response layer; unknown/raw inputs fail closed; `ALLOW` is a decision, not a reason, and ambiguous approval semantics remain unchanged.
+- `apps/web/lib/mission-authority/provider-adapter-registry.mjs` keeps `TRUSTED_DISPATCH_ADAPTERS = Object.freeze({})`; no live provider is registered.
+
+### Test-only executor/gateway topology
+
+The disposable prototype under `tool/mission-executor/` places the executor on an internal Docker network, the fake provider on a separate egress network, and a fixed-destination fake gateway on both. This is local/fake-provider evidence only, not a production-deployed executor or proof of universal production egress enforcement.
+
+Its PR description records tests for:
+- direct egress denial via static Node networking, ESM dynamic import, CommonJS `createRequire`, HTTP/HTTPS/TLS, TCP socket and fresh child-process attempts; direct connection attempts to the actual fake-provider container IP fail;
+- approved fixed-gateway path, rejection of caller-supplied destinations, replay/payload binding and exact provider request counters;
+- 256-bit per-run fake bearer token for dispatch and reconciliation (wrong/missing token rejected before parsing/forwarding);
+- accepted-then-lost response, missing/malformed/mismatched receipts, provider 429/500, timeout/cancellation and separate fixed-destination reconciliation endpoint;
+- reconciliation receipt-binding mismatch and disposable container/network cleanup.
+
+Do not extend the evidence beyond tested cases. Native modules, arbitrary transitive dependencies and every runtime/process context are not universally covered.
+
+## 5. Important source-of-truth documents
+
+Read from the current PR #39 branch/head and verify their current URLs/content:
+- Universal egress plan: https://github.com/abdalrhmanata-gif/Nexo/blob/7fc9f6a114fa4736d3fa1287707f16f6f6908873/docs/ZAVQERA_UNIVERSAL_EGRESS_BOUNDARY_PLAN_2026-10-15.md
+- Mission Authority implementation audit (older checkpoint; compare it against current PR body and current plan before relying on its SHA/status): https://github.com/abdalrhmanata-gif/Nexo/blob/d45fc33c5210d666a0fedaf5020c9b9fd90c9143/docs/ZAVQERA_MISSION_AUTHORITY_IMPLEMENTATION_AUDIT_2026-10-14.md
+- Decision interface/reason-code proposal: https://github.com/abdalrhmanata-gif/Nexo/blob/43edddf6050ac56ad9d1d8f4120f9d389a333c8a/docs/ZAVQERA_MISSION_AUTHORITY_DECISION_INTERFACE_v0.1.md
+- Current PR #39 description: https://github.com/abdalrhmanata-gif/Nexo/pull/39
+- W21 full evidence and artifacts: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38697454403
+
+## 6. What is still NOT established
+
+- Universal production egress/effect mediation over all entrypoints, jobs, workers, SDK/native transports and runtime dependency paths.
+- A production-isolated executor and enforced production egress gateway/network policy.
+- Provider credential separation and secret scope in a deployed architecture.
+- Real-provider idempotency guarantees, authentic receipt binding, authoritative reconciliation, and trustworthy proof of `NOT_SENT`.
+- Full W21 passing on current code/test SHA `b184b91540c80be8a07b455bddaeca9080fad4f0`.
+- Hosted Supabase Development schema parity with candidate migrations.
+
+A fake reconciliation `NOT_FOUND` is not proof an external effect was never sent. An unknown external outcome remains `UNKNOWN`; do not auto-retry without provider-specific authoritative evidence.
+
+## 7. Next work order for the next conversation
+
+1. Read this file, fetch the current PR #39 body/head, Issue #23 state, branch heads and Actions runs. Do not assume this snapshot is still the live state.
+2. Keep PR #39 Draft/open and keep the registry empty. Do not touch PR #29/#36/#37, hosted Supabase, Production, deployment, secrets or billing.
+3. Try to obtain a full W21 result against the exact current code/test SHA (`b184b91540c80be8a07b455bddaeca9080fad4f0`) only if the workflow can be dispatched safely on the intended branch and permissions allow it. Do not make artificial code edits just to trigger a workflow. If W21 is not feasible, state the blocker rather than pretending it passed.
+4. Inspect the existing `tool/mission-executor/` scripts and its newest W21 output; determine missing adversarial coverage (native/transitive loader/process contexts, DNS, socket variants) and expand only with reproducible disposable tests.
+5. Expand fake-provider contract tests for all uncertain-send boundaries, cancellation races, duplicate/replay semantics and receipt binding. Preserve exact counters and cleanup guarantees.
+6. Only after candidate tests are complete, plan—not deploy—the production executor/control-plane architecture, default-deny networking, fixed allowlisted gateway, narrow signed/strongly authenticated execution envelope, JIT claim, durable dispatch evidence, receipt validation and reconciliation.
+7. Re-run Web Unit, Web CI, Flutter CI and W21 on one exact source/test SHA and link artifacts with that SHA. Validate hosted schema parity using read-only inspection or a separately approved safe procedure only; never mutate hosted projects.
+8. Keep launch **NO-GO** until every required gate has evidence and review.
+
+## 8. Paste this instruction into the next chat
+
+“استأنف مشروع ZAVQERA من ملف الاستئناف هذا باعتباره نقطة البداية الحالية. تحقّق أولاً من الحالة الحية لـ PR #39 وIssue #23 ونتائج Actions على GitHub، ولا تعتمد على أرقام قديمة دون التحقق. تابع التنفيذ العملي بدقة وباختصار. ممنوع دمج أي PR أو تعديل Supabase Development/Main/Production أو النشر أو الأسرار أو إضافة مزود حقيقي. أبقِ سجل المزودات فارغاً وPR #39 Draft وIssue #23 مفتوحة. فرّق دائماً بين نجاح Web Unit/Web CI/Flutter CI وبين نجاح W21 الكامل؛ أحدث W21 مؤكد هنا على SHA أقدم من أحدث كود. أبقِ قرار الإطلاق NO-GO حتى إثبات حدود egress الشاملة وعقد المزود.” 
