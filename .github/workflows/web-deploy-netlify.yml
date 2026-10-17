@@ -34,7 +34,13 @@ concurrency:
 
 jobs:
   deploy:
-    if: github.event_name != 'pull_request'
+    # workflow_dispatch can target any branch, so enforce the release-branch allowlist here too.
+    if: >-
+      github.event_name != 'pull_request' &&
+      (
+        github.ref == 'refs/heads/zavqera/integrate-origin-main-clean' ||
+        github.ref == 'refs/heads/zavqera/alternative-web-deployment'
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
