@@ -87,6 +87,81 @@ test("allows one exact bound execution and records a correlated receipt", async 
   assert.ok(attempt.receipt.externalId);
 });
 
+test("a provider-reported failure returns DENY rather than ALLOW", async () => {
+  const { adapter } = setup({
+    outcome: { state: ATTEMPT_STATES.FAILED, receipt: { errorCode: "provider-rejected" } },
+  });
+  const result = await adapter.execute(request());
+  assert.equal(result.decision, DECISIONS.DENY);
+  assert.equal(result.reasonCode, "EXTERNAL_FAILED");
+  assert.equal(result.state, ATTEMPT_STATES.FAILED);
+});
+
+test("a success state without a usable provider receipt stays UNKNOWN", async () => {
+  const { adapter, external } = setup({
+    outcome: { state: ATTEMPT_STATES.SUCCEEDED, receipt: {} },
+  });
+  const first = await adapter.execute(request());
+  assert.equal(first.decision, DECISIONS.RECONCILE_REQUIRED);
+  assert.equal(first.reasonCode, "UNKNOWN_REQUIRES_RECONCILIATION");
+  assert.equal(external.calls().length, 1);
+
+  const reconciled = await adapter.reconcile(first.attemptId);
+  assert.equal(reconciled.state, ATTEMPT_STATES.UNKNOWN);
+
+  const retry = await adapter.execute(request());
+  assert.equal(retry.decision, DECISIONS.RECONCILE_REQUIRED);
+  assert.equal(retry.reasonCode, "UNKNOWN_REQUIRES_RECONCILIATION");
+  assert.equal(external.calls().length, 1);
+});
+
+test("nested empty receipt structures remain UNKNOWN and block retries", async () => {
+  const unusableReceipts = [
+    { provider: {} },
+    { events: [] },
+    { reference: "  \t " },
+    { details: { items: [null, {}] } },
+  ];
+
+  for (const receipt of unusableReceipts) {
+    const { adapter, external } = setup({
+      outcome: { state: ATTEMPT_STATES.SUCCEEDED, receipt },
+    });
+    const first = await adapter.execute(request());
+    assert.equal(first.decision, DECISIONS.RECONCILE_REQUIRED);
+    assert.equal(first.reasonCode, "UNKNOWN_REQUIRES_RECONCILIATION");
+    assert.equal(external.calls().length, 1);
+
+    const reconciled = await adapter.reconcile(first.attemptId);
+    assert.equal(reconciled.state, ATTEMPT_STATES.UNKNOWN);
+
+    const retry = await adapter.execute(request());
+    assert.equal(retry.decision, DECISIONS.RECONCILE_REQUIRED);
+    assert.equal(external.calls().length, 1);
+  }
+});
+
+test("dispatch cannot self-assert RECONCILED_NOT_SENT without reconciliation evidence", async () => {
+  const { adapter, external } = setup({
+    outcome: {
+      state: ATTEMPT_STATES.RECONCILED_NOT_SENT,
+      receipt: { evidenceId: "untrusted-dispatch-claim" },
+    },
+  });
+  const result = await adapter.execute(request());
+  assert.equal(result.decision, DECISIONS.RECONCILE_REQUIRED);
+  assert.equal(result.reasonCode, "UNKNOWN_REQUIRES_RECONCILIATION");
+  assert.equal(external.calls().length, 1);
+
+  const attempt = (await adapter.reconcile(result.attemptId));
+  assert.equal(attempt.state, ATTEMPT_STATES.UNKNOWN);
+
+  const retry = await adapter.execute(request());
+  assert.equal(retry.decision, DECISIONS.RECONCILE_REQUIRED);
+  assert.equal(retry.reasonCode, "UNKNOWN_REQUIRES_RECONCILIATION");
+  assert.equal(external.calls().length, 1);
+});
+
 test("fails closed for cross-tenant, stale, revoked, expired, lease-mismatch and destination-mismatch requests", async () => {
   for (const [name, overrides] of Object.entries({
     crossTenant: { organizationId: "org-b", principalId: "user-b" },
@@ -144,6 +219,34 @@ test("fails closed for cross-tenant, stale, revoked, expired, lease-mismatch and
   assert.equal(external.calls().length, 1);
 });
 
+test("provider substitution cannot expand approved authority or allowed actions", async () => {
+  const { adapter, external } = setup();
+
+  const swappedProvider = await adapter.execute(request({
+    audience: "fake.external.alternate.v1",
+    idempotencyKey: "provider-swap-denied-0001",
+  }));
+  assert.equal(swappedProvider.decision, DECISIONS.DENY);
+  assert.equal(swappedProvider.reasonCode, "BINDING_MISMATCH");
+  assert.equal(external.calls().length, 0);
+
+  const widenedAction = await adapter.execute(request({
+    actionId: "delete",
+    idempotencyKey: "authority-expansion-denied-01",
+  }));
+  assert.equal(widenedAction.decision, DECISIONS.DENY);
+  assert.equal(widenedAction.reasonCode, "ACTION_NOT_ALLOWED");
+  assert.equal(external.calls().length, 0);
+
+  const swappedDestination = await adapter.execute(request({
+    destination: "https://alternate-provider.example.test/send",
+    idempotencyKey: "destination-swap-denied-001",
+  }));
+  assert.equal(swappedDestination.decision, DECISIONS.DENY);
+  assert.equal(swappedDestination.reasonCode, "BINDING_MISMATCH");
+  assert.equal(external.calls().length, 0);
+});
+
 test("requires exact approval binding instead of dispatching when approval is required", async () => {
   const input = { message: "hello", count: 1 };
   const validApproval = {
@@ -156,6 +259,8 @@ test("requires exact approval binding instead of dispatching when approval is re
     actionVersion: 7,
     inputHash: hashInput(input),
     destination: "https://fake.external.test/action",
+    audience: "fake.external.v1",
+    policyVersion: 4,
     authorityRevision: 9,
     expiresAt: "2026-10-01T12:30:00.000Z",
   };
@@ -172,6 +277,8 @@ test("requires exact approval binding instead of dispatching when approval is re
       actionVersion: 99,
       inputHash: "wrong",
       destination: "https://evil.example",
+      audience: "fake.external.evil",
+      policyVersion: 99,
       authorityRevision: 99,
       expiresAt: new Date(NOW).toISOString(),
     }).map(([field, value]) => ({ ...validApproval, [field]: value })),
@@ -205,6 +312,16 @@ test("duplicate idempotency key is rejected before budget is considered", async 
   assert.equal(external.calls().length, 1);
 });
 
+test("concurrent requests with the same idempotency key dispatch exactly once", async () => {
+  const { adapter, external } = setup();
+  const results = await Promise.all([adapter.execute(request()), adapter.execute(request())]);
+
+  assert.equal(results.filter((result) => result.decision === DECISIONS.ALLOW).length, 1);
+  const rejected = results.find((result) => result.decision === DECISIONS.DENY);
+  assert.equal(rejected?.reasonCode, "IDEMPOTENCY_REPLAY");
+  assert.equal(external.calls().length, 1);
+});
+
 test("idempotency key cannot be rebound after authoritative revision changes", async () => {
   const { adapter, external, store } = setup();
   await adapter.execute(request());
@@ -213,6 +330,37 @@ test("idempotency key cannot be rebound after authoritative revision changes", a
   assert.equal(rebound.decision, DECISIONS.DENY);
   assert.equal(rebound.reasonCode, "IDEMPOTENCY_BINDING_MISMATCH");
   assert.equal(external.calls().length, 1);
+});
+
+test("rejects negative, non-finite and non-numeric spend amounts without dispatch", async () => {
+  for (const amount of [-1, Number.NaN, Number.POSITIVE_INFINITY, "2"]) {
+    const { adapter, external, store } = setup();
+    const result = await adapter.execute(request({ amount }));
+    assert.equal(result.decision, DECISIONS.DENY, String(amount));
+    assert.equal(result.reasonCode, "INVALID_SPEND_AMOUNT", String(amount));
+    assert.equal(external.calls().length, 0, String(amount));
+    assert.equal(store.getJournal().some((entry) => entry.decision === DECISIONS.ALLOW), false, String(amount));
+  }
+});
+
+test("fails closed when persisted budget counters or caps are malformed", async () => {
+  for (const authorityOverrides of [
+    { spentActions: -1 },
+    { spentActions: 0.5 },
+    { spentAmount: -1 },
+    { spentAmount: Number.NaN },
+    { maxActions: -1 },
+    { maxActions: 0.5 },
+    { maxSpend: -1 },
+    { maxSpend: "10" },
+  ]) {
+    const { adapter, external, store } = setup({ authorityOverrides });
+    const result = await adapter.execute(request());
+    assert.equal(result.decision, DECISIONS.DENY);
+    assert.match(result.reasonCode, /^INVALID_(STORED_BUDGET|ACTION_BUDGET|SPEND_BUDGET)$/);
+    assert.equal(external.calls().length, 0);
+    assert.equal(store.getJournal().some((entry) => entry.decision === DECISIONS.ALLOW), false);
+  }
 });
 
 test("one remaining action budget cannot authorize two concurrent attempts", async () => {
@@ -246,8 +394,8 @@ test("UNKNOWN never retries blindly and reconciliation resolves a sent request",
   assert.ok(reconciled.receipt.externalId);
 });
 
-test("UNKNOWN with no external record becomes explicitly retryable only after reconciliation", async () => {
-  const { adapter, external } = setup({ outcome: { kind: "UNKNOWN_BEFORE_SEND" } });
+test("UNKNOWN becomes retryable only after explicit authoritative no-send evidence", async () => {
+  const { adapter, external, store } = setup({ outcome: { kind: "UNKNOWN_BEFORE_SEND" } });
   const first = await adapter.execute(request());
   assert.equal(first.decision, DECISIONS.RECONCILE_REQUIRED);
   assert.equal(external.calls().length, 1);
@@ -258,10 +406,29 @@ test("UNKNOWN with no external record becomes explicitly retryable only after re
 
   const reconciled = await adapter.reconcile(first.attemptId);
   assert.equal(reconciled.state, ATTEMPT_STATES.RECONCILED_NOT_SENT);
+  const reconciliation = store.getJournal().at(-1);
+  assert.equal(reconciliation.result, DECISIONS.RETRYABLE_NOT_SENT);
+  assert.ok(reconciliation.evidenceId);
 
   const retry = await adapter.execute(request({ idempotencyKey: "idem-2" }));
   assert.equal(retry.decision, DECISIONS.DENY); // budget remains consumed until a durable refund policy is designed.
   assert.equal(retry.reasonCode, "ACTION_BUDGET_EXHAUSTED");
+  assert.equal(external.calls().length, 1);
+});
+
+test("an inconclusive provider lookup leaves UNKNOWN unresolved and blocks retry", async () => {
+  const { adapter, external, store } = setup({ outcome: { kind: "UNKNOWN_INCONCLUSIVE" } });
+  const first = await adapter.execute(request());
+  assert.equal(first.decision, DECISIONS.RECONCILE_REQUIRED);
+  assert.equal(external.calls().length, 1);
+
+  const reconciled = await adapter.reconcile(first.attemptId);
+  assert.equal(reconciled.state, ATTEMPT_STATES.UNKNOWN);
+  assert.equal(store.getJournal().at(-1).result, DECISIONS.RECONCILE_REQUIRED);
+
+  const retry = await adapter.execute(request());
+  assert.equal(retry.decision, DECISIONS.RECONCILE_REQUIRED);
+  assert.equal(retry.reasonCode, "UNKNOWN_REQUIRES_RECONCILIATION");
   assert.equal(external.calls().length, 1);
 });
 
@@ -289,3 +456,4 @@ test("unexpected transport failure is fail-closed as UNKNOWN", async () => {
   assert.equal(retry.decision, DECISIONS.RECONCILE_REQUIRED);
   assert.equal(external.calls().length, 1);
 });
+

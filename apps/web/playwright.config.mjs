@@ -9,9 +9,9 @@ import { DEFAULT_BASE_URL } from "./test/e2e/harness.mjs";
 // stack has been reset and verified.
 export default defineConfig({
   testDir: "./test/e2e",
-  outputDir: path.join(os.tmpdir(), "zavqera-e2e", "playwright-results"),
+  outputDir: process.env.ZAVQERA_E2E_OUTPUT_DIR || path.join(os.tmpdir(), "zavqera-e2e", "playwright-results"),
   globalSetup: "./test/e2e/global-setup.mjs",
-  timeout: 360_000,
+  timeout: 180_000,
   expect: { timeout: 15_000 },
   fullyParallel: false,
   workers: 1,
@@ -22,5 +22,7 @@ export default defineConfig({
     baseURL: process.env.ZAVQERA_E2E_BASE_URL || DEFAULT_BASE_URL,
     headless: true,
     trace: "retain-on-failure",
+    // Keep useful failure screenshots without triggering Playwright 1.55 fixture-step reporter noise on successful runs.
+    screenshot: "only-on-failure",
   },
 });

@@ -79,3 +79,58 @@ This is a separate proof from the Web unit tests.
 Existing mission/action/history tables remain authoritative for their current responsibilities. New security state should reference them rather than overload their existing columns. Existing append-only history and auth.users -> private.handle_new_user_profile binding must remain intact.
 
 No production schema object is proposed by this document.
+
+
+## Evidence update — 2026-10-11 (W43–W66)
+
+This remains a **design-only** proposal. Read-only catalog inspection was repeated against hosted ZAVQERA Development on 2026-10-11; no hosted schema or grants were changed.
+
+### Existing primitives now available (W43–W66)
+
+The feature branch and current Development schema now include a durable `public.agent_executions` ledger; workspace-scoped idempotency uniqueness; execution lease/recovery fields; W56/W60 replay/request binding; W57–W60 expiring exact approval scopes and consumption tombstones; W61/W62 bounded and redacted payload previews; W63 trusted-only generic completion with receipt/lease guards; W64 a narrow explicitly unverified read-only research completion path; and W65 direct-write revocation for client roles.
+
+W66 further removes direct table privileges from `service_role` so a leaked service key cannot bypass W63 solely through direct DML. **W66 is currently only in the PR branch, not the hosted Development migration registry**. The W21 run on HEAD `95fcbb5ee64548e2e5b4117284474c9ff0e34b01` replayed the repository migrations, but the workflow did not yet copy or invoke the dedicated W66 pgTAP file. Thus no W66-specific test pass is claimed from that run. The read-only hosted privilege catalog still shows direct service_role table grants. No remote change was made.
+
+### Evidence boundary for W25
+
+W25 runs a two-session test over dedicated disposable harness objects named `authority_state` and `execution_attempts`, using a test-only `authorize_attempt()` function. It successfully demonstrates one ALLOW for one remaining budget unit, unique idempotency, changed-binding refusal, UNKNOWN replay hold, revocation, expiry, destination and input-hash mismatch **inside that harness**.
+
+It does **not** yet prove that the app's current `public.start_agent_execution` RPC and `public.agent_executions` table atomically reserve Mission Authority action/spend budgets, or that the reservation is held across the external dispatch/receipt crash window. The current persistent ledger lacks dedicated normalized budget-counter/reservation fields for the full provider-neutral contract. JSON request and approval-scope bindings are useful protections but should not be presented as a universal JIT gate.
+
+### Remaining proof, before any schema migration
+
+W67 has completed the actual-ledger idempotency part on candidate HEAD `c1ce23840f442edcf7a84149f34e7b8b3ba460f4`: two independent PostgreSQL sessions called `public.start_agent_execution` against the disposable W21-migrated Supabase schema. Exactly one same-key attempt row and one start event remained; the losing session returned `EXECUTION_ALREADY_EXISTS`; replay and changed request content under the same key were refused. See https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38170577786.
+
+The remaining design and evidence tasks are narrower now:
+
+1. **Atomic budget reservation is still MISSING.** The actual ledger has no dedicated action/spend reservation counters to atomically coordinate concurrent starts. W67 explicitly reported `W67_BUDGET_RESERVATION=NOT_TESTED`; do not infer budget proof from idempotency.
+2. Design the smallest durable authority-budget row or equivalent invariant, scoped to workspace/mission/agent/authority revision. It must carry the current revision/status/validity, action limit with reserved/consumed counts, and spend limit with reserved/consumed amount/currency. Avoid overloading `workspace_agents.authority` JSON as a concurrency counter.
+3. A future guarded start/claim transaction must lock the current authority and mission/agent records in a consistent order, reject stale/revoked/expired/mismatched authority, reject duplicate idempotency keys, conditionally reserve action/spend budget, and insert the attempt under the same transaction. If this cannot be tested as one atomic fence, do not enable a real dispatch.
+4. Specify when reservations are settled or released. UNKNOWN must keep the reservation held until authoritative reconciliation. A success must require trusted receipt evidence; a retry must require confirmed safe-to-retry evidence plus fresh authorization.
+5. Prove one remaining action unit and one remaining spend budget cannot authorize two independent concurrent workers in disposable PostgreSQL 17. Separately race expiry/revocation against the same actual start/claim boundary. Never call hosted Development or real providers for these E2E tests.
+6. Keep the universal JIT dispatch boundary, independent provider-side reconciliation and real external-effect verification as explicit blockers until a first real provider adapter is reviewed and tested.
+
+W66's dedicated pgTAP test is now wired into W21 and passed on the later candidate; W66 is still only in the PR branch and was not applied to hosted Development. All six automated gates passed on HEAD `c1ce23840f442edcf7a84149f34e7b8b3ba460f4`; W21's W67 markers and teardown evidence are recorded in the run above.
+
+
+**No new schema/RPC is approved by this design update.** Keep issue #25 open until actual-ledger concurrency evidence is attached. PR #29 stays OPEN / Draft / UNMERGED; Supabase Main/Production and hosted Development remain unmodified.
+
+
+## W67 evidence and remaining budget-fence design — 2026-10-11
+
+W67 is a provider-free test of the real persisted start RPC. It establishes concurrency/replay behavior for a single idempotency key in `public.agent_executions`, not action/spend consumption. This is an important narrow proof, not production authorization certification. Do not mark issue #25 complete until the actual authority-budget row/counter and dispatch fence have an independent-session proof.
+
+
+## W68 implementation candidate — persistent budget reservation (2026-10-11)
+
+W68 adds a branch-only migration for durable `mission_authority_budgets` rows and execution-linked reservation records over the actual `public.agent_executions` ledger. The guarded start RPC resolves idempotency before budget checks, binds the current authority hash/revision into the exact approval scope, locks the budget row, increments action/spend reservations, creates the execution, and inserts its reservation in one transaction. Budget configuration/revocation is restricted to workspace owners/admins; direct table access is revoked from both authenticated clients and `service_role`.
+
+Settlement is deliberately conservative:
+- A trusted successful receipt converts one reserved action to consumed and consumes only the receipt's normalized charge amount in the approved currency.
+- A failed/blocked attempt releases reservation only with trusted evidence explicitly stating both `provider_not_sent=true` and `safe_to_retry=true`.
+- Other failure/timeout ambiguity becomes `UNKNOWN`, records reconciliation-required evidence and retains the budget reservation. Retry is refused unless a prior reservation is released.
+- Retry starts a new execution attempt and re-reserves allowance under the same active budget revision.
+
+The new pgTAP test covers admin-only budget configuration, actual ledger reservation, trusted charge settlement, safe-no-send release, retry re-reservation, UNKNOWN hold, and exhaustion denial. W21 also invokes a separate two-session PostgreSQL 17 race against the actual `public.start_agent_execution` RPC and budget table; it expects exactly one winner for a one-action budget. This is a **candidate implementation** until that exact commit passes all CI gates.
+
+**Limit remains:** W68 fences budget reservation at the database start boundary. It does not establish a universal just-in-time authority recheck immediately before every real external I/O, and the web branch has no certified production side-effect provider adapter or real-provider reconciliation. Do not enable external dispatch based on W68 alone. No hosted Development or Production migration was applied.

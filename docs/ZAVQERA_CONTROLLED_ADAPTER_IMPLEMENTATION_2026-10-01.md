@@ -46,6 +46,12 @@ Regression cases cover both request restrictions and authoritative state,
 exact/missing/mismatched approvals, concurrent budget reservation and no resend
 while reconciliation is required.
 
+Reconciliation treats a missing provider record as inconclusive. The adapter
+returns an attempt to `RECONCILED_NOT_SENT` only when the provider contract
+supplies explicit evidence that no request crossed its boundary; an unknown
+lookup keeps the attempt `UNKNOWN` and blocks retry. The fake-provider suite
+covers both authoritative no-send evidence and an inconclusive lookup.
+
 This slice is an executable **server-side boundary prototype**, not production persistence. The authority store and attempt journal are in-memory so the exact enforcement semantics can be tested without inventing schema/RPCs prematurely. It is not yet wired to a real provider, hosted environment, or production credentials.
 
 Therefore it does **not** claim:
@@ -60,3 +66,4 @@ Therefore it does **not** claim:
 The first safe implementation seam now exists and is testable in isolation. The next gate is to run the new Node test file in trusted CI/local infrastructure, then replace only the proven persistence seam with the minimum database/worker primitives actually required by the evidence.
 
 No Supabase Main, hosted Development schema, protected PR, production deployment, billing, or provider credentials were changed.
+

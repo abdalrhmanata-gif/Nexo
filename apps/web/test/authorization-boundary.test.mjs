@@ -59,7 +59,9 @@ test("server repository derives identity and scopes every authoritative read", a
   assert.match(repository, /supabase\.auth\.getUser\(\)/);
   assert.match(repository, /if \(error \|\| !user\) throw new Error\("Authentication required\."\)/);
   assert.match(repository, /ownedWorkspace\(supabase, user\.id\)/);
-  assert.match(repository, /\.eq\("owner_id", userId\)/);
+  assert.match(repository, /\.eq\("user_id", userId\)/);
+  assert.match(repository, /supabase\.rpc\("ensure_owned_workspace"\)/);
+  assert.doesNotMatch(repository, /\.from\("workspaces"\)\.insert/);
   assert.match(repository, /\.eq\("workspace_id", workspaceId\)/);
   assert.match(repository, /\.eq\("mission_id", missionId\)/);
   assert.match(server, /createServerClient\(supabaseUrl, supabasePublishableKey/);
@@ -101,4 +103,20 @@ test("browser and request boundaries do not authorize authoritative reads", asyn
     assert.doesNotMatch(text, /\b(owner_id|user_id)\b/);
     assert.doesNotMatch(text, restrictedCredentialPattern);
   }
+});
+
+test("nested approval decisions bind the exact approval to the parent mission", async () => {
+  const route = await source(join(
+    webRoot, "app", "api", "missions", "[id]", "approval", "[approvalId]", "route.ts",
+  ));
+
+  assert.match(route, /params: Promise<\{ id: string; approvalId: string \}>/);
+  assert.match(route, /const \{ id, approvalId \} = await params;/);
+  assert.match(route, /\.eq\("id", approvalId\)/);
+  assert.match(route, /\.eq\("mission_id", id\)/);
+  assert.match(route, /p_approval_id: approvalId/);
+  assert.doesNotMatch(route, /p_approval_id: id\b/);
+  assert.match(route, /decision === "REJECTED" && !note/);
+  assert.match(route, /note.length > MAX_DECISION_NOTE/);
+  assert.match(route, /if \(authError \|\| !user\)/);
 });

@@ -1,0 +1,13 @@
+begin;
+create extension if not exists pgtap;
+select plan(8);
+select ok(to_regclass('public.workspace_activity') is not null,'workspace activity table exists');
+select ok((select relrowsecurity from pg_class where oid='public.workspace_activity'::regclass),'workspace activity RLS enabled');
+select ok(not has_table_privilege('anon','public.workspace_activity','SELECT'),'anon cannot read activity table');
+select ok(not has_table_privilege('authenticated','public.workspace_activity','INSERT'),'authenticated cannot insert raw activity');
+select ok(has_function_privilege('authenticated','public.list_workspace_activity(uuid,integer)','EXECUTE'),'authenticated can list workspace activity');
+select ok(not has_function_privilege('anon','public.list_workspace_activity(uuid,integer)','EXECUTE'),'anon cannot list workspace activity');
+select ok(exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='private' and p.proname='record_workspace_activity'),'private activity recorder exists');
+select ok(not exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='private' and p.proname in ('record_workspace_activity') and p.prosecdef and coalesce(array_to_string(p.proconfig,'|'),'') not like '%search_path=pg_catalog, public%'),'activity recorder pins search_path');
+select * from finish();
+rollback;
