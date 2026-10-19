@@ -1,3 +1,4 @@
+import "server-only";
 import { supabaseUrl } from "./supabase/config";
 
 function getServerDbKey() {
