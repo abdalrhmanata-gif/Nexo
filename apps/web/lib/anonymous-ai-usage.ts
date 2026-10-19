@@ -1,4 +1,5 @@
 import "server-only";
+import { getServerDbHeaders } from "./anonymous-ai-rpc-headers.mjs";
 import { supabaseUrl } from "./supabase/config";
 
 function getServerDbKey() {
@@ -7,20 +8,7 @@ function getServerDbKey() {
   return key;
 }
 
-function getServerDbHeaders(key: string): Record<string, string> {
-  const headers: Record<string, string> = {
-    apikey: key,
-    "Content-Type": "application/json",
-  };
-
-  // Current Supabase secret API keys are not JWTs and must be sent via apikey only.
-  if (key.startsWith("sb_secret_")) return headers;
-
-  // Legacy Supabase API keys are JWTs. Send them as bearer tokens too;
-  // PostgreSQL function grants still reject any key that lacks the required role.
-  if (key.startsWith("eyJ")) {
-    headers.Authorization = `Bearer ${key}`;
-    return headers;
+headers;
   }
 
   throw new Error("ANONYMOUS_AI_GUARD_UNAVAILABLE");
