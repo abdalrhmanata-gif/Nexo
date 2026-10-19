@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
+import { getServerDbHeaders } from "../lib/anonymous-ai-rpc-headers.mjs";
 
 const migrationPath = fileURLToPath(
   new URL("../../../supabase/migrations/20261019193000_w83_anonymous_ai_rpc_public_invoker_wrappers.sql", import.meta.url),
@@ -21,14 +22,31 @@ const rpcSignatures = [
   ["release_anonymous_ai_generation", "uuid"],
 ];
 
-test("anonymous quota RPCs use the public default schema and support both Supabase server-key formats", () => {
+test("server key header policy is exercised at runtime for modern and legacy Supabase keys", () => {
+  const modernKey = "sb_secret_runtime-test";
+  assert.deepEqual(getServerDbHeaders(modernKey), {
+    apikey: modernKey,
+    "Content-Type": "application/json",
+  });
+  assert.equal("Authorization" in getServerDbHeaders(modernKey), false);
+
+  const legacyKey = "eyJheader.payload.signature";
+  assert.deepEqual(getServerDbHeaders(legacyKey), {
+    apikey: legacyKey,
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${legacyKey}`,
+  });
+
+  assert.throws(
+    () => getServerDbHeaders("unsupported-key-format"),
+    { message: "ANONYMOUS_AI_GUARD_UNAVAILABLE" },
+  );
+});
+
+test("anonymous quota RPC caller remains server-only and uses the public default schema", () => {
   assert.match(helper, /^import ["\']server-only["\'];/);
   assert.match(helper, /\/rest\/v1\/rpc\/\$\{name\}/);
-  assert.match(helper, /apikey:\s*key/);
-  assert.match(helper, /key\.startsWith\("sb_secret_"\)\) return headers/);
-  assert.match(helper, /key\.startsWith\("eyJ"\)/);
-  assert.match(helper, /headers\.Authorization = `Bearer \$\{key\}`/);
-  assert.match(helper, /throw new Error\("ANONYMOUS_AI_GUARD_UNAVAILABLE"\)/);
+  assert.match(helper, /getServerDbHeaders\(key\)/);
   assert.doesNotMatch(helper, /Content-Profile\s*:/);
 });
 
@@ -43,6 +61,7 @@ test("all public quota wrappers are SECURITY INVOKER and call schema-qualified p
     assert.ok(block.includes(`private.${name}(`), `${name} must call its private implementation`);
   }
 });
+
 test("only service_role receives EXECUTE on the public wrappers", () => {
   for (const [name, args] of rpcSignatures) {
     const signature = `public.${name}(${args})`;
