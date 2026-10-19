@@ -22,6 +22,7 @@ const rpcSignatures = [
 ];
 
 test("anonymous quota RPCs use the public default schema and support both Supabase server-key formats", () => {
+  assert.match(helper, /^import ["\']server-only["\'];/);
   assert.match(helper, /\/rest\/v1\/rpc\/\$\{name\}/);
   assert.match(helper, /apikey:\s*key/);
   assert.match(helper, /key\.startsWith\("sb_secret_"\)\) return headers/);
