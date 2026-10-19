@@ -8,12 +8,6 @@ function getServerDbKey() {
   return key;
 }
 
-headers;
-  }
-
-  throw new Error("ANONYMOUS_AI_GUARD_UNAVAILABLE");
-}
-
 async function callRpc<T>(name: string, body: Record<string, unknown>) {
   const key = getServerDbKey();
   const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${name}`, {
