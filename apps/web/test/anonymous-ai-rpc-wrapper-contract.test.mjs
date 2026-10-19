@@ -30,15 +30,15 @@ test("anonymous quota calls use the public default schema and modern secret-key 
 
 test("all public quota wrappers are SECURITY INVOKER and call schema-qualified private helpers", () => {
   for (const [name] of rpcSignatures) {
-    const escapedName = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const wrapper = new RegExp(
-      `create or replace function public\\.${escapedName}\\([\\s\\S]*?security invoker[\\s\\S]*?set search_path = pg_catalog[\\s\\S]*?as \\\$function\\\\\\$[\\s\\S]*?private\\.${escapedName}\\(`,
-      "i",
-    );
-    assert.match(migration, wrapper, `expected least-privilege invoker wrapper for ${name}`);
+    const start = migration.indexOf(`create or replace function public.${name}(`);
+    assert.notEqual(start, -1, `missing public wrapper for ${name}`);
+    const next = migration.indexOf("\\ncreate or replace function", start + 1);
+    const block = migration.slice(start, next === -1 ? migration.length : next);
+    assert.match(block, /security invoker/i, `${name} must be SECURITY INVOKER`);
+    assert.match(block, /set search_path = pg_catalog/i, `${name} must pin search_path`);
+    assert.match(block, new RegExp(`private\\\\.${name}\\\\(`), `${name} must call its private implementation`);
   }
 });
-
 test("only service_role receives EXECUTE on the public wrappers", () => {
   for (const [name, args] of rpcSignatures) {
     const signature = `public.${name}(${args})`;
