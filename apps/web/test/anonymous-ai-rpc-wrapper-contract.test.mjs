@@ -21,10 +21,14 @@ const rpcSignatures = [
   ["release_anonymous_ai_generation", "uuid"],
 ];
 
-test("anonymous quota calls use the public default schema and modern secret-key header contract", () => {
+test("anonymous quota RPCs use the public default schema and support both Supabase server-key formats", () => {
   assert.match(helper, /\/rest\/v1\/rpc\/\$\{name\}/);
   assert.match(helper, /apikey:\s*key/);
-  assert.doesNotMatch(helper, /Authorization\s*:/);
+  assert.match(helper, /key\.startsWith\("sb_secret_"\)\) return headers/);
+  assert.match(helper, /key\.startsWith\("eyJ"\)/);
+  assert.match(helper, /claims\.role !== "service_role"/);
+  assert.match(helper, /headers\.Authorization = `Bearer \\$\{key\}`/);
+  assert.match(helper, /throw new Error\("ANONYMOUS_AI_GUARD_UNAVAILABLE"\)/);
   assert.doesNotMatch(helper, /Content-Profile\s*:/);
 });
 
