@@ -1,0 +1,331 @@
+name: ZAVQERA W83 Anonymous AI RPC Wrapper PostgreSQL 17 pgTAP
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - codex/anonymous-ai-rpc-public-invoker-wrapper-20261019
+      - zavqera/anonymous-ai-rpc-wrapper-validation-20261019
+    paths:
+      - .github/workflows/zavqera-w83-anonymous-ai-rpc-isolated-pgtap.yml
+      - supabase/tests/w83_anonymous_ai_rpc_public_invoker_wrappers.sql
+      - supabase/migrations/20261019193000_w83_anonymous_ai_rpc_public_invoker_wrappers.sql
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zavqera-w83-isolated-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  w83-pgtap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout W83 source revision
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v3
+        with:
+          version: latest
+
+      - name: Prepare clean local PostgreSQL 17 project
+        id: prepare
+        shell: bash
+        run: |
+          set -euo pipefail
+          workdir="${RUNNER_TEMP}/zavqera-w83-local"
+          mkdir -p "${workdir}"
+          supabase init --workdir "${workdir}"
+
+          python3 - "${workdir}/supabase/config.toml" <<'PY'
+          from pathlib import Path
+          import socket
+          import sys
+
+          path = Path(sys.argv[1])
+          lines = path.read_text(encoding="utf-8").splitlines()
+          for i, line in enumerate(lines):
+              if line.startswith("project_id"):
+                  lines[i] = 'project_id = "zavqera-w83-local"'
+                  break
+
+          def set_value(section, key, value):
+              header = f"[{section}]"
+              start = next((i for i, line in enumerate(lines) if line.strip() == header), None)
+              if start is None:
+                  lines.extend(["", header, f"{key} = {value}"])
+                  return
+              end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("[")), len(lines))
+              for i in range(start + 1, end):
+                  if lines[i].lstrip().startswith(f"{key} ="):
+                      lines[i] = f"{key} = {value}"
+                      return
+              lines.insert(start + 1, f"{key} = {value}")
+
+          with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+              listener.bind(("127.0.0.1", 0))
+              db_port = listener.getsockname()[1]
+          set_value("db", "major_version", "17")
+          set_value("db", "port", str(db_port))
+          set_value("db.seed", "enabled", "false")
+          path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+          PY
+
+          # Match the known historical bootstrap used by the disposable W21 replay.
+          # This fixture is local-only test scaffolding, not a hosted migration.
+          mkdir -p "${workdir}/volumes/db/init"
+          cat > "${workdir}/volumes/db/init/00_private_schema.sql" <<'SQL'
+          create schema if not exists private;
+          SQL
+
+          migration_source="${GITHUB_WORKSPACE}/supabase/migrations"
+          manifest="${RUNNER_TEMP}/W83_MIGRATION_MANIFEST.sha256"
+          (cd "${migration_source}" && find . -maxdepth 1 -type f -name "*.sql" -print0 | LC_ALL=C sort -z | xargs -0 sha256sum) > "${manifest}"
+          migration_manifest_sha256="$(sha256sum "${manifest}" | awk "{print \$1}")"
+          mkdir -p "${workdir}/supabase/migrations"
+          cat > "${workdir}/supabase/migrations/20260921180005_e2e_historical_auth_compat.sql" <<'SQL'
+          create schema if not exists private;
+          create or replace function private.handle_new_user_profile()
+          returns trigger
+          language plpgsql
+          security definer
+          set search_path = pg_catalog, public
+          as $body$
+          begin
+            insert into public.profiles (id)
+            values (new.id)
+            on conflict (id) do nothing;
+            return new;
+          end;
+          $body$;
+          revoke all privileges on function private.handle_new_user_profile() from public, anon, authenticated;
+          create or replace function public.handle_new_user_profile()
+          returns trigger
+          language plpgsql
+          security definer
+          set search_path = pg_catalog, public
+          as $body$
+          begin
+            insert into public.profiles (id)
+            values (new.id)
+            on conflict (id) do nothing;
+            return new;
+          end;
+          $body$;
+          revoke all privileges on function public.handle_new_user_profile() from public, anon, authenticated;
+          drop trigger if exists on_auth_user_created on auth.users;
+          create trigger on_auth_user_created
+          after insert on auth.users
+          for each row execute function private.handle_new_user_profile();
+          SQL
+          mkdir -p "${RUNNER_TEMP}/w83-all-migrations"
+          cp -R "${migration_source}/." "${RUNNER_TEMP}/w83-all-migrations/"
+          export LC_ALL=C
+          for migration in "${migration_source}"/*.sql; do
+            name="$(basename "${migration}")"
+            cp "${migration}" "${workdir}/supabase/migrations/${name}"
+            if [ "${name}" = "20261019193000_w83_anonymous_ai_rpc_public_invoker_wrappers.sql" ]; then
+              break
+            fi
+          done
+          if [ ! -f "${workdir}/supabase/migrations/20261019193000_w83_anonymous_ai_rpc_public_invoker_wrappers.sql" ]; then
+            echo "::error::W83 migration was not found in the checked-in migration chain."
+            exit 1
+          fi
+          mkdir -p "${workdir}/supabase/tests"
+          cp "${GITHUB_WORKSPACE}/supabase/tests/w83_anonymous_ai_rpc_public_invoker_wrappers.sql" \
+            "${workdir}/supabase/tests/w83_anonymous_ai_rpc_public_invoker_wrappers.sql"
+          printf '%s\n' 'zavqera-w83-local' > "${workdir}/ZAVQERA_W83_DISPOSABLE"
+          printf '%s\n' "${workdir}" > "${RUNNER_TEMP}/w83-workdir"
+          {
+            echo "postgres_major=17"
+            echo "migration_source=checked-in supabase/migrations files"
+            echo "migration_file_count=$(find "${GITHUB_WORKSPACE}/supabase/migrations" -maxdepth 1 -type f -name '*.sql' | wc -l | tr -d ' ')"
+            echo "verification_source_commit=$(git -C "${GITHUB_WORKSPACE}" rev-parse HEAD)"
+            echo "w83_migration_blob=$(git -C "${GITHUB_WORKSPACE}" rev-parse HEAD:supabase/migrations/20261019193000_w83_anonymous_ai_rpc_public_invoker_wrappers.sql)"
+            echo "w83_test_blob=$(git -C "${GITHUB_WORKSPACE}" rev-parse HEAD:supabase/tests/w83_anonymous_ai_rpc_public_invoker_wrappers.sql)"
+            echo "expected_w83_pgtap_assertions=28"
+            echo "verification_source_branch=${GITHUB_REF_NAME}"
+            echo "verification_source_ref=${GITHUB_REF}"
+            echo "migration_manifest_sha256=${migration_manifest_sha256}"
+            echo "application_schema_bootstrap=local-only private schema and historical auth-trigger compatibility fixture"
+            echo "compatibility_fixture=20260921180005_e2e_historical_auth_compat.sql (not a hosted migration)"
+            echo "database_source=brand-new local Supabase stack"
+          } > "${RUNNER_TEMP}/W83_EVIDENCE.txt"
+
+      - name: Replay checked-in migrations plus recorded local compatibility fixture through W83
+        id: replay
+        shell: bash
+        run: |
+          set -uo pipefail
+          workdir="$(cat "${RUNNER_TEMP}/w83-workdir")"
+          log="${RUNNER_TEMP}/W83_MIGRATION_REPLAY.txt"
+          set +e
+          supabase start --ignore-health-check \
+            -x "studio,imgproxy,realtime,storage-api,postgres-meta,edge-runtime,logflare,vector,supavisor" \
+            --workdir "${workdir}" 2>&1 | tee "${log}"
+          status="${PIPESTATUS[0]}"
+          set -e
+          echo "migration_replay_through_w83_exit_code=${status}" >> "${RUNNER_TEMP}/W83_EVIDENCE.txt"
+          echo "migration_replay_order=Supabase CLI timestamp order; checked-in migrations plus documented local-only historical compatibility fixture" >> "${RUNNER_TEMP}/W83_EVIDENCE.txt"
+          if [ "${status}" -eq 0 ]; then
+            db_container="$(docker ps --filter name=supabase_db_zavqera-w83-local --format "{{.ID}}" | head -n 1)"
+            if [ -z "${db_container}" ]; then
+              echo "postgres_server_version_check=FAILED_NO_DB_CONTAINER" >> "${RUNNER_TEMP}/W83_EVIDENCE.txt"
+              status=1
+            else
+              server_version_num="$(docker exec "${db_container}" psql -U postgres -d postgres -Atqc "SHOW server_version_num" | tr -d '\r\n')"
+              if [[ "${server_version_num}" =~ ^[0-9]{5,}$ ]]; then
+                server_major="$((server_version_num / 10000))"
+                echo "postgres_server_version_num=${server_version_num}" >> "${RUNNER_TEMP}/W83_EVIDENCE.txt"
+                echo "postgres_major_observed=${server_major}" >> "${RUNNER_TEMP}/W83_EVIDENCE.txt"
+                if [ "${server_major}" -ne 17 ]; then
+                  echo "::error::Disposable PostgreSQL major version is not 17."
+                  status=1
+                fi
+              else
+                echo "postgres_server_version_check=FAILED_INVALID_VERSION" >> "${RUNNER_TEMP}/W83_EVIDENCE.txt"
+                status=1
+              fi
+            fi
+          fi
+          exit "${status}"
+
+      - name: Run W83 pgTAP at its dependency point and replay later migrations
+        id: test_and_remainder
+        shell: bash
+        run: |
+          set -uo pipefail
+          workdir="$(cat "${RUNNER_TEMP}/w83-workdir")"
+          log="${RUNNER_TEMP}/W83_PGTAP_OUTPUT.txt"
+          set +e
+          (cd "${workdir}" && timeout 10m supabase test db --local \
+            supabase/tests/w83_anonymous_ai_rpc_public_invoker_wrappers.sql) 2>&1 | tee "${log}"
+          status="${PIPESTATUS[0]}"
+          set -e
+          planned="$(sed -n 's/^1\.\.\([0-9][0-9]*\)$/\1/p' "${log}" | tail -n 1)"
+          tap_assertions="$(grep -Ec '^(ok|not ok) [0-9]+' "${log}" || true)"
+          summary_tests="$(sed -nE 's/.*Tests=([0-9]+).*/\1/p' "${log}" | tail -n 1)"
+          if [ -z "${planned}" ]; then planned="${summary_tests}"; fi
+          failed_subtests="$(sed -nE 's/^Failed ([0-9]+)\/[0-9]+ subtests.*/\1/p' "${log}" | tail -n 1)"
+          if [ -z "${failed_subtests}" ]; then
+            failed_subtests="$(sed -nE 's/^Looks like you failed ([0-9]+) tests of [0-9]+.*/\1/p' "${log}" | tail -n 1)"
+          fi
+          failed_names="$(sed -nE 's/^# Failed test [0-9]+: "(.*)"$/\1/p' "${log}" | paste -sd ';' -)"
+          if [ "${tap_assertions}" -gt 0 ]; then
+            reported="${tap_assertions}"
+            failed="$(grep -Ec '^not ok [0-9]+' "${log}" || true)"
+          elif [ -n "${summary_tests}" ] && [ "${status}" -eq 0 ] \
+            && grep -Eq '^(Result: PASS|All tests successful\.)' "${log}"; then
+            reported="${summary_tests}"
+            failed=0
+          elif [ -n "${summary_tests}" ] && [ -n "${failed_subtests}" ]; then
+            reported="${summary_tests}"
+            failed="${failed_subtests}"
+          else
+            reported="${summary_tests:-0}"
+            failed=not-reported
+          fi
+          {
+            echo "w83_pg_tap_exit_code=${status}"
+            echo "w83_assertions_planned=${planned:-not-reported}"
+            echo "w83_assertions_reported=${reported}"
+            echo "w83_assertions_failed=${failed}"
+            echo "w83_failed_test_names=${failed_names:-none}"
+          } >> "${RUNNER_TEMP}/W83_EVIDENCE.txt"
+
+          test_status="${status}"
+          if [ "${planned}" != 28 ] || [ "${reported}" != 28 ] || [ "${failed}" != 0 ]; then
+            echo "::error::W83 TAP output did not report exactly 28 passing assertions."
+            test_status=1
+          fi
+
+          # Apply every later checked-in migration only after W83 has been tested.
+          # This preserves the tested dependency point and still reports full-chain drift.
+          cp -R "${RUNNER_TEMP}/w83-all-migrations/." "${workdir}/supabase/migrations/"
+          replay_log="${RUNNER_TEMP}/W83_MIGRATION_REPLAY.txt"
+          set +e
+          supabase migration up --local --workdir "${workdir}" 2>&1 | tee -a "${replay_log}"
+          later_status="${PIPESTATUS[0]}"
+          set -e
+          echo "migration_replay_after_w83_exit_code=${later_status}" >> "${RUNNER_TEMP}/W83_EVIDENCE.txt"
+          if [ "${later_status}" -ne 0 ]; then
+            echo "::error::The remaining checked-in migration chain failed after W83."
+          fi
+          if [ "${test_status}" -ne 0 ] || [ "${later_status}" -ne 0 ]; then exit 1; fi
+
+      - name: Stop and prove disposable resource cleanup
+        if: always()
+        shell: bash
+        run: |
+          set +e
+          proof="${RUNNER_TEMP}/W83_CLEANUP_PROOF.txt"
+          workdir="${RUNNER_TEMP}/zavqera-w83-local"
+          {
+            echo "cleanup_started=true"
+            echo "project_id=zavqera-w83-local"
+            if [ -d "${workdir}" ] && command -v supabase >/dev/null 2>&1; then
+              supabase stop --no-backup --workdir "${workdir}" >/tmp/w83-stop.log 2>&1
+              stop_status=$?
+              cat /tmp/w83-stop.log
+              echo "supabase_stop_exit_code=${stop_status}"
+            else
+              stop_status=0
+              echo "supabase_stop=not_started_or_cli_unavailable"
+            fi
+            if command -v docker >/dev/null 2>&1; then
+              labelled_containers="$(docker ps -aq --filter label=com.supabase.cli.project=zavqera-w83-local 2>/dev/null)"
+              named_containers="$(docker ps -aq --filter name=zavqera-w83-local 2>/dev/null)"
+              containers="$(printf '%s\n%s\n' "${labelled_containers}" "${named_containers}" | sed '/^$/d' | sort -u)"
+              labelled_volumes="$(docker volume ls -q --filter label=com.supabase.cli.project=zavqera-w83-local 2>/dev/null)"
+              named_volumes="$(docker volume ls -q --filter name=zavqera-w83-local 2>/dev/null)"
+              volumes="$(printf '%s\n%s\n' "${labelled_volumes}" "${named_volumes}" | sed '/^$/d' | sort -u)"
+              echo "remaining_project_containers=${containers:-none}"
+              echo "remaining_project_volumes=${volumes:-none}"
+              if [ -z "${containers}" ] && [ -z "${volumes}" ] && [ "${stop_status}" -eq 0 ]; then
+                echo "cleanup=VERIFIED"
+              else
+                echo "cleanup=NOT_VERIFIED"
+                exit_code=1
+              fi
+            else
+              echo "docker_inventory=unavailable"
+              echo "cleanup=NOT_VERIFIED"
+              exit_code=1
+            fi
+            exit "${exit_code:-0}"
+          } > "${proof}" 2>&1
+
+      - name: Redact disposable local credentials from evidence artifacts
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          for artifact in "${RUNNER_TEMP}"/W83_*.txt; do
+            [ -f "${artifact}" ] || continue
+            sed -E -i \
+              -e 's/sb_(publishable|secret)_[A-Za-z0-9_-]+/sb_\1_[REDACTED_LOCAL_KEY]/g' \
+              -e 's#eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+#[REDACTED_LOCAL_JWT]#g' \
+              -e 's#(postgresql?://[^:/[:space:]]+:)[^@/[:space:]]+@#\1[REDACTED_DB_PASSWORD]@#g' \
+              -e 's/(SERVICE_ROLE_KEY=|ANON_KEY=|JWT_SECRET=)[^[:space:]]+/\1[REDACTED_LOCAL_SECRET]/g' \
+              "${artifact}"
+          done
+
+      - name: Upload W83 isolated verification artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: zavqera-w83-isolated-pgtap-${{ github.sha }}
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/W83_EVIDENCE.txt
+            ${{ runner.temp }}/W83_MIGRATION_REPLAY.txt
+            ${{ runner.temp }}/W83_PGTAP_OUTPUT.txt
+            ${{ runner.temp }}/W83_CLEANUP_PROOF.txt
+            ${{ runner.temp }}/W83_MIGRATION_MANIFEST.sha256
