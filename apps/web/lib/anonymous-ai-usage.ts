@@ -15,19 +15,9 @@ function getServerDbHeaders(key: string): Record<string, string> {
   // Current Supabase secret API keys are not JWTs and must be sent via apikey only.
   if (key.startsWith("sb_secret_")) return headers;
 
-  // Older Supabase service_role keys are JWTs; PostgREST needs the bearer role
-  // token as well as apikey for these legacy keys. Fail closed on other JWT roles.
+  // Legacy Supabase API keys are JWTs. Send them as bearer tokens too;
+  // PostgreSQL function grants still reject any key that lacks the required role.
   if (key.startsWith("eyJ")) {
-    try {
-      const segments = key.split(".");
-      if (segments.length !== 3) throw new Error("invalid_jwt_shape");
-      const claims = JSON.parse(Buffer.from(segments[1], "base64url").toString("utf8")) as {
-        role?: unknown;
-      };
-      if (claims.role !== "service_role") throw new Error("invalid_server_role");
-    } catch {
-      throw new Error("ANONYMOUS_AI_GUARD_UNAVAILABLE");
-    }
     headers.Authorization = `Bearer ${key}`;
     return headers;
   }
