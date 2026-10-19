@@ -6,14 +6,40 @@ function getServerDbKey() {
   return key;
 }
 
+function getServerDbHeaders(key: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    apikey: key,
+    "Content-Type": "application/json",
+  };
+
+  // Current Supabase secret API keys are not JWTs and must be sent via apikey only.
+  if (key.startsWith("sb_secret_")) return headers;
+
+  // Older Supabase service_role keys are JWTs; PostgREST needs the bearer role
+  // token as well as apikey for these legacy keys. Fail closed on other JWT roles.
+  if (key.startsWith("eyJ")) {
+    try {
+      const segments = key.split(".");
+      if (segments.length !== 3) throw new Error("invalid_jwt_shape");
+      const claims = JSON.parse(Buffer.from(segments[1], "base64url").toString("utf8")) as {
+        role?: unknown;
+      };
+      if (claims.role !== "service_role") throw new Error("invalid_server_role");
+    } catch {
+      throw new Error("ANONYMOUS_AI_GUARD_UNAVAILABLE");
+    }
+    headers.Authorization = `Bearer ${key}`;
+    return headers;
+  }
+
+  throw new Error("ANONYMOUS_AI_GUARD_UNAVAILABLE");
+}
+
 async function callRpc<T>(name: string, body: Record<string, unknown>) {
   const key = getServerDbKey();
   const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${name}`, {
     method: "POST",
-    headers: {
-      apikey: key,
-      "Content-Type": "application/json",
-    },
+    headers: getServerDbHeaders(key),
     body: JSON.stringify(body),
     cache: "no-store",
     redirect: "error",
