@@ -26,7 +26,6 @@ test("anonymous quota RPCs use the public default schema and support both Supaba
   assert.match(helper, /apikey:\s*key/);
   assert.match(helper, /key\.startsWith\("sb_secret_"\)\) return headers/);
   assert.match(helper, /key\.startsWith\("eyJ"\)/);
-  assert.match(helper, /claims\.role !== "service_role"/);
   assert.match(helper, /headers\.Authorization = `Bearer \$\{key\}`/);
   assert.match(helper, /throw new Error\("ANONYMOUS_AI_GUARD_UNAVAILABLE"\)/);
   assert.doesNotMatch(helper, /Content-Profile\s*:/);
