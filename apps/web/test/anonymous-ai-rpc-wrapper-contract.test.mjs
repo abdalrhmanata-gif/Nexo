@@ -5,7 +5,7 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 const migrationPath = fileURLToPath(
-  new URL("../../supabase/migrations/20261019193000_w83_anonymous_ai_rpc_public_invoker_wrappers.sql", import.meta.url),
+  new URL("../../../supabase/migrations/20261019193000_w83_anonymous_ai_rpc_public_invoker_wrappers.sql", import.meta.url),
 );
 const helperPath = fileURLToPath(
   new URL("../lib/anonymous-ai-usage.ts", import.meta.url),
