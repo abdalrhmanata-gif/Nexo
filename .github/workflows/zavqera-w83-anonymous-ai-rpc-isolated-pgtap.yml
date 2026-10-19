@@ -201,6 +201,116 @@ jobs:
           fi
           exit "${status}"
 
+      - name: Exercise all anonymous quota wrappers through the disposable Supabase REST gateway
+        id: rest_smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          workdir="$(cat "${RUNNER_TEMP}/w83-workdir")"
+          # The local Supabase CLI provides legacy JWT API keys. This exercises
+          # the legacy header mode without exposing credentials in logs/artifacts.
+          eval "$(supabase status --workdir "${workdir}" -o env)"
+          : "${API_URL:?local API_URL missing}" "${SERVICE_ROLE_KEY:?local SERVICE_ROLE_KEY missing}"
+          response_file="${RUNNER_TEMP}/W83_REST_RESPONSE.json"
+
+          reserve_status="$(curl --silent --show-error -o "${response_file}" -w '%{http_code}' \
+            -X POST "${API_URL}/rest/v1/rpc/reserve_anonymous_ai_generation" \
+            -H "apikey: ${SERVICE_ROLE_KEY}" -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
+            -H 'Content-Type: application/json' \
+            --data '{"p_visitor_hash":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","p_ip_hash":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","p_request_id":"10000000-0000-4000-8000-000000000001"}')"
+          if [ "${reserve_status}" != 200 ]; then
+            cat "${response_file}"
+            echo "::error::Local REST reserve wrapper did not return HTTP 200."
+            exit 1
+          fi
+          reservation_id="$(python3 - "${response_file}" <<'PY'
+          import json, sys
+          data = json.load(open(sys.argv[1], encoding="utf-8"))
+          assert isinstance(data, list) and len(data) == 1, data
+          assert data[0].get("allowed") is True, data
+          assert isinstance(data[0].get("reservation_id"), str), data
+          print(data[0]["reservation_id"])
+          PY
+          )"
+          consume_status="$(curl --silent --show-error -o "${response_file}" -w '%{http_code}' \
+            -X POST "${API_URL}/rest/v1/rpc/consume_anonymous_ai_generation" \
+            -H "apikey: ${SERVICE_ROLE_KEY}" -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
+            -H 'Content-Type: application/json' \
+            --data "{\"p_reservation_id\":\"$reservation_id\"}")"
+          if [ "${consume_status}" != 200 ]; then
+            cat "${response_file}"
+            echo "::error::Local REST consume wrapper did not return HTTP 200."
+            exit 1
+          fi
+          python3 - "${response_file}" <<'PY'
+          import json, sys
+          assert json.load(open(sys.argv[1], encoding="utf-8")) is True
+          PY
+          consume_again_status="$(curl --silent --show-error -o "${response_file}" -w '%{http_code}' \
+            -X POST "${API_URL}/rest/v1/rpc/consume_anonymous_ai_generation" \
+            -H "apikey: ${SERVICE_ROLE_KEY}" -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
+            -H 'Content-Type: application/json' \
+            --data "{\"p_reservation_id\":\"$reservation_id\"}")"
+          if [ "${consume_again_status}" != 200 ]; then
+            cat "${response_file}"
+            echo "::error::Local REST repeated consume did not return HTTP 200."
+            exit 1
+          fi
+          python3 - "${response_file}" <<'PY'
+          import json, sys
+          assert json.load(open(sys.argv[1], encoding="utf-8")) is False
+          PY
+
+          release_reserve_status="$(curl --silent --show-error -o "${response_file}" -w '%{http_code}' \
+            -X POST "${API_URL}/rest/v1/rpc/reserve_anonymous_ai_generation" \
+            -H "apikey: ${SERVICE_ROLE_KEY}" -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
+            -H 'Content-Type: application/json' \
+            --data '{"p_visitor_hash":"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc","p_ip_hash":"dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","p_request_id":"10000000-0000-4000-8000-000000000002"}')"
+          if [ "${release_reserve_status}" != 200 ]; then
+            cat "${response_file}"
+            echo "::error::Local REST second reservation did not return HTTP 200."
+            exit 1
+          fi
+          release_id="$(python3 - "${response_file}" <<'PY'
+          import json, sys
+          data = json.load(open(sys.argv[1], encoding="utf-8"))
+          assert isinstance(data, list) and len(data) == 1, data
+          assert data[0].get("allowed") is True, data
+          assert isinstance(data[0].get("reservation_id"), str), data
+          print(data[0]["reservation_id"])
+          PY
+          )"
+          release_status="$(curl --silent --show-error -o "${response_file}" -w '%{http_code}' \
+            -X POST "${API_URL}/rest/v1/rpc/release_anonymous_ai_generation" \
+            -H "apikey: ${SERVICE_ROLE_KEY}" -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
+            -H 'Content-Type: application/json' \
+            --data "{\"p_reservation_id\":\"$release_id\"}")"
+          if [ "${release_status}" != 200 ]; then
+            cat "${response_file}"
+            echo "::error::Local REST release wrapper did not return HTTP 200."
+            exit 1
+          fi
+          python3 - "${response_file}" <<'PY'
+          import json, sys
+          assert json.load(open(sys.argv[1], encoding="utf-8")) is True
+          PY
+          release_again_status="$(curl --silent --show-error -o "${response_file}" -w '%{http_code}' \
+            -X POST "${API_URL}/rest/v1/rpc/release_anonymous_ai_generation" \
+            -H "apikey: ${SERVICE_ROLE_KEY}" -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
+            -H 'Content-Type: application/json' \
+            --data "{\"p_reservation_id\":\"$release_id\"}")"
+          if [ "${release_again_status}" != 200 ]; then
+            cat "${response_file}"
+            echo "::error::Local REST repeated release did not return HTTP 200."
+            exit 1
+          fi
+          python3 - "${response_file}" <<'PY'
+          import json, sys
+          assert json.load(open(sys.argv[1], encoding="utf-8")) is False
+          PY
+          echo "w83_local_rest_wrappers=PASS"
+          echo "w83_local_rest_reserve_consume_release_idempotency=PASS"
+
       - name: Run W83 pgTAP at its dependency point and replay later migrations
         id: test_and_remainder
         shell: bash
