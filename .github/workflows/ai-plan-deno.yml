@@ -2,7 +2,7 @@ name: AI Plan Function CI
 
 on:
   pull_request:
-    branches: [main, zavqera/openai-responses-integration]
+    branches: [main, zavqera/openai-responses-integration, codex/ai-plan-fail-closed-model-20261020]
     paths:
       - "supabase/functions/ai-plan/**"
       - ".github/workflows/ai-plan-deno.yml"
