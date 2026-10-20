@@ -1,5 +1,6 @@
 import { withSupabase } from "npm:@supabase/server@1";
 import { readBoundedBody } from "./request_body.ts";
+import { resolveConfiguredModel } from "./model_config.ts";
 
 const OPENAI_URL = "https://api.openai.com/v1/responses";
 const MAX_GOAL_CHARS = 6000;
@@ -92,7 +93,7 @@ export default {
 
     // Never guess a model identifier: provider calls can incur cost and must be
     // explicitly configured against an available model for this project.
-    const model = Deno.env.get("OPENAI_MODEL")?.trim();
+    const model = resolveConfiguredModel(Deno.env.get("OPENAI_MODEL"));
     if (!model) return json({ error: "ai_model_not_configured" }, 503);
 
     let rawBody: string;
