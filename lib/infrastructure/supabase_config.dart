@@ -3,6 +3,5 @@ class SupabaseConfig {
   static const publishableKey =
       String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
 
-  static bool get isConfigured =>
-      url.isNotEmpty && publishableKey.isNotEmpty;
+  static bool get isConfigured => url.isNotEmpty && publishableKey.isNotEmpty;
 }
