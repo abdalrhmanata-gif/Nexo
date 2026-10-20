@@ -69,6 +69,34 @@ void main() {
     );
   });
 
+  test('rejects a step without an explicit approval flag', () {
+    expect(
+      () => AiMissionPlan.fromJson({
+        'summary': 'Test',
+        'objective': 'Test',
+        'steps': [
+          {
+            'title': 'Send message',
+            'description': 'Send an external message.',
+            'authorityClass': 'WRITE',
+          },
+        ],
+      }),
+      throwsA(isA<FormatException>()),
+    );
+  });
+
+  test('rejects malformed step entries instead of silently skipping them', () {
+    expect(
+      () => AiMissionPlan.fromJson({
+        'summary': 'Test',
+        'objective': 'Test',
+        'steps': ['not a step'],
+      }),
+      throwsA(isA<FormatException>()),
+    );
+  });
+
   test('rejects a plan without steps', () {
     expect(
       () => AiMissionPlan.fromJson({
