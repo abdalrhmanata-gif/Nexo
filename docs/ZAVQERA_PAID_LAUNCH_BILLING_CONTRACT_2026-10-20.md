@@ -11,6 +11,19 @@
 - The web app uses Supabase for authentication and data. Do not trust a client-supplied plan name, checkout redirect, or browser state as proof of payment.
 - The existing hosted Development migration history is not in verified parity with the repository. This contract does not authorize any hosted migration or schema change.
 
+## Verified repository-only entitlement and quota map (2026-10-20)
+
+The current application already has a server-side quota boundary, but it does **not** have a payment-backed subscription entitlement source:
+
+- `apps/web/lib/ai-usage.ts` calls `get_ai_usage`, `reserve_ai_generation`, `consume_ai_generation`, and `release_ai_generation` through the authenticated Supabase server client.
+- `apps/web/app/api/ai/usage/route.ts` requires an authenticated user and returns the server-derived usage response with `Cache-Control: no-store`.
+- `apps/web/app/api/ai/plan/route.ts` authenticates the user, validates the goal, reserves quota before generation, and uses the existing generation service to consume or release the reservation. It requires `OPENAI_API_KEY` in production unless the provider is configured; no key or paid provider setup is implied here.
+- Migration `20261001184951_w22_ai_usage_quota_and_reservations.sql` introduced `public.ai_entitlements` and the usage/reservation tables. Migration `20261004191431_w34_plan_quota_constraints.sql` defines the repository's intended Free=5, Plus=50, Pro=300 limits; `20261005080400_w36_enable_pro_plan_identity.sql` permits the `pro` plan identity.
+- The current W82 reservation function reads `plan` and `monthly_limit` from `public.ai_entitlements`, defaulting missing rows to Free/5. It does not query a payment provider or independently verify a subscription. Therefore, an entitlement row is currently the plan authority, but there is no verified billing lifecycle that safely populates it from a paid subscription.
+- W22's original definitions predate the W34/W36 plan-limit changes. Do not treat a single historical migration as the final schema; use a reviewed, ordered isolated replay and resolve hosted migration provenance before writing a billing migration.
+
+**Implementation consequence:** the next safe code slice is not a checkout button alone. First define and test a provider-neutral, server-only entitlement projection and a single authoritative plan/period contract that the existing quota reservation path can consume. Then implement provider-specific checkout/webhooks behind a disabled-by-default flag, with a new forward migration only after schema/provenance review. Do not grant Plus/Pro based on client input, a success redirect, or manually editable browser state.
+
 ## Recommended first implementation
 
 Use **Stripe Checkout + Stripe Billing** for monthly subscriptions, with a provider-neutral internal entitlement boundary. This is a proposed choice for implementation, not evidence that a Stripe account, price IDs, tax configuration, or webhook is configured. Before accepting real payments, confirm the merchant's legal entity, country, currency, consumer terms, VAT/tax handling, refund/cancellation policy, and Stripe account eligibility. Do not put secret keys in source control.
