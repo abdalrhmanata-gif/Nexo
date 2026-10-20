@@ -157,7 +157,6 @@ jobs:
             echo "verification_source_commit=$(git -C "${GITHUB_WORKSPACE}" rev-parse HEAD)"
             echo "w83_migration_blob=$(git -C "${GITHUB_WORKSPACE}" rev-parse HEAD:supabase/migrations/20261019193000_w83_anonymous_ai_rpc_public_invoker_wrappers.sql)"
             echo "w83_test_blob=$(git -C "${GITHUB_WORKSPACE}" rev-parse HEAD:supabase/tests/w83_anonymous_ai_rpc_public_invoker_wrappers.sql)"
-            echo "expected_w83_pgtap_assertions=28"
             echo "verification_source_branch=${GITHUB_REF_NAME}"
             echo "verification_source_ref=${GITHUB_REF}"
             echo "migration_manifest_sha256=${migration_manifest_sha256}"
@@ -320,6 +319,25 @@ jobs:
         run: |
           set -uo pipefail
           workdir="$(cat "${RUNNER_TEMP}/w83-workdir")"
+          test_file="${GITHUB_WORKSPACE}/supabase/tests/w83_anonymous_ai_rpc_public_invoker_wrappers.sql"
+          if ! expected="$(python3 - "${test_file}" <<'PY'
+          import re, sys
+          from pathlib import Path
+
+          source = Path(sys.argv[1]).read_text(encoding="utf-8")
+          plan_match = re.search(r"(?im)^\s*select\s+plan\((\d+)\)\s*;", source)
+          assertions = len(re.findall(r"(?im)^\s*select\s+(?:ok|is)\s*\(", source))
+          if plan_match is None:
+              raise SystemExit("W83 pgTAP file has no single-line plan() declaration")
+          planned = int(plan_match.group(1))
+          if planned != assertions:
+              raise SystemExit(f"W83 pgTAP plan is {planned}, but found {assertions} assertions")
+          print(planned)
+          PY
+          )"; then
+            echo "::error::Could not derive a consistent W83 pgTAP assertion count."
+            exit 1
+          fi
           log="${RUNNER_TEMP}/W83_PGTAP_OUTPUT.txt"
           set +e
           (cd "${workdir}" && timeout 10m supabase test db --local \
@@ -351,6 +369,7 @@ jobs:
           fi
           {
             echo "w83_pg_tap_exit_code=${status}"
+            echo "expected_w83_pgtap_assertions=${expected}"
             echo "w83_assertions_planned=${planned:-not-reported}"
             echo "w83_assertions_reported=${reported}"
             echo "w83_assertions_failed=${failed}"
@@ -358,8 +377,8 @@ jobs:
           } >> "${RUNNER_TEMP}/W83_EVIDENCE.txt"
 
           test_status="${status}"
-          if [ "${planned}" != 28 ] || [ "${reported}" != 28 ] || [ "${failed}" != 0 ]; then
-            echo "::error::W83 TAP output did not report exactly 28 passing assertions."
+          if [ "${planned}" != "${expected}" ] || [ "${reported}" != "${expected}" ] || [ "${failed}" != 0 ]; then
+            echo "::error::W83 TAP output did not report exactly ${expected} passing assertions."
             test_status=1
           fi
 

@@ -74,6 +74,20 @@ class W83WorkflowPolicyTests(unittest.TestCase):
         self.assertIn("supabase test db --local", self.w83)
         self.assertIn("${GITHUB_WORKSPACE}/supabase/tests/w83_anonymous_ai_rpc_public_invoker_wrappers.sql", self.w83)
 
+    def test_pgtap_assertion_guard_tracks_the_test_file_plan(self):
+        test_sql = (
+            ROOT / "supabase/tests/w83_anonymous_ai_rpc_public_invoker_wrappers.sql"
+        ).read_text(encoding="utf-8")
+        plan = re.search(r"(?im)^\s*select\s+plan\((\d+)\)\s*;", test_sql)
+        self.assertIsNotNone(plan)
+        assertion_count = len(
+            re.findall(r"(?im)^\s*select\s+(?:ok|is)\s*\(", test_sql)
+        )
+        self.assertEqual(int(plan.group(1)), assertion_count)
+        self.assertIn('echo "expected_w83_pgtap_assertions=${expected}"', self.w83)
+        self.assertIn('[ "${reported}" != "${expected}" ]', self.w83)
+        self.assertNotRegex(self.w83, r"(?:planned|reported)\"?\s*\]?\s*!=\s*28")
+
 
 if __name__ == "__main__":
     unittest.main()
