@@ -4,6 +4,7 @@ const OPENAI_URL = "https://api.openai.com/v1/responses";
 const DEFAULT_MODEL = "gpt-6-luna";
 const MAX_GOAL_CHARS = 6000;
 const MAX_CONTEXT_CHARS = 12000;
+const MAX_REQUEST_BYTES = 64 * 1024;
 const WINDOW_MS = 60_000;
 const MAX_REQUESTS_PER_WINDOW = 10;
 const recentRequests = new Map<string, number[]>();
@@ -59,7 +60,56 @@ function allowRequest(userId: string): boolean {
   }
   existing.push(now);
   recentRequests.set(userId, existing);
+
+  // Bound stale per-user entries in long-lived function instances.
+  if (recentRequests.size > 1000) {
+    for (const [id, timestamps] of recentRequests) {
+      if (!timestamps.some((timestamp) => now - timestamp < WINDOW_MS)) {
+        recentRequests.delete(id);
+      }
+    }
+  }
   return true;
+}
+
+async function readBoundedBody(req: Request): Promise<string> {
+  const declaredLength = req.headers.get("content-length");
+  if (declaredLength !== null) {
+    const parsedLength = Number(declaredLength);
+    if (!Number.isSafeInteger(parsedLength) || parsedLength < 0) {
+      throw new SyntaxError("invalid_content_length");
+    }
+    if (parsedLength > MAX_REQUEST_BYTES) {
+      throw new RangeError("request_body_too_large");
+    }
+  }
+
+  if (!req.body) return "";
+  const reader = req.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let totalBytes = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.byteLength;
+      if (totalBytes > MAX_REQUEST_BYTES) {
+        await reader.cancel();
+        throw new RangeError("request_body_too_large");
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const body = new Uint8Array(totalBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new TextDecoder("utf-8", { fatal: true }).decode(body);
 }
 
 function safeString(value: unknown, max: number): string | null {
@@ -79,11 +129,24 @@ export default {
     const apiKey = Deno.env.get("OPENAI_API_KEY");
     if (!apiKey) return json({ error: "ai_provider_not_configured" }, 503);
 
+    let rawBody: string;
+    try {
+      rawBody = await readBoundedBody(req);
+    } catch (error) {
+      if (error instanceof RangeError) {
+        return json({ error: "request_body_too_large" }, 413);
+      }
+      return json({ error: "invalid_request_body" }, 400);
+    }
+
     let body: any;
     try {
-      body = await req.json();
+      body = JSON.parse(rawBody);
     } catch {
       return json({ error: "invalid_json" }, 400);
+    }
+    if (!body || typeof body !== "object" || Array.isArray(body)) {
+      return json({ error: "invalid_request_body" }, 400);
     }
 
     const goal = safeString(body?.goal, MAX_GOAL_CHARS);
@@ -110,39 +173,45 @@ export default {
       context ? "\nAdditional context:\n" + context : "",
     ].join("\n");
 
-    const openaiResponse = await fetch(OPENAI_URL, {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer " + apiKey,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: Deno.env.get("OPENAI_MODEL") || DEFAULT_MODEL,
-        store: false,
-        max_output_tokens: 1200,
-        instructions: [
-          "You are ZAVQERA's planning intelligence.",
-          "Convert the user's goal into a concise, practical mission plan.",
-          "You do not grant authority, execute actions, contact anyone, spend money, or claim verification.",
-          "Treat all proposed steps as untrusted suggestions until ZAVQERA policy and authorization validate them.",
-          "Never invent permissions. Mark external side effects as requiring approval.",
-          "Prefer a small number of concrete steps. Ask clarifying questions only when they materially block planning.",
-        ].join(" "),
-        input,
-        text: {
-          format: {
-            type: "json_schema",
-            name: "zavqera_mission_plan",
-            strict: true,
-            schema: planSchema,
-          },
+    let openaiResponse: Response;
+    try {
+      openaiResponse = await fetch(OPENAI_URL, {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + apiKey,
+          "Content-Type": "application/json",
         },
-      }),
-    });
+        body: JSON.stringify({
+          model: Deno.env.get("OPENAI_MODEL") || DEFAULT_MODEL,
+          store: false,
+          max_output_tokens: 1200,
+          instructions: [
+            "You are ZAVQERA's planning intelligence.",
+            "Convert the user's goal into a concise, practical mission plan.",
+            "You do not grant authority, execute actions, contact anyone, spend money, or claim verification.",
+            "Treat all proposed steps as untrusted suggestions until ZAVQERA policy and authorization validate them.",
+            "Never invent permissions. Mark external side effects as requiring approval.",
+            "Prefer a small number of concrete steps. Ask clarifying questions only when they materially block planning.",
+          ].join(" "),
+          input,
+          text: {
+            format: {
+              type: "json_schema",
+              name: "zavqera_mission_plan",
+              strict: true,
+              schema: planSchema,
+            },
+          },
+        }),
+      });
+    } catch {
+      console.error("OpenAI request could not be completed");
+      return json({ error: "ai_provider_unavailable" }, 502);
+    }
 
     if (!openaiResponse.ok) {
-      const detail = await openaiResponse.text();
-      console.error("OpenAI request failed", openaiResponse.status, detail.slice(0, 1000));
+      await openaiResponse.body?.cancel();
+      console.error("OpenAI request failed", openaiResponse.status);
       return json({ error: "ai_provider_error", provider_status: openaiResponse.status }, 502);
     }
 
