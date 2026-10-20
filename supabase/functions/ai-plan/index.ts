@@ -84,8 +84,9 @@ export default {
   fetch: withSupabase({ auth: "user" }, async (req, ctx) => {
     if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
     if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
-    if (!ctx.user) return json({ error: "unauthorized" }, 401);
-    if (!allowRequest(ctx.user.id)) return json({ error: "rate_limited" }, 429);
+    const userId = ctx.userClaims?.id;
+    if (!userId) return json({ error: "unauthorized" }, 401);
+    if (!allowRequest(userId)) return json({ error: "rate_limited" }, 429);
 
     const apiKey = Deno.env.get("OPENAI_API_KEY");
     if (!apiKey) return json({ error: "ai_provider_not_configured" }, 503);
