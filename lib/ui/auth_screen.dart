@@ -194,8 +194,9 @@ class _AuthScreenState extends State<AuthScreen> {
                   labelText: 'Password',
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
-                    tooltip:
-                        _obscurePassword ? 'Show password' : 'Hide password',
+                    tooltip: _obscurePassword
+                        ? 'Show password'
+                        : 'Hide password',
                     onPressed: () => setState(
                       () => _obscurePassword = !_obscurePassword,
                     ),
