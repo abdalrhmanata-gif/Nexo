@@ -85,7 +85,7 @@ begin
   -- record instead of reopening the key and risking another provider call.
 
   select r.generation_kind, r.request_hash
-    into v_existing_kind, v_existing_hash, v_existing_state
+    into v_existing_kind, v_existing_hash
     from public.ai_usage_reservations r
    where r.user_id = v_user_id and r.request_id = btrim(p_request_id)
    for update;
