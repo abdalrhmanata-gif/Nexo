@@ -131,9 +131,8 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final title = _signUp
-        ? 'Create your ZAVQERA account'
-        : 'Sign in to ZAVQERA';
+    final title =
+        _signUp ? 'Create your ZAVQERA account' : 'Sign in to ZAVQERA';
 
     return Scaffold(
       appBar: AppBar(title: const Text('ZAVQERA')),
@@ -194,9 +193,8 @@ class _AuthScreenState extends State<AuthScreen> {
                   labelText: 'Password',
                   border: const OutlineInputBorder(),
                   suffixIcon: IconButton(
-                    tooltip: _obscurePassword
-                        ? 'Show password'
-                        : 'Hide password',
+                    tooltip:
+                        _obscurePassword ? 'Show password' : 'Hide password',
                     onPressed: () => setState(
                       () => _obscurePassword = !_obscurePassword,
                     ),
@@ -226,9 +224,8 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
               ),
               TextButton(
-                onPressed: _loading
-                    ? null
-                    : () => setState(() => _signUp = !_signUp),
+                onPressed:
+                    _loading ? null : () => setState(() => _signUp = !_signUp),
                 child: Text(
                   _signUp
                       ? 'Already have an account? Sign in'
