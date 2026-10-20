@@ -15,7 +15,8 @@ Required: set `OPENAI_MODEL` to an explicitly verified model identifier availabl
 - Does not execute external actions or grant authority.
 - Returns a proposal only; ZAVQERA policy/authorization must validate it before persistence or execution.
 - `OPENAI_MODEL` must be explicitly configured; the function does not guess a default model.
-- The per-user in-memory rate limiter is **best-effort only**: it is local to a function instance, can reset on cold starts, and is not a durable quota, abuse-prevention, or billing control. Do not rely on it for production entitlement enforcement.
+- The per-user in-memory rate limiter is **best-effort only**: it is local to a function instance, can reset on cold starts, and is not a durable quota, abuse-prevention, or billing control.
+- The Edge Function fails closed with `503 ai_quota_enforcement_not_configured` until durable, atomic entitlement reservation and success/failure settlement are integrated and verified. Do not enable provider calls by changing the guard alone.
 - Provider failure logs record status only and do not emit provider error response bodies or user prompts.
 
 ## Endpoint
@@ -29,4 +30,4 @@ Body:
 
 ## Verification
 
-The repository's AI Plan Function CI runs bounded-body unit tests and a Deno type check. These checks do not prove hosted configuration, API-key validity, real-provider behavior, quota accounting, or production readiness.
+The repository's AI Plan Function CI runs bounded-body tests, quota fail-closed guard tests, model configuration tests, and a Deno type check. These checks do not prove hosted configuration, API-key validity, real-provider behavior, quota accounting, or production readiness.
