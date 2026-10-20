@@ -8,12 +8,12 @@ on:
       - zavqera/ai-planner-integration
   push:
     branches:
-      - codex/anonymous-ai-rpc-public-invoker-wrapper-20261019
       - zavqera/anonymous-ai-rpc-wrapper-validation-20261019
     paths:
       - .github/workflows/zavqera-w83-anonymous-ai-rpc-isolated-pgtap.yml
       - supabase/tests/w83_anonymous_ai_rpc_public_invoker_wrappers.sql
       - supabase/migrations/20261019193000_w83_anonymous_ai_rpc_public_invoker_wrappers.sql
+      - tests/test_w83_workflow_policy.py
 
 permissions:
   contents: read
@@ -32,6 +32,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
+
+      - name: Verify candidate push exclusions and full PR triggers
+        run: python3 -m unittest tests/test_w83_workflow_policy.py -v
 
       - name: Set up Supabase CLI
         uses: supabase/setup-cli@v3

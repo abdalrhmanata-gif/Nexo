@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap;
-select plan(28);
+select plan(43);
 
 select ok(
   has_schema_privilege('service_role', 'private', 'USAGE'),
@@ -125,6 +125,99 @@ select ok(
   (select proconfig::text ~ 'search_path=pg_catalog, ?private'
    from pg_proc where oid = 'private.release_anonymous_ai_generation(uuid)'::regprocedure),
   'private release implementation pins search_path'
+);
+
+select is(
+  coalesce((select array_to_string(proconfig, '|') from pg_proc
+    where oid = 'public.reserve_anonymous_ai_generation(text,text,uuid)'::regprocedure), ''),
+  'search_path=pg_catalog',
+  'public reserve wrapper catalog search_path is exactly pg_catalog'
+);
+select is(
+  coalesce((select array_to_string(proconfig, '|') from pg_proc
+    where oid = 'public.consume_anonymous_ai_generation(uuid)'::regprocedure), ''),
+  'search_path=pg_catalog',
+  'public consume wrapper catalog search_path is exactly pg_catalog'
+);
+select is(
+  coalesce((select array_to_string(proconfig, '|') from pg_proc
+    where oid = 'public.release_anonymous_ai_generation(uuid)'::regprocedure), ''),
+  'search_path=pg_catalog',
+  'public release wrapper catalog search_path is exactly pg_catalog'
+);
+
+select is(
+  (select pg_get_userbyid(proowner) from pg_proc
+    where oid = 'public.reserve_anonymous_ai_generation(text,text,uuid)'::regprocedure),
+  'postgres',
+  'public reserve wrapper is owned by the trusted migration role'
+);
+select is(
+  (select pg_get_userbyid(proowner) from pg_proc
+    where oid = 'public.consume_anonymous_ai_generation(uuid)'::regprocedure),
+  'postgres',
+  'public consume wrapper is owned by the trusted migration role'
+);
+select is(
+  (select pg_get_userbyid(proowner) from pg_proc
+    where oid = 'public.release_anonymous_ai_generation(uuid)'::regprocedure),
+  'postgres',
+  'public release wrapper is owned by the trusted migration role'
+);
+select is(
+  (select pg_get_userbyid(proowner) from pg_proc
+    where oid = 'private.reserve_anonymous_ai_generation(text,text,uuid)'::regprocedure),
+  'postgres',
+  'private reserve implementation is owned by the trusted migration role'
+);
+select is(
+  (select pg_get_userbyid(proowner) from pg_proc
+    where oid = 'private.consume_anonymous_ai_generation(uuid)'::regprocedure),
+  'postgres',
+  'private consume implementation is owned by the trusted migration role'
+);
+select is(
+  (select pg_get_userbyid(proowner) from pg_proc
+    where oid = 'private.release_anonymous_ai_generation(uuid)'::regprocedure),
+  'postgres',
+  'private release implementation is owned by the trusted migration role'
+);
+
+select is(
+  (select count(*)::integer from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+   where n.nspname = 'public' and p.proname = 'reserve_anonymous_ai_generation' and p.prokind = 'f'),
+  1,
+  'public reserve wrapper has exactly one overload'
+);
+select is(
+  (select count(*)::integer from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+   where n.nspname = 'public' and p.proname = 'consume_anonymous_ai_generation' and p.prokind = 'f'),
+  1,
+  'public consume wrapper has exactly one overload'
+);
+select is(
+  (select count(*)::integer from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+   where n.nspname = 'public' and p.proname = 'release_anonymous_ai_generation' and p.prokind = 'f'),
+  1,
+  'public release wrapper has exactly one overload'
+);
+select is(
+  (select count(*)::integer from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+   where n.nspname = 'private' and p.proname = 'reserve_anonymous_ai_generation' and p.prokind = 'f'),
+  1,
+  'private reserve implementation has exactly one overload'
+);
+select is(
+  (select count(*)::integer from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+   where n.nspname = 'private' and p.proname = 'consume_anonymous_ai_generation' and p.prokind = 'f'),
+  1,
+  'private consume implementation has exactly one overload'
+);
+select is(
+  (select count(*)::integer from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+   where n.nspname = 'private' and p.proname = 'release_anonymous_ai_generation' and p.prokind = 'f'),
+  1,
+  'private release implementation has exactly one overload'
 );
 
 select * from finish();

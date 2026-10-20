@@ -15,6 +15,7 @@ const [migration, helper] = await Promise.all([
   readFile(migrationPath, "utf8"),
   readFile(helperPath, "utf8"),
 ]);
+const normalizedMigration = migration.replace(/\r\n/g, "\n");
 
 const rpcSignatures = [
   ["reserve_anonymous_ai_generation", "text, text, uuid"],
@@ -52,10 +53,10 @@ test("anonymous quota RPC caller remains server-only and uses the public default
 
 test("all public quota wrappers are SECURITY INVOKER and call schema-qualified private helpers", () => {
   for (const [name] of rpcSignatures) {
-    const start = migration.indexOf(`create or replace function public.${name}(`);
+    const start = normalizedMigration.indexOf(`create or replace function public.${name}(`);
     assert.notEqual(start, -1, `missing public wrapper for ${name}`);
-    const next = migration.indexOf("\ncreate or replace function", start + 1);
-    const block = migration.slice(start, next === -1 ? migration.length : next);
+    const next = normalizedMigration.indexOf("\ncreate or replace function", start + 1);
+    const block = normalizedMigration.slice(start, next === -1 ? normalizedMigration.length : next);
     assert.match(block, /security invoker/i, `${name} must be SECURITY INVOKER`);
     assert.match(block, /set search_path = pg_catalog/i, `${name} must pin search_path`);
     assert.ok(block.includes(`private.${name}(`), `${name} must call its private implementation`);
@@ -66,11 +67,11 @@ test("only service_role receives EXECUTE on the public wrappers", () => {
   for (const [name, args] of rpcSignatures) {
     const signature = `public.${name}(${args})`;
     assert.ok(
-      migration.includes(`revoke all on function ${signature}\n  from public, anon, authenticated;`),
+      normalizedMigration.includes(`revoke all on function ${signature}\n  from public, anon, authenticated;`),
       `missing explicit revoke for ${signature}`,
     );
     assert.ok(
-      migration.includes(`grant execute on function ${signature} to service_role;`),
+      normalizedMigration.includes(`grant execute on function ${signature} to service_role;`),
       `missing service_role grant for ${signature}`,
     );
   }
