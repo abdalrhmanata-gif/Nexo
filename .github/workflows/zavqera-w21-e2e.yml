@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - "codex/mission-action-runtime-seam-test-20261014"
+      - "codex/w82-select-target-fix-20261020"
     paths:
       - ".github/workflows/zavqera-w21-e2e.yml"
       - ".github/workflows/zavqera-web-unit.yml"
