@@ -1,0 +1,29 @@
+name: AI Plan Function CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "supabase/functions/ai-plan/**"
+      - ".github/workflows/ai-plan-deno.yml"
+  push:
+    branches: [main]
+    paths:
+      - "supabase/functions/ai-plan/**"
+      - ".github/workflows/ai-plan-deno.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Test bounded request parsing
+        run: deno test supabase/functions/ai-plan/request_body_test.ts
+      - name: Type-check AI plan function
+        run: deno check supabase/functions/ai-plan/index.ts
