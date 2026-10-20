@@ -1,6 +1,7 @@
 import { withSupabase } from "npm:@supabase/server@1";
 import { readBoundedBody } from "./request_body.ts";
 import { resolveConfiguredModel } from "./model_config.ts";
+import { AI_QUOTA_ENFORCEMENT_READY, quotaEnforcementError } from "./quota_gate.ts";
 
 const OPENAI_URL = "https://api.openai.com/v1/responses";
 const MAX_GOAL_CHARS = 6000;
@@ -72,7 +73,6 @@ function allowRequest(userId: string): boolean {
   return true;
 }
 
-
 function safeString(value: unknown, max: number): string | null {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
@@ -86,6 +86,13 @@ export default {
     if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
     const userId = ctx.userClaims?.id;
     if (!userId) return json({ error: "unauthorized" }, 401);
+
+    // Fail closed: do not incur provider costs until durable, atomic quota
+    // reservation and success/failure settlement are integrated in this path.
+    if (!AI_QUOTA_ENFORCEMENT_READY) {
+      return json(quotaEnforcementError(), 503);
+    }
+
     if (!allowRequest(userId)) return json({ error: "rate_limited" }, 429);
 
     const apiKey = Deno.env.get("OPENAI_API_KEY");
