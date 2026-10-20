@@ -2,7 +2,6 @@ import { withSupabase } from "npm:@supabase/server@1";
 import { readBoundedBody } from "./request_body.ts";
 
 const OPENAI_URL = "https://api.openai.com/v1/responses";
-const DEFAULT_MODEL = "gpt-6-luna";
 const MAX_GOAL_CHARS = 6000;
 const MAX_CONTEXT_CHARS = 12000;
 const WINDOW_MS = 60_000;
@@ -91,6 +90,11 @@ export default {
     const apiKey = Deno.env.get("OPENAI_API_KEY");
     if (!apiKey) return json({ error: "ai_provider_not_configured" }, 503);
 
+    // Never guess a model identifier: provider calls can incur cost and must be
+    // explicitly configured against an available model for this project.
+    const model = Deno.env.get("OPENAI_MODEL")?.trim();
+    if (!model) return json({ error: "ai_model_not_configured" }, 503);
+
     let rawBody: string;
     try {
       rawBody = await readBoundedBody(req);
@@ -144,7 +148,7 @@ export default {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: Deno.env.get("OPENAI_MODEL") || DEFAULT_MODEL,
+          model,
           store: false,
           max_output_tokens: 1200,
           instructions: [
@@ -196,7 +200,7 @@ export default {
 
     return json({
       provider: "openai",
-      model: response?.model ?? Deno.env.get("OPENAI_MODEL") ?? DEFAULT_MODEL,
+      model: response?.model ?? model,
       responseId: response?.id ?? null,
       plan,
     });
