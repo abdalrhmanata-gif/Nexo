@@ -28,6 +28,6 @@ jobs:
       - name: Test fail-closed model configuration
         run: deno test supabase/functions/ai-plan/model_config_test.ts
       - name: Test fail-closed quota enforcement gate
-        run: deno test supabase/functions/ai-plan/quota_gate_test.ts
+        run: deno test --allow-read=supabase/functions/ai-plan/index.ts supabase/functions/ai-plan/quota_gate_test.ts
       - name: Type-check AI plan function
         run: deno check supabase/functions/ai-plan/index.ts
