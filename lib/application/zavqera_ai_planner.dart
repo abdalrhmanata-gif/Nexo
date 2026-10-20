@@ -74,17 +74,17 @@ class AiMissionPlan {
       throw const FormatException('AI planner returned no steps.');
     }
 
+    final steps = rawSteps.map((step) {
+      if (step is! Map) {
+        throw const FormatException('AI planner returned an invalid step.');
+      }
+      return AiMissionStep.fromJson(Map<String, dynamic>.from(step));
+    }).toList(growable: false);
+
     return AiMissionPlan(
       summary: _requiredString(json, 'summary'),
       objective: _requiredString(json, 'objective'),
-      steps: rawSteps
-          .whereType<Map>()
-          .map(
-            (step) => AiMissionStep.fromJson(
-              Map<String, dynamic>.from(step),
-            ),
-          )
-          .toList(growable: false),
+      steps: List.unmodifiable(steps),
       clarifications: _stringList(json['clarifications']),
       risks: _stringList(json['risks']),
     );
@@ -163,12 +163,18 @@ class AiMissionStep {
   factory AiMissionStep.fromJson(Map<String, dynamic> json) {
     final authorityClass = _requiredString(json, 'authorityClass');
     AiMissionPlan._authorityClass(authorityClass);
+    final requiresApproval = json['requiresApproval'];
+    if (requiresApproval is! bool) {
+      throw const FormatException(
+        'AI planner returned an invalid requiresApproval value.',
+      );
+    }
 
     return AiMissionStep(
       title: _requiredString(json, 'title'),
       description: _requiredString(json, 'description'),
       authorityClass: authorityClass,
-      requiresApproval: json['requiresApproval'] == true,
+      requiresApproval: requiresApproval,
     );
   }
 }
