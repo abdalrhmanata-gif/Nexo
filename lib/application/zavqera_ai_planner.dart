@@ -79,9 +79,11 @@ class AiMissionPlan {
       objective: _requiredString(json, 'objective'),
       steps: rawSteps
           .whereType<Map>()
-          .map((step) => AiMissionStep.fromJson(
-                Map<String, dynamic>.from(step),
-              ))
+          .map(
+            (step) => AiMissionStep.fromJson(
+              Map<String, dynamic>.from(step),
+            ),
+          )
           .toList(growable: false),
       clarifications: _stringList(json['clarifications']),
       risks: _stringList(json['risks']),
@@ -159,10 +161,13 @@ class AiMissionStep {
   });
 
   factory AiMissionStep.fromJson(Map<String, dynamic> json) {
+    final authorityClass = _requiredString(json, 'authorityClass');
+    AiMissionPlan._authorityClass(authorityClass);
+
     return AiMissionStep(
       title: _requiredString(json, 'title'),
       description: _requiredString(json, 'description'),
-      authorityClass: _requiredString(json, 'authorityClass'),
+      authorityClass: authorityClass,
       requiresApproval: json['requiresApproval'] == true,
     );
   }
@@ -178,5 +183,9 @@ String _requiredString(Map<String, dynamic> json, String key) {
 
 List<String> _stringList(dynamic value) {
   if (value is! List) return const [];
-  return value.whereType<String>().map((x) => x.trim()).where((x) => x.isNotEmpty).toList(growable: false);
+  return value
+      .whereType<String>()
+      .map((x) => x.trim())
+      .where((x) => x.isNotEmpty)
+      .toList(growable: false);
 }
