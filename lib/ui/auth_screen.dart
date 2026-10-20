@@ -131,8 +131,9 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final title =
-        _signUp ? 'Create your ZAVQERA account' : 'Sign in to ZAVQERA';
+    final title = _signUp
+        ? 'Create your ZAVQERA account'
+        : 'Sign in to ZAVQERA';
 
     return Scaffold(
       appBar: AppBar(title: const Text('ZAVQERA')),
