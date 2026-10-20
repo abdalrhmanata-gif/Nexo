@@ -1,10 +1,10 @@
 import { withSupabase } from "npm:@supabase/server@1";
+import { readBoundedBody } from "./request_body.ts";
 
 const OPENAI_URL = "https://api.openai.com/v1/responses";
 const DEFAULT_MODEL = "gpt-6-luna";
 const MAX_GOAL_CHARS = 6000;
 const MAX_CONTEXT_CHARS = 12000;
-const MAX_REQUEST_BYTES = 64 * 1024;
 const WINDOW_MS = 60_000;
 const MAX_REQUESTS_PER_WINDOW = 10;
 const recentRequests = new Map<string, number[]>();
@@ -72,45 +72,6 @@ function allowRequest(userId: string): boolean {
   return true;
 }
 
-async function readBoundedBody(req: Request): Promise<string> {
-  const declaredLength = req.headers.get("content-length");
-  if (declaredLength !== null) {
-    const parsedLength = Number(declaredLength);
-    if (!Number.isSafeInteger(parsedLength) || parsedLength < 0) {
-      throw new SyntaxError("invalid_content_length");
-    }
-    if (parsedLength > MAX_REQUEST_BYTES) {
-      throw new RangeError("request_body_too_large");
-    }
-  }
-
-  if (!req.body) return "";
-  const reader = req.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let totalBytes = 0;
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      totalBytes += value.byteLength;
-      if (totalBytes > MAX_REQUEST_BYTES) {
-        await reader.cancel();
-        throw new RangeError("request_body_too_large");
-      }
-      chunks.push(value);
-    }
-  } finally {
-    reader.releaseLock();
-  }
-
-  const body = new Uint8Array(totalBytes);
-  let offset = 0;
-  for (const chunk of chunks) {
-    body.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return new TextDecoder("utf-8", { fatal: true }).decode(body);
-}
 
 function safeString(value: unknown, max: number): string | null {
   if (typeof value !== "string") return null;
