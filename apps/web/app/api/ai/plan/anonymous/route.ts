@@ -94,6 +94,16 @@ export async function POST(request: Request) {
       shouldSetCookie,
     );
   }
+  if (providerMode !== "mock" && model && model.length > 128) {
+    return withVisitorCookie(
+      NextResponse.json(
+        { error: "AI planning model configuration is invalid.", code: "ai_model_invalid" },
+        { status: 503 },
+      ),
+      visitorToken,
+      shouldSetCookie,
+    );
+  }
 
   const visitorHash = hashVisitor(visitorToken);
   const ipHash = hashWithSalt(getRequestClientIp(request), salt);
