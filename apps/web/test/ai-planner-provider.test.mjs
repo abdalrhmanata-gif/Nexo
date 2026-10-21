@@ -50,5 +50,6 @@ test("provider requires an explicit verified model and has no silent fallback", 
   assert.match(source, /const modelName = typeof model === "string" \? model\.trim\(\) : ""/);
   assert.match(source, /modelName\.length > 128/);
   assert.match(source, /AI_MODEL_NOT_CONFIGURED/);
+  assert.match(source, /AI_MODEL_INVALID/);
   assert.match(source, /model:\s*modelName/);
 });
