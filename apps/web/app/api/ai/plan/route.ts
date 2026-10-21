@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { parseAuthorizationHeader } from "../../../../lib/bearer-auth";
 import { readJsonBody } from "../../../../lib/read-json-body.mjs";
-import { DEFAULT_AI_MODEL, requestMissionPlan } from "../../../../lib/ai-planner";
+import { requestMissionPlan } from "../../../../lib/ai-planner";
 import { buildMockMissionPlan } from "../../../../lib/ai-mock-provider";
 import {
   AI_GENERATION_OUTCOMES,
@@ -51,8 +51,15 @@ export async function POST(request: Request) {
   const isProductionRuntime = process.env.NODE_ENV === "production";
   const providerMode = configuredProviderMode === "mock" && !isProductionRuntime ? "mock" : "openai";
   const apiKey = process.env.OPENAI_API_KEY;
+  const model = process.env.OPENAI_MODEL?.trim();
   if (providerMode !== "mock" && !apiKey) {
     return NextResponse.json({ error: "AI planning is not configured yet." }, { status: 503 });
+  }
+  if (providerMode !== "mock" && !model) {
+    return NextResponse.json(
+      { error: "AI planning model is not configured yet.", code: "ai_model_not_configured" },
+      { status: 503 },
+    );
   }
 
   const parsedBody = await readJsonBody(request);
@@ -93,7 +100,7 @@ export async function POST(request: Request) {
         ? Promise.resolve(buildMockMissionPlan(goal.trim()))
         : requestMissionPlan(goal.trim(), {
           apiKey: apiKey as string,
-          model: process.env.OPENAI_MODEL || DEFAULT_AI_MODEL,
+          model: model as string,
           requestId,
         }),
       consume: (reservationId) => consumeAiGeneration(reservationId, quotaSupabaseClient),
