@@ -127,6 +127,76 @@ jobs:
           esac
 
 
+  verify-built-runtime:
+    # Local production-mode smoke tests only; this job never deploys to Netlify
+    # and deliberately has no provider key or hosted Supabase credentials.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Build production web app
+        working-directory: apps/web
+        env:
+          NODE_ENV: production
+          NEXT_PUBLIC_SUPABASE_URL: ""
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ""
+          OPENAI_API_KEY: ""
+          OPENAI_MODEL: ""
+        run: npm run build
+
+      - name: Smoke-test built app without external services
+        working-directory: apps/web
+        env:
+          NODE_ENV: production
+          NEXT_PUBLIC_SUPABASE_URL: ""
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ""
+          OPENAI_API_KEY: ""
+          OPENAI_MODEL: ""
+          ZAVQERA_AI_PROVIDER_MODE: openai
+        run: |
+          set -euo pipefail
+          npx next start --hostname 127.0.0.1 --port 4173 >/tmp/zavqera-next-start.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          ready=false
+          for i in $(seq 1 30); do
+            if curl --silent --show-error --max-time 3 -o /dev/null http://127.0.0.1:4173/; then
+              ready=true
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" != true ]; then
+            cat /tmp/zavqera-next-start.log
+            echo "::error::Built Next.js server did not become ready."
+            exit 1
+          fi
+
+          root="$(curl --silent --show-error --max-time 5 -o /dev/null -w '%{http_code}' http://127.0.0.1:4173/)"
+          signin="$(curl --silent --show-error --max-time 5 -o /dev/null -w '%{http_code}' http://127.0.0.1:4173/auth/sign-in)"
+          ai_unauth="$(curl --silent --show-error --max-time 5 -o /dev/null -w '%{http_code}' -X POST -H 'content-type: application/json' --data '{"goal":"local auth gate smoke test"}' http://127.0.0.1:4173/api/ai/plan)"
+          echo "/=$root /auth/sign-in=$signin /api/ai/plan unauthenticated=$ai_unauth"
+          test "$root" = "200"
+          test "$signin" = "200"
+          # No keys or sessions are present. The route must reject the request
+          # before quota RPCs or provider dispatch.
+          test "$ai_unauth" = "401"
+
   verify-preview:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
