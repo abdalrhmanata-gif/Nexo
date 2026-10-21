@@ -39,6 +39,7 @@ test("Netlify preview validation follows the PR and checks unauthenticated AI re
   assert.ok(localRuntimeStart >= 0);
   assert.ok(previewStart > localRuntimeStart);
   const localRuntimeJob = deployWorkflow.slice(localRuntimeStart, previewStart);
+  assert.ok(localRuntimeJob.includes("run: npx next build"));
   assert.ok(localRuntimeJob.includes("npx next start --hostname 127.0.0.1 --port 4173"));
   assert.ok(localRuntimeJob.includes('test "$root" = "200"'));
   assert.ok(localRuntimeJob.includes('test "$signin" = "200"'));
@@ -47,6 +48,11 @@ test("Netlify preview validation follows the PR and checks unauthenticated AI re
   assert.ok(localRuntimeJob.includes('OPENAI_MODEL: ""'));
   assert.equal(localRuntimeJob.includes("netlify-cli"), false);
   assert.equal(localRuntimeJob.includes("--prod"), false);
+
+  const previewJob = deployWorkflow.slice(previewStart);
+  assert.ok(previewJob.includes("for i in $(seq 1 6); do"));
+  assert.ok(previewJob.includes("Netlify did not provision a Deploy Preview"));
+  assert.ok(previewJob.includes("This check remains blocking."));
 });
 
 test("requests without Authorization retain the cookie-session path", () => {
