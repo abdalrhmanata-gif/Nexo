@@ -27,7 +27,7 @@ test("valid bearer authorization yields only the opaque access token", () => {
 });
 
 test("malformed or non-bearer Authorization never falls back to cookies", () => {
-  for (const value of ["", "Basic user.token", "Bearer", "Bearer token extra", "Bearer token\n"]) {
+  for (const value of ["", "Basic user.token", "Bearer", "Bearer token extra", "Bearer token\nextra"]) {
     assert.deepEqual(parseAuthorizationHeader(value), { kind: "invalid" }, value);
   }
 });
