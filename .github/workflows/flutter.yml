@@ -2,7 +2,10 @@ name: ZAVQERA Flutter CI
 
 on:
   push:
-    branches: ["**"]
+    branches:
+      - "main"
+      - "zavqera/integrate-origin-main-clean"
+      - "zavqera/alternative-web-deployment"
   pull_request:
 
 permissions:
