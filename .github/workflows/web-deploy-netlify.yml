@@ -200,36 +200,89 @@ jobs:
           test "$ai_unauth" = "401"
 
   verify-preview:
-    if: github.event_name == 'pull_request'
+    # Secrets are used only for trusted same-repository PRs. This creates a
+    # Netlify draft deploy (never production) because Git-connected previews
+    # are not provisioned for this API/CLI-managed site.
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - name: Wait for Netlify Deploy Preview
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install web dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Create a non-production Netlify draft preview
+        id: draft-preview
         env:
-          PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--unique-kringle-3ce321.netlify.app
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          PREVIEW_ALIAS: zavqera-pr-${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
-          url="$PREVIEW_URL"
-          for i in $(seq 1 6); do
-            code="$(curl -sS -o /tmp/root.html -w '%{http_code}' "$url/")" || code="000"
-            echo "attempt=$i http=$code"
-            if [ "$code" = "200" ]; then exit 0; fi
-            sleep 10
-          done
-          echo "::error::Netlify did not provision a Deploy Preview for this PR (6 checks returned non-200). The site is currently API/CLI-deployed; configure Git-based Deploy Previews or provide an owner-approved preview URL. This check remains blocking."
-          if [ -s /tmp/root.html ]; then head -c 300 /tmp/root.html; echo; fi
-          exit 1
+          if [ -z "$NETLIFY_AUTH_TOKEN" ] || [ -z "$NETLIFY_SITE_ID" ]; then
+            echo "::error::NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID are required to create a draft preview."
+            exit 1
+          fi
+          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "::error::Supabase Development public configuration is missing."
+            exit 1
+          fi
+          case "$NEXT_PUBLIC_SUPABASE_URL" in
+            https://mrwmmbytcymqgwvcoywd.supabase.co*) ;;
+            *) echo "::error::Preview target must be ZAVQERA Development (mrwmmbytcymqgwvcoywd)."; exit 1 ;;
+          esac
+
+          # No --prod / -p flag: this command creates an isolated draft URL.
+          # The alias is PR-specific and does not match a Git branch name.
+          deploy_json="$(npx --yes netlify-cli@latest deploy \
+            --site "$NETLIFY_SITE_ID" \
+            --build \
+            --context deploy-preview \
+            --alias "$PREVIEW_ALIAS" \
+            --json)"
+          preview_url="$(printf '%s' "$deploy_json" | node -e '
+            let input = "";
+            process.stdin.on("data", chunk => input += chunk);
+            process.stdin.on("end", () => {
+              const deploy = JSON.parse(input);
+              const raw = deploy.deploy_url;
+              if (typeof raw !== "string") throw new Error("Netlify CLI JSON omitted deploy_url");
+              const url = new URL(raw);
+              if (url.protocol !== "https:" || !url.hostname.endsWith("unique-kringle-3ce321.netlify.app")) {
+                throw new Error("Netlify CLI returned a URL outside the expected preview site");
+              }
+              process.stdout.write(url.toString());
+            });
+          ')"
+          echo "preview_url=$preview_url" >> "$GITHUB_OUTPUT"
+          echo "::notice::Draft preview created: $preview_url"
 
       - name: Verify preview routes and unauthenticated AI gate
         env:
-          PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--unique-kringle-3ce321.netlify.app
+          PREVIEW_URL: ${{ steps.draft-preview.outputs.preview_url }}
         run: |
           set -euo pipefail
+          if [ -z "$PREVIEW_URL" ]; then
+            echo "::error::Draft preview URL was not captured from Netlify."
+            exit 1
+          fi
           url="$PREVIEW_URL"
-          root="$(curl -sS -o /dev/null -w '%{http_code}' "$url/")"
-          signin="$(curl -sS -o /dev/null -w '%{http_code}' "$url/auth/sign-in")"
-          app="$(curl -sS -o /dev/null -w '%{http_code}' -L "$url/app")"
-          ai_unauth="$(curl -sS -o /dev/null -w '%{http_code}' -X POST -H 'content-type: application/json' --data '{"goal":"auth gate smoke test"}' "$url/api/ai/plan")"
+          root="$(curl --silent --show-error --max-time 20 -o /dev/null -w '%{http_code}' "$url/")"
+          signin="$(curl --silent --show-error --max-time 20 -o /dev/null -w '%{http_code}' "$url/auth/sign-in")"
+          app="$(curl --silent --show-error --max-time 20 -o /dev/null -w '%{http_code}' -L "$url/app")"
+          ai_unauth="$(curl --silent --show-error --max-time 20 -o /dev/null -w '%{http_code}' -X POST -H 'content-type: application/json' --data '{"goal":"auth gate smoke test"}' "$url/api/ai/plan")"
           echo "/=$root /auth/sign-in=$signin /app(final)=$app /api/ai/plan unauthenticated=$ai_unauth"
           test "$root" = "200"
           test "$signin" = "200"
