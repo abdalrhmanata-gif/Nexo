@@ -5,7 +5,7 @@ import '../domain/intent.dart';
 
 class IntentBuilderScreen extends StatefulWidget {
   final void Function(IntentDraft draft) onApproved;
-  final ZavqeraAiPlanner? aiPlanner;
+  final AiMissionPlanner? aiPlanner;
 
   const IntentBuilderScreen({
     super.key,
