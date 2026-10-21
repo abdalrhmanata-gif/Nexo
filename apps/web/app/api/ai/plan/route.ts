@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { parseAuthorizationHeader } from "../../../../lib/bearer-auth";
+import { readJsonBody } from "../../../../lib/read-json-body.mjs";
 import { DEFAULT_AI_MODEL, requestMissionPlan } from "../../../../lib/ai-planner";
 import { buildMockMissionPlan } from "../../../../lib/ai-mock-provider";
 import {
@@ -54,12 +55,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "AI planning is not configured yet." }, { status: 503 });
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Send a valid JSON request." }, { status: 400 });
+  const parsedBody = await readJsonBody(request);
+  if (!parsedBody.ok) {
+    return NextResponse.json(
+      {
+        error: parsedBody.reason === "too_large"
+          ? "Request body is too large."
+          : "Send a valid JSON request.",
+      },
+      { status: parsedBody.reason === "too_large" ? 413 : 400 },
+    );
   }
+  const body = parsedBody.value;
 
   const goal = typeof body === "object" && body !== null && "goal" in body
     ? (body as { goal?: unknown }).goal
