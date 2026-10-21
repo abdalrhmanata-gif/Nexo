@@ -2,6 +2,7 @@ import { createHash, createHmac } from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getRequestClientIp } from "../../../../../lib/request-client-ip.mjs";
+import { readJsonBody } from "../../../../../lib/read-json-body.mjs";
 import { DEFAULT_AI_MODEL, requestMissionPlan } from "../../../../../lib/ai-planner";
 import { buildMockMissionPlan } from "../../../../../lib/ai-mock-provider";
 import {
@@ -52,12 +53,13 @@ export async function POST(request: Request) {
     return errorResponse("Anonymous AI planning is not configured yet.", 503, visitorToken, shouldSetCookie);
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return errorResponse("Send a valid JSON request.", 400, visitorToken, shouldSetCookie);
+  const parsedBody = await readJsonBody(request);
+  if (!parsedBody.ok) {
+    return parsedBody.reason === "too_large"
+      ? errorResponse("Request body is too large.", 413, visitorToken, shouldSetCookie)
+      : errorResponse("Send a valid JSON request.", 400, visitorToken, shouldSetCookie);
   }
+  const body = parsedBody.value;
 
   const goal = typeof body === "object" && body !== null && "goal" in body
     ? (body as { goal?: unknown }).goal
