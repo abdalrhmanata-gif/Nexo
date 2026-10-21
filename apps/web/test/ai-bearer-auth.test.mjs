@@ -9,6 +9,7 @@ import { createAuthenticatedBearerContext } from "../lib/supabase/bearer-context
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const route = readFileSync(path.join(root, "apps/web/app/api/ai/plan/route.ts"), "utf8");
+const anonymousRoute = readFileSync(path.join(root, "apps/web/app/api/ai/plan/anonymous/route.ts"), "utf8");
 const deployWorkflow = readFileSync(path.join(root, ".github/workflows/web-deploy-netlify.yml"), "utf8");
 const server = readFileSync(path.join(root, "apps/web/lib/supabase/server.ts"), "utf8");
 const bearerContextSource = readFileSync(path.join(root, "apps/web/lib/supabase/bearer-context.mjs"), "utf8");
@@ -124,6 +125,13 @@ test("bearer context fails closed on missing config or empty token", async () =>
     /access token is required/,
   );
   assert.equal(clientCreated, false);
+});
+
+test("both AI planning endpoints use bounded JSON request parsing", () => {
+  assert.ok(route.includes('readJsonBody(request)'));
+  assert.ok(route.includes('status: parsedBody.reason === "too_large" ? 413 : 400'));
+  assert.ok(anonymousRoute.includes('readJsonBody(request)'));
+  assert.ok(anonymousRoute.includes('errorResponse("Request body is too large.", 413'));
 });
 
 test("bearer route validates the token and reuses its user-scoped client for quota settlement", () => {
