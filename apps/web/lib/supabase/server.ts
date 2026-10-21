@@ -11,8 +11,8 @@ export function createSupabaseBearerClient(accessToken: string) {
     throw new Error("A bearer access token is required.");
   }
 
-  // Use the validated user's token for every PostgREST/RPC request. Do not
-  // substitute a service-role key or trust a user ID supplied by the caller.
+  // Use the validated user's token for every PostgREST/RPC request.
+  // Never trust a user ID supplied by the caller.
   return createClient(supabaseUrl, supabasePublishableKey, {
     auth: {
       autoRefreshToken: false,
