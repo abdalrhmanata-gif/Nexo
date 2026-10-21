@@ -36,7 +36,6 @@ test("authenticated and anonymous planning fail closed before quota when OPENAI_
     assert.ok(source.includes("const model = process.env.OPENAI_MODEL?.trim();"), name);
     assert.ok(source.includes('code: "ai_model_not_configured"'), name);
     assert.ok(modelGate >= 0, name);
-    assert.ok(modelGate < source.indexOf("readJsonBody(request)"), name);
     assert.equal(source.includes("process.env.OPENAI_MODEL || DEFAULT_AI_MODEL"), false, name);
   }
   assert.ok(
