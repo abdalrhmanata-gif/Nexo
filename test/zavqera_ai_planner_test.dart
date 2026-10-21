@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:nexo_followthrough/application/zavqera_ai_planner.dart';
@@ -66,6 +70,36 @@ void main() {
       normalized.toString(),
       'AI planning is temporarily unavailable. Please use Set goal to continue manually.',
     );
+  });
+
+  test('normalizes the real HTTP 503 response without retrying', () async {
+    var requestCount = 0;
+    final mockHttpClient = MockClient((request) async {
+      requestCount += 1;
+      expect(request.method, 'POST');
+      expect(request.url.path, '/functions/v1/ai-plan');
+      return http.Response(
+        jsonEncode({'error': 'ai_quota_enforcement_not_configured'}),
+        503,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    final supabaseClient = SupabaseClient(
+      'https://example.supabase.co',
+      'test-publishable-key',
+      accessToken: () async => 'test-user-token',
+      httpClient: mockHttpClient,
+    );
+    addTearDown(() async {
+      await supabaseClient.dispose();
+    });
+
+    final planner = ZavqeraAiPlanner(supabaseClient);
+    await expectLater(
+      planner.plan(goal: 'Test goal'),
+      throwsA(isA<AiPlannerUnavailableException>()),
+    );
+    expect(requestCount, 1, reason: 'the client must not automatically retry');
   });
 
   test('does not mislabel unrelated function errors as quota unavailable', () {
