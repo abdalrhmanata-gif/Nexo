@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -7,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:nexo_followthrough/application/zavqera_ai_planner.dart';
 import 'package:nexo_followthrough/domain/intent.dart';
+import 'package:nexo_followthrough/ui/intent_builder_screen.dart';
 
 void main() {
   test('parses a structured AI mission plan', () {
@@ -100,6 +102,49 @@ void main() {
       throwsA(isA<AiPlannerUnavailableException>()),
     );
     expect(requestCount, 1, reason: 'the client must not automatically retry');
+  });
+
+  testWidgets('shows a manual fallback when quota gate returns HTTP 503', (
+    tester,
+  ) async {
+    var requestCount = 0;
+    final mockHttpClient = MockClient((request) async {
+      requestCount += 1;
+      return http.Response(
+        jsonEncode({'error': 'ai_quota_enforcement_not_configured'}),
+        503,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    final supabaseClient = SupabaseClient(
+      'https://example.supabase.co',
+      'test-publishable-key',
+      accessToken: () async => 'test-user-token',
+      httpClient: mockHttpClient,
+    );
+    addTearDown(() async {
+      await supabaseClient.dispose();
+    });
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: IntentBuilderScreen(
+          onApproved: (_) {},
+          aiPlanner: ZavqeraAiPlanner(supabaseClient),
+        ),
+      ),
+    );
+    await tester.enterText(find.byType(TextField).first, 'Plan my launch');
+    await tester.tap(find.text('ZAVQERA AI'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'AI planning is temporarily unavailable. Please use Set goal to continue manually.',
+      ),
+      findsOneWidget,
+    );
+    expect(requestCount, 1, reason: 'the blocked UI must not auto-retry');
   });
 
   test('does not mislabel unrelated function errors as quota unavailable', () {
