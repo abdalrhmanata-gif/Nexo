@@ -11,6 +11,7 @@ warnings = []
 ALLOWED_EXTERNAL = {
     'package:flutter/',
     'package:flutter_test/',
+    'package:http/',
     'package:supabase_flutter/',
     'package:crypto/',
     'package:shared_preferences/',
