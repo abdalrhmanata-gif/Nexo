@@ -16,9 +16,9 @@ const integratedForm = readFileSync(path.join(root, "components/mission-create-f
 
 test("AI route authenticates before invoking the provider service and keeps the key server-side", () => {
   assert.ok(route.indexOf("getAuthenticatedUser()") < route.indexOf("runAiGeneration("));
-  assert.match(route, /reserve:\s*\(id\)\s*=>\s*reserveAiGeneration\(id,\s*"planner"/);
-  assert.ok(route.includes("consume: consumeAiGeneration"));
-  assert.ok(route.includes("release: releaseAiGeneration"));
+  assert.match(route, /reserve:\s*\(id\)\s*=>\s*reserveAiGeneration\(\s*id,\s*"planner"/);
+  assert.match(route, /consume:\s*\(reservationId\)\s*=>\s*consumeAiGeneration\(reservationId,\s*quotaSupabaseClient\)/);
+  assert.match(route, /release:\s*\(reservationId\)\s*=>\s*releaseAiGeneration\(reservationId,\s*quotaSupabaseClient\)/);
   assert.ok(route.includes("process.env.OPENAI_API_KEY"));
   assert.equal(route.includes("NEXT_PUBLIC_OPENAI_API_KEY"), false);
   assert.ok(route.includes("ZAVQERA_AI_PROVIDER_MODE"));
