@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import '../application/intent_builder.dart';
+import '../application/zavqera_ai_planner.dart';
 import '../domain/intent.dart';
 
 class IntentBuilderScreen extends StatefulWidget {
   final void Function(IntentDraft draft) onApproved;
+  final ZavqeraAiPlanner? aiPlanner;
 
-  const IntentBuilderScreen({super.key, required this.onApproved});
+  const IntentBuilderScreen({
+    super.key,
+    required this.onApproved,
+    this.aiPlanner,
+  });
 
   @override
   State<IntentBuilderScreen> createState() => _IntentBuilderScreenState();
@@ -17,12 +23,43 @@ class _IntentBuilderScreenState extends State<IntentBuilderScreen> {
   final _stepController = TextEditingController();
   final _steps = <String>[];
   IntentDraft? _draft;
+  AiMissionPlan? _aiPlan;
+  bool _aiLoading = false;
 
   @override
   void dispose() {
     _controller.dispose();
     _stepController.dispose();
     super.dispose();
+  }
+
+  Future<void> _understandWithAi() async {
+    final planner = widget.aiPlanner;
+    if (planner == null) return;
+    final goal = _controller.text.trim();
+    if (goal.isEmpty) {
+      _understand();
+      return;
+    }
+    setState(() => _aiLoading = true);
+    try {
+      final plan = await planner.plan(goal: goal);
+      if (!mounted) return;
+      setState(() {
+        _aiPlan = plan;
+        _draft = plan.toIntentDraft(goal);
+        _steps
+          ..clear()
+          ..addAll(plan.steps.map((step) => step.title));
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('ZAVQERA AI could not plan this goal: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _aiLoading = false);
+    }
   }
 
   void _understand() {
@@ -97,14 +134,57 @@ class _IntentBuilderScreenState extends State<IntentBuilderScreen> {
             ),
           ),
           const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: _understand,
-            icon: const Icon(Icons.check),
-            label: const Text('Set goal'),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: _understand,
+                  icon: const Icon(Icons.check),
+                  label: const Text('Set goal'),
+                ),
+              ),
+              if (widget.aiPlanner != null) ...[
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: _aiLoading ? null : _understandWithAi,
+                    icon: _aiLoading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.auto_awesome),
+                    label: Text(_aiLoading ? 'Planning…' : 'ZAVQERA AI'),
+                  ),
+                ),
+              ],
+            ],
           ),
           if (draft != null) ...[
             const SizedBox(height: 24),
             _Section(title: 'NEXO understood', child: Text(draft.objective)),
+            if (_aiPlan != null) ...[
+              _Section(
+                title: 'AI planning notes',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_aiPlan!.summary.isNotEmpty) Text(_aiPlan!.summary),
+                    if (_aiPlan!.clarifications.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      const Text('Clarifications needed'),
+                      ..._aiPlan!.clarifications.map(_Bullet.new),
+                    ],
+                    if (_aiPlan!.risks.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      const Text('Risks'),
+                      ..._aiPlan!.risks.map(_Bullet.new),
+                    ],
+                  ],
+                ),
+              ),
+            ],
             _Section(
               title: 'Steps',
               child: Column(

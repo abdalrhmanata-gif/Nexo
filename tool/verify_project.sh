@@ -17,6 +17,11 @@ flutter --version
 dart --version
 flutter pub get
 
-dart format --set-exit-if-changed lib test
+if ! dart format --set-exit-if-changed lib test; then
+  echo "DART_FORMAT_DIFF_BEGIN" >&2
+  git diff -- lib/application/zavqera_ai_planner.dart lib/infrastructure/supabase_config.dart lib/ui/auth_screen.dart >&2
+  echo "DART_FORMAT_DIFF_END" >&2
+  exit 1
+fi
 flutter analyze
 flutter test
