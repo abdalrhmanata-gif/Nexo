@@ -33,6 +33,20 @@ test("Netlify preview validation follows the PR and checks unauthenticated AI re
   assert.ok(livePlanningStep.includes("head.repo.full_name == github.repository"));
   assert.ok(livePlanningStep.includes("contains(github.event.pull_request.body, '[live-openai-planning]')"));
   assert.equal(livePlanningStep.includes("github.event_name != 'pull_request'"), false);
+
+  const localRuntimeStart = deployWorkflow.indexOf("  verify-built-runtime:");
+  const previewStart = deployWorkflow.indexOf("  verify-preview:", localRuntimeStart);
+  assert.ok(localRuntimeStart >= 0);
+  assert.ok(previewStart > localRuntimeStart);
+  const localRuntimeJob = deployWorkflow.slice(localRuntimeStart, previewStart);
+  assert.ok(localRuntimeJob.includes("npx next start --hostname 127.0.0.1 --port 4173"));
+  assert.ok(localRuntimeJob.includes('test "$root" = "200"'));
+  assert.ok(localRuntimeJob.includes('test "$signin" = "200"'));
+  assert.ok(localRuntimeJob.includes('test "$ai_unauth" = "401"'));
+  assert.ok(localRuntimeJob.includes('OPENAI_API_KEY: ""'));
+  assert.ok(localRuntimeJob.includes('OPENAI_MODEL: ""'));
+  assert.equal(localRuntimeJob.includes("netlify-cli"), false);
+  assert.equal(localRuntimeJob.includes("--prod"), false);
 });
 
 test("requests without Authorization retain the cookie-session path", () => {
