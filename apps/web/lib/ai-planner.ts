@@ -74,8 +74,11 @@ export async function requestMissionPlan(
   },
 ): Promise<MissionPlan> {
   const modelName = typeof model === "string" ? model.trim() : "";
-  if (!modelName || modelName.length > 128) {
+  if (!modelName) {
     throw new Error("AI_MODEL_NOT_CONFIGURED");
+  }
+  if (modelName.length > 128) {
+    throw new Error("AI_MODEL_INVALID");
   }
 
   const response = await fetchImpl("https://api.openai.com/v1/responses", {
