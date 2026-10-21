@@ -38,8 +38,6 @@ const PLAN_SCHEMA = {
   required: ["title", "summary", "successCriteria", "steps", "clarifyingQuestions"],
 } as const;
 
-export const DEFAULT_AI_MODEL = "gpt-6-luna";
-
 type PlannerResponse = {
   output_text?: unknown;
   output?: Array<{
@@ -65,16 +63,21 @@ export async function requestMissionPlan(
   goal: string,
   {
     apiKey,
-    model = DEFAULT_AI_MODEL,
+    model,
     requestId,
     fetchImpl = fetch,
   }: {
     apiKey: string;
-    model?: string;
+    model: string;
     requestId?: string;
     fetchImpl?: typeof fetch;
   },
 ): Promise<MissionPlan> {
+  const modelName = typeof model === "string" ? model.trim() : "";
+  if (!modelName || modelName.length > 128) {
+    throw new Error("AI_MODEL_NOT_CONFIGURED");
+  }
+
   const response = await fetchImpl("https://api.openai.com/v1/responses", {
     method: "POST",
     headers: {
@@ -83,7 +86,7 @@ export async function requestMissionPlan(
       ...(requestId ? { "X-Client-Request-Id": requestId } : {}),
     },
     body: JSON.stringify({
-      model,
+      model: modelName,
       instructions: [
         "You are ZAVQERA's mission planning copilot.",
         "Turn the user's goal into a specific, outcome-driven draft mission.",
