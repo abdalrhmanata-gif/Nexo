@@ -55,7 +55,11 @@ jobs:
         run: flutter analyze
         timeout-minutes: 5
 
-      - name: Run Flutter tests
+      - name: Test AI planner quota failure and manual fallback
+        run: flutter test test/zavqera_ai_planner_test.dart
+        timeout-minutes: 3
+
+      - name: Run complete Flutter test suite
         run: flutter test
         timeout-minutes: 10
 
