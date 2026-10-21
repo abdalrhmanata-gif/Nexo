@@ -114,6 +114,11 @@ test("bearer context fails closed on missing config or empty token", async () =>
 });
 
 test("bearer route validates the token and reuses its user-scoped client for quota settlement", () => {
+  const invalidHeaderGuard = route.indexOf('if (authorization.kind === "invalid")');
+  const cookieSessionPath = route.indexOf("user = await getAuthenticatedUser()");
+  assert.ok(invalidHeaderGuard >= 0, "malformed authorization must be rejected");
+  assert.ok(invalidHeaderGuard < cookieSessionPath, "invalid authorization must not fall back to cookies");
+  assert.match(route.slice(invalidHeaderGuard, cookieSessionPath), /status: 401/);
   assert.ok(route.includes("getAuthenticatedBearerContext(authorization.token)"));
   assert.ok(route.includes("reserveAiGeneration("));
   assert.ok(route.includes("quotaSupabaseClient,"));
