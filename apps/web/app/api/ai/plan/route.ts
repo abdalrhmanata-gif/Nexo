@@ -1,20 +1,43 @@
 import { NextResponse } from "next/server";
-import { getAuthenticatedUser } from "../../../../lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { parseAuthorizationHeader } from "../../../../lib/bearer-auth";
 import { DEFAULT_AI_MODEL, requestMissionPlan } from "../../../../lib/ai-planner";
 import { buildMockMissionPlan } from "../../../../lib/ai-mock-provider";
 import {
   AI_GENERATION_OUTCOMES,
   runAiGeneration,
 } from "../../../../lib/ai-generation-service";
-import { reserveAiGeneration, consumeAiGeneration, releaseAiGeneration } from "../../../../lib/ai-usage";
+import {
+  consumeAiGeneration,
+  releaseAiGeneration,
+  reserveAiGeneration,
+} from "../../../../lib/ai-usage";
+import {
+  getAuthenticatedBearerContext,
+  getAuthenticatedUser,
+} from "../../../../lib/supabase/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 25;
 
 export async function POST(request: Request) {
+  const authorization = parseAuthorizationHeader(request.headers.get("authorization"));
+  if (authorization.kind === "invalid") {
+    return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
+  }
+
   let user: Awaited<ReturnType<typeof getAuthenticatedUser>>;
+  let quotaSupabaseClient: SupabaseClient | undefined;
   try {
-    user = await getAuthenticatedUser();
+    if (authorization.kind === "bearer") {
+      // Validate the JWT with Supabase and retain that same user-scoped client
+      // for reserve/consume/release RPCs. Never trust a caller-supplied user ID.
+      const context = await getAuthenticatedBearerContext(authorization.token);
+      user = context?.user ?? null;
+      quotaSupabaseClient = context?.supabase;
+    } else {
+      user = await getAuthenticatedUser();
+    }
   } catch {
     return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
   }
@@ -53,7 +76,12 @@ export async function POST(request: Request) {
   try {
     const result = await runAiGeneration({
       requestId,
-      reserve: (id) => reserveAiGeneration(id, "planner", { goal: goal.trim() }),
+      reserve: (id) => reserveAiGeneration(
+        id,
+        "planner",
+        { goal: goal.trim() },
+        quotaSupabaseClient,
+      ),
       generate: () => providerMode === "mock"
         ? Promise.resolve(buildMockMissionPlan(goal.trim()))
         : requestMissionPlan(goal.trim(), {
@@ -61,8 +89,8 @@ export async function POST(request: Request) {
           model: process.env.OPENAI_MODEL || DEFAULT_AI_MODEL,
           requestId,
         }),
-      consume: consumeAiGeneration,
-      release: releaseAiGeneration,
+      consume: (reservationId) => consumeAiGeneration(reservationId, quotaSupabaseClient),
+      release: (reservationId) => releaseAiGeneration(reservationId, quotaSupabaseClient),
     });
 
     if (result.kind === AI_GENERATION_OUTCOMES.QUOTA) {
