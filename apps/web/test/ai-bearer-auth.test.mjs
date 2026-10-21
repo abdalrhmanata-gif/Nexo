@@ -24,7 +24,15 @@ test("Netlify preview validation follows the PR and checks unauthenticated AI re
     false,
   );
   assert.ok(deployWorkflow.includes('test "$ai_unauth" = "401"'));
-  assert.ok(deployWorkflow.includes("[live-openai-planning]"));
+  const livePlanningStart = deployWorkflow.indexOf("- name: Verify real OpenAI mission planning");
+  const liveResearchStart = deployWorkflow.indexOf("- name: Check Development-only live research authentication config");
+  assert.ok(livePlanningStart >= 0);
+  assert.ok(liveResearchStart > livePlanningStart);
+  const livePlanningStep = deployWorkflow.slice(livePlanningStart, liveResearchStart);
+  assert.ok(livePlanningStep.includes("if: github.event_name == 'pull_request'"));
+  assert.ok(livePlanningStep.includes("head.repo.full_name == github.repository"));
+  assert.ok(livePlanningStep.includes("contains(github.event.pull_request.body, '[live-openai-planning]')"));
+  assert.equal(livePlanningStep.includes("github.event_name != 'pull_request'"), false);
 });
 
 test("requests without Authorization retain the cookie-session path", () => {
