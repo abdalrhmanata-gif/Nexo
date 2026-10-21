@@ -2,15 +2,24 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../domain/intent.dart';
 
+/// UI-facing contract for mission planning, independent of the transport.
+abstract interface class AiMissionPlanner {
+  Future<AiMissionPlan> plan({
+    required String goal,
+    String context = '',
+  });
+}
+
 /// Provider-facing adapter for ZAVQERA planning intelligence.
 ///
 /// This class owns transport/parsing only. It does not grant authority,
 /// execute actions, or bypass the existing intent/policy boundaries.
-class ZavqeraAiPlanner {
+class ZavqeraAiPlanner implements AiMissionPlanner {
   final SupabaseClient client;
 
   const ZavqeraAiPlanner(this.client);
 
+  @override
   Future<AiMissionPlan> plan({
     required String goal,
     String context = '',
