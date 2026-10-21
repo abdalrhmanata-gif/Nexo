@@ -5,10 +5,12 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { parseAuthorizationHeader } from "../lib/bearer-auth.mjs";
+import { createAuthenticatedBearerContext } from "../lib/supabase/bearer-context.mjs";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const route = readFileSync(path.join(root, "apps/web/app/api/ai/plan/route.ts"), "utf8");
 const server = readFileSync(path.join(root, "apps/web/lib/supabase/server.ts"), "utf8");
+const bearerContextSource = readFileSync(path.join(root, "apps/web/lib/supabase/bearer-context.mjs"), "utf8");
 const usage = readFileSync(path.join(root, "apps/web/lib/ai-usage.ts"), "utf8");
 
 test("requests without Authorization retain the cookie-session path", () => {
@@ -32,13 +34,93 @@ test("malformed or non-bearer Authorization never falls back to cookies", () => 
   }
 });
 
+test("bearer context validates the token and returns the exact user-scoped client", async () => {
+  const accessToken = "user.jwt.token";
+  const user = { id: "auth-user-1" };
+  const received = [];
+  const supabase = {
+    auth: {
+      getUser: async (token) => {
+        received.push(token);
+        return { data: { user }, error: null };
+      },
+    },
+  };
+  const calls = [];
+  const createClient = (url, key, options) => {
+    calls.push({ url, key, options });
+    return supabase;
+  };
+
+  const context = await createAuthenticatedBearerContext({
+    accessToken,
+    supabaseUrl: "https://example.supabase.co",
+    publishableKey: "publishable-test-key",
+    createClient,
+  });
+
+  assert.deepEqual(received, [accessToken]);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].url, "https://example.supabase.co");
+  assert.equal(calls[0].key, "publishable-test-key");
+  assert.deepEqual(calls[0].options.auth, {
+    autoRefreshToken: false,
+    persistSession: false,
+    detectSessionInUrl: false,
+  });
+  assert.equal(await calls[0].options.accessToken(), accessToken);
+  assert.equal(context.user, user);
+  assert.strictEqual(context.supabase, supabase);
+});
+
+test("invalid bearer token yields no authenticated context", async () => {
+  const supabase = {
+    auth: {
+      getUser: async () => ({
+        data: { user: null },
+        error: new Error("invalid token"),
+      }),
+    },
+  };
+  const context = await createAuthenticatedBearerContext({
+    accessToken: "invalid.token",
+    supabaseUrl: "https://example.supabase.co",
+    publishableKey: "publishable-test-key",
+    createClient: () => supabase,
+  });
+  assert.equal(context, null);
+});
+
+test("bearer context fails closed on missing config or empty token", async () => {
+  let clientCreated = false;
+  const args = {
+    accessToken: "token",
+    supabaseUrl: "https://example.supabase.co",
+    publishableKey: "publishable-test-key",
+    createClient: () => {
+      clientCreated = true;
+      throw new Error("must not create client");
+    },
+  };
+  await assert.rejects(
+    createAuthenticatedBearerContext({ ...args, supabaseUrl: undefined }),
+    /not configured/,
+  );
+  await assert.rejects(
+    createAuthenticatedBearerContext({ ...args, accessToken: " " }),
+    /access token is required/,
+  );
+  assert.equal(clientCreated, false);
+});
+
 test("bearer route validates the token and reuses its user-scoped client for quota settlement", () => {
   assert.ok(route.includes("getAuthenticatedBearerContext(authorization.token)"));
   assert.ok(route.includes("reserveAiGeneration("));
   assert.ok(route.includes("quotaSupabaseClient,"));
   assert.ok(route.includes("consumeAiGeneration(reservationId, quotaSupabaseClient)"));
   assert.ok(route.includes("releaseAiGeneration(reservationId, quotaSupabaseClient)"));
-  assert.ok(server.includes("await supabase.auth.getUser(accessToken)"));
-  assert.ok(server.includes("accessToken: async () => accessToken"));
+  assert.ok(server.includes("createAuthenticatedBearerContext"));
+  assert.ok(bearerContextSource.includes("await supabase.auth.getUser(accessToken)"));
+  assert.ok(bearerContextSource.includes("accessToken: async () => accessToken"));
   assert.ok(usage.includes("resolveUsageClient(client)"));
 });
