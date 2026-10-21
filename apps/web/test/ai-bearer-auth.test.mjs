@@ -15,15 +15,33 @@ const server = readFileSync(path.join(root, "apps/web/lib/supabase/server.ts"), 
 const bearerContextSource = readFileSync(path.join(root, "apps/web/lib/supabase/bearer-context.mjs"), "utf8");
 const usage = readFileSync(path.join(root, "apps/web/lib/ai-usage.ts"), "utf8");
 
-test("Netlify preview validation follows the PR and checks unauthenticated AI returns 401", () => {
-  assert.ok(deployWorkflow.includes(
-    'PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--unique-kringle-3ce321.netlify.app',
-  ));
-  assert.equal(
-    deployWorkflow.includes("deploy-preview-29--unique-kringle-3ce321.netlify.app"),
-    false,
-  );
-  assert.ok(deployWorkflow.includes('test "$ai_unauth" = "401"'));
+test("Netlify PR preview is deployed as a draft and checked at its returned URL", () => {
+  const previewStart = deployWorkflow.indexOf("  verify-preview:");
+  const localRuntimeStart = deployWorkflow.indexOf("  verify-built-runtime:");
+  assert.ok(previewStart > 0);
+  assert.ok(localRuntimeStart > 0);
+  const previewJob = deployWorkflow.slice(previewStart);
+  const localRuntimeJob = deployWorkflow.slice(localRuntimeStart, previewStart);
+
+  assert.ok(previewJob.includes("github.event.pull_request.head.repo.full_name == github.repository"));
+  assert.ok(previewJob.includes("id: draft-preview"));
+  assert.ok(previewJob.includes("npx --yes netlify-cli@latest deploy"));
+  assert.ok(previewJob.includes("--context deploy-preview"));
+  assert.ok(previewJob.includes("--alias \"$PREVIEW_ALIAS\""));
+  assert.ok(previewJob.includes("--json"));
+  assert.ok(previewJob.includes("deploy.deploy_url"));
+  assert.ok(previewJob.includes("steps.draft-preview.outputs.preview_url"));
+  assert.ok(previewJob.includes("NEXT_PUBLIC_SUPABASE_URL"));
+  assert.ok(previewJob.includes("mrwmmbytcymqgwvcoywd.supabase.co"));
+  assert.ok(previewJob.includes('test "$ai_unauth" = "401"'));
+  assert.ok(previewJob.includes('test "$root" = "200"'));
+  assert.ok(previewJob.includes('test "$signin" = "200"'));
+  assert.equal(previewJob.includes("deploy-preview-29--unique-kringle-3ce321.netlify.app"), false);
+  assert.equal(previewJob.includes("deploy-preview-46--unique-kringle-3ce321.netlify.app"), false);
+  const deployOnly = previewJob.slice(0, previewJob.indexOf("      - name: Verify preview routes"));
+  assert.equal(deployOnly.includes("--prod"), false);
+  assert.equal(deployOnly.includes("NETLIFY_AUTH_TOKEN:"), true);
+
   const livePlanningStart = deployWorkflow.indexOf("- name: Verify real OpenAI mission planning");
   const liveResearchStart = deployWorkflow.indexOf("- name: Check Development-only live research authentication config");
   assert.ok(livePlanningStart >= 0);
@@ -34,11 +52,6 @@ test("Netlify preview validation follows the PR and checks unauthenticated AI re
   assert.ok(livePlanningStep.includes("contains(github.event.pull_request.body, '[live-openai-planning]')"));
   assert.equal(livePlanningStep.includes("github.event_name != 'pull_request'"), false);
 
-  const localRuntimeStart = deployWorkflow.indexOf("  verify-built-runtime:");
-  const previewStart = deployWorkflow.indexOf("  verify-preview:", localRuntimeStart);
-  assert.ok(localRuntimeStart >= 0);
-  assert.ok(previewStart > localRuntimeStart);
-  const localRuntimeJob = deployWorkflow.slice(localRuntimeStart, previewStart);
   assert.ok(localRuntimeJob.includes("run: npx next build"));
   assert.ok(localRuntimeJob.includes("npx next start --hostname 127.0.0.1 --port 4173"));
   assert.ok(localRuntimeJob.includes('test "$root" = "200"'));
@@ -48,12 +61,8 @@ test("Netlify preview validation follows the PR and checks unauthenticated AI re
   assert.ok(localRuntimeJob.includes('OPENAI_MODEL: ""'));
   assert.equal(localRuntimeJob.includes("netlify-cli"), false);
   assert.equal(localRuntimeJob.includes("--prod"), false);
-
-  const previewJob = deployWorkflow.slice(previewStart);
-  assert.ok(previewJob.includes("for i in $(seq 1 6); do"));
-  assert.ok(previewJob.includes("Netlify did not provision a Deploy Preview"));
-  assert.ok(previewJob.includes("This check remains blocking."));
 });
+
 
 test("requests without Authorization retain the cookie-session path", () => {
   assert.deepEqual(parseAuthorizationHeader(null), { kind: "cookie" });
