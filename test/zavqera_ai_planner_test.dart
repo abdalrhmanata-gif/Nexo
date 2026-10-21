@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:nexo_followthrough/application/zavqera_ai_planner.dart';
 import 'package:nexo_followthrough/domain/intent.dart';
@@ -49,6 +50,46 @@ void main() {
       ],
     );
     expect(draft.authorityRequests.last.requiresApproval, isTrue);
+  });
+
+  test('normalizes the fail-closed quota 503 to a user-facing message', () {
+    final normalized = normalizeAiPlannerFunctionException(
+      FunctionException(
+        status: 503,
+        details: {'error': 'ai_quota_enforcement_not_configured'},
+        reasonPhrase: 'Service Unavailable',
+      ),
+    );
+
+    expect(normalized, isA<AiPlannerUnavailableException>());
+    expect(
+      normalized.toString(),
+      'AI planning is temporarily unavailable. Please use Set goal to continue manually.',
+    );
+  });
+
+  test('does not mislabel unrelated function errors as quota unavailable', () {
+    final normalized = normalizeAiPlannerFunctionException(
+      FunctionException(
+        status: 503,
+        details: {'error': 'provider_unavailable'},
+        reasonPhrase: 'Service Unavailable',
+      ),
+    );
+
+    expect(normalized, isNull);
+  });
+
+  test('does not mislabel quota-shaped errors with a different status', () {
+    final normalized = normalizeAiPlannerFunctionException(
+      FunctionException(
+        status: 502,
+        details: {'error': 'ai_quota_enforcement_not_configured'},
+        reasonPhrase: 'Bad Gateway',
+      ),
+    );
+
+    expect(normalized, isNull);
   });
 
   test('rejects an unknown authority class', () {
