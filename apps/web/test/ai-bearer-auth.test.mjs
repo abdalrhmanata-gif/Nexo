@@ -127,10 +127,17 @@ test("bearer context fails closed on missing config or empty token", async () =>
   assert.equal(clientCreated, false);
 });
 
-test("both AI planning endpoints use bounded JSON request parsing", () => {
-  assert.ok(route.includes('readJsonBody(request)'));
+test("both AI planning endpoints enforce body size before quota or provider work", () => {
+  const authenticatedBodyGate = route.indexOf("readJsonBody(request)");
+  const authenticatedGeneration = route.indexOf("runAiGeneration(");
+  const anonymousBodyGate = anonymousRoute.indexOf("readJsonBody(request)");
+  const anonymousReservation = anonymousRoute.lastIndexOf("await reserveAnonymousAiGeneration(");
+
+  assert.ok(authenticatedBodyGate >= 0);
+  assert.ok(authenticatedBodyGate < authenticatedGeneration);
   assert.ok(route.includes('status: parsedBody.reason === "too_large" ? 413 : 400'));
-  assert.ok(anonymousRoute.includes('readJsonBody(request)'));
+  assert.ok(anonymousBodyGate >= 0);
+  assert.ok(anonymousBodyGate < anonymousReservation);
   assert.ok(anonymousRoute.includes('errorResponse("Request body is too large.", 413'));
 });
 
