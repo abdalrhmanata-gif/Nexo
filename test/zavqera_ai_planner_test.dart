@@ -127,7 +127,8 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(planner.requestCount, 1, reason: 'the blocked UI must not auto-retry');
+    expect(planner.requestCount, 1,
+        reason: 'the blocked UI must not auto-retry');
   });
 
   test('does not mislabel unrelated function errors as quota unavailable', () {
