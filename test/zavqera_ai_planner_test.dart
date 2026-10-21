@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -92,7 +91,6 @@ void main() {
       'test-publishable-key',
       accessToken: () async => 'test-user-token',
       httpClient: mockHttpClient,
-      jsonCodec: _InlineJsonCodec(),
     );
     addTearDown(() async {
       await supabaseClient.dispose();
@@ -109,31 +107,13 @@ void main() {
   testWidgets('shows a manual fallback when quota gate returns HTTP 503', (
     tester,
   ) async {
-    var requestCount = 0;
-    final mockHttpClient = MockClient((request) async {
-      requestCount += 1;
-      return http.Response(
-        jsonEncode({'error': 'ai_quota_enforcement_not_configured'}),
-        503,
-        headers: {'content-type': 'application/json'},
-      );
-    });
-    final supabaseClient = SupabaseClient(
-      'https://example.supabase.co',
-      'test-publishable-key',
-      accessToken: () async => 'test-user-token',
-      httpClient: mockHttpClient,
-      jsonCodec: _InlineJsonCodec(),
-    );
-    addTearDown(() async {
-      await supabaseClient.dispose();
-    });
+    final planner = _UnavailableAiPlanner();
 
     await tester.pumpWidget(
       MaterialApp(
         home: IntentBuilderScreen(
           onApproved: (_) {},
-          aiPlanner: ZavqeraAiPlanner(supabaseClient),
+          aiPlanner: planner,
         ),
       ),
     );
@@ -147,7 +127,7 @@ void main() {
       ),
       findsOneWidget,
     );
-    expect(requestCount, 1, reason: 'the blocked UI must not auto-retry');
+    expect(planner.requestCount, 1, reason: 'the blocked UI must not auto-retry');
   });
 
   test('does not mislabel unrelated function errors as quota unavailable', () {
@@ -232,18 +212,15 @@ void main() {
   });
 }
 
-/// Avoids isolate scheduling in widget tests while preserving JSON behavior.
-class _InlineJsonCodec implements AsyncJsonCodec {
-  @override
-  Future<String> encode(Object? json) async => jsonEncode(json);
+class _UnavailableAiPlanner implements AiMissionPlanner {
+  int requestCount = 0;
 
   @override
-  Future<dynamic> decode(String json) async => jsonDecode(json);
-
-  @override
-  Future<dynamic> decodeBytes(Uint8List encodedJson) async =>
-      jsonDecode(utf8.decode(encodedJson));
-
-  @override
-  Future<void> dispose() async {}
+  Future<AiMissionPlan> plan({
+    required String goal,
+    String context = '',
+  }) async {
+    requestCount += 1;
+    throw const AiPlannerUnavailableException();
+  }
 }
