@@ -164,8 +164,9 @@ jobs:
           test "$ai_unauth" = "401"
 
       - name: Verify real OpenAI mission planning
-        # Real provider calls require an explicit [live-openai-planning] marker in the PR body.
-        if: github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.body, '[live-openai-planning]'))
+        # Never run a live provider request from workflow_dispatch or an untrusted fork.
+        # Live calls require an explicit marker on a PR from this same repository.
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.body, '[live-openai-planning]')
         env:
           PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--unique-kringle-3ce321.netlify.app
         run: |
