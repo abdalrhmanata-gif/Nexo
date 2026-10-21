@@ -244,7 +244,7 @@ jobs:
             *) echo "::error::Preview target must be ZAVQERA Development (mrwmmbytcymqgwvcoywd)."; exit 1 ;;
           esac
 
-          # No --prod / -p flag: this command creates an isolated draft URL.
+          # This is a draft-only deployment; never enable production publishing here.
           # The alias is PR-specific and does not match a Git branch name.
           deploy_json="$(npx --yes netlify-cli@latest deploy \
             --site "$NETLIFY_SITE_ID" \
