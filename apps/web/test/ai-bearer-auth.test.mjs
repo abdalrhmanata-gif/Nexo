@@ -31,8 +31,9 @@ test("Netlify PR preview is deployed as a draft and checked at its returned URL"
   assert.ok(previewJob.includes("--json"));
   assert.ok(previewJob.includes("deploy.deploy_url"));
   assert.ok(previewJob.includes("steps.draft-preview.outputs.preview_url"));
-  assert.ok(previewJob.includes("NEXT_PUBLIC_SUPABASE_URL"));
-  assert.ok(previewJob.includes("mrwmmbytcymqgwvcoywd.supabase.co"));
+  assert.ok(previewJob.includes("NETLIFY_SITE_ID: 53e470f1-30da-497e-85f6-16179db4c985"));
+  assert.ok(previewJob.includes("Add NETLIFY_AUTH_TOKEN to GitHub repository Settings"));
+  assert.ok(previewJob.includes("--context deploy-preview"));
   assert.ok(previewJob.includes('test "$ai_unauth" = "401"'));
   assert.ok(previewJob.includes('test "$root" = "200"'));
   assert.ok(previewJob.includes('test "$signin" = "200"'));
