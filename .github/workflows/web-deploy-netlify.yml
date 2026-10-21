@@ -225,25 +225,17 @@ jobs:
         id: draft-preview
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          NETLIFY_SITE_ID: 53e470f1-30da-497e-85f6-16179db4c985
           PREVIEW_ALIAS: zavqera-pr-${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
-          if [ -z "$NETLIFY_AUTH_TOKEN" ] || [ -z "$NETLIFY_SITE_ID" ]; then
-            echo "::error::NETLIFY_AUTH_TOKEN and NETLIFY_SITE_ID are required to create a draft preview."
+          if [ -z "$NETLIFY_AUTH_TOKEN" ]; then
+            echo "::error title=Missing Netlify credential::Add NETLIFY_AUTH_TOKEN to GitHub repository Settings > Secrets and variables > Actions. Do not put the token in source code."
             exit 1
           fi
-          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY" ]; then
-            echo "::error::Supabase Development public configuration is missing."
-            exit 1
-          fi
-          case "$NEXT_PUBLIC_SUPABASE_URL" in
-            https://mrwmmbytcymqgwvcoywd.supabase.co*) ;;
-            *) echo "::error::Preview target must be ZAVQERA Development (mrwmmbytcymqgwvcoywd)."; exit 1 ;;
-          esac
 
+          # Explicit deploy-preview context loads the site's deploy-preview
+          # variables, which must target ZAVQERA Development, not Production.
           # This is a draft-only deployment; never enable production publishing here.
           # The alias is PR-specific and does not match a Git branch name.
           deploy_json="$(npx --yes netlify-cli@latest deploy \
