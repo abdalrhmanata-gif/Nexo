@@ -9,9 +9,22 @@ import { createAuthenticatedBearerContext } from "../lib/supabase/bearer-context
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 const route = readFileSync(path.join(root, "apps/web/app/api/ai/plan/route.ts"), "utf8");
+const deployWorkflow = readFileSync(path.join(root, ".github/workflows/web-deploy-netlify.yml"), "utf8");
 const server = readFileSync(path.join(root, "apps/web/lib/supabase/server.ts"), "utf8");
 const bearerContextSource = readFileSync(path.join(root, "apps/web/lib/supabase/bearer-context.mjs"), "utf8");
 const usage = readFileSync(path.join(root, "apps/web/lib/ai-usage.ts"), "utf8");
+
+test("Netlify preview validation follows the PR and checks unauthenticated AI returns 401", () => {
+  assert.ok(deployWorkflow.includes(
+    'PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--unique-kringle-3ce321.netlify.app',
+  ));
+  assert.equal(
+    deployWorkflow.includes("deploy-preview-29--unique-kringle-3ce321.netlify.app"),
+    false,
+  );
+  assert.ok(deployWorkflow.includes('test "$ai_unauth" = "401"'));
+  assert.ok(deployWorkflow.includes("[live-openai-planning]"));
+});
 
 test("requests without Authorization retain the cookie-session path", () => {
   assert.deepEqual(parseAuthorizationHeader(null), { kind: "cookie" });
