@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -91,6 +92,7 @@ void main() {
       'test-publishable-key',
       accessToken: () async => 'test-user-token',
       httpClient: mockHttpClient,
+      jsonCodec: _InlineJsonCodec(),
     );
     addTearDown(() async {
       await supabaseClient.dispose();
@@ -121,6 +123,7 @@ void main() {
       'test-publishable-key',
       accessToken: () async => 'test-user-token',
       httpClient: mockHttpClient,
+      jsonCodec: _InlineJsonCodec(),
     );
     addTearDown(() async {
       await supabaseClient.dispose();
@@ -227,4 +230,21 @@ void main() {
       throwsA(isA<FormatException>()),
     );
   });
+}
+
+
+/// Avoids isolate scheduling in widget tests while preserving JSON behavior.
+class _InlineJsonCodec implements AsyncJsonCodec {
+  @override
+  Future<String> encode(Object? json) async => jsonEncode(json);
+
+  @override
+  Future<dynamic> decode(String json) async => jsonDecode(json);
+
+  @override
+  Future<dynamic> decodeBytes(Uint8List encodedJson) async =>
+      jsonDecode(utf8.decode(encodedJson));
+
+  @override
+  Future<void> dispose() async {}
 }
