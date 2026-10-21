@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getRequestClientIp } from "../../../../../lib/request-client-ip.mjs";
 import { readJsonBody } from "../../../../../lib/read-json-body.mjs";
-import { DEFAULT_AI_MODEL, requestMissionPlan } from "../../../../../lib/ai-planner";
+import { requestMissionPlan } from "../../../../../lib/ai-planner";
 import { buildMockMissionPlan } from "../../../../../lib/ai-mock-provider";
 import {
   consumeAnonymousAiGeneration,
@@ -80,8 +80,19 @@ export async function POST(request: Request) {
   const isProductionRuntime = process.env.NODE_ENV === "production";
   const providerMode = configuredProviderMode === "mock" && !isProductionRuntime ? "mock" : "openai";
   const apiKey = process.env.OPENAI_API_KEY;
+  const model = process.env.OPENAI_MODEL?.trim();
   if (providerMode !== "mock" && !apiKey) {
     return errorResponse("AI planning is not configured yet.", 503, visitorToken, shouldSetCookie);
+  }
+  if (providerMode !== "mock" && !model) {
+    return withVisitorCookie(
+      NextResponse.json(
+        { error: "AI planning model is not configured yet.", code: "ai_model_not_configured" },
+        { status: 503 },
+      ),
+      visitorToken,
+      shouldSetCookie,
+    );
   }
 
   const visitorHash = hashVisitor(visitorToken);
@@ -109,7 +120,7 @@ export async function POST(request: Request) {
       ? buildMockMissionPlan(goal.trim())
       : await requestMissionPlan(goal.trim(), {
         apiKey: apiKey as string,
-        model: process.env.OPENAI_MODEL || DEFAULT_AI_MODEL,
+        model: model as string,
         requestId,
       });
 
