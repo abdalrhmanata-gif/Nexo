@@ -5,7 +5,7 @@ import '../domain/intent.dart';
 
 class IntentBuilderScreen extends StatefulWidget {
   final void Function(IntentDraft draft) onApproved;
-  final ZavqeraAiPlanner? aiPlanner;
+  final AiMissionPlanner? aiPlanner;
 
   const IntentBuilderScreen({
     super.key,
@@ -54,8 +54,11 @@ class _IntentBuilderScreenState extends State<IntentBuilderScreen> {
       });
     } catch (e) {
       if (!mounted) return;
+      final message = e is AiPlannerUnavailableException
+          ? e.toString()
+          : 'ZAVQERA AI could not plan this goal. Please try again, or choose Set goal to continue manually.';
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('ZAVQERA AI could not plan this goal: $e')),
+        SnackBar(content: Text(message)),
       );
     } finally {
       if (mounted) setState(() => _aiLoading = false);

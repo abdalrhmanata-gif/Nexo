@@ -1,7 +1,14 @@
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:nexo_followthrough/application/zavqera_ai_planner.dart';
 import 'package:nexo_followthrough/domain/intent.dart';
+import 'package:nexo_followthrough/ui/intent_builder_screen.dart';
 
 void main() {
   test('parses a structured AI mission plan', () {
@@ -49,6 +56,103 @@ void main() {
       ],
     );
     expect(draft.authorityRequests.last.requiresApproval, isTrue);
+  });
+
+  test('normalizes the fail-closed quota 503 to a user-facing message', () {
+    final normalized = normalizeAiPlannerFunctionException(
+      FunctionException(
+        status: 503,
+        details: {'error': 'ai_quota_enforcement_not_configured'},
+        reasonPhrase: 'Service Unavailable',
+      ),
+    );
+
+    expect(normalized, isA<AiPlannerUnavailableException>());
+    expect(
+      normalized.toString(),
+      'AI planning is temporarily unavailable. Please use Set goal to continue manually.',
+    );
+  });
+
+  test('normalizes the real HTTP 503 response without retrying', () async {
+    var requestCount = 0;
+    final mockHttpClient = MockClient((request) async {
+      requestCount += 1;
+      expect(request.method, 'POST');
+      expect(request.url.path, '/functions/v1/ai-plan');
+      return http.Response(
+        jsonEncode({'error': 'ai_quota_enforcement_not_configured'}),
+        503,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    final supabaseClient = SupabaseClient(
+      'https://example.supabase.co',
+      'test-publishable-key',
+      accessToken: () async => 'test-user-token',
+      httpClient: mockHttpClient,
+    );
+    addTearDown(() async {
+      await supabaseClient.dispose();
+    });
+
+    final planner = ZavqeraAiPlanner(supabaseClient);
+    await expectLater(
+      planner.plan(goal: 'Test goal'),
+      throwsA(isA<AiPlannerUnavailableException>()),
+    );
+    expect(requestCount, 1, reason: 'the client must not automatically retry');
+  });
+
+  testWidgets('shows a manual fallback when quota gate returns HTTP 503', (
+    tester,
+  ) async {
+    final planner = _UnavailableAiPlanner();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: IntentBuilderScreen(
+          onApproved: (_) {},
+          aiPlanner: planner,
+        ),
+      ),
+    );
+    await tester.enterText(find.byType(TextField).first, 'Plan my launch');
+    await tester.tap(find.text('ZAVQERA AI'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        'AI planning is temporarily unavailable. Please use Set goal to continue manually.',
+      ),
+      findsOneWidget,
+    );
+    expect(planner.requestCount, 1,
+        reason: 'the blocked UI must not auto-retry');
+  });
+
+  test('does not mislabel unrelated function errors as quota unavailable', () {
+    final normalized = normalizeAiPlannerFunctionException(
+      FunctionException(
+        status: 503,
+        details: {'error': 'provider_unavailable'},
+        reasonPhrase: 'Service Unavailable',
+      ),
+    );
+
+    expect(normalized, isNull);
+  });
+
+  test('does not mislabel quota-shaped errors with a different status', () {
+    final normalized = normalizeAiPlannerFunctionException(
+      FunctionException(
+        status: 502,
+        details: {'error': 'ai_quota_enforcement_not_configured'},
+        reasonPhrase: 'Bad Gateway',
+      ),
+    );
+
+    expect(normalized, isNull);
   });
 
   test('rejects an unknown authority class', () {
@@ -107,4 +211,17 @@ void main() {
       throwsA(isA<FormatException>()),
     );
   });
+}
+
+class _UnavailableAiPlanner implements AiMissionPlanner {
+  int requestCount = 0;
+
+  @override
+  Future<AiMissionPlan> plan({
+    required String goal,
+    String context = '',
+  }) async {
+    requestCount += 1;
+    throw const AiPlannerUnavailableException();
+  }
 }

@@ -2,15 +2,24 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../domain/intent.dart';
 
+/// UI-facing contract for mission planning, independent of the transport.
+abstract interface class AiMissionPlanner {
+  Future<AiMissionPlan> plan({
+    required String goal,
+    String context = '',
+  });
+}
+
 /// Provider-facing adapter for ZAVQERA planning intelligence.
 ///
 /// This class owns transport/parsing only. It does not grant authority,
 /// execute actions, or bypass the existing intent/policy boundaries.
-class ZavqeraAiPlanner {
+class ZavqeraAiPlanner implements AiMissionPlanner {
   final SupabaseClient client;
 
   const ZavqeraAiPlanner(this.client);
 
+  @override
   Future<AiMissionPlan> plan({
     required String goal,
     String context = '',
@@ -26,31 +35,59 @@ class ZavqeraAiPlanner {
       throw ArgumentError('Context is too long.');
     }
 
-    final response = await client.functions.invoke(
-      'ai-plan',
-      body: <String, dynamic>{
-        'goal': normalizedGoal,
-        if (context.trim().isNotEmpty) 'context': context.trim(),
-      },
-    );
+    try {
+      final response = await client.functions.invoke(
+        'ai-plan',
+        body: <String, dynamic>{
+          'goal': normalizedGoal,
+          if (context.trim().isNotEmpty) 'context': context.trim(),
+        },
+      );
 
-    final data = response.data;
-    if (data is! Map) {
-      throw const FormatException('AI planner returned an invalid response.');
+      final data = response.data;
+      if (data is! Map) {
+        throw const FormatException('AI planner returned an invalid response.');
+      }
+
+      final error = data['error'];
+      if (error is String && error.isNotEmpty) {
+        throw Exception(error);
+      }
+
+      final plan = data['plan'];
+      if (plan is! Map) {
+        throw const FormatException('AI planner returned no mission plan.');
+      }
+
+      return AiMissionPlan.fromJson(Map<String, dynamic>.from(plan));
+    } on FunctionException catch (error) {
+      final normalizedError = normalizeAiPlannerFunctionException(error);
+      if (normalizedError != null) throw normalizedError;
+      rethrow;
     }
-
-    final error = data['error'];
-    if (error is String && error.isNotEmpty) {
-      throw Exception(error);
-    }
-
-    final plan = data['plan'];
-    if (plan is! Map) {
-      throw const FormatException('AI planner returned no mission plan.');
-    }
-
-    return AiMissionPlan.fromJson(Map<String, dynamic>.from(plan));
   }
+}
+
+/// Converts only the known fail-closed quota response into a safe user message.
+/// Other function errors remain distinguishable to the caller.
+AiPlannerUnavailableException? normalizeAiPlannerFunctionException(
+  FunctionException error,
+) {
+  final details = error.details;
+  if (error.status == 503 &&
+      details is Map &&
+      details['error'] == 'ai_quota_enforcement_not_configured') {
+    return const AiPlannerUnavailableException();
+  }
+  return null;
+}
+
+class AiPlannerUnavailableException implements Exception {
+  const AiPlannerUnavailableException();
+
+  @override
+  String toString() =>
+      'AI planning is temporarily unavailable. Please use Set goal to continue manually.';
 }
 
 class AiMissionPlan {

@@ -1,8 +1,9 @@
 name: NEXO Flutter CI
 
 on:
+  # Avoid running the same CI twice for feature branches that already have a PR.
   push:
-    branches: ["**"]
+    branches: ["main"]
   pull_request:
 
 permissions:
@@ -28,8 +29,39 @@ jobs:
           flutter --version
           dart --version
 
-      - name: Verify NEXO MVP
-        run: ./tool/verify_project.sh
+      - name: Static contract gate
+        run: python3 tool/static_contract_check.py
+
+      - name: Verify Flutter and Dart executables
+        run: |
+          command -v flutter
+          command -v dart
+
+      - name: Install dependencies
+        run: flutter pub get
+        timeout-minutes: 5
+
+      - name: Verify Dart formatting
+        run: |
+          if ! dart format --set-exit-if-changed lib test; then
+            echo "DART_FORMAT_DIFF_BEGIN" >&2
+            git diff -- lib/application/zavqera_ai_planner.dart lib/infrastructure/supabase_config.dart lib/ui/auth_screen.dart lib/ui/intent_builder_screen.dart test/zavqera_ai_planner_test.dart >&2
+            echo "DART_FORMAT_DIFF_END" >&2
+            exit 1
+          fi
+        timeout-minutes: 3
+
+      - name: Analyze project source
+        run: flutter analyze
+        timeout-minutes: 5
+
+      - name: Test AI planner quota failure and manual fallback
+        run: flutter test test/zavqera_ai_planner_test.dart
+        timeout-minutes: 3
+
+      - name: Run complete Flutter test suite
+        run: flutter test
+        timeout-minutes: 10
 
       - name: Upload diagnostic bundle on failure
         if: failure()
@@ -39,4 +71,5 @@ jobs:
           path: |
             pubspec.lock
             .dart_tool/package_config.json
+            NEXO_STATIC_CONTRACT_REPORT.json
           if-no-files-found: ignore

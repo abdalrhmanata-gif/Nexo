@@ -2,7 +2,7 @@ name: AI Plan Function CI
 
 on:
   pull_request:
-    branches: [main, zavqera/openai-responses-integration]
+    branches: [main, zavqera/openai-responses-integration, codex/ai-plan-fail-closed-model-20261020]
     paths:
       - "supabase/functions/ai-plan/**"
       - ".github/workflows/ai-plan-deno.yml"
@@ -27,5 +27,7 @@ jobs:
         run: deno test supabase/functions/ai-plan/request_body_test.ts
       - name: Test fail-closed model configuration
         run: deno test supabase/functions/ai-plan/model_config_test.ts
+      - name: Test fail-closed quota enforcement gate
+        run: deno test --allow-read=supabase/functions/ai-plan/index.ts supabase/functions/ai-plan/quota_gate_test.ts
       - name: Type-check AI plan function
         run: deno check supabase/functions/ai-plan/index.ts
