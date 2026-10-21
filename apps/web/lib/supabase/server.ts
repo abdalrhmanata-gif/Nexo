@@ -1,33 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { supabasePublishableKey, supabaseUrl } from "./config";
-
-export function createSupabaseBearerClient(accessToken: string) {
-  if (!supabaseUrl || !supabasePublishableKey) {
-    throw new Error("Supabase is not configured.");
-  }
-  if (!accessToken.trim()) {
-    throw new Error("A bearer access token is required.");
-  }
-
-  // Use the validated user's token for every PostgREST/RPC request.
-  // Never trust a user ID supplied by the caller.
-  return createClient(supabaseUrl, supabasePublishableKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-      detectSessionInUrl: false,
-    },
-    accessToken: async () => accessToken,
-  });
-}
+import { createAuthenticatedBearerContext } from "./bearer-context.mjs";
 
 export async function getAuthenticatedBearerContext(accessToken: string) {
-  const supabase = createSupabaseBearerClient(accessToken);
-  const { data, error } = await supabase.auth.getUser(accessToken);
-  if (error || !data.user) return null;
-  return { user: data.user, supabase };
+  return createAuthenticatedBearerContext({
+    accessToken,
+    supabaseUrl,
+    publishableKey: supabasePublishableKey,
+    createClient,
+  });
 }
 
 export async function createSupabaseServerClient() {
