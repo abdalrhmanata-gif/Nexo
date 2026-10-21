@@ -61,6 +61,12 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   }
+  if (providerMode !== "mock" && model && model.length > 128) {
+    return NextResponse.json(
+      { error: "AI planning model configuration is invalid.", code: "ai_model_invalid" },
+      { status: 503 },
+    );
+  }
 
   const parsedBody = await readJsonBody(request);
   if (!parsedBody.ok) {
