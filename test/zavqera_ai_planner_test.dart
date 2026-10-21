@@ -232,7 +232,6 @@ void main() {
   });
 }
 
-
 /// Avoids isolate scheduling in widget tests while preserving JSON behavior.
 class _InlineJsonCodec implements AsyncJsonCodec {
   @override
