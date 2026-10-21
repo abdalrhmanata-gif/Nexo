@@ -29,6 +29,27 @@ test("AI route authenticates before invoking the provider service and keeps the 
   assert.ok(route.includes("buildMockMissionPlan"));
 });
 
+test("authenticated and anonymous planning fail closed before quota when OPENAI_MODEL is absent", () => {
+  const anonymous = readFileSync(path.join(root, "app/api/ai/plan/anonymous/route.ts"), "utf8");
+  for (const [name, source] of [["authenticated", route], ["anonymous", anonymous]]) {
+    const modelGate = source.indexOf('if (providerMode !== "mock" && !model)');
+    assert.ok(source.includes("const model = process.env.OPENAI_MODEL?.trim();"), name);
+    assert.ok(source.includes('code: "ai_model_not_configured"'), name);
+    assert.ok(modelGate >= 0, name);
+    assert.ok(modelGate < source.indexOf("readJsonBody(request)"), name);
+    assert.equal(source.includes("process.env.OPENAI_MODEL || DEFAULT_AI_MODEL"), false, name);
+  }
+  assert.ok(
+    route.indexOf('if (providerMode !== "mock" && !model)') < route.indexOf("runAiGeneration("),
+    "authenticated route must reject missing model before quota reservation",
+  );
+  assert.ok(
+    anonymous.indexOf('if (providerMode !== "mock" && !model)') <
+      anonymous.lastIndexOf("await reserveAnonymousAiGeneration("),
+    "anonymous route must reject missing model before quota reservation",
+  );
+});
+
 test("AI planner bounds input, output, time and response caching", () => {
   assert.ok(route.includes("length > 2400"));
   assert.ok(planner.includes("max_output_tokens: 2000"));
