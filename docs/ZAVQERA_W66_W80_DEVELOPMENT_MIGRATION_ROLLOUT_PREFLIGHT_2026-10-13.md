@@ -181,3 +181,16 @@ As of this refresh, direct GitHub review-submission checks returned **zero submi
 ### Independent reviewer assignment attempt — 2026-10-22
 
 Formal GitHub review requests were attempted for `Farenhytee` and `eugenicum` on PRs #40 (W83), #43 (W82), and #45 (AI fail-closed). GitHub rejected the requests with HTTP 422: `Reviews may only be requested from collaborators`. A separate permission lookup returning `read` did not satisfy GitHub's collaborator requirement. The available GitHub actions do not expose a collaborator-invitation/write operation, so no membership or repository permissions were changed. The owner must invite an independent reviewer through repository access settings; after acceptance, request formal PR review again. Until a review is actually submitted, **independent review remains NOT DONE**.
+
+
+### Targeted schema catalog confirmation — 2026-10-22 (read-only metadata)
+
+A second scoped read-only metadata call listed **20 tables across `public` and `private`**, including columns and RLS flags. No table rows or secret values were read.
+
+Confirmed on the live Development catalog:
+- `public.ai_usage_reservations` has RLS enabled and 27 rows, but its columns currently omit `generation_kind` and `request_hash`; the visible `state` constraint remains `reserved/consumed/released` and does not include `unknown`. This corroborates that W82 is not applied.
+- `public.mission_authority_budgets` and `public.mission_authority_budget_reservations` are absent.
+- `public.agent_executions` (RLS enabled; 3 rows) lacks `dispatch_claimed_at`, `dispatch_claim_authority_hash`, `dispatch_claim_request_hash`, `dispatch_claim_budget_revision`, `reconciliation_claimed_at`, `reconciliation_lease_expires_at`, `reconciliation_claim_token`, and W81 research-claim fields.
+- `private.anonymous_ai_visitors` (385 rows), `private.anonymous_ai_ip_windows` (384 rows), and `private.anonymous_ai_reservations` (386 rows) all report **RLS disabled**.
+
+These RLS flags are a concrete defense-in-depth finding; they do **not**, by themselves, prove public table access. Prior ACL/catalog evidence reported no direct table privileges for `anon`, `authenticated`, or `service_role` on these private tables, but a current exact-ACL and exposed-schema/API-path capture is not available from this metadata call. Do not blindly enable RLS without reviewing intended server-side access and policies. The existing security-advisor output and catalog metadata must be adjudicated by an independent reviewer before any change.
