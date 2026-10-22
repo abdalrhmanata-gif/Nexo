@@ -176,3 +176,8 @@ This version is **more restrictive than a provider-enabled implementation**, whi
 As of this refresh, direct GitHub review-submission checks returned **zero submitted reviews** for PRs #40, #43 and #45, and audit PR #3. The public independent-review intake has earlier invitations to `Farenhytee` and `eugenicum`, but no attributable independent review is recorded. The available actions in this execution do not grant repository collaborator access; no permissions were changed.
 
 **NO-GO remains.** Issue #23 prohibits hosted Development schema changes and hosted E2E unless its approval boundary is explicitly superseded. Keep migrations W66–W82 unapplied, do not change secrets/ACLs, do not make a live-provider call, and do not promote this to Production. Next valid gate is independent review of the published evidence plus migration SQL-byte/deployment-receipt reconciliation; only then can an owner-authorized, separately reviewed Development change be evaluated.
+
+
+### Independent reviewer assignment attempt — 2026-10-22
+
+Formal GitHub review requests were attempted for `Farenhytee` and `eugenicum` on PRs #40 (W83), #43 (W82), and #45 (AI fail-closed). GitHub rejected the requests with HTTP 422: `Reviews may only be requested from collaborators`. A separate permission lookup returning `read` did not satisfy GitHub's collaborator requirement. The available GitHub actions do not expose a collaborator-invitation/write operation, so no membership or repository permissions were changed. The owner must invite an independent reviewer through repository access settings; after acceptance, request formal PR review again. Until a review is actually submitted, **independent review remains NOT DONE**.
