@@ -3,8 +3,10 @@ name: ZAVQERA Web Deploy (Netlify)
 # Deploys the ZAVQERA Web MVP (apps/web) to Netlify.
 #
 # Production deploys are restricted to the existing release branches.
-# Pull-request Deploy Previews are handled by the connected Netlify project,
-# while this workflow remains limited to the existing non-PR deploy paths.
+# Trusted same-repository PRs create an explicit non-production Netlify draft
+# using the CLI, then test the URL returned by Netlify; no Git-connected preview
+# hostname is assumed. This requires NETLIFY_AUTH_TOKEN in GitHub Actions.
+# A separate local runtime smoke verifies the built app without deploys.
 
 on:
   workflow_dispatch:
@@ -18,8 +20,6 @@ on:
       - ".github/workflows/web-deploy-netlify.yml"
   pull_request:
     types: [opened, synchronize, reopened]
-    branches:
-      - "zavqera/alternative-web-deployment"
     paths:
       - "apps/web/**"
       - "netlify.toml"
@@ -129,41 +129,168 @@ jobs:
           esac
 
 
-  verify-preview:
+  verify-built-runtime:
+    # Local production-mode smoke tests only; this job never deploys to Netlify
+    # and deliberately has no provider key or hosted Supabase credentials.
     if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Build production web app
+        working-directory: apps/web
+        env:
+          NODE_ENV: production
+          NEXT_PUBLIC_SUPABASE_URL: ""
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ""
+          OPENAI_API_KEY: ""
+          OPENAI_MODEL: ""
+        run: npx next build
+
+      - name: Smoke-test built app without external services
+        working-directory: apps/web
+        env:
+          NODE_ENV: production
+          NEXT_PUBLIC_SUPABASE_URL: ""
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ""
+          OPENAI_API_KEY: ""
+          OPENAI_MODEL: ""
+          ZAVQERA_AI_PROVIDER_MODE: openai
+        run: |
+          set -euo pipefail
+          npx next start --hostname 127.0.0.1 --port 4173 >/tmp/zavqera-next-start.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+
+          ready=false
+          for i in $(seq 1 30); do
+            if curl --silent --show-error --max-time 3 -o /dev/null http://127.0.0.1:4173/; then
+              ready=true
+              break
+            fi
+            sleep 2
+          done
+          if [ "$ready" != true ]; then
+            cat /tmp/zavqera-next-start.log
+            echo "::error::Built Next.js server did not become ready."
+            exit 1
+          fi
+
+          root="$(curl --silent --show-error --max-time 5 -o /dev/null -w '%{http_code}' http://127.0.0.1:4173/)"
+          signin="$(curl --silent --show-error --max-time 5 -o /dev/null -w '%{http_code}' http://127.0.0.1:4173/auth/sign-in)"
+          ai_unauth="$(curl --silent --show-error --max-time 5 -o /dev/null -w '%{http_code}' -X POST -H 'content-type: application/json' --data '{"goal":"local auth gate smoke test"}' http://127.0.0.1:4173/api/ai/plan)"
+          echo "/=$root /auth/sign-in=$signin /api/ai/plan unauthenticated=$ai_unauth"
+          test "$root" = "200"
+          test "$signin" = "200"
+          # No keys or sessions are present. The route must reject the request
+          # before quota RPCs or provider dispatch.
+          test "$ai_unauth" = "401"
+
+  verify-preview:
+    # Secrets are used only for trusted same-repository PRs. This creates a
+    # Netlify draft deploy (never production) because Git-connected previews
+    # are not provisioned for this API/CLI-managed site.
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - name: Wait for Netlify Deploy Preview
-        run: |
-          set -euo pipefail
-          url="https://deploy-preview-29--unique-kringle-3ce321.netlify.app"
-          for i in $(seq 1 36); do
-            code="$(curl -sS -o /tmp/root.html -w '%{http_code}' "$url/")" || code="000"
-            echo "attempt=$i http=$code"
-            if [ "$code" = "200" ]; then exit 0; fi
-            sleep 10
-          done
-          exit 1
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Verify preview routes
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install web dependencies
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Create a non-production Netlify draft preview
+        id: draft-preview
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: 53e470f1-30da-497e-85f6-16179db4c985
+          PREVIEW_ALIAS: zavqera-pr-${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
-          url="https://deploy-preview-29--unique-kringle-3ce321.netlify.app"
-          root="$(curl -sS -o /dev/null -w '%{http_code}' "$url/")"
-          signin="$(curl -sS -o /dev/null -w '%{http_code}' "$url/auth/sign-in")"
-          app="$(curl -sS -o /dev/null -w '%{http_code}' -L "$url/app")"
-          echo "/=$root /auth/sign-in=$signin /app(final)=$app"
+          if [ -z "$NETLIFY_AUTH_TOKEN" ]; then
+            echo "::error title=Missing Netlify credential::Add NETLIFY_AUTH_TOKEN to GitHub repository Settings > Secrets and variables > Actions. Do not put the token in source code."
+            exit 1
+          fi
+
+          # Explicit deploy-preview context loads the site's deploy-preview
+          # variables, which must target ZAVQERA Development, not Production.
+          # This is a draft-only deployment; never enable production publishing here.
+          # The alias is PR-specific and does not match a Git branch name.
+          deploy_json="$(npx --yes netlify-cli@latest deploy \
+            --site "$NETLIFY_SITE_ID" \
+            --build \
+            --context deploy-preview \
+            --alias "$PREVIEW_ALIAS" \
+            --json)"
+          preview_url="$(printf '%s' "$deploy_json" | node -e '
+            let input = "";
+            process.stdin.on("data", chunk => input += chunk);
+            process.stdin.on("end", () => {
+              const deploy = JSON.parse(input);
+              const raw = deploy.deploy_url;
+              if (typeof raw !== "string") throw new Error("Netlify CLI JSON omitted deploy_url");
+              const url = new URL(raw);
+              if (url.protocol !== "https:" || !url.hostname.endsWith("unique-kringle-3ce321.netlify.app")) {
+                throw new Error("Netlify CLI returned a URL outside the expected preview site");
+              }
+              process.stdout.write(url.toString());
+            });
+          ')"
+          echo "preview_url=$preview_url" >> "$GITHUB_OUTPUT"
+          echo "::notice::Draft preview created: $preview_url"
+
+      - name: Verify preview routes and unauthenticated AI gate
+        env:
+          PREVIEW_URL: ${{ steps.draft-preview.outputs.preview_url }}
+        run: |
+          set -euo pipefail
+          if [ -z "$PREVIEW_URL" ]; then
+            echo "::error::Draft preview URL was not captured from Netlify."
+            exit 1
+          fi
+          url="$PREVIEW_URL"
+          root="$(curl --silent --show-error --max-time 20 -o /dev/null -w '%{http_code}' "$url/")"
+          signin="$(curl --silent --show-error --max-time 20 -o /dev/null -w '%{http_code}' "$url/auth/sign-in")"
+          app="$(curl --silent --show-error --max-time 20 -o /dev/null -w '%{http_code}' -L "$url/app")"
+          ai_unauth="$(curl --silent --show-error --max-time 20 -o /dev/null -w '%{http_code}' -X POST -H 'content-type: application/json' --data '{"goal":"auth gate smoke test"}' "$url/api/ai/plan")"
+          echo "/=$root /auth/sign-in=$signin /app(final)=$app /api/ai/plan unauthenticated=$ai_unauth"
           test "$root" = "200"
           test "$signin" = "200"
           test "$app" = "200"
+          # No bearer/cookie: this request must stop at auth before quota or provider work.
+          test "$ai_unauth" = "401"
 
       - name: Verify real OpenAI mission planning
-        # Real provider calls require an explicit [live-openai-planning] marker in the PR body.
-        if: github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.body, '[live-openai-planning]'))
+        # Never run a live provider request from workflow_dispatch or an untrusted fork.
+        # Live calls require an explicit marker on a PR from this same repository.
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && contains(github.event.pull_request.body, '[live-openai-planning]')
+        env:
+          PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--unique-kringle-3ce321.netlify.app
         run: |
           set -euo pipefail
-          url="https://deploy-preview-29--unique-kringle-3ce321.netlify.app/api/ai/plan/anonymous"
+          url="$PREVIEW_URL/api/ai/plan/anonymous"
           body="$(curl -sS -c /tmp/zavqera-cookie.txt -b /tmp/zavqera-cookie.txt \
             -H 'content-type: application/json' \
             --data '{"goal":"Plan a simple launch checklist for a small software product"}' \
@@ -230,7 +357,7 @@ jobs:
         timeout-minutes: 8
         working-directory: apps/web
         env:
-          PREVIEW_URL: https://deploy-preview-29--unique-kringle-3ce321.netlify.app
+          PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--unique-kringle-3ce321.netlify.app
           SUPABASE_URL: https://mrwmmbytcymqgwvcoywd.supabase.co
           SUPABASE_DEV_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}
           SUPABASE_DEV_TEST_EMAIL: ${{ secrets.SUPABASE_DEV_TEST_EMAIL }}

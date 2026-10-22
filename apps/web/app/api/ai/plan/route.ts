@@ -1,20 +1,44 @@
 import { NextResponse } from "next/server";
-import { getAuthenticatedUser } from "../../../../lib/supabase/server";
-import { DEFAULT_AI_MODEL, requestMissionPlan } from "../../../../lib/ai-planner";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { parseAuthorizationHeader } from "../../../../lib/bearer-auth";
+import { readJsonBody } from "../../../../lib/read-json-body.mjs";
+import { requestMissionPlan } from "../../../../lib/ai-planner";
 import { buildMockMissionPlan } from "../../../../lib/ai-mock-provider";
 import {
   AI_GENERATION_OUTCOMES,
   runAiGeneration,
 } from "../../../../lib/ai-generation-service";
-import { reserveAiGeneration, consumeAiGeneration, releaseAiGeneration } from "../../../../lib/ai-usage";
+import {
+  consumeAiGeneration,
+  releaseAiGeneration,
+  reserveAiGeneration,
+} from "../../../../lib/ai-usage";
+import {
+  getAuthenticatedBearerContext,
+  getAuthenticatedUser,
+} from "../../../../lib/supabase/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 25;
 
 export async function POST(request: Request) {
+  const authorization = parseAuthorizationHeader(request.headers.get("authorization"));
+  if (authorization.kind === "invalid") {
+    return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
+  }
+
   let user: Awaited<ReturnType<typeof getAuthenticatedUser>>;
+  let quotaSupabaseClient: SupabaseClient | undefined;
   try {
-    user = await getAuthenticatedUser();
+    if (authorization.kind === "bearer") {
+      // Validate the JWT with Supabase and retain that same user-scoped client
+      // for reserve/consume/release RPCs. Never trust a caller-supplied user ID.
+      const context = await getAuthenticatedBearerContext(authorization.token);
+      user = context?.user ?? null;
+      quotaSupabaseClient = context?.supabase;
+    } else {
+      user = await getAuthenticatedUser();
+    }
   } catch {
     return NextResponse.json({ error: "Authentication is required." }, { status: 401 });
   }
@@ -27,16 +51,35 @@ export async function POST(request: Request) {
   const isProductionRuntime = process.env.NODE_ENV === "production";
   const providerMode = configuredProviderMode === "mock" && !isProductionRuntime ? "mock" : "openai";
   const apiKey = process.env.OPENAI_API_KEY;
+  const model = process.env.OPENAI_MODEL?.trim();
   if (providerMode !== "mock" && !apiKey) {
     return NextResponse.json({ error: "AI planning is not configured yet." }, { status: 503 });
   }
-
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Send a valid JSON request." }, { status: 400 });
+  if (providerMode !== "mock" && !model) {
+    return NextResponse.json(
+      { error: "AI planning model is not configured yet.", code: "ai_model_not_configured" },
+      { status: 503 },
+    );
   }
+  if (providerMode !== "mock" && model && model.length > 128) {
+    return NextResponse.json(
+      { error: "AI planning model configuration is invalid.", code: "ai_model_invalid" },
+      { status: 503 },
+    );
+  }
+
+  const parsedBody = await readJsonBody(request);
+  if (!parsedBody.ok) {
+    return NextResponse.json(
+      {
+        error: parsedBody.reason === "too_large"
+          ? "Request body is too large."
+          : "Send a valid JSON request.",
+      },
+      { status: parsedBody.reason === "too_large" ? 413 : 400 },
+    );
+  }
+  const body = parsedBody.value;
 
   const goal = typeof body === "object" && body !== null && "goal" in body
     ? (body as { goal?: unknown }).goal
@@ -53,16 +96,21 @@ export async function POST(request: Request) {
   try {
     const result = await runAiGeneration({
       requestId,
-      reserve: (id) => reserveAiGeneration(id, "planner", { goal: goal.trim() }),
+      reserve: (id) => reserveAiGeneration(
+        id,
+        "planner",
+        { goal: goal.trim() },
+        quotaSupabaseClient,
+      ),
       generate: () => providerMode === "mock"
         ? Promise.resolve(buildMockMissionPlan(goal.trim()))
         : requestMissionPlan(goal.trim(), {
           apiKey: apiKey as string,
-          model: process.env.OPENAI_MODEL || DEFAULT_AI_MODEL,
+          model: model as string,
           requestId,
         }),
-      consume: consumeAiGeneration,
-      release: releaseAiGeneration,
+      consume: (reservationId) => consumeAiGeneration(reservationId, quotaSupabaseClient),
+      release: (reservationId) => releaseAiGeneration(reservationId, quotaSupabaseClient),
     });
 
     if (result.kind === AI_GENERATION_OUTCOMES.QUOTA) {

@@ -2,7 +2,8 @@ import { createHash, createHmac } from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getRequestClientIp } from "../../../../../lib/request-client-ip.mjs";
-import { DEFAULT_AI_MODEL, requestMissionPlan } from "../../../../../lib/ai-planner";
+import { readJsonBody } from "../../../../../lib/read-json-body.mjs";
+import { requestMissionPlan } from "../../../../../lib/ai-planner";
 import { buildMockMissionPlan } from "../../../../../lib/ai-mock-provider";
 import {
   consumeAnonymousAiGeneration,
@@ -52,12 +53,13 @@ export async function POST(request: Request) {
     return errorResponse("Anonymous AI planning is not configured yet.", 503, visitorToken, shouldSetCookie);
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return errorResponse("Send a valid JSON request.", 400, visitorToken, shouldSetCookie);
+  const parsedBody = await readJsonBody(request);
+  if (!parsedBody.ok) {
+    return parsedBody.reason === "too_large"
+      ? errorResponse("Request body is too large.", 413, visitorToken, shouldSetCookie)
+      : errorResponse("Send a valid JSON request.", 400, visitorToken, shouldSetCookie);
   }
+  const body = parsedBody.value;
 
   const goal = typeof body === "object" && body !== null && "goal" in body
     ? (body as { goal?: unknown }).goal
@@ -78,8 +80,29 @@ export async function POST(request: Request) {
   const isProductionRuntime = process.env.NODE_ENV === "production";
   const providerMode = configuredProviderMode === "mock" && !isProductionRuntime ? "mock" : "openai";
   const apiKey = process.env.OPENAI_API_KEY;
+  const model = process.env.OPENAI_MODEL?.trim();
   if (providerMode !== "mock" && !apiKey) {
     return errorResponse("AI planning is not configured yet.", 503, visitorToken, shouldSetCookie);
+  }
+  if (providerMode !== "mock" && !model) {
+    return withVisitorCookie(
+      NextResponse.json(
+        { error: "AI planning model is not configured yet.", code: "ai_model_not_configured" },
+        { status: 503 },
+      ),
+      visitorToken,
+      shouldSetCookie,
+    );
+  }
+  if (providerMode !== "mock" && model && model.length > 128) {
+    return withVisitorCookie(
+      NextResponse.json(
+        { error: "AI planning model configuration is invalid.", code: "ai_model_invalid" },
+        { status: 503 },
+      ),
+      visitorToken,
+      shouldSetCookie,
+    );
   }
 
   const visitorHash = hashVisitor(visitorToken);
@@ -107,7 +130,7 @@ export async function POST(request: Request) {
       ? buildMockMissionPlan(goal.trim())
       : await requestMissionPlan(goal.trim(), {
         apiKey: apiKey as string,
-        model: process.env.OPENAI_MODEL || DEFAULT_AI_MODEL,
+        model: model as string,
         requestId,
       });
 

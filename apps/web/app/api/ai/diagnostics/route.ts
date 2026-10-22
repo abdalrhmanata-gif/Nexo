@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "../../../../lib/supabase/server";
-import { DEFAULT_AI_MODEL } from "../../../../lib/ai-planner";
 
 export const runtime = "nodejs";
 export const maxDuration = 10;
@@ -16,14 +15,23 @@ export async function GET() {
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
-  const model = process.env.OPENAI_MODEL || DEFAULT_AI_MODEL;
+  const model = process.env.OPENAI_MODEL?.trim();
 
   if (!apiKey) {
     return NextResponse.json({
       provider: "openai",
       configured: false,
-      model,
+      model: model || null,
       diagnosis: "OPENAI_API_KEY_MISSING",
+    }, { status: 503 });
+  }
+
+  if (!model || model.length > 128) {
+    return NextResponse.json({
+      provider: "openai",
+      configured: false,
+      model: null,
+      diagnosis: model ? "OPENAI_MODEL_INVALID" : "OPENAI_MODEL_NOT_CONFIGURED",
     }, { status: 503 });
   }
 

@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const route = readFileSync(path.join(root, "app/api/ai/plan/route.ts"), "utf8");
+const diagnostics = readFileSync(path.join(root, "app/api/ai/diagnostics/route.ts"), "utf8");
 const service = readFileSync(path.join(root, "lib/ai-generation-service.mjs"), "utf8");
 const usage = readFileSync(path.join(root, "lib/ai-usage.ts"), "utf8");
 const planner = readFileSync(path.join(root, "lib/ai-planner.ts"), "utf8");
@@ -16,9 +17,9 @@ const integratedForm = readFileSync(path.join(root, "components/mission-create-f
 
 test("AI route authenticates before invoking the provider service and keeps the key server-side", () => {
   assert.ok(route.indexOf("getAuthenticatedUser()") < route.indexOf("runAiGeneration("));
-  assert.match(route, /reserve:\s*\(id\)\s*=>\s*reserveAiGeneration\(id,\s*"planner"/);
-  assert.ok(route.includes("consume: consumeAiGeneration"));
-  assert.ok(route.includes("release: releaseAiGeneration"));
+  assert.match(route, /reserve:\s*\(id\)\s*=>\s*reserveAiGeneration\(\s*id,\s*"planner"/);
+  assert.match(route, /consume:\s*\(reservationId\)\s*=>\s*consumeAiGeneration\(reservationId,\s*quotaSupabaseClient\)/);
+  assert.match(route, /release:\s*\(reservationId\)\s*=>\s*releaseAiGeneration\(reservationId,\s*quotaSupabaseClient\)/);
   assert.ok(route.includes("process.env.OPENAI_API_KEY"));
   assert.equal(route.includes("NEXT_PUBLIC_OPENAI_API_KEY"), false);
   assert.ok(route.includes("ZAVQERA_AI_PROVIDER_MODE"));
@@ -27,6 +28,41 @@ test("AI route authenticates before invoking the provider service and keeps the 
   assert.match(route, /ZAVQERA_AI_PROVIDER_MODE/);
   assert.match(route, /providerMode === "mock"/);
   assert.ok(route.includes("buildMockMissionPlan"));
+});
+
+test("planning and diagnostics require an explicit valid model before quota or provider work", () => {
+  const anonymous = readFileSync(path.join(root, "app/api/ai/plan/anonymous/route.ts"), "utf8");
+
+  for (const [name, source] of [["authenticated", route], ["anonymous", anonymous]]) {
+    const modelGate = source.indexOf('if (providerMode !== "mock" && !model)');
+    const invalidModelGate = source.indexOf('if (providerMode !== "mock" && model && model.length > 128)');
+    assert.ok(source.includes("const model = process.env.OPENAI_MODEL?.trim();"), name);
+    assert.ok(source.includes('code: "ai_model_not_configured"'), name);
+    assert.ok(source.includes('code: "ai_model_invalid"'), name);
+    assert.ok(modelGate >= 0, name);
+    assert.ok(invalidModelGate > modelGate, name);
+    assert.equal(source.includes("DEFAULT_AI_MODEL"), false, name);
+    assert.equal(source.includes("process.env.OPENAI_MODEL ||"), false, name);
+  }
+
+  assert.ok(
+    route.indexOf('if (providerMode !== "mock" && !model)') < route.indexOf("runAiGeneration("),
+    "authenticated route must reject missing model before quota reservation",
+  );
+  assert.ok(
+    anonymous.indexOf('if (providerMode !== "mock" && !model)') <
+      anonymous.lastIndexOf("await reserveAnonymousAiGeneration("),
+    "anonymous route must reject missing model before quota reservation",
+  );
+
+  assert.ok(diagnostics.includes("const model = process.env.OPENAI_MODEL?.trim();"));
+  assert.ok(diagnostics.includes('diagnosis: model ? "OPENAI_MODEL_INVALID" : "OPENAI_MODEL_NOT_CONFIGURED"'));
+  assert.ok(diagnostics.includes("if (!model || model.length > 128)"));
+  assert.equal(diagnostics.includes("DEFAULT_AI_MODEL"), false);
+  assert.ok(
+    diagnostics.indexOf("if (!model || model.length > 128)") < diagnostics.indexOf('const response = await fetch('),
+    "diagnostics must not contact provider with missing/invalid model",
+  );
 });
 
 test("AI planner bounds input, output, time and response caching", () => {

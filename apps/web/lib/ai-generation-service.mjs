@@ -6,6 +6,8 @@ export const AI_GENERATION_OUTCOMES = Object.freeze({
 });
 
 const KNOWN_PROVIDER_FAILURES = new Map([
+  ["AI_MODEL_NOT_CONFIGURED", { kind: "definite", status: 503 }],
+  ["AI_MODEL_INVALID", { kind: "definite", status: 503 }],
   ["RATE_LIMITED", { kind: "definite", status: 429 }],
   ["UPSTREAM_OUTCOME_UNKNOWN", { kind: "unknown", status: 504 }],
   ["UPSTREAM_REJECTED", { kind: "definite", status: 502 }],

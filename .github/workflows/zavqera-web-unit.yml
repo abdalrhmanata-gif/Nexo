@@ -3,6 +3,9 @@ name: ZAVQERA Web Unit
 on:
   workflow_dispatch:
   push:
+    branches:
+      - "zavqera/integrate-origin-main-clean"
+      - "zavqera/alternative-web-deployment"
     paths:
       - "apps/web/**"
       - ".github/workflows/zavqera-web-unit.yml"

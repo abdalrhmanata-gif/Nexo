@@ -1,5 +1,10 @@
 import { createSupabaseServerClient } from "./supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createHash } from "node:crypto";
+
+async function resolveUsageClient(client?: SupabaseClient) {
+  return client ?? await createSupabaseServerClient();
+}
 
 export type AiUsage = {
   period_start: string;
@@ -18,8 +23,8 @@ export async function getAiUsage(): Promise<AiUsage> {
 
 export type AiGenerationKind = "planner" | "research";
 
-export async function reserveAiGeneration(requestId: string, generationKind: AiGenerationKind, input: unknown) {
-  const supabase = await createSupabaseServerClient();
+export async function reserveAiGeneration(requestId: string, generationKind: AiGenerationKind, input: unknown, client?: SupabaseClient) {
+  const supabase = await resolveUsageClient(client);
   const requestHash = createHash("sha256").update(JSON.stringify(input)).digest("hex");
   const { data, error } = await supabase.rpc("reserve_ai_generation", {
     p_request_id: requestId,
@@ -43,16 +48,16 @@ export async function reserveAiGeneration(requestId: string, generationKind: AiG
   return reservation;
 }
 
-export async function consumeAiGeneration(reservationId: string) {
-  const supabase = await createSupabaseServerClient();
+export async function consumeAiGeneration(reservationId: string, client?: SupabaseClient) {
+  const supabase = await resolveUsageClient(client);
   const { data, error } = await supabase.rpc("consume_ai_generation", {
     p_reservation_id: reservationId,
   });
   if (error || data !== true) throw new Error("AI_USAGE_UNAVAILABLE");
 }
 
-export async function releaseAiGeneration(reservationId: string) {
-  const supabase = await createSupabaseServerClient();
+export async function releaseAiGeneration(reservationId: string, client?: SupabaseClient) {
+  const supabase = await resolveUsageClient(client);
   const { data, error } = await supabase.rpc("release_ai_generation", {
     p_reservation_id: reservationId,
   });

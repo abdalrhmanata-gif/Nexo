@@ -128,6 +128,24 @@ test("invalid provider request releases the reservation exactly once", async () 
 });
 
 
+test("missing or invalid model configuration releases quota before any provider dispatch", async () => {
+  for (const code of ["AI_MODEL_NOT_CONFIGURED", "AI_MODEL_INVALID"]) {
+    const fake = fakes({
+      generate: async () => {
+        throw new Error(code);
+      },
+    });
+    const result = await runAiGeneration({ requestId: `request-${code}`, ...fake });
+    assert.equal(result.kind, AI_GENERATION_OUTCOMES.PROVIDER_ERROR);
+    assert.equal(result.code, code);
+    assert.equal(result.disposition, "release");
+    assert.equal(result.status, 503);
+    assert.equal(fake.calls.generate, 1);
+    assert.deepEqual(fake.calls.release, ["reservation-1"]);
+    assert.deepEqual(fake.calls.consume, []);
+  }
+});
+
 test("duplicate execution attempts keep quota reserved because another dispatch may be in flight", async () => {
   const fake = fakes();
   const result = await runAiGeneration({
