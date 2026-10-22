@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexo_followthrough/data/local_mission_store.dart';
-import 'package:nexo_followthrough/data/mission_repository.dart';
-import 'package:nexo_followthrough/domain/intent.dart';
-import 'package:nexo_followthrough/main.dart';
+import 'package:zavqera_followthrough/data/local_mission_store.dart';
+import 'package:zavqera_followthrough/data/mission_repository.dart';
+import 'package:zavqera_followthrough/domain/intent.dart';
+import 'package:zavqera_followthrough/main.dart';
 
 class _MemoryStore implements LocalMissionStore {
   String? value;
@@ -33,7 +33,7 @@ void main() {
 
     final restored = DemoMissionRepository(store: store);
     await restored.restore();
-    await tester.pumpWidget(NexoApp(repository: restored));
+    await tester.pumpWidget(ZavqeraApp(repository: restored));
     await tester.pumpAndSettle();
 
     expect(find.text(created.objective), findsOneWidget);

@@ -1,4 +1,4 @@
-# NEXO Follow-through API Contract v0.1
+# ZAVQERA Follow-through API Contract v0.1
 
 The API contract is intentionally provider-neutral.
 
@@ -45,7 +45,7 @@ Returns:
 
 ## External execution rule
 
-Every side effect must cross the final NEXO authorization boundary immediately
+Every side effect must cross the final ZAVQERA authorization boundary immediately
 before execution and bind to the exact Action revision and input hash.
 
 ## Outcome rule

@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexo_followthrough/domain/mission_kernel.dart';
-import 'package:nexo_followthrough/domain/mission_runtime.dart';
+import 'package:zavqera_followthrough/domain/mission_kernel.dart';
+import 'package:zavqera_followthrough/domain/mission_runtime.dart';
 
 MissionKernelSnapshot seed() => MissionKernelSnapshot(
       missionId: 'm1',

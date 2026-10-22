@@ -1,7 +1,7 @@
 import '../domain/execution_gateway.dart';
 
 /// Demo adapters only. Real adapters must live behind the server-side
-/// NEXO authorization + secret boundary and must never receive raw authority.
+/// ZAVQERA authorization + secret boundary and must never receive raw authority.
 class DemoProviderAdapter implements AgentProviderAdapter {
   @override
   final String providerId;

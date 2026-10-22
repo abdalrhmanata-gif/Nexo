@@ -1,8 +1,8 @@
 import 'package:test/test.dart';
-import 'package:nexo_followthrough/application/provenance_chain.dart';
-import 'package:nexo_followthrough/application/trust_graph.dart';
-import 'package:nexo_followthrough/domain/provenance_event.dart';
-import 'package:nexo_followthrough/domain/trust_graph.dart';
+import 'package:zavqera_followthrough/application/provenance_chain.dart';
+import 'package:zavqera_followthrough/application/trust_graph.dart';
+import 'package:zavqera_followthrough/domain/provenance_event.dart';
+import 'package:zavqera_followthrough/domain/trust_graph.dart';
 
 void main() {
   group('provenance chain', () {

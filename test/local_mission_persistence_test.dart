@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexo_followthrough/data/local_mission_store.dart';
-import 'package:nexo_followthrough/data/mission_repository.dart';
-import 'package:nexo_followthrough/domain/intent.dart';
-import 'package:nexo_followthrough/domain/mission.dart';
+import 'package:zavqera_followthrough/data/local_mission_store.dart';
+import 'package:zavqera_followthrough/data/mission_repository.dart';
+import 'package:zavqera_followthrough/domain/intent.dart';
+import 'package:zavqera_followthrough/domain/mission.dart';
 
 class _MemoryStore implements LocalMissionStore {
   String? value;
@@ -77,6 +77,25 @@ void main() {
         ActionStatus.pending);
     expect((await second.getMission(passport.id)).actions.first.followUpAt,
         DateTime.utc(2026, 11, 1));
+  });
+
+  test('deleting one mission persists without affecting another', () async {
+    final store = _MemoryStore();
+    final first = DemoMissionRepository(store: store);
+    final passport = await first.createMission(
+        _draft().withSteps(['Find the form', 'Submit the renewal']));
+    final business = await first.createMission(
+        _draft().withSteps(['Choose a name', 'Register the business']));
+
+    await first.deleteMission(passport.id);
+    final second = DemoMissionRepository(store: store);
+    await second.restore();
+
+    expect((await second.listMissions()).map((mission) => mission.id).toList(),
+        [business.id]);
+    expect(() => second.getMission(passport.id), throwsStateError);
+    expect(
+        (await second.getMission(business.id)).objective, _draft().objective);
   });
 
   test('custom step ordering and progress survive restore', () async {
