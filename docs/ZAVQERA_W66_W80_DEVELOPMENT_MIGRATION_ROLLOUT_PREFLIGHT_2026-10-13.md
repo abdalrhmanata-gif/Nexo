@@ -136,3 +136,43 @@ Continue in timestamp order after W80:
 ### Current approval boundary
 
 The result remains **NO-GO for hosted Research and any Development migration**. The smallest owner decision required is explicit authorization for a **Development-only W66–W82 rollout** on project `mrwmmbytcymqgwvcoywd`, explicitly superseding the current Issue #23 schema-change restriction, with a reviewed backup/restore plan and a controlled migration window. Until that authorization exists, continue only with local tests, source review, and read-only checks. Never modify Supabase Main/Production, perform real provider effects, or register a provider adapter.
+
+
+## Current hosted Development reconciliation and AI containment status — 2026-10-22
+
+**Scope:** read-only Supabase metadata/function reads and GitHub source inventory. No SQL statement, RPC invocation, migration, secret read/write, provider request, or production action was performed for this refresh.
+
+### Migration ledger comparison
+
+- Live Development ledger: **74 migration rows**, latest `20261011150000 / w65_agent_execution_table_write_boundary`.
+- Pinned candidate source snapshot: `zavqera/ai-planner-integration` at commit `1b02272a7281b2e9ebf9020cd21a8ac9de3e577e`, containing **87 checked-in SQL migration files**.
+- Exact version + name tuple matches: **46**.
+- Source tuples absent as exact tuples in the hosted ledger: **41**.
+- Hosted tuples absent as exact tuples in the source snapshot: **28**; these comprise **22 same-name/different-version entries** and **6 hosted-only names**.
+- All **16 source SQL migration files after W65 through W82** (W66–W71 and W73–W82; W72 has no SQL migration file in this snapshot) are absent from the hosted migration ledger. W81 and W82 therefore remain unapplied in the current ledger.
+
+This is a version/name reconciliation only. It does **not** establish SQL-byte equality, the exact historical file that originally ran, or a deployment receipt. Do not “repair” the ledger or apply migrations based on tuple comparison alone.
+
+### Current published `ai-plan` containment state
+
+A fresh read-only recheck observed `ai-plan` **ACTIVE version 4**, `verify_jwt=true`, updated `2026-10-22T12:06:41.488Z`, reported bundle SHA-256 `245907cc77df7c5df142cc1ea89f26d930cfbb75e8a1c7b028b2a72abd52773f`.
+
+The currently published source is a short temporary fail-closed stub (23 source lines):
+- `OPTIONS` returns CORS preflight; non-POST methods return 405; every POST returns `503 ai_quota_enforcement_not_configured`.
+- It makes no OpenAI/provider request, reads no provider secret, and does not parse the request body.
+- JWT verification remains enabled at the function gateway.
+
+This version is **more restrictive than a provider-enabled implementation**, which is the intended containment effect. However, its current deployed source differs from the source files in PR #45 / commit `7ee74ebdd58c6cbfadb0f6d6a5b7196505ab0aa6`; Supabase metadata/read-back did not identify who or what created version 4. Do not attribute this deployment to a particular actor without separate deployment audit evidence. Preserve fail-closed behavior and reconcile the deployed stub with version-controlled source in a reviewed, code-only change before future feature re-enablement. The earlier version-3 note is superseded by this current version-4 read-back.
+
+### Static security review — findings, not independent approval
+
+- PR #43 / W82 remains **OPEN / Draft / Unmerged**. It creates a requester-bound reservation API and adds request identity columns, but the source migration's grants and the historic hosted ACL records differ. In particular, the candidate grants `authenticated` EXECUTE on the public reservation wrapper and private helper functions. Before any hosted rollout, an independent reviewer must establish the intended direct RPC surface, `private` schema reachability, and the effective privileges under the actual Data API configuration.
+- PR #40 / W83 remains **OPEN / Draft / Unmerged**. Its isolated PostgreSQL 17/pgTAP evidence is useful but does not prove hosted schema/grant parity or modern secret-key behavior against the live gateway.
+- The direct Flutter Edge path remains blocked by the published version-4 stub. The web route's separate reservation/settlement implementation is not proof that the direct Flutter path is protected by the same authoritative quota.
+- The latest Supabase security-advisor response returned `auth_leaked_password_protection` / **WARN: disabled**. This response does not supersede the previously recorded catalog-level RLS/ACL discrepancies; those require a fresh, scoped, authorized catalog capture and independent interpretation.
+
+### Review and release decision
+
+As of this refresh, direct GitHub review-submission checks returned **zero submitted reviews** for PRs #40, #43 and #45, and audit PR #3. The public independent-review intake has earlier invitations to `Farenhytee` and `eugenicum`, but no attributable independent review is recorded. The available actions in this execution do not grant repository collaborator access; no permissions were changed.
+
+**NO-GO remains.** Issue #23 prohibits hosted Development schema changes and hosted E2E unless its approval boundary is explicitly superseded. Keep migrations W66–W82 unapplied, do not change secrets/ACLs, do not make a live-provider call, and do not promote this to Production. Next valid gate is independent review of the published evidence plus migration SQL-byte/deployment-receipt reconciliation; only then can an owner-authorized, separately reviewed Development change be evaluated.
