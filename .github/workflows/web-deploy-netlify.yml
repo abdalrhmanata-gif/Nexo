@@ -3,10 +3,10 @@ name: ZAVQERA Web Deploy (Netlify)
 # Deploys the ZAVQERA Web MVP (apps/web) to Netlify.
 #
 # Production deploys are restricted to the existing release branches.
-# PR Deploy Previews are expected from Netlify's Git integration, but that
-# integration is not verified for this API/CLI-deployed site. The preview job
-# below intentionally fails closed when no PR-specific preview is provisioned.
-# The separate local runtime smoke job provides built-app evidence without deploys.
+# Trusted same-repository PRs create an explicit non-production Netlify draft
+# using the CLI, then test the URL returned by Netlify; no Git-connected preview
+# hostname is assumed. This requires NETLIFY_AUTH_TOKEN in GitHub Actions.
+# A separate local runtime smoke verifies the built app without deploys.
 
 on:
   workflow_dispatch:
