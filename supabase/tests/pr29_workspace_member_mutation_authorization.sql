@@ -1,7 +1,7 @@
 -- Runtime authorization regressions for the W45/W46 member mutation helpers.
 begin;
 create extension if not exists pgtap;
-select plan(10);
+select plan(12);
 
 create temporary table pr29_member_authz_results(name text primary key, passed boolean not null) on commit drop;
 
@@ -12,14 +12,20 @@ declare
   v_member uuid := gen_random_uuid();
   v_viewer uuid := gen_random_uuid();
   v_other_member uuid := gen_random_uuid();
+  v_foreign_owner uuid := gen_random_uuid();
+  v_foreign_member uuid := gen_random_uuid();
   v_workspace uuid := gen_random_uuid();
+  v_foreign_workspace uuid := gen_random_uuid();
   v_denied boolean;
 begin
-  insert into auth.users(id) values (v_owner),(v_admin),(v_member),(v_viewer),(v_other_member);
+  insert into auth.users(id) values (v_owner),(v_admin),(v_member),(v_viewer),(v_other_member),(v_foreign_owner),(v_foreign_member);
   insert into public.workspaces(id,owner_id,name) values(v_workspace,v_owner,'PR29 member authorization test');
+  insert into public.workspaces(id,owner_id,name) values(v_foreign_workspace,v_foreign_owner,'PR29 foreign workspace test');
   insert into public.workspace_members(workspace_id,user_id,role) values
     (v_workspace,v_owner,'owner'),(v_workspace,v_admin,'admin'),(v_workspace,v_member,'member'),
     (v_workspace,v_viewer,'viewer'),(v_workspace,v_other_member,'member');
+  insert into public.workspace_members(workspace_id,user_id,role) values
+    (v_foreign_workspace,v_foreign_owner,'owner'),(v_foreign_workspace,v_foreign_member,'member');
 
   perform set_config('request.jwt.claim.role','authenticated',true);
   perform set_config('request.jwt.claims',jsonb_build_object('role','authenticated')::text,true);
@@ -32,6 +38,15 @@ begin
   exception when sqlstate '42501' then v_denied:=sqlerrm='WORKSPACE_ADMIN_REQUIRED'; end;
   perform set_config('role','postgres',true);
   insert into pr29_member_authz_results values('member cannot promote another member',v_denied and (select role='member' from public.workspace_members where workspace_id=v_workspace and user_id=v_other_member));
+
+  perform set_config('request.jwt.claim.sub',v_admin::text,true);
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',v_admin,'role','authenticated')::text,true);
+  perform set_config('role','authenticated',true);
+  v_denied:=false;
+  begin perform public.update_workspace_member_role((select id from public.workspace_members where workspace_id=v_foreign_workspace and user_id=v_foreign_member),'admin');
+  exception when sqlstate '42501' then v_denied:=sqlerrm='WORKSPACE_ACCESS_REQUIRED'; end;
+  perform set_config('role','postgres',true);
+  insert into pr29_member_authz_results values('workspace admin cannot change a foreign workspace role',v_denied and (select role='member' from public.workspace_members where workspace_id=v_foreign_workspace and user_id=v_foreign_member));
 
   perform set_config('request.jwt.claim.sub',v_viewer::text,true);
   perform set_config('request.jwt.claims',jsonb_build_object('sub',v_viewer,'role','authenticated')::text,true);
@@ -76,6 +91,15 @@ begin
   exception when sqlstate '42501' then v_denied:=sqlerrm='WORKSPACE_ADMIN_REQUIRED'; end;
   perform set_config('role','postgres',true);
   insert into pr29_member_authz_results values('member cannot bypass through private removal helper',v_denied and exists(select 1 from public.workspace_members where workspace_id=v_workspace and user_id=v_viewer));
+
+  perform set_config('request.jwt.claim.sub',v_admin::text,true);
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',v_admin,'role','authenticated')::text,true);
+  perform set_config('role','authenticated',true);
+  v_denied:=false;
+  begin perform private.remove_workspace_member((select id from public.workspace_members where workspace_id=v_foreign_workspace and user_id=v_foreign_member));
+  exception when sqlstate '42501' then v_denied:=sqlerrm='WORKSPACE_ACCESS_REQUIRED'; end;
+  perform set_config('role','postgres',true);
+  insert into pr29_member_authz_results values('workspace admin cannot remove a foreign workspace member',v_denied and exists(select 1 from public.workspace_members where workspace_id=v_foreign_workspace and user_id=v_foreign_member));
 
   perform set_config('request.jwt.claim.sub',v_admin::text,true);
   perform set_config('request.jwt.claims',jsonb_build_object('sub',v_admin,'role','authenticated')::text,true);
