@@ -24,6 +24,14 @@ on:
       - "apps/web/**"
       - "netlify.toml"
       - ".github/workflows/web-deploy-netlify.yml"
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - "zavqera/alternative-web-deployment"
+    paths:
+      - "apps/web/**"
+      - "netlify.toml"
+      - ".github/workflows/web-deploy-netlify.yml"
 
 permissions:
   contents: read
@@ -34,7 +42,8 @@ concurrency:
 
 jobs:
   deploy:
-    # workflow_dispatch can target any branch, so enforce the release-branch allowlist here too.
+    # workflow_dispatch can target any branch. Keep deployment limited to the two
+    # approved release branches and never deploy from a pull_request event.
     if: >-
       github.event_name != 'pull_request' &&
       (
@@ -67,7 +76,7 @@ jobs:
           SUPABASE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
         run: |
           if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_KEY}" ]; then
-            echo "::error::NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY must be set."
+            echo "::error::NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY must be set, otherwise /app silently falls back to the local mock repository."
             exit 1
           fi
           case "${SUPABASE_URL}" in
@@ -128,9 +137,10 @@ jobs:
           echo "/=${root} /auth/sign-in=${signin} /app=${app} -> ${appdest}"
           test "${root}" = "200"
           test "${signin}" = "200"
+          # With Supabase configured, middleware must bounce anonymous /app to sign-in.
           case "${appdest}" in
             *"/auth/sign-in"*) echo "Auth middleware verified." ;;
-            *) echo "::error::/app did not redirect anonymously to /auth/sign-in."; exit 1 ;;
+            *) echo "::error::/app did not redirect anonymously to /auth/sign-in. The deployment may have fallen back to the local mock repository."; exit 1 ;;
           esac
 
 

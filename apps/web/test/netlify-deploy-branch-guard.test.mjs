@@ -11,6 +11,10 @@ const workflow = readFileSync(
 ).replace(/\r\n/g, "\n");
 
 test("Netlify workflow permits draft previews but never production deploys", () => {
+  assert.match(workflow, /pull_request:\s*\n\s+types: \[opened, synchronize, reopened\]/,
+    "PR updates must continue to trigger preview verification");
+  assert.match(workflow, /branches:\s*\n\s+- "zavqera\/alternative-web-deployment"/,
+    "PR preview checks must target the intended deployment branch");
   const deployStart = workflow.indexOf("\n  deploy:\n");
   const previewStart = workflow.indexOf("\n  verify-preview:", deployStart + 1);
   assert.notEqual(deployStart, -1, "deployment job must exist");
@@ -29,6 +33,10 @@ test("Netlify workflow permits draft previews but never production deploys", () 
     "no workflow path may invoke a production deploy");
   assert.match(deployJob, /PREVIEW_URL/,
     "route checks must target the URL returned for this draft preview");
+
+  const previewJob = workflow.slice(previewStart);
+  assert.match(previewJob, /if: github\.event_name == 'pull_request'/,
+    "PR events must run verification without running the deploy job");
 });
 
 test("real OpenAI planning is skipped unless a same-repository PR explicitly opts in", () => {
