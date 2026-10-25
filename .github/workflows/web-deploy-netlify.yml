@@ -24,14 +24,6 @@ on:
       - "apps/web/**"
       - "netlify.toml"
       - ".github/workflows/web-deploy-netlify.yml"
-  pull_request:
-    types: [opened, synchronize, reopened]
-    branches:
-      - "zavqera/alternative-web-deployment"
-    paths:
-      - "apps/web/**"
-      - "netlify.toml"
-      - ".github/workflows/web-deploy-netlify.yml"
 
 permissions:
   contents: read

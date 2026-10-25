@@ -11,6 +11,8 @@ const workflow = readFileSync(
 ).replace(/\r\n/g, "\n");
 
 test("Netlify workflow permits draft previews but never production deploys", () => {
+  assert.equal([...workflow.matchAll(/^  pull_request:\s*$/gm)].length, 1,
+    "workflow must declare pull_request exactly once");
   assert.match(workflow, /pull_request:\s*\n\s+types: \[opened, synchronize, reopened\]/,
     "PR updates must continue to trigger preview verification");
   assert.match(workflow, /branches:\s*\n\s+- "zavqera\/alternative-web-deployment"/,
