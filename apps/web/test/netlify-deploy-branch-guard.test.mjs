@@ -8,13 +8,13 @@ const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..")
 const workflow = readFileSync(
   join(repoRoot, ".github", "workflows", "web-deploy-netlify.yml"),
   "utf8",
-);
+).replace(/\r\n/g, "\n");
 
-test("manual Netlify production deploy is restricted to explicit release branches", () => {
+test("Netlify workflow permits draft previews but never production deploys", () => {
   const deployStart = workflow.indexOf("\n  deploy:\n");
   const previewStart = workflow.indexOf("\n  verify-preview:", deployStart + 1);
-  assert.notEqual(deployStart, -1, "production deploy job must exist");
-  assert.notEqual(previewStart, -1, "preview verifier job must remain separate");
+  assert.notEqual(deployStart, -1, "deployment job must exist");
+  assert.notEqual(previewStart, -1, "PR preview verification must remain separate");
   const deployJob = workflow.slice(deployStart, previewStart);
   const condition = deployJob.match(/^    if:\s*>-\s*\n([\s\S]*?)(?=^    runs-on:)/m)?.[1] ?? "";
 
@@ -22,8 +22,11 @@ test("manual Netlify production deploy is restricted to explicit release branche
   assert.match(condition, /github\.ref\s*==\s*'refs\/heads\/zavqera\/integrate-origin-main-clean'/);
   assert.match(condition, /github\.ref\s*==\s*'refs\/heads\/zavqera\/alternative-web-deployment'/);
   assert.equal((condition.match(/github\.ref\s*==/g) ?? []).length, 2,
-    "only the two explicitly approved release branches may run the production deploy job");
-  assert.match(deployJob, /netlify-cli@latest deploy --build --prod/);
-  assert.doesNotMatch(deployJob, /if:\s*github\.event_name\s*!=\s*'pull_request'/,
-    "manual dispatch must not bypass the release-branch allowlist");
+    "only the two explicitly approved branches may create a draft deploy");
+
+  assert.match(deployJob, /deploy --build --context deploy-preview/);
+  assert.doesNotMatch(workflow, /\bdeploy\b[^\n]*--prod|deploy[^\n]*--prod/i,
+    "no workflow path may invoke a production deploy");
+  assert.match(deployJob, /PREVIEW_URL/,
+    "route checks must target the URL returned for this draft preview");
 });
