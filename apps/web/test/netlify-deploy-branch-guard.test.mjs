@@ -30,3 +30,21 @@ test("Netlify workflow permits draft previews but never production deploys", () 
   assert.match(deployJob, /PREVIEW_URL/,
     "route checks must target the URL returned for this draft preview");
 });
+
+test("real OpenAI planning is skipped unless a same-repository PR explicitly opts in", () => {
+  const stepStart = workflow.indexOf("      - name: Verify real OpenAI mission planning");
+  const nextStep = workflow.indexOf("      - name: Check Development-only live research authentication config", stepStart + 1);
+  assert.notEqual(stepStart, -1, "live OpenAI planning step must remain identifiable");
+  assert.notEqual(nextStep, -1, "live research config step must follow it");
+  const step = workflow.slice(stepStart, nextStep);
+  const condition = step.match(/^        if:\s*>-\s*\n([\s\S]*?)(?=^        run:)/m)?.[1] ?? "";
+
+  assert.match(condition, /github\.event_name\s*==\s*'pull_request'/,
+    "push and manual workflow runs must never call the real provider");
+  assert.match(condition, /github\.event\.pull_request\.head\.repo\.full_name\s*==\s*github\.repository/,
+    "fork PRs must not receive provider credentials or invoke the live check");
+  assert.match(condition, /contains\(github\.event\.pull_request\.body,\s*'\[live-openai-planning\]'\)/,
+    "same-repository PR must explicitly opt in");
+  assert.doesNotMatch(condition, /\|\|/,
+    "no alternate event path may bypass the explicit PR opt-in");
+});
