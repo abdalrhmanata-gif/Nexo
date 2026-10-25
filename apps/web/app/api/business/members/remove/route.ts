@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
       const message = error instanceof Error ? error.message : "";
       const map: Record<string,string> = {
         OWNER_PROTECTED: "The workspace owner is protected.",
+        WORKSPACE_ADMIN_REQUIRED: "Only workspace owners and admins can remove other members.",
         WORKSPACE_OWNER_PROTECTED: "The workspace owner cannot be removed.",
         LAST_OWNER_PROTECTED: "The last workspace owner cannot be removed.",
         PRIVILEGED_MEMBER_PROTECTED: "Only the workspace owner can remove this privileged member.",
