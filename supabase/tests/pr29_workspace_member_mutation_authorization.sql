@@ -14,6 +14,7 @@ declare
   v_other_member uuid := gen_random_uuid();
   v_foreign_owner uuid := gen_random_uuid();
   v_foreign_member uuid := gen_random_uuid();
+  v_foreign_member_row uuid;
   v_workspace uuid := gen_random_uuid();
   v_foreign_workspace uuid := gen_random_uuid();
   v_denied boolean;
@@ -26,6 +27,8 @@ begin
     (v_workspace,v_viewer,'viewer'),(v_workspace,v_other_member,'member');
   insert into public.workspace_members(workspace_id,user_id,role) values
     (v_foreign_workspace,v_foreign_owner,'owner'),(v_foreign_workspace,v_foreign_member,'member');
+  select id into v_foreign_member_row from public.workspace_members
+    where workspace_id=v_foreign_workspace and user_id=v_foreign_member;
 
   perform set_config('request.jwt.claim.role','authenticated',true);
   perform set_config('request.jwt.claims',jsonb_build_object('role','authenticated')::text,true);
@@ -43,7 +46,7 @@ begin
   perform set_config('request.jwt.claims',jsonb_build_object('sub',v_admin,'role','authenticated')::text,true);
   perform set_config('role','authenticated',true);
   v_denied:=false;
-  begin perform public.update_workspace_member_role((select id from public.workspace_members where workspace_id=v_foreign_workspace and user_id=v_foreign_member),'admin');
+  begin perform public.update_workspace_member_role(v_foreign_member_row,'admin');
   exception when sqlstate '42501' then v_denied:=sqlerrm='WORKSPACE_ACCESS_REQUIRED'; end;
   perform set_config('role','postgres',true);
   insert into pr29_member_authz_results values('workspace admin cannot change a foreign workspace role',v_denied and (select role='member' from public.workspace_members where workspace_id=v_foreign_workspace and user_id=v_foreign_member));
@@ -96,7 +99,7 @@ begin
   perform set_config('request.jwt.claims',jsonb_build_object('sub',v_admin,'role','authenticated')::text,true);
   perform set_config('role','authenticated',true);
   v_denied:=false;
-  begin perform private.remove_workspace_member((select id from public.workspace_members where workspace_id=v_foreign_workspace and user_id=v_foreign_member));
+  begin perform private.remove_workspace_member(v_foreign_member_row);
   exception when sqlstate '42501' then v_denied:=sqlerrm='WORKSPACE_ACCESS_REQUIRED'; end;
   perform set_config('role','postgres',true);
   insert into pr29_member_authz_results values('workspace admin cannot remove a foreign workspace member',v_denied and exists(select 1 from public.workspace_members where workspace_id=v_foreign_workspace and user_id=v_foreign_member));
