@@ -2,8 +2,10 @@
 
 **Decision: BLOCKED — this candidate is not production-ready and public launch is not authorized.**
 
-Candidate code branch: `zavqera/alternative-web-deployment`  
-Candidate code commit: [`017da480d88eef32971a25d7febe32685368ccce`](https://github.com/abdalrhmanata-gif/Nexo/commit/017da480d88eef32971a25d7febe32685368ccce)  
+Candidate code branch: `zavqera/alternative-web-deployment`
+
+Candidate code commit: [`017da480d88eef32971a25d7febe32685368ccce`](https://github.com/abdalrhmanata-gif/Nexo/commit/017da480d88eef32971a25d7febe32685368ccce)
+
 PR #29 remains open and Draft. Issue [#31](https://github.com/abdalrhmanata-gif/Nexo/issues/31) remains open.
 
 This report distinguishes evidence for the candidate commit from historical evidence on PR #29's merge candidate. No hosted database writes, production deployment, production credential use, or secret values were involved.
