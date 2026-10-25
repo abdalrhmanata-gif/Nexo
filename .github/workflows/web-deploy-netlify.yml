@@ -83,29 +83,33 @@ jobs:
         working-directory: apps/web
         run: npm run typecheck
 
-      - name: Deploy to Netlify
+      - name: Deploy Netlify draft preview
+        id: deploy
         if: steps.creds.outputs.ready == 'true'
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
-        run: npx --yes netlify-cli@latest deploy --build --prod
+        run: |
+          set -euo pipefail
+          response="$(npx --yes netlify-cli@latest deploy --build --context deploy-preview --json)"
+          preview_url="$(printf '%s' "$response" | node -e 'let input = ""; process.stdin.on("data", chunk => input += chunk); process.stdin.on("end", () => { const deploy = JSON.parse(input); const url = deploy.deploy_ssl_url || deploy.deploy_url || deploy.url; if (!url) { console.error("Netlify CLI response did not include a deploy preview URL."); process.exit(1); } console.log(url); });')"
+          echo "preview_url=${preview_url}" >> "$GITHUB_OUTPUT"
+          echo "Draft preview URL: ${preview_url}"
 
       - name: Verify public routes
         if: steps.creds.outputs.ready == 'true'
         env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          PREVIEW_URL: ${{ steps.deploy.outputs.preview_url }}
         run: |
           set -euo pipefail
-          url="$(npx --yes netlify-cli@latest api getSite --data "{\"site_id\":\"${NETLIFY_SITE_ID}\"}" | node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>console.log(JSON.parse(s).ssl_url))')"
-          echo "Public URL: ${url}"
+          test -n "${PREVIEW_URL}"
 
-          root="$(curl -sS -o /dev/null -w '%{http_code}' "${url}/")"
-          signin="$(curl -sS -o /dev/null -w '%{http_code}' "${url}/auth/sign-in")"
-          app="$(curl -sS -o /dev/null -w '%{http_code}' "${url}/app")"
-          appdest="$(curl -sS -o /dev/null -w '%{redirect_url}' "${url}/app")"
+          root="$(curl -sS -o /dev/null -w '%{http_code}' "${PREVIEW_URL}/")"
+          signin="$(curl -sS -o /dev/null -w '%{http_code}' "${PREVIEW_URL}/auth/sign-in")"
+          app="$(curl -sS -o /dev/null -w '%{http_code}' "${PREVIEW_URL}/app")"
+          appdest="$(curl -sS -o /dev/null -w '%{redirect_url}' "${PREVIEW_URL}/app")"
           echo "/=${root} /auth/sign-in=${signin} /app=${app} -> ${appdest}"
 
           test "${root}" = "200"
