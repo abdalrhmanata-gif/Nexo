@@ -30,6 +30,7 @@ Keep the AI flag unset or false until you intentionally want to allow provider c
 - The route sends one request only per click, limits request bytes and output tokens, times out after 25 seconds, and does not automatically retry. It keeps the provider key on the server and returns `Cache-Control: no-store`.
 - The in-memory per-user rate guard allows at most three requests per ten minutes per running server instance. Serverless instances may scale or restart, so this remains best-effort burst protection, not the source of truth for monthly quota or a global spending cap.
 - A durable monthly per-user generation quota is enforced through the existing Supabase `reserve_ai_generation` and `consume_ai_generation` RPCs. The slot is reserved atomically and consumed before contacting the provider. Therefore, a provider timeout or error still counts as one generation; this prevents repeated failed attempts from bypassing the monthly allowance.
+- Successful responses emit a structured `[zavqera-ai-cost]` event to Netlify function logs with model, prompt/completion token counts and an estimated USD cost; it contains no prompt text or user ID. The estimate uses the published standard `gpt-6-luna` text rates and deliberately charges cached input at the non-cached rate. Unpriced models fail closed until a price entry is added.
 
 ## Limits that are not solved by this MVP
 
