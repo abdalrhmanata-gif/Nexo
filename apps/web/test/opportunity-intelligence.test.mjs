@@ -56,5 +56,5 @@ test("priority thresholds are stable and readable", () => {
   assert.equal(opportunityPriority(60), "VALIDATE");
   assert.match(priorityDescription("PURSUE"), /Confirm the evidence/);
   assert.match(priorityDescription("VALIDATE"), /weakest assumption/);
-  assert.match(priorityDescription("HOLD"), /improve the evidence/);
+  assert.match(priorityDescription("HOLD"), /Improve the evidence/);
 });
