@@ -2,7 +2,7 @@ import { isOpportunityEvidenceItem } from "./evidence-ledger.mjs";
 import { opportunityPriority, scoreOpportunity } from "./opportunity-intelligence.mjs";
 
 export const MAX_ANALYSIS_EVIDENCE_ITEMS = 10;
-export const MAX_ANALYSIS_REQUEST_CHARS = 18000;
+export const MAX_ANALYSIS_REQUEST_BYTES = 24000;
 export const MAX_ANALYSIS_REPORT_CHARS = 24000;
 
 const DECISIONS = Object.freeze(["TEST", "PURSUE", "PIVOT", "DEFER", "STOP", "INSUFFICIENT_EVIDENCE"]);
