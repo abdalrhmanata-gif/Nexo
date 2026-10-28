@@ -13,7 +13,7 @@ export default async function BusinessWorkspacePage() {
   const active = missions.filter((mission) => mission.status === "ACTIVE");
   const waiting = missions.filter((mission) => mission.status === "WAITING");
   const completed = missions.filter((mission) => mission.status === "COMPLETED");
-  const recent = [...missions].sort((a, b) => b.updated.localeCompare(a.updated)).slice(0, 3);
+  const recent = missions.slice(0, 3);
 
   return <div className="container business-dashboard">
     <section className="section-heading">
