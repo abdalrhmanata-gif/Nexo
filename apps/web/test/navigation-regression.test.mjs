@@ -78,8 +78,10 @@ test("templates prefill the normal review-before-create mission flow", () => {
 
 test("current navigation styling distinguishes the active page and Workspace scope", () => {
   const nav = read("components/nav-link.tsx");
+  const shell = read("components/shell.tsx");
   const css = read("app/globals.css");
-  assert.ok(nav.includes('href="/app" prefix="/app/missions"'));
+  assert.ok(nav.includes('href="/app" className="button button-small workspace-nav"'));
+  assert.ok(shell.includes('<NavLink href="/app/missions/new" className="button button-small">'));
   assert.ok(css.includes('.topbar nav a[aria-current="page"]:not(.button):not(.nav-featured)'));
   assert.ok(css.includes('.topbar nav a.button[aria-current="page"]'));
   assert.ok(css.includes('.topbar nav a.nav-featured[aria-current="page"]'));
