@@ -4,7 +4,7 @@ import { isSupabaseConfigured } from "../../../../lib/supabase/config";
 import {
   buildOpportunityAnalysisPrompt,
   MAX_ANALYSIS_REPORT_CHARS,
-  MAX_ANALYSIS_REQUEST_CHARS,
+  MAX_ANALYSIS_REQUEST_BYTES,
   normalizeOpportunityAnalysisRequest,
   validateOpportunityAnalysisReport,
 } from "../../../../lib/opportunity-analysis.mjs";
@@ -116,7 +116,7 @@ export async function POST(request: Request) {
 
   let rawBody: string;
   try {
-    rawBody = await readLimitedBody(request, MAX_ANALYSIS_REQUEST_CHARS);
+    rawBody = await readLimitedBody(request, MAX_ANALYSIS_REQUEST_BYTES);
   } catch (error) {
     if (error instanceof Error && error.message === "BODY_TOO_LARGE") {
       return jsonError(413, "REQUEST_TOO_LARGE", "The brief is too large. Reduce the evidence notes and try again.");
