@@ -165,6 +165,6 @@ test("provider setup is documented without putting keys in client-side environme
   assert.match(env, /ZAVQERA_AI_ENABLED=false/);
   assert.match(env, /ZAVQERA_AI_API_KEY=/);
   assert.match(setup, /Monthly plan entitlements and billing are not enforced/);
-  assert.match(setup, /never use NEXT_PUBLIC_/i);
+  assert.match(setup, /Never name the secret.*NEXT_PUBLIC_/i);
   assert.match(setup, /No provider request is made until/);
 });
