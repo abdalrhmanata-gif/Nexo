@@ -188,6 +188,17 @@ export async function POST(request: Request) {
     return jsonError(503, "AI_USAGE_UNAVAILABLE", "Monthly AI usage returned an invalid response. No AI provider was called.");
   }
   const quota = quotaValue as AiUsageReservation;
+  if (
+    typeof quota.allowed !== "boolean"
+    || typeof quota.plan !== "string"
+    || typeof quota.period_start !== "string"
+    || !Number.isInteger(quota.monthly_limit)
+    || !Number.isInteger(quota.generations_used)
+    || !Number.isInteger(quota.remaining)
+    || (quota.reservation_id !== null && typeof quota.reservation_id !== "string")
+  ) {
+    return jsonError(503, "AI_USAGE_UNAVAILABLE", "Monthly AI usage returned an invalid response. No AI provider was called.");
+  }
   if (quota.allowed !== true) {
     return jsonError(429, "AI_MONTHLY_QUOTA_EXCEEDED", "You've reached the monthly AI Opportunity Brief allowance.", {
       usage: {
@@ -249,30 +260,30 @@ export async function POST(request: Request) {
       cache: "no-store",
     });
     if (!response.ok) {
-      return jsonError(502, "AI_PROVIDER_ERROR", "The AI provider could not complete this brief. No automatic retry was attempted.");
+      return jsonError(502, "AI_PROVIDER_ERROR", "The AI provider could not complete this brief. This attempt used one monthly generation; no automatic retry was attempted.");
     }
 
     let providerResponse: unknown;
     try { providerResponse = await response.json(); } catch {
-      return jsonError(502, "AI_PROVIDER_INVALID_RESPONSE", "The AI provider returned an unreadable response.");
+      return jsonError(502, "AI_PROVIDER_INVALID_RESPONSE", "The AI provider returned an unreadable response. This attempt used one monthly generation.");
     }
     if (!providerResponse || typeof providerResponse !== "object" || !("choices" in providerResponse) || !Array.isArray((providerResponse as { choices?: unknown }).choices)) {
-      return jsonError(502, "AI_PROVIDER_INVALID_RESPONSE", "The AI provider returned an unsupported response.");
+      return jsonError(502, "AI_PROVIDER_INVALID_RESPONSE", "The AI provider returned an unsupported response. This attempt used one monthly generation.");
     }
 
     const choices = (providerResponse as { choices: Array<{ message?: { content?: unknown } }> }).choices;
     const content = choices[0]?.message?.content;
     if (typeof content !== "string" || content.length === 0 || content.length > MAX_ANALYSIS_REPORT_CHARS) {
-      return jsonError(502, "AI_REPORT_MISSING", "The AI provider did not return a complete report.");
+      return jsonError(502, "AI_REPORT_MISSING", "The AI provider did not return a complete report. This attempt used one monthly generation.");
     }
 
     let reportValue: unknown;
     try { reportValue = JSON.parse(content); } catch {
-      return jsonError(502, "AI_REPORT_INVALID_JSON", "The AI provider returned a report that was not valid JSON.");
+      return jsonError(502, "AI_REPORT_INVALID_JSON", "The AI provider returned a report that was not valid JSON. This attempt used one monthly generation.");
     }
     let report: OpportunityAnalysisReport;
     try { report = validateOpportunityAnalysisReport(reportValue, input.evidenceItems); } catch {
-      return jsonError(502, "AI_REPORT_VALIDATION_FAILED", "The report did not pass evidence-reference and structure checks. Review your evidence or try again later.");
+      return jsonError(502, "AI_REPORT_VALIDATION_FAILED", "The report did not pass evidence-reference and structure checks. This attempt used one monthly generation.");
     }
 
     return NextResponse.json({
@@ -294,9 +305,9 @@ export async function POST(request: Request) {
     }, { headers: noStoreHeaders });
   } catch (error) {
     if (error instanceof Error && error.name === "AbortError") {
-      return jsonError(504, "AI_ANALYSIS_TIMEOUT", "The AI report timed out. No automatic retry was attempted.");
+      return jsonError(504, "AI_ANALYSIS_TIMEOUT", "The AI report timed out. This attempt used one monthly generation; no automatic retry was attempted.");
     }
-    return jsonError(502, "AI_ANALYSIS_FAILED", "The AI report could not be completed. No automatic retry was attempted.");
+    return jsonError(502, "AI_ANALYSIS_FAILED", "The AI report could not be completed. This attempt used one monthly generation; no automatic retry was attempted.");
   } finally {
     clearTimeout(timeout);
   }
