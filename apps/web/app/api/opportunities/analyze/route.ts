@@ -25,11 +25,13 @@ const noStoreHeaders = { "Cache-Control": "no-store, max-age=0", Vary: "Cookie" 
 type ProviderConfig = { endpoint: string; apiKey: string; model: string; maxCompletionTokens: number };
 
 function providerConfig(): ProviderConfig | null {
+  // Keep the paid API path explicitly opt-in. Existing OpenAI Netlify variables
+  // are reused, but no request is sent until this flag is set for a test deploy.
   if (process.env.ZAVQERA_AI_ENABLED !== "true") return null;
-  const baseUrl = process.env.ZAVQERA_AI_BASE_URL?.trim();
-  const apiKey = process.env.ZAVQERA_AI_API_KEY?.trim();
-  const model = process.env.ZAVQERA_AI_MODEL?.trim();
-  if (!baseUrl || !apiKey || !model) return null;
+  const baseUrl = process.env.ZAVQERA_AI_BASE_URL?.trim() || "https://api.openai.com/v1";
+  const apiKey = process.env.ZAVQERA_AI_API_KEY?.trim() || process.env.OPENAI_API_KEY?.trim();
+  const model = process.env.ZAVQERA_AI_MODEL?.trim() || process.env.OPENAI_MODEL?.trim();
+  if (!apiKey || !model) return null;
 
   let url: URL;
   try { url = new URL(baseUrl); } catch { return null; }
@@ -37,6 +39,8 @@ function providerConfig(): ProviderConfig | null {
     && url.protocol === "http:"
     && ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
   if ((url.protocol !== "https:" && !localDevelopmentUrl) || url.username || url.password || url.search || url.hash) return null;
+  // This route currently supports the official OpenAI API host only.
+  if (url.hostname !== "api.openai.com" && !localDevelopmentUrl) return null;
 
   const rawLimit = Number(process.env.ZAVQERA_AI_MAX_COMPLETION_TOKENS ?? "1200");
   const maxCompletionTokens = Number.isInteger(rawLimit) ? Math.max(400, Math.min(1400, rawLimit)) : 1200;
