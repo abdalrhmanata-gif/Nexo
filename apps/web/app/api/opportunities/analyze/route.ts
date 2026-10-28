@@ -44,11 +44,11 @@ function providerConfig(): ProviderConfig | null {
 
 function rateLimit(userId: string, now = Date.now()): { allowed: boolean; retryAfterSeconds: number } {
   if (inMemoryUserRequests.size > 5000) {
-    for (const [key, timestamps] of inMemoryUserRequests) {
-      const remaining = timestamps.filter((timestamp) => now - timestamp < REQUEST_WINDOW_MS);
+    inMemoryUserRequests.forEach((timestamps: number[], key: string) => {
+      const remaining = timestamps.filter((timestamp: number) => now - timestamp < REQUEST_WINDOW_MS);
       if (remaining.length) inMemoryUserRequests.set(key, remaining);
       else inMemoryUserRequests.delete(key);
-    }
+    });
   }
   const active = (inMemoryUserRequests.get(userId) ?? []).filter((timestamp) => now - timestamp < REQUEST_WINDOW_MS);
   if (active.length >= MAX_REQUESTS_PER_WINDOW) {
