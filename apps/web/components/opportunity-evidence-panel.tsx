@@ -203,7 +203,7 @@ export function OpportunityEvidencePanel({
           <form className="form-grid evidence-form" onSubmit={recordEvidence}>
             <div className="field">
               <label htmlFor={`evidence-url-${opportunity.id}`}>Source URL</label>
-              <input id={`evidence-url-${opportunity.id}`} type="url" inputMode="url" maxLength={1000} value={draft.url} onChange={(event) => updateDraft("url", event.target.value)} placeholder="https://…" required />
+              <input id={`evidence-url-${opportunity.id}`} type="url" inputMode="url" maxLength={500} value={draft.url} onChange={(event) => updateDraft("url", event.target.value)} placeholder="https://…" required />
             </div>
             <div className="field">
               <label htmlFor={`evidence-title-${opportunity.id}`}>Source title</label>
