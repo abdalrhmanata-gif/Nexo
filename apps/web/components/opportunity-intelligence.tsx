@@ -86,8 +86,8 @@ function missionHref(opportunity: Opportunity): string {
     ? `Original source reference provided by the user (not independently verified): ${opportunity.evidenceUrl}`
     : "No original source reference has been attached.";
   const evidenceNotes = opportunity.evidenceItems.slice(0, 3).map((item) =>
-    `[${item.stance.toUpperCase()}] ${item.title} — ${item.url}. User-recorded observation: ${item.observation.slice(0, 220)}`
-  ).join("\\n");
+    `[${item.stance.toUpperCase()}] ${item.title} — ${item.url}. User-recorded observation: ${item.observation.slice(0, 140)}`
+  ).join("\n");
   const ledgerNote = opportunity.evidenceItems.length
     ? `User-recorded evidence notes (not independently verified):\n${evidenceNotes}`
     : "No reviewed evidence notes are recorded yet. Search public sources and test assumptions before deciding.";
@@ -99,6 +99,7 @@ function missionHref(opportunity: Opportunity): string {
       `Opportunity thesis: ${opportunity.thesis}`,
       `Current rule-based priority: ${score}/100 (${priorityLabel}). This is a prioritization aid, not a forecast.`,
       sourceNote,
+      ledgerNote,
     ].join("\n\n"),
     criteria: [
       "Assess the source and verify the key claims",
