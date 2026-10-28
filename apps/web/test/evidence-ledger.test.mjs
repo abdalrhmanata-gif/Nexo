@@ -4,6 +4,7 @@ import {
   buildPublicSearchUrls,
   findDuplicateEvidence,
   isHttpSourceUrl,
+  isOpportunityEvidenceItem,
   normaliseEvidenceUrl,
   summariseEvidence,
 } from "../lib/evidence-ledger.mjs";
@@ -64,4 +65,24 @@ test("search links encode the user's opportunity as a query rather than fetching
   assert.ok(result.query.includes("small towns"));
   assert.ok(result.webUrl.includes("faster+access"));
   assert.equal(buildPublicSearchUrls({}).webUrl, "https://www.google.com/");
+});
+
+test("persisted evidence records must have bounded metadata and a safe source URL", () => {
+  const valid = {
+    id: "evidence-1",
+    url: "https://example.com/report",
+    title: "Published market report",
+    observation: "The source reports a stated market change.",
+    stance: "supports",
+    sourceType: "research",
+    sourceDate: "2026-09-30",
+    reliability: 4,
+    checkedAt: "2026-10-28T12:00:00.000Z",
+    addedAt: 1793190000000,
+  };
+  assert.equal(isOpportunityEvidenceItem(valid), true);
+  assert.equal(isOpportunityEvidenceItem({ ...valid, url: "javascript:alert(1)" }), false);
+  assert.equal(isOpportunityEvidenceItem({ ...valid, stance: "verified" }), false);
+  assert.equal(isOpportunityEvidenceItem({ ...valid, reliability: 8 }), false);
+  assert.equal(isOpportunityEvidenceItem({ ...valid, observation: "" }), false);
 });
