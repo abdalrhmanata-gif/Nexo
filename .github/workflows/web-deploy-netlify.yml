@@ -22,8 +22,11 @@ permissions:
   contents: read
 
 env:
-  # Public Netlify site identifier; the only required deployment credential is the token.
+  # Public Netlify site identifier; the only deployment credential is the token.
   NETLIFY_SITE_ID: "53e470f1-30da-497e-85f6-16179db4c985"
+  # Public client configuration for ZAVQERA Development (publishable, never a service-role key).
+  NEXT_PUBLIC_SUPABASE_URL: "https://mrwmmbytcymqgwvcoywd.supabase.co"
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_okCtCgHLflR_wRWGnIXY3Q_6mxRm0GL"
 
 concurrency:
   group: zavqera-netlify-deploy-${{ github.ref }}
@@ -52,8 +55,8 @@ jobs:
       - name: Check Supabase Development configuration
         if: steps.creds.outputs.ready == 'true'
         env:
-          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_URL: ${{ env.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
         run: |
           if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_KEY}" ]; then
             echo "::error::NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY must be set, otherwise /app silently falls back to the local mock repository."
@@ -92,8 +95,8 @@ jobs:
         if: steps.creds.outputs.ready == 'true'
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ env.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
         run: |
           set -euo pipefail
           response="$(npx --yes netlify-cli@latest deploy --build --context deploy-preview --json)"
