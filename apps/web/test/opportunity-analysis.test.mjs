@@ -158,7 +158,7 @@ test("AI endpoint enforces persistent monthly quota before calling the paid prov
   assert.match(route, /AI_USAGE_FINALIZATION_FAILED/);
   const reserveAt = route.indexOf('rpc("reserve_ai_generation"');
   const consumeAt = route.indexOf('rpc("consume_ai_generation"');
-  const providerAt = route.indexOf("fetch(config.endpoint)");
+  const providerAt = route.indexOf("fetch(config.endpoint,");
   assert.ok(reserveAt >= 0 && reserveAt < consumeAt && consumeAt < providerAt,
     "durable quota reservation and consumption must precede the external provider call");
 });
@@ -179,7 +179,7 @@ test("provider setup is documented without putting keys in client-side environme
   const setup = readFileSync(join(repoRoot, "docs", "AI_OPPORTUNITY_ANALYST_SETUP.md"), "utf8");
   assert.match(env, /ZAVQERA_AI_ENABLED=false/);
   assert.match(env, /ZAVQERA_AI_API_KEY=/);
-  assert.match(setup, /persistent monthly per-user generation quota is enforced/i);
+  assert.match(setup, /durable monthly per-user generation quota is enforced/i);
   assert.match(setup, /not a global money-spend cap/i);
   assert.match(setup, /OpenAI organization or project hard spend limit/i);
   assert.match(setup, /Never name a secret.*NEXT_PUBLIC_/i);
