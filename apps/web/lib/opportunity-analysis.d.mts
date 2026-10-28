@@ -43,7 +43,7 @@ export type OpportunityAnalysisReport = {
 };
 
 export declare const MAX_ANALYSIS_EVIDENCE_ITEMS: number;
-export declare const MAX_ANALYSIS_REQUEST_CHARS: number;
+export declare const MAX_ANALYSIS_REQUEST_BYTES: number;
 export declare const MAX_ANALYSIS_REPORT_CHARS: number;
 export declare function normalizeOpportunityAnalysisRequest(value: unknown): OpportunityAnalysisInput;
 export declare function buildOpportunityAnalysisPrompt(input: OpportunityAnalysisInput): { system: string; user: string };
