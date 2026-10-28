@@ -35,15 +35,15 @@ export function scoreOpportunity(opportunity) {
 
 export function opportunityPriority(score) {
   const normalized = Number.isFinite(Number(score)) ? Number(score) : 0;
-  if (normalized >= 80) return "PURSUE";
+  if (normalized >= 80) return "HIGH_SCORE";
   if (normalized >= 60) return "VALIDATE";
   return "HOLD";
 }
 
 export function priorityDescription(priority) {
   switch (priority) {
-    case "PURSUE":
-      return "Strong candidate. Confirm the evidence and define the smallest safe next step.";
+    case "HIGH_SCORE":
+      return "High score. Verify the source and test the key assumptions before deciding whether to pursue.";
     case "VALIDATE":
       return "Potentially worthwhile. Test the weakest assumption before investing heavily.";
     default:
