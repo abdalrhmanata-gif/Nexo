@@ -36,10 +36,10 @@ function missionHref(report: OpportunityAnalysisReport, score: number): string {
       `Critical unknowns: ${report.criticalUnknowns.join("; ") || "None listed; verify the report before proceeding."}`,
     ].join("\n\n").slice(0, 3000),
     criteria: report.missionDraft.successCriteria.join("\n").slice(0, 2000),
-    actions: [...new Set([
+    actions: Array.from(new Set([
       ...report.missionDraft.firstActions,
       ...report.recommendedExperiment.steps,
-    ])].slice(0, 6).join("\n").slice(0, 2000),
+    ])).slice(0, 6).join("\n").slice(0, 2000),
   });
   return `/app/missions/new?${params.toString()}`;
 }
