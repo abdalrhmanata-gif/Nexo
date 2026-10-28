@@ -52,7 +52,7 @@ test("the /app route fails closed when deployment middleware is unavailable", as
   const layout = await source("app/app/layout.tsx");
   assert.match(layout, /isSupabaseConfigured\(\)/);
   assert.match(layout, /getAuthenticatedUser\(\)\.catch\(\(\) => null\)/);
-  assert.match(layout, /if \(!user\)\s*redirect\("\/auth\/sign-in\?next=%2Fapp"\)/);
+  assert.match(layout, /if \(!user\)\s*\{\s*redirect\("\/auth\/sign-in\?next=%2Fapp"\);?\s*\}/);
 });
 
 test("confirmation redirect targets cannot leave the application origin", () => {

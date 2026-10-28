@@ -3,8 +3,8 @@ name: ZAVQERA Web Deploy (Netlify)
 # Deploys the ZAVQERA Web MVP (apps/web) to Netlify.
 #
 # This workflow is inert until the repository owner adds NETLIFY_AUTH_TOKEN.
-# It never prints secret values; NEXT_PUBLIC_* values are injected as masked
-# secrets so the Development backend is active in the deployed build.
+# It never prints secret values. Only the public Development URL and publishable
+# key are set inline; no service-role key or provider secret is stored in this workflow.
 
 on:
   workflow_dispatch:
