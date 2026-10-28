@@ -1,7 +1,7 @@
 -- Runtime authorization regressions for the W45/W46 member mutation helpers.
 begin;
 create extension if not exists pgtap;
-select plan(12);
+select plan(13);
 
 create temporary table pr29_member_authz_results(name text primary key, passed boolean not null) on commit drop;
 
@@ -41,6 +41,13 @@ begin
   exception when sqlstate '42501' then v_denied:=sqlerrm='WORKSPACE_ADMIN_REQUIRED'; end;
   perform set_config('role','postgres',true);
   insert into pr29_member_authz_results values('member cannot promote another member',v_denied and (select role='member' from public.workspace_members where workspace_id=v_workspace and user_id=v_other_member));
+
+  perform set_config('role','authenticated',true);
+  v_denied:=false;
+  begin perform public.update_workspace_member_role((select id from public.workspace_members where workspace_id=v_workspace and user_id=v_member),'admin');
+  exception when sqlstate '42501' then v_denied:=sqlerrm='WORKSPACE_ADMIN_REQUIRED'; end;
+  perform set_config('role','postgres',true);
+  insert into pr29_member_authz_results values('member cannot promote self to admin',v_denied and (select role='member' from public.workspace_members where workspace_id=v_workspace and user_id=v_member));
 
   perform set_config('request.jwt.claim.sub',v_admin::text,true);
   perform set_config('request.jwt.claims',jsonb_build_object('sub',v_admin,'role','authenticated')::text,true);
