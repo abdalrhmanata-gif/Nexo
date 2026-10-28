@@ -72,7 +72,7 @@ export default function PricingPage() {
     <section className="pricing-note card" aria-labelledby="opportunity-intelligence-pricing-heading">
       <p className="eyebrow"><LocalizedText en="The product we intend to build" /></p>
       <h2 id="opportunity-intelligence-pricing-heading"><LocalizedText en="Opportunity Intelligence belongs inside the monthly plan—not as a surprise add-on." /></h2>
-      <p><LocalizedText en="The current early-access feature scores the information you enter, keeps your evidence ledger in this browser, and can turn a reviewed opportunity into a Mission. The AI analyst described in these proposed plans is not connected yet." /></p>
+      <p><LocalizedText en="The current early-access feature scores the information you enter, keeps your evidence ledger in this browser, and can turn a reviewed opportunity into a Mission. A server-side AI analyst route is now implemented, but it remains disabled until an approved provider and server-side credentials are configured; the route does not fetch source pages itself." /></p>
       <ul>
         <li><LocalizedText en="AI challenge: find weak assumptions, contradictions, missing evidence, and reasons an idea may fail." /></li>
         <li><LocalizedText en="Evidence-first report: each factual claim must cite a source or be clearly labeled as an inference or unknown." /></li>
