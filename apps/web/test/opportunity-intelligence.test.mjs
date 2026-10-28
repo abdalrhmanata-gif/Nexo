@@ -51,10 +51,10 @@ test("score is rounded and ratings are clamped to the 1–5 range", () => {
 
 test("priority thresholds are stable and readable", () => {
   assert.equal(opportunityPriority(79), "VALIDATE");
-  assert.equal(opportunityPriority(80), "PURSUE");
+  assert.equal(opportunityPriority(80), "HIGH_SCORE");
   assert.equal(opportunityPriority(59), "HOLD");
   assert.equal(opportunityPriority(60), "VALIDATE");
-  assert.match(priorityDescription("PURSUE"), /Confirm the evidence/);
+  assert.match(priorityDescription("HIGH_SCORE"), /Verify the source/);
   assert.match(priorityDescription("VALIDATE"), /weakest assumption/);
   assert.match(priorityDescription("HOLD"), /Improve the evidence/);
 });
