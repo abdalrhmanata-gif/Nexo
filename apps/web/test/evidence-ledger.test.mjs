@@ -86,3 +86,8 @@ test("persisted evidence records must have bounded metadata and a safe source UR
   assert.equal(isOpportunityEvidenceItem({ ...valid, reliability: 8 }), false);
   assert.equal(isOpportunityEvidenceItem({ ...valid, observation: "" }), false);
 });
+
+test("public search queries are bounded before they leave the browser", () => {
+  const result = buildPublicSearchUrls({ title: "x".repeat(500) });
+  assert.equal(result.query.length, 360);
+});
