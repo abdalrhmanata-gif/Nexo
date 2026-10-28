@@ -24,7 +24,7 @@ test("pricing positions Opportunity Intelligence as part of the monthly plan wit
   const pricing = read("app/pricing/page.tsx");
   assert.match(pricing, /inside the monthly plan—not as a surprise add-on/);
   assert.match(pricing, /AI analyst described in these proposed plans is not connected yet/);
-  assert.match(pricing, /Every material factual claim must cite a source or be clearly labeled as an inference or unknown/);
+  assert.match(pricing, /each factual claim must cite a source or be clearly labeled as an inference or unknown/);
   assert.match(pricing, /href="\/app\/opportunities"/);
   assert.match(pricing, /market monitoring and alerts \(later phase\)/);
 });
@@ -46,5 +46,5 @@ test("AI Opportunity Intelligence product strategy records evidence rules, phase
   assert.match(strategy, /Every material factual claim has a source URL/);
   assert.match(strategy, /Phase 1 — useful AI analysis on reviewed evidence/);
   assert.match(strategy, /Release gates/);
-  assert.match(strategy, /not currently available features/i);
+  assert.match(strategy, /not a statement that planned AI capabilities are live/i);
 });
