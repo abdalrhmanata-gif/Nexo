@@ -16,7 +16,7 @@ The route is disabled by default. To enable it in a **non-production test deploy
 - `ZAVQERA_AI_MODEL=...`
 - `ZAVQERA_AI_MAX_COMPLETION_TOKENS=1200` (server clamps this to 400–1400)
 
-Keep `ZAVQERA_AI_ENABLED=false` until a provider and test key are explicitly selected. Never name the secret `NEXT_PUBLIC_*`. Change environment variables in the deployment's protected environment settings, never by editing tracked files. This code change does not set provider values or invoke a live provider.
+Keep `ZAVQERA_AI_ENABLED=false` until a provider and test key are explicitly selected. No provider request is made until `ZAVQERA_AI_ENABLED=true` and all required provider settings exist. Never name the secret `NEXT_PUBLIC_*`. Change environment variables in the deployment's protected environment settings, never by editing tracked files. This code change does not set provider values or invoke a live provider.
 
 The route sends one request only per click, limits request bytes and output tokens, times out after 25 seconds, and does not automatically retry. It keeps the provider key on the server and returns `Cache-Control: no-store`.
 
