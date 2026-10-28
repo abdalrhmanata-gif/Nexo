@@ -21,6 +21,10 @@ on:
 permissions:
   contents: read
 
+env:
+  # Public Netlify site identifier; the only required deployment credential is the token.
+  NETLIFY_SITE_ID: "53e470f1-30da-497e-85f6-16179db4c985"
+
 concurrency:
   group: zavqera-netlify-deploy-${{ github.ref }}
   cancel-in-progress: true
@@ -37,9 +41,8 @@ jobs:
         id: creds
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         run: |
-          if [ -z "${NETLIFY_AUTH_TOKEN}" ] || [ -z "${NETLIFY_SITE_ID}" ]; then
+          if [ -z "${NETLIFY_AUTH_TOKEN}" ]; then
             echo "ready=false" >> "$GITHUB_OUTPUT"
             echo "::warning::NETLIFY_AUTH_TOKEN and/or NETLIFY_SITE_ID are not configured. Skipping deploy."
           else
@@ -89,7 +92,6 @@ jobs:
         if: steps.creds.outputs.ready == 'true'
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
         run: |
