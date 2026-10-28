@@ -44,7 +44,7 @@ jobs:
         run: |
           if [ -z "${NETLIFY_AUTH_TOKEN}" ]; then
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::NETLIFY_AUTH_TOKEN and/or NETLIFY_SITE_ID are not configured. Skipping deploy."
+            echo "::warning::NETLIFY_AUTH_TOKEN is not configured. Skipping draft preview deploy."
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
