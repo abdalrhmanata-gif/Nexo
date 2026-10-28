@@ -2,21 +2,24 @@
 
 ## What this changes
 
-The Opportunity Intelligence page now has an explicit **Generate AI brief** action. It sends the opportunity and up to the ten most recent evidence notes to a server-side route, which checks the signed-in user, validates the request, calls an explicitly configured OpenAI-compatible Chat Completions endpoint, validates the returned JSON, and displays a report that the user can review and turn into a prefilled Mission.
+The Opportunity Intelligence page now has an explicit **Generate AI brief** action. It sends the opportunity and up to the ten most recent evidence notes to a server-side route, which checks the signed-in user, validates the request, calls the official OpenAI Chat Completions API, validates the returned JSON, and displays a report that the user can review and turn into a prefilled Mission.
 
 It does not fetch or crawl the note URLs. A URL alone is not treated as evidence that Zavqera has read the page. The model is instructed to use only evidence notes supplied by the user and to label inference and unknowns separately. The server rejects unsupported evidence IDs and factual claims with no source ID. This structural validation cannot prove that a note semantically supports a claim, so human review remains required.
 
-## Environment configuration
+## Existing Netlify OpenAI variables
 
-The route is disabled by default. To enable it in a **non-production test deployment only**, configure these server-side runtime environment variables:
+The current Netlify site already has `OPENAI_API_KEY` and `OPENAI_MODEL` configured for Deploy Previews and Production. The route now reuses those variables, defaults to the official endpoint `https://api.openai.com/v1/chat/completions`, and accepts the explicit overrides below. It does not need the key to be copied or exposed again.
 
-- `ZAVQERA_AI_ENABLED=true`
-- `ZAVQERA_AI_BASE_URL=https://YOUR-APPROVED-PROVIDER/v1` (the base URL for an OpenAI-compatible `/chat/completions` endpoint)
-- `ZAVQERA_AI_API_KEY=...` (server-side secret; do not put it in source control)
-- `ZAVQERA_AI_MODEL=...`
+## Enable only for a test deployment
+
+The route remains disabled unless `ZAVQERA_AI_ENABLED=true`. In Netlify, set this variable for **Deploy Previews only**, not Production, after the spending boundary is agreed. The route uses the existing `OPENAI_API_KEY` and `OPENAI_MODEL` if no `ZAVQERA_AI_API_KEY` / `ZAVQERA_AI_MODEL` override is supplied. Optional overrides:
+
+- `ZAVQERA_AI_BASE_URL=https://api.openai.com/v1`
+- `ZAVQERA_AI_API_KEY=...` (optional; server-side secret only)
+- `ZAVQERA_AI_MODEL=...` (optional; defaults to existing `OPENAI_MODEL`)
 - `ZAVQERA_AI_MAX_COMPLETION_TOKENS=1200` (server clamps this to 400–1400)
 
-Keep `ZAVQERA_AI_ENABLED=false` until a provider and test key are explicitly selected. No provider request is made until `ZAVQERA_AI_ENABLED=true` and all required provider settings exist. Never name the secret `NEXT_PUBLIC_*`. Change environment variables in the deployment's protected environment settings, never by editing tracked files. This code change does not set provider values or invoke a live provider.
+Keep the AI flag unset or false until you intentionally want to allow provider calls. Never name a secret `NEXT_PUBLIC_*`. Changes to Netlify variables require a new deploy. This code change itself does not set the enable flag or invoke a live provider.
 
 ## Request and spending safeguards
 
@@ -29,8 +32,8 @@ Keep `ZAVQERA_AI_ENABLED=false` until a provider and test key are explicitly sel
 
 - Monthly plan entitlements and billing are not enforced. Do not publicly enable this endpoint for paid usage until persistent per-user metering, concurrency/rate limits, an account-level budget, and alerting are implemented and tested.
 - The route cannot prove source content is true or that a cited note semantically supports a generated claim. The report provides clickable links to the exact user-supplied notes so users can inspect them.
-- It sends the submitted opportunity hypothesis and up to ten evidence notes to the configured provider. The UI discloses this at the point of use; do not use confidential or sensitive data.
-- No provider account, key, monthly quota, or production setting has been configured by this code change.
+- It sends the submitted opportunity hypothesis and up to ten evidence notes to OpenAI. The UI discloses this at the point of use; do not use confidential or sensitive data.
+- No live provider request was made by this code change. No billing, database, or production environment setting was changed.
 
 ## Verification
 
