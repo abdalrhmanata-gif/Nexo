@@ -198,7 +198,10 @@ export function OpportunityEvidencePanel({
             <a className="button button-small button-quiet" href={search.newsUrl} target="_blank" rel="noopener noreferrer">Search news ↗</a>
           </div>
           <p className="evidence-search-note">
-            Searches open public search results in a new tab. No crawler or third-party API runs here. Read the source yourself, then record the specific observation and whether it supports or challenges the thesis.
+            Searches open public results in a new tab. No crawler or search API runs inside Zavqera. Read the source yourself, then record the specific observation and whether it supports or challenges the thesis.
+          </p>
+          <p className="evidence-search-privacy">
+            If you open a search, Google receives this query text: <code>{search.query || "(empty query)"}</code>. Keep confidential business information and personal data out of the query.
           </p>
           <form className="form-grid evidence-form" onSubmit={recordEvidence}>
             <div className="field">
