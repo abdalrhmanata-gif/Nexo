@@ -34,9 +34,17 @@ type AiUsageReservation = {
   remaining: number;
 };
 
+function isApprovedPreviewTester(userId: string): boolean {
+  const configured = process.env.ZAVQERA_AI_ALLOWED_USER_IDS?.trim();
+  if (!configured) return false;
+  const allowlist = configured.split(",").map((value) => value.trim()).filter(Boolean);
+  return allowlist.includes(userId);
+}
+
 function providerConfig(): ProviderConfig | null {
-  // Keep the paid API path explicitly opt-in. Existing OpenAI Netlify variables
-  // are reused, but no request is sent until this flag is set for a test deploy.
+  // Keep the paid API path explicitly opt-in. Never allow this route in
+  // Netlify Production, even if someone accidentally changes the feature flag.
+  if (process.env.CONTEXT === "production") return null;
   if (process.env.ZAVQERA_AI_ENABLED !== "true") return null;
   const baseUrl = process.env.ZAVQERA_AI_BASE_URL?.trim() || "https://api.openai.com/v1";
   const apiKey = process.env.ZAVQERA_AI_API_KEY?.trim() || process.env.OPENAI_API_KEY?.trim();
@@ -126,6 +134,9 @@ export async function POST(request: Request) {
     return jsonError(503, "AUTH_UNAVAILABLE", "Authentication is temporarily unavailable.");
   }
   if (!user) return jsonError(401, "AUTHENTICATION_REQUIRED", "Sign in to generate an AI Opportunity Brief.");
+  if (!isApprovedPreviewTester(user.id)) {
+    return jsonError(403, "AI_ACCESS_RESTRICTED", "AI Opportunity Brief is limited to approved preview testers.");
+  }
 
   const config = providerConfig();
   if (!config) {
