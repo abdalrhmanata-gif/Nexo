@@ -15,5 +15,5 @@ export declare const OPPORTUNITY_WEIGHTS: Readonly<{
 }>;
 
 export declare function scoreOpportunity(opportunity: Partial<OpportunityScoreInput> | null | undefined): number;
-export declare function opportunityPriority(score: number): "PURSUE" | "VALIDATE" | "HOLD";
+export declare function opportunityPriority(score: number): "HIGH_SCORE" | "VALIDATE" | "HOLD";
 export declare function priorityDescription(priority: string): string;
