@@ -26,11 +26,12 @@ Keep the AI flag unset or false until you intentionally want to allow provider c
 - The route requires a signed-in Supabase user and rejects cross-site Fetch Metadata signals.
 - The route also compares the browser's `Origin` with the request origin. If `Origin` is absent, it only accepts an explicit `Sec-Fetch-Site: same-origin` signal. Requests without a trustworthy same-origin signal are rejected.
 - The route sends one request only per click, limits request bytes and output tokens, times out after 25 seconds, and does not automatically retry. It keeps the provider key on the server and returns `Cache-Control: no-store`.
-- The in-memory per-user guard allows at most three requests per ten minutes per running server instance. Serverless instances may scale or restart, so this is only a best-effort guard, not a durable user quota or a global spending cap.
+- The in-memory per-user rate guard allows at most three requests per ten minutes per running server instance. Serverless instances may scale or restart, so this remains best-effort burst protection, not the source of truth for monthly quota or a global spending cap.
+- A durable monthly per-user generation quota is enforced through the existing Supabase `reserve_ai_generation` and `consume_ai_generation` RPCs. The slot is reserved atomically and consumed before contacting the provider. Therefore, a provider timeout or error still counts as one generation; this prevents repeated failed attempts from bypassing the monthly allowance.
 
 ## Limits that are not solved by this MVP
 
-- Monthly plan entitlements and billing are not enforced. Do not publicly enable this endpoint for paid usage until persistent per-user metering, concurrency/rate limits, an account-level budget, and alerting are implemented and tested.
+- The persistent quota counts generations, not token cost, and is not a global money-spend cap. It does not enforce an OpenAI organization/project budget. Do not publicly enable paid Production traffic until an OpenAI organization or project hard spend limit is set and verified, and global cost-based metering and alerting are implemented and tested.
 - The route cannot prove source content is true or that a cited note semantically supports a generated claim. The report provides clickable links to the exact user-supplied notes so users can inspect them.
 - It sends the submitted opportunity hypothesis and up to ten evidence notes to OpenAI. The UI discloses this at the point of use; do not use confidential or sensitive data.
 - No live provider request was made by this code change. No billing, database, or production environment setting was changed.
