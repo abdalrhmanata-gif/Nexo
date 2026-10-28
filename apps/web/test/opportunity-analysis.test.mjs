@@ -160,6 +160,9 @@ test("AI endpoint requires authentication, explicit opt-in configuration, reques
   assert.match(route, /CONTEXT === "production"/);
   assert.match(route, /ZAVQERA_AI_ALLOWED_USER_IDS/);
   assert.match(route, /isApprovedPreviewTester/);
+  assert.match(route, /isSupportedCostModel/);
+  assert.match(route, /estimateOpenAITextCost/);
+  assert.match(route, /ai_brief_usage/);
   assert.match(route, /ZAVQERA_AI_API_KEY/);
   assert.match(route, /MAX_ANALYSIS_REQUEST_BYTES/);
   assert.match(route, /MAX_REQUESTS_PER_WINDOW/);
@@ -210,6 +213,8 @@ test("provider setup is documented without putting keys in client-side environme
   assert.match(setup, /hard spend limit/i);
   assert.match(setup, /ZAVQERA_AI_ALLOWED_USER_IDS/);
   assert.match(setup, /OpenAI Platform project limits/);
+  assert.match(setup, /\[zavqera-ai-cost\]/);
+  assert.match(setup, /Netlify function logs/);
   assert.match(setup, /Never name a secret.*NEXT_PUBLIC_/i);
   assert.match(setup, /This code change itself does not set the enable flag or invoke a live provider/);
 });
