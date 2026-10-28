@@ -1,5 +1,6 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { getAuthenticatedUser } from "../../../../lib/supabase/server";
+import { createSupabaseServerClient, getAuthenticatedUser } from "../../../../lib/supabase/server";
 import { isSupabaseConfigured } from "../../../../lib/supabase/config";
 import { isTrustedSameOriginRequest } from "../../../../lib/request-origin.mjs";
 import {
@@ -23,6 +24,15 @@ const inMemoryUserRequests = new Map<string, number[]>();
 const noStoreHeaders = { "Cache-Control": "no-store, max-age=0", Vary: "Cookie" };
 
 type ProviderConfig = { endpoint: string; apiKey: string; model: string; maxCompletionTokens: number };
+type AiUsageReservation = {
+  allowed: boolean;
+  reservation_id: string | null;
+  period_start: string;
+  plan: string;
+  monthly_limit: number;
+  generations_used: number;
+  remaining: number;
+};
 
 function providerConfig(): ProviderConfig | null {
   // Keep the paid API path explicitly opt-in. Existing OpenAI Netlify variables
@@ -151,6 +161,71 @@ export async function POST(request: Request) {
   }
 
   const prompt = buildOpportunityAnalysisPrompt(input);
+
+  // Enforce the durable monthly generation allowance in Supabase before any
+  // paid provider request. Both RPCs run as the signed-in user via their cookie
+  // session; direct table access remains blocked by RLS.
+  let supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>;
+  try {
+    supabase = await createSupabaseServerClient();
+  } catch {
+    return jsonError(503, "AI_USAGE_UNAVAILABLE", "Monthly AI usage could not be verified. No AI provider was called.");
+  }
+
+  let reservationData: unknown;
+  try {
+    const result = await supabase.rpc("reserve_ai_generation", { p_request_id: randomUUID() });
+    if (result.error) {
+      return jsonError(503, "AI_USAGE_UNAVAILABLE", "Monthly AI usage could not be verified. No AI provider was called.");
+    }
+    reservationData = result.data;
+  } catch {
+    return jsonError(503, "AI_USAGE_UNAVAILABLE", "Monthly AI usage could not be verified. No AI provider was called.");
+  }
+
+  const quotaValue = Array.isArray(reservationData) ? reservationData[0] : reservationData;
+  if (!quotaValue || typeof quotaValue !== "object") {
+    return jsonError(503, "AI_USAGE_UNAVAILABLE", "Monthly AI usage returned an invalid response. No AI provider was called.");
+  }
+  const quota = quotaValue as AiUsageReservation;
+  if (quota.allowed !== true) {
+    return jsonError(429, "AI_MONTHLY_QUOTA_EXCEEDED", "You've reached the monthly AI Opportunity Brief allowance.", {
+      usage: {
+        plan: quota.plan,
+        periodStart: quota.period_start,
+        monthlyLimit: quota.monthly_limit,
+        generationsUsed: quota.generations_used,
+        remaining: quota.remaining,
+      },
+    });
+  }
+  if (typeof quota.reservation_id !== "string" || quota.reservation_id.length === 0) {
+    return jsonError(503, "AI_USAGE_UNAVAILABLE", "Monthly AI usage reservation is invalid. No AI provider was called.");
+  }
+
+  // Treat an attempt as a consumed generation before contacting OpenAI. This
+  // prevents retries/timeouts from bypassing the persistent per-user quota.
+  try {
+    const { data: consumed, error: consumeError } = await supabase.rpc("consume_ai_generation", {
+      p_reservation_id: quota.reservation_id,
+    });
+    if (consumeError || consumed !== true) {
+      try {
+        await supabase.rpc("release_ai_generation", { p_reservation_id: quota.reservation_id });
+      } catch {
+        // Fail closed: the provider is not called if usage cannot be finalized.
+      }
+      return jsonError(503, "AI_USAGE_FINALIZATION_FAILED", "The monthly usage reservation could not be confirmed. No AI provider was called.");
+    }
+  } catch {
+    try {
+      await supabase.rpc("release_ai_generation", { p_reservation_id: quota.reservation_id });
+    } catch {
+      // Fail closed: the provider is not called if usage cannot be finalized.
+    }
+    return jsonError(503, "AI_USAGE_FINALIZATION_FAILED", "The monthly usage reservation could not be confirmed. No AI provider was called.");
+  }
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), PROVIDER_TIMEOUT_MS);
   try {
@@ -208,6 +283,13 @@ export async function POST(request: Request) {
         evidenceNotesProvided: input.evidenceItems.length,
         omittedEvidenceNotes: input.omittedEvidenceCount,
         sourcesFetchedByZavqera: false,
+        usage: {
+          plan: quota.plan,
+          periodStart: quota.period_start,
+          monthlyLimit: quota.monthly_limit,
+          generationsUsed: quota.generations_used,
+          remaining: quota.remaining,
+        },
       },
     }, { headers: noStoreHeaders });
   } catch (error) {
