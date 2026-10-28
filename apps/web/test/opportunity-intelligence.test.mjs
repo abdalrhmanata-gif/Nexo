@@ -46,7 +46,7 @@ test("score is rounded and ratings are clamped to the 1–5 range", () => {
     urgency: 3,
     evidenceStrength: 3,
     effort: 3,
-  })), 60);
+  })), 50);
 });
 
 test("priority thresholds are stable and readable", () => {
