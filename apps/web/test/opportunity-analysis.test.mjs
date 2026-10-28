@@ -164,7 +164,7 @@ test("provider setup is documented without putting keys in client-side environme
   const setup = readFileSync(join(repoRoot, "docs", "AI_OPPORTUNITY_ANALYST_SETUP.md"), "utf8");
   assert.match(env, /ZAVQERA_AI_ENABLED=false/);
   assert.match(env, /ZAVQERA_AI_API_KEY=/);
-  assert.match(setup, /monthly quota is not enforced/);
+  assert.match(setup, /Monthly plan entitlements and billing are not enforced/);
   assert.match(setup, /never use NEXT_PUBLIC_/);
   assert.match(setup, /No provider request is made until/);
 });
