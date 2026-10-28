@@ -68,6 +68,7 @@ function isOpportunity(value: unknown): value is Opportunity {
 function missionHref(opportunity: Opportunity): string {
   const score = scoreOpportunity(opportunity);
   const priority = opportunityPriority(score);
+  const priorityLabel = priority === "HIGH_SCORE" ? "high score; evidence review required" : priority === "VALIDATE" ? "validate" : "hold";
   const sourceNote = opportunity.evidenceUrl
     ? `Reference provided by the user: ${opportunity.evidenceUrl}`
     : "No evidence source has been attached yet; locate and assess a credible source before making a decision.";
@@ -77,7 +78,7 @@ function missionHref(opportunity: Opportunity): string {
     intent: [
       `Assess whether this opportunity is worth pursuing for ${opportunity.target || "the intended audience"}.`,
       `Opportunity thesis: ${opportunity.thesis}`,
-      `Current rule-based priority: ${score}/100 (${priority}). This is a prioritization aid, not a forecast.`,
+      `Current rule-based priority: ${score}/100 (${priorityLabel}). This is a prioritization aid, not a forecast.`,
       sourceNote,
     ].join("\n\n"),
     criteria: [
@@ -160,7 +161,7 @@ export function OpportunityIntelligence() {
     [opportunities],
   );
 
-  const highPriorityWithSource = ranked.filter(
+  const highScoreWithSource = ranked.filter(
     ({ opportunity, score }) => score >= 80 && isHttpUrl(opportunity.evidenceUrl),
   ).length;
   const missingSource = ranked.filter(({ opportunity }) => !isHttpUrl(opportunity.evidenceUrl)).length;
@@ -220,7 +221,7 @@ export function OpportunityIntelligence() {
 
       <section className="opportunity-metrics" aria-label="Opportunity overview">
         <div className="opportunity-metric"><strong>{opportunities.length}</strong><span>Opportunities tracked</span></div>
-        <div className="opportunity-metric"><strong>{highPriorityWithSource}</strong><span>High priority with a source link</span></div>
+        <div className="opportunity-metric"><strong>{highScoreWithSource}</strong><span>High score with a source link</span></div>
         <div className="opportunity-metric"><strong>{missingSource}</strong><span>Need a source reference</span></div>
       </section>
 
@@ -291,7 +292,7 @@ export function OpportunityIntelligence() {
                   <article className="card opportunity-card" key={opportunity.id}>
                     <div className="opportunity-card-top">
                       <span className="opportunity-rank">#{index + 1}</span>
-                      <span className={`opportunity-priority opportunity-priority-${priority.toLowerCase()}`}>{priority === "PURSUE" ? "Strong candidate" : priority === "VALIDATE" ? "Validate first" : "Keep on radar"}</span>
+                      <span className={`opportunity-priority opportunity-priority-${priority.toLowerCase()}`}>{priority === "HIGH_SCORE" ? "High score · verify evidence" : priority === "VALIDATE" ? "Validate first" : "Low priority · keep on radar"}</span>
                     </div>
                     <div className="opportunity-score-row">
                       <div>
