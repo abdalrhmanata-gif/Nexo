@@ -11,7 +11,7 @@ const NB: Record<string, string> = {
   "Business workspace":"Arbeidsområde for bedrifter", "Run AI work with clear boundaries.":"Organiser KI-arbeid med tydelige rammer.",
   "Total missions":"Oppdrag totalt", "Active":"Aktive", "Completed":"Fullførte", "Needs your input":"Trenger avklaring",
   "Invite a teammate":"Inviter en kollega", "Invitations not enabled":"Invitasjoner er ikke aktivert",
-  "Recent missions":"Nylige oppdrag", "Open workspace":"Åpne arbeidsområdet", "New mission":"Nytt oppdrag",
+  "Recent missions":"Nylige oppdrag", "Open workspace":"Åpne arbeidsområdet",
   "Workspace updates":"Oppdateringer", "need attention":"krever oppmerksomhet", "Your input":"Din avklaring",
   "Missions waiting for you":"Oppdrag som venter på deg", "Review mission":"Gjennomgå oppdrag",
   "No missions are waiting for your input.":"Ingen oppdrag venter på avklaring.", "Follow-up":"Oppfølging",
@@ -21,7 +21,7 @@ const NB: Record<string, string> = {
   "Use this template":"Bruk denne malen", "Mission template":"Oppdragsmal",
   "Find a mission":"Finn et oppdrag", "Search your missions":"Søk i oppdragene dine",
   "Find by mission name, goal, success criterion, or step.":"Søk etter navn, mål, suksesskriterium eller steg.",
-  "Search missions":"Søk i oppdrag", "Search":"Søk", "Clear":"Tøm"
+  "Search missions":"Søk i oppdrag", "Clear":"Tøm"
 };
 const AR: Record<string, string> = {
   "MISSION CONTROL":"مركز التحكم", "Search":"بحث", "New mission":"مهمة جديدة",
