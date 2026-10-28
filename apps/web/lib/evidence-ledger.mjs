@@ -69,3 +69,18 @@ export function buildPublicSearchUrls(input) {
     newsUrl: query ? `https://www.google.com/search?${newsParams.toString()}` : "https://news.google.com/",
   };
 }
+
+export function isOpportunityEvidenceItem(value) {
+  if (!value || typeof value !== "object") return false;
+  const item = value;
+  return typeof item.id === "string"
+    && typeof item.url === "string" && isHttpSourceUrl(item.url)
+    && typeof item.title === "string" && item.title.trim().length > 0
+    && typeof item.observation === "string" && item.observation.trim().length > 0
+    && EVIDENCE_STANCES.includes(item.stance)
+    && EVIDENCE_SOURCE_TYPES.includes(item.sourceType)
+    && typeof item.sourceDate === "string"
+    && Number.isInteger(item.reliability) && item.reliability >= 1 && item.reliability <= 5
+    && typeof item.checkedAt === "string"
+    && Number.isFinite(item.addedAt);
+}
