@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
+import { estimateOpenAITextCost, isSupportedCostModel } from "../lib/opportunity-cost.mjs";
 import {
   MAX_ANALYSIS_EVIDENCE_ITEMS,
   buildOpportunityAnalysisPrompt,
@@ -68,6 +69,23 @@ const report = (overrides = {}) => ({
   ...overrides,
 });
 
+test("OpenAI cost estimates use a known conservative price table and reject unsupported models", () => {
+  assert.equal(isSupportedCostModel("gpt-6-luna"), true);
+  assert.equal(isSupportedCostModel("unpriced-model"), false);
+  assert.deepEqual(
+    estimateOpenAITextCost("gpt-6-luna", 10_000, 1_000),
+    {
+      model: "gpt-6-luna",
+      promptTokens: 10_000,
+      completionTokens: 1_000,
+      estimatedCostUsd: 0.0015,
+      currency: "USD",
+      pricingBasis: "OpenAI standard text rates; cached input charged at uncached input rate",
+    },
+  );
+  assert.equal(estimateOpenAITextCost("gpt-6-luna", -1, 100), null);
+  assert.equal(estimateOpenAITextCost("unpriced-model", 100, 100), null);
+});
 test("analysis request validates fields, recomputes score on the server, and tracks omitted evidence", () => {
   const result = normalizeOpportunityAnalysisRequest(input({
     ratings: { strategicFit: 5, potentialValue: 5, urgency: 5, evidenceStrength: 5, effort: 1 },
