@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "../../../../lib/supabase/server";
 import { isSupabaseConfigured } from "../../../../lib/supabase/config";
+import { isTrustedSameOriginRequest } from "../../../../lib/request-origin.mjs";
 import {
   buildOpportunityAnalysisPrompt,
   MAX_ANALYSIS_REPORT_CHARS,
@@ -92,7 +93,8 @@ function jsonError(status: number, code: string, error: string, extra: Record<st
 }
 
 export async function POST(request: Request) {
-  if (request.headers.get("sec-fetch-site") === "cross-site") {
+  const fetchSite = request.headers.get("sec-fetch-site");
+  if (fetchSite === "cross-site" || !isTrustedSameOriginRequest(request)) {
     return jsonError(403, "CROSS_SITE_REQUEST", "This request is not allowed.");
   }
   if (!request.headers.get("content-type")?.toLowerCase().includes("application/json")) {
