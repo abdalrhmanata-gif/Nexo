@@ -10,6 +10,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </Link>
         <nav aria-label="Primary navigation">
           <Link href="/app">Workspace</Link>
+          <Link href="/app/opportunities">Opportunity Intelligence</Link>
           <Link className="button button-small" href="/app/missions/new">New mission</Link>
           <SignOutButton />
         </nav>
