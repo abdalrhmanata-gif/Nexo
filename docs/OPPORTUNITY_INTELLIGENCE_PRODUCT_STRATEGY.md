@@ -87,7 +87,10 @@ A strong trust offer is more attractive than “unlimited AI”: one useful free
 - Validate output shape, bound lengths, handle timeout/provider failure, and display an honest fallback. Preserve deterministic local scoring as a separate signal rather than presenting model opinion as a verified score.
 - Keep provider secrets server-only. Add authentication/ownership checks, request limits, usage metering, idempotency for retries, cost ceilings, and error logging that excludes sensitive user content.
 - Do not store private report content in shared logs or send it to a provider without clear disclosure and an appropriate retention/privacy policy.
-- No AI key or provider implementation is currently confirmed as wired into Opportunity Intelligence. Do not call a real paid API, add a paid integration, or change billing without approval and a cost review.
+- This implementation adds an authenticated server-side analysis route, typed/validated report contract, explicit opt-in provider configuration, request-size and output-token caps, timeout handling, no automatic retries, and a best-effort per-instance rate limit.
+- The route can call an administrator-configured OpenAI-compatible Chat Completions endpoint, but this change does not add provider credentials or enable the route. No live model call is active until the server has `ZAVQERA_AI_ENABLED=true`, a provider base URL, a server-only API key, and a model identifier.
+- Source URLs are not fetched by this route. A model may cite only evidence-note IDs supplied in the request, and a report with no evidence notes must return `INSUFFICIENT_EVIDENCE`. This checks structure and reference membership, not whether a note semantically proves a claim; users must review each result.
+- The in-memory rate guard is not a durable monthly quota or global spending cap. Persistent usage metering and account-level budget enforcement must be implemented before public paid usage. Do not enable paid traffic until the provider, key, and cost controls are approved.
 
 ### Phase 2 — source-supported market research
 
