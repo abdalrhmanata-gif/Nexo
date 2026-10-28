@@ -75,3 +75,18 @@ test("templates prefill the normal review-before-create mission flow", () => {
   }
   assert.match(templates, /Nothing is created until you review/);
 });
+
+test("current navigation styling distinguishes the active page and Workspace scope", () => {
+  const nav = read("components/nav-link.tsx");
+  const css = read("app/globals.css");
+  assert.match(nav, /href="\\/app" prefix="\\/app\\/missions"/);
+  assert.match(css, /a\\[aria-current="page"\\]:not\\(\\.button\\):not\\(\\.nav-featured\\)/);
+  assert.match(css, /a\\.button\\[aria-current="page"\\]/);
+  assert.match(css, /a\\.nav-featured\\[aria-current="page"\\]/);
+  assert.match(css, /\.topbar nav[^\\n]*flex-wrap:wrap/);
+});
+
+test("Search fragment can receive keyboard focus on navigation", () => {
+  const page = read("app/app/page.tsx");
+  assert.match(page, /id="mission-search"[^>]*tabIndex=\\{-1\\}/);
+});
