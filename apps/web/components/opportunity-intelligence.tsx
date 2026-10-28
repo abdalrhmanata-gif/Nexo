@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { opportunityPriority, priorityDescription, scoreOpportunity } from "../lib/opportunity-intelligence.mjs";
+import { isOpportunityEvidenceItem, type OpportunityEvidenceItem } from "../lib/evidence-ledger.mjs";
+import { OpportunityEvidencePanel } from "./opportunity-evidence-panel";
 
 type Opportunity = {
   id: string;
@@ -10,6 +12,7 @@ type Opportunity = {
   target: string;
   thesis: string;
   evidenceUrl: string;
+  evidenceItems: OpportunityEvidenceItem[];
   strategicFit: number;
   potentialValue: number;
   urgency: number;
@@ -65,13 +68,29 @@ function isOpportunity(value: unknown): value is Opportunity {
     && typeof item.createdAt === "number";
 }
 
+function normalizeStoredOpportunity(item: Opportunity): Opportunity {
+  const legacy = item as Opportunity & { evidenceItems?: unknown };
+  return {
+    ...legacy,
+    evidenceItems: Array.isArray(legacy.evidenceItems)
+      ? legacy.evidenceItems.filter(isOpportunityEvidenceItem)
+      : [],
+  };
+}
+
 function missionHref(opportunity: Opportunity): string {
   const score = scoreOpportunity(opportunity);
   const priority = opportunityPriority(score);
   const priorityLabel = priority === "HIGH_SCORE" ? "high score; evidence review required" : priority === "VALIDATE" ? "validate" : "hold";
   const sourceNote = opportunity.evidenceUrl
-    ? `Reference provided by the user: ${opportunity.evidenceUrl}`
-    : "No evidence source has been attached yet; locate and assess a credible source before making a decision.";
+    ? `Original source reference provided by the user (not independently verified): ${opportunity.evidenceUrl}`
+    : "No original source reference has been attached.";
+  const evidenceNotes = opportunity.evidenceItems.slice(0, 4).map((item) =>
+    `[${item.stance.toUpperCase()}] ${item.title} — ${item.url}. User-recorded observation: ${item.observation.slice(0, 220)}`
+  ).join("\\n");
+  const ledgerNote = opportunity.evidenceItems.length
+    ? `User-recorded evidence notes (not independently verified):\\n${evidenceNotes}`
+    : "No reviewed evidence notes are recorded yet. Search public sources and test assumptions before deciding.";
   const params = new URLSearchParams({
     fromOpportunity: "1",
     name: `Evaluate: ${opportunity.title}`.slice(0, 90),
@@ -136,7 +155,7 @@ export function OpportunityIntelligence() {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed: unknown = JSON.parse(raw);
-        if (Array.isArray(parsed)) setOpportunities(parsed.filter(isOpportunity));
+        if (Array.isArray(parsed)) setOpportunities(parsed.filter(isOpportunity).map(normalizeStoredOpportunity));
       }
     } catch {
       // A blocked or malformed local store should not prevent the feature from opening.
@@ -161,10 +180,10 @@ export function OpportunityIntelligence() {
     [opportunities],
   );
 
-  const highScoreWithSource = ranked.filter(
-    ({ opportunity, score }) => score >= 80 && isHttpUrl(opportunity.evidenceUrl),
+  const highScoreWithEvidence = ranked.filter(
+    ({ opportunity, score }) => score >= 80 && opportunity.evidenceItems.length > 0,
   ).length;
-  const missingSource = ranked.filter(({ opportunity }) => !isHttpUrl(opportunity.evidenceUrl)).length;
+  const missingEvidenceReview = ranked.filter(({ opportunity }) => opportunity.evidenceItems.length === 0).length;
 
   function updateForm<K extends keyof OpportunityForm>(key: K, value: OpportunityForm[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -196,6 +215,7 @@ export function OpportunityIntelligence() {
       target: form.target.trim(),
       thesis,
       evidenceUrl,
+      evidenceItems: [],
       strategicFit: Number(form.strategicFit),
       potentialValue: Number(form.potentialValue),
       urgency: Number(form.urgency),
@@ -221,8 +241,8 @@ export function OpportunityIntelligence() {
 
       <section className="opportunity-metrics" aria-label="Opportunity overview">
         <div className="opportunity-metric"><strong>{opportunities.length}</strong><span>Opportunities tracked</span></div>
-        <div className="opportunity-metric"><strong>{highScoreWithSource}</strong><span>High score with a source link</span></div>
-        <div className="opportunity-metric"><strong>{missingSource}</strong><span>Need a source reference</span></div>
+        <div className="opportunity-metric"><strong>{highScoreWithEvidence}</strong><span>High score with evidence notes</span></div>
+        <div className="opportunity-metric"><strong>{missingEvidenceReview}</strong><span>Need evidence review</span></div>
       </section>
 
       <div className="opportunity-layout">
@@ -312,12 +332,19 @@ export function OpportunityIntelligence() {
                       <span>Evidence <b>{opportunity.evidenceStrength}/5</b></span>
                       <span>Effort <b>{opportunity.effort}/5</b></span>
                     </div>
-                    <div className={`opportunity-evidence ${sourceAvailable ? "opportunity-evidence-linked" : "opportunity-evidence-missing"}`}>
-                      <span aria-hidden="true">{sourceAvailable ? "↗" : "!"}</span>
-                      {sourceAvailable
-                        ? <>Source reference added — not independently verified. <a href={safeSource} target="_blank" rel="noreferrer">Open source</a></>
-                        : <>No source attached. Validate the claim before acting.</>}
-                    </div>
+                    <OpportunityEvidencePanel
+                      opportunity={opportunity}
+                      onAddEvidence={(item) => setOpportunities((current) => current.map((candidate) =>
+                        candidate.id === opportunity.id
+                          ? { ...candidate, evidenceItems: [...candidate.evidenceItems, item] }
+                          : candidate
+                      ))}
+                      onRemoveEvidence={(itemId) => setOpportunities((current) => current.map((candidate) =>
+                        candidate.id === opportunity.id
+                          ? { ...candidate, evidenceItems: candidate.evidenceItems.filter((item) => item.id !== itemId) }
+                          : candidate
+                      ))}
+                    />
                     <div className="opportunity-card-actions">
                       <Link className="button button-small" href={missionHref(opportunity)}>Turn into Mission</Link>
                       <button className="button button-quiet button-small" type="button" onClick={() => setOpportunities((current) => current.filter((item) => item.id !== opportunity.id))} aria-label={`Remove ${opportunity.title}`}>Remove</button>
