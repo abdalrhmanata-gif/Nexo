@@ -71,3 +71,24 @@ Required release gates, in order:
 6. Obtain independent security review and explicit production release authorization.
 
 No Production/Supabase Main change is authorized by this report.
+
+
+## Supplemental live catalog read — 2026-10-28, after the W82 fix
+
+A second SELECT-only catalog query confirmed the following on the same hosted Development project:
+
+- The `private` schema grants USAGE to `authenticated` and `service_role` (not `anon`). Do not infer PostgREST exposure from SQL USAGE alone; the project's exposed-schema configuration still needs independent confirmation.
+- The hosted database still has `private.reserve_ai_generation(text)` and `public.reserve_ai_generation(text)`, and the grants view reports EXECUTE for `authenticated` on both the legacy reservation path and the one-argument consume/release/get helpers.
+- The W82 three-argument `public.reserve_ai_generation(text, text, text)` is not present in the hosted catalog.
+- `ai_entitlements`, `ai_usage_monthly` and `ai_usage_reservations` have RLS enabled and an explicit deny-direct-access policy. The role-grants view reported table privileges for `postgres` and `service_role`, not `anon` or `authenticated`. The budget tables introduced by W68 remain absent.
+- The live migration ledger query confirmed 74 distinct rows, latest version `20261011150000` (W65).
+
+These findings reinforce the need to reconcile migration provenance and confirm the actual API-exposed schema before changing grants. They do **not** prove that the legacy function is reachable over the public REST API, and they do not justify applying W82 or changing privileges ad hoc.
+
+## Exact-head verification follow-up
+
+On commit `8503407832ce1e24d12d1a17284f5f23f4c92ca0`:
+
+- Web Unit, Web CI/production build, Flutter CI and W25 isolated atomic-fence tests: **PASS**.
+- Netlify workflow: **success with deploy job skipped**; no deployment occurred.
+- W21 disposable PostgreSQL 17 gate: migration replay, pgTAP launch gate, Mission Authority regressions, AI quota/workspace tests, actual-ledger idempotency and race proofs, one-time dispatch/reconciliation claim races, and fake-provider W72 integration have all reported **PASS**. The browser full-loop step was still running at the latest check; cleanup verification and final evidence upload had therefore not yet completed. Do not call W21 a full pass until the workflow completes successfully.
