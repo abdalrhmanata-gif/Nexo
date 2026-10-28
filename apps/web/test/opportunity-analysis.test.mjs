@@ -125,7 +125,7 @@ test("report rejects factual claims with no source and requires unknown claims t
 test("report without evidence notes must explicitly say that evidence is insufficient", () => {
   assert.throws(() => validateOpportunityAnalysisReport(report({
     decision: "PURSUE",
-    claims: [{ claim: "Unsupported fact.", kind: "inference", confidence: "low", evidenceIds: [] }],
+    claims: [{ claim: "The evidence packet is empty.", kind: "unknown", confidence: "low", evidenceIds: [] }],
   }), []), /must return INSUFFICIENT_EVIDENCE/);
   const checked = validateOpportunityAnalysisReport(report({
     decision: "INSUFFICIENT_EVIDENCE",
@@ -160,7 +160,7 @@ test("Opportunity Intelligence UI calls the server endpoint only on explicit use
 });
 
 test("provider setup is documented without putting keys in client-side environment names", () => {
-  const env = read("../.env.example");
+  const env = read(".env.example");
   const setup = readFileSync(join(repoRoot, "docs", "AI_OPPORTUNITY_ANALYST_SETUP.md"), "utf8");
   assert.match(env, /ZAVQERA_AI_ENABLED=false/);
   assert.match(env, /ZAVQERA_AI_API_KEY=/);
