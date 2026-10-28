@@ -85,7 +85,7 @@ function missionHref(opportunity: Opportunity): string {
   const sourceNote = opportunity.evidenceUrl
     ? `Original source reference provided by the user (not independently verified): ${opportunity.evidenceUrl}`
     : "No original source reference has been attached.";
-  const evidenceNotes = opportunity.evidenceItems.slice(0, 3).map((item) =>
+  const evidenceNotes = opportunity.evidenceItems.slice(0, 2).map((item) =>
     `[${item.stance.toUpperCase()}] ${item.title} — ${item.url}. User-recorded observation: ${item.observation.slice(0, 140)}`
   ).join("\n");
   const ledgerNote = opportunity.evidenceItems.length
