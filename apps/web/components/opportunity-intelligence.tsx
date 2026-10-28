@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { opportunityPriority, priorityDescription, scoreOpportunity } from "../lib/opportunity-intelligence.mjs";
 import { isOpportunityEvidenceItem, type OpportunityEvidenceItem } from "../lib/evidence-ledger.mjs";
 import { OpportunityEvidencePanel } from "./opportunity-evidence-panel";
+import { OpportunityAnalysisPanel } from "./opportunity-analysis-panel";
 
 type Opportunity = {
   id: string;
@@ -344,6 +345,7 @@ export function OpportunityIntelligence() {
                           : candidate
                       ))}
                     />
+                    <OpportunityAnalysisPanel opportunity={opportunity} score={score} />
                     <div className="opportunity-card-actions">
                       <Link className="button button-small" href={missionHref(opportunity)}>Turn into Mission</Link>
                       <button className="button button-quiet button-small" type="button" onClick={() => setOpportunities((current) => current.filter((item) => item.id !== opportunity.id))} aria-label={`Remove ${opportunity.title}`}>Remove</button>
