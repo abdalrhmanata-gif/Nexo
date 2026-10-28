@@ -4,6 +4,15 @@ import { useState } from "react";
 import type { OpportunityEvidenceItem } from "../lib/evidence-ledger.mjs";
 import type { OpportunityAnalysisReport } from "../lib/opportunity-analysis.mjs";
 
+type CostEstimate = {
+  model: string;
+  promptTokens: number;
+  completionTokens: number;
+  estimatedCostUsd: number;
+  currency: "USD";
+  pricingBasis: string;
+};
+
 type OpportunityAnalysisSubject = {
   title: string;
   target: string;
