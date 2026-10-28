@@ -23,7 +23,7 @@ test("monthly Opportunity Intelligence prices and report allowances are explicit
 test("pricing positions Opportunity Intelligence as part of the monthly plan without pretending AI is live", () => {
   const pricing = read("app/pricing/page.tsx");
   assert.match(pricing, /inside the monthly plan—not as a surprise add-on/);
-  assert.match(pricing, /AI analyst described in these proposed plans is not connected yet/);
+  assert.match(pricing, /server-side AI analyst route is now implemented.*disabled until an approved provider/i);
   assert.match(pricing, /each factual claim must cite a source or be clearly labeled as an inference or unknown/);
   assert.match(pricing, /href="\/app\/opportunities"/);
   assert.match(pricing, /Market monitoring and alerts/i);
