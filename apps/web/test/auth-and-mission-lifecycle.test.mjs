@@ -51,6 +51,7 @@ test("middleware does not bounce signed-in users away from confirmation endpoint
 test("the /app route fails closed when deployment middleware is unavailable", async () => {
   const layout = await source("app/app/layout.tsx");
   assert.match(layout, /isSupabaseConfigured\(\)/);
+  assert.match(layout, /export const dynamic = "force-dynamic"/);
   assert.match(layout, /getAuthenticatedUser\(\)\.catch\(\(\) => null\)/);
   assert.match(layout, /if \(!user\)\s*\{\s*redirect\("\/auth\/sign-in\?next=%2Fapp"\);?\s*\}/);
 });

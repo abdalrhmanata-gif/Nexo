@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { isSupabaseConfigured } from "../../lib/supabase/config";
 import { getAuthenticatedUser } from "../../lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 /**
  * Enforce authentication in the server-rendered route tree as a second
  * boundary. Netlify middleware must not be the only guard protecting /app.
