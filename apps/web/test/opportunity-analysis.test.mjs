@@ -186,9 +186,12 @@ test("provider setup is documented without putting keys in client-side environme
   const setup = readFileSync(join(repoRoot, "docs", "AI_OPPORTUNITY_ANALYST_SETUP.md"), "utf8");
   assert.match(env, /ZAVQERA_AI_ENABLED=false/);
   assert.match(env, /ZAVQERA_AI_API_KEY=/);
+  assert.match(env, /ZAVQERA_AI_ALLOWED_USER_IDS=/);
   assert.match(setup, /durable monthly per-user generation quota is enforced/i);
   assert.match(setup, /not a global money-spend cap/i);
-  assert.match(setup, /OpenAI organization or project hard spend limit/i);
+  assert.match(setup, /hard spend limit/i);
+  assert.match(setup, /ZAVQERA_AI_ALLOWED_USER_IDS/);
+  assert.match(setup, /OpenAI Platform project limits/);
   assert.match(setup, /Never name a secret.*NEXT_PUBLIC_/i);
   assert.match(setup, /This code change itself does not set the enable flag or invoke a live provider/);
 });
