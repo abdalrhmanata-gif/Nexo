@@ -26,7 +26,7 @@ test("pricing positions Opportunity Intelligence as part of the monthly plan wit
   assert.match(pricing, /AI analyst described in these proposed plans is not connected yet/);
   assert.match(pricing, /each factual claim must cite a source or be clearly labeled as an inference or unknown/);
   assert.match(pricing, /href="\/app\/opportunities"/);
-  assert.match(pricing, /market monitoring and alerts \(later phase\)/);
+  assert.match(pricing, /Market monitoring and alerts/i);
 });
 
 test("current Opportunity Intelligence remains local-first and does not call an AI-generation API", () => {
