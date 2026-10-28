@@ -257,3 +257,46 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,te
   .business-stats,.pricing-grid { grid-template-columns:1fr; }
   .notification-item { align-items:flex-start; flex-direction:column; gap:8px; }
 }
+
+
+/* AI Opportunity Brief — explicit, bounded, review-before-action output. */
+.opportunity-analysis { margin-top:16px; padding-top:14px; border-top:1px solid var(--line); min-width:0; }
+.analysis-toolbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+.analysis-toolbar > div { min-width:0; flex:1 1 220px; }
+.analysis-toolbar .eyebrow { margin-bottom:3px; }
+.analysis-toolbar .action-hint { margin:0; }
+.analysis-toolbar button { flex:none; }
+.analysis-caution { margin:10px 0; color:var(--muted); font-size:11px; }
+.analysis-status { color:var(--navy); font-size:13px; }
+.analysis-error { font-size:13px; overflow-wrap:anywhere; }
+.analysis-report { margin-top:14px; padding:16px; border:1px solid #b8dcd7; border-radius:7px; background:#f8fbfa; min-width:0; }
+.analysis-report-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+.analysis-report-heading h3 { font-size:22px; margin:0; text-transform:capitalize; }
+.analysis-score-note { color:var(--muted); font-size:11px; }
+.analysis-report > p { margin:12px 0; }
+.analysis-section { margin-top:16px; }
+.analysis-section h4,.analysis-experiment h4,.analysis-mission-draft h4 { margin:0 0 8px; font-size:15px; }
+.analysis-section > p,.analysis-experiment p,.analysis-mission-draft p { margin:6px 0; font-size:13px; }
+.analysis-list { margin:8px 0 0; padding-left:20px; }
+.analysis-list li { margin:9px 0; overflow-wrap:anywhere; }
+.analysis-list li > p { margin:4px 0; color:var(--muted); font-size:12px; }
+.analysis-kind { display:inline-block; margin-right:7px; padding:2px 6px; border-radius:4px; font-size:10px; font-weight:700; text-transform:uppercase; vertical-align:middle; }
+.analysis-kind-evidence { color:#22605a; background:#e5f4f1; }
+.analysis-kind-inference { color:#604e1a; background:#fff4d5; }
+.analysis-kind-unknown { color:#49657c; background:#edf2f6; }
+.analysis-claim-text { display:inline; }
+.analysis-confidence { display:block; margin-top:4px; color:var(--muted); font-size:11px; }
+.analysis-sources { display:flex; flex-wrap:wrap; gap:6px 12px; margin-top:5px; }
+.analysis-sources a { display:inline-block; color:var(--teal); font-size:11px; text-decoration:underline; text-underline-offset:2px; overflow-wrap:anywhere; }
+.analysis-experiment { margin-top:18px; padding:14px; border-left:3px solid var(--teal); background:var(--white); }
+.analysis-experiment .eyebrow { margin-bottom:4px; }
+.analysis-experiment ol { padding-left:20px; margin:8px 0; font-size:13px; }
+.analysis-experiment li { margin:5px 0; }
+.analysis-mission-draft { margin-top:16px; padding-top:14px; border-top:1px solid var(--line); }
+.analysis-mission-draft .button { margin-top:6px; }
+@media (max-width:700px) {
+  .analysis-report { padding:12px; }
+  .analysis-toolbar { align-items:stretch; }
+  .analysis-toolbar button { width:100%; }
+  .analysis-report-heading { flex-direction:column; }
+}
