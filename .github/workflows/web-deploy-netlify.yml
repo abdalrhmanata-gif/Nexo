@@ -12,6 +12,7 @@ on:
     branches:
       - "zavqera/integrate-origin-main-clean"
       - "zavqera/alternative-web-deployment"
+      - "zavqera/pricing-opportunity-clarity-20261028"
     paths:
       - "apps/web/**"
       - "netlify.toml"
