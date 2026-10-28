@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient, getAuthenticatedUser } from "../../../../lib/supabase/server";
 import { isSupabaseConfigured } from "../../../../lib/supabase/config";
 import { isTrustedSameOriginRequest } from "../../../../lib/request-origin.mjs";
+import { estimateOpenAITextCost, isSupportedCostModel, type AiCostEstimate } from "../../../../lib/opportunity-cost.mjs";
 import {
   buildOpportunityAnalysisPrompt,
   MAX_ANALYSIS_REPORT_CHARS,
@@ -49,7 +50,7 @@ function providerConfig(): ProviderConfig | null {
   const baseUrl = process.env.ZAVQERA_AI_BASE_URL?.trim() || "https://api.openai.com/v1";
   const apiKey = process.env.ZAVQERA_AI_API_KEY?.trim() || process.env.OPENAI_API_KEY?.trim();
   const model = process.env.ZAVQERA_AI_MODEL?.trim() || process.env.OPENAI_MODEL?.trim();
-  if (!apiKey || !model) return null;
+  if (!apiKey || !model || !isSupportedCostModel(model)) return null;
 
   let url: URL;
   try { url = new URL(baseUrl); } catch { return null; }
@@ -282,6 +283,34 @@ export async function POST(request: Request) {
       return jsonError(502, "AI_PROVIDER_INVALID_RESPONSE", "The AI provider returned an unsupported response. This attempt used one monthly generation.");
     }
 
+    const usage = (providerResponse as {
+      usage?: { prompt_tokens?: unknown; completion_tokens?: unknown };
+    }).usage;
+    const costEstimate: AiCostEstimate | null = estimateOpenAITextCost(
+      config.model,
+      Number(usage?.prompt_tokens),
+      Number(usage?.completion_tokens),
+    );
+    if (costEstimate) {
+      // Safe operational telemetry: no prompts, notes, user IDs, or API keys.
+      console.warn("[zavqera-ai-cost]", JSON.stringify({
+        event: "ai_brief_usage",
+        ...costEstimate,
+        periodStart: quota.period_start,
+        monthlyLimit: quota.monthly_limit,
+        generationsUsed: quota.generations_used,
+        remaining: quota.remaining,
+      }));
+    } else {
+      console.warn("[zavqera-ai-cost]", JSON.stringify({
+        event: "ai_brief_usage_missing",
+        model: config.model,
+        periodStart: quota.period_start,
+        monthlyLimit: quota.monthly_limit,
+        generationsUsed: quota.generations_used,
+      }));
+    }
+
     const choices = (providerResponse as { choices: Array<{ message?: { content?: unknown } }> }).choices;
     const content = choices[0]?.message?.content;
     if (typeof content !== "string" || content.length === 0 || content.length > MAX_ANALYSIS_REPORT_CHARS) {
@@ -305,6 +334,7 @@ export async function POST(request: Request) {
         evidenceNotesProvided: input.evidenceItems.length,
         omittedEvidenceNotes: input.omittedEvidenceCount,
         sourcesFetchedByZavqera: false,
+        costEstimate,
         usage: {
           plan: quota.plan,
           periodStart: quota.period_start,
