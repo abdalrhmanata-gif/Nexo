@@ -7,6 +7,8 @@ import {
   MAX_ANALYSIS_REQUEST_BYTES,
   normalizeOpportunityAnalysisRequest,
   validateOpportunityAnalysisReport,
+  type OpportunityAnalysisInput,
+  type OpportunityAnalysisReport,
 } from "../../../../lib/opportunity-analysis.mjs";
 
 export const dynamic = "force-dynamic";
@@ -101,7 +103,7 @@ export async function POST(request: Request) {
     return jsonError(503, "AUTH_NOT_CONFIGURED", "Sign-in is not configured on this deployment.");
   }
 
-  let user;
+  let user: Awaited<ReturnType<typeof getAuthenticatedUser>>;
   try {
     user = await getAuthenticatedUser();
   } catch {
@@ -130,7 +132,7 @@ export async function POST(request: Request) {
     return jsonError(400, "INVALID_JSON", "Send valid JSON.");
   }
 
-  let input;
+  let input: OpportunityAnalysisInput;
   try {
     input = normalizeOpportunityAnalysisRequest(parsed);
   } catch (error) {
@@ -187,7 +189,7 @@ export async function POST(request: Request) {
     try { reportValue = JSON.parse(content); } catch {
       return jsonError(502, "AI_REPORT_INVALID_JSON", "The AI provider returned a report that was not valid JSON.");
     }
-    let report;
+    let report: OpportunityAnalysisReport;
     try { report = validateOpportunityAnalysisReport(reportValue, input.evidenceItems); } catch {
       return jsonError(502, "AI_REPORT_VALIDATION_FAILED", "The report did not pass evidence-reference and structure checks. Review your evidence or try again later.");
     }
