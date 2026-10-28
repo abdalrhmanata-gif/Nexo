@@ -100,6 +100,7 @@ export function OpportunityAnalysisPanel({
         report?: OpportunityAnalysisReport;
         code?: string;
         error?: string;
+        meta?: { costEstimate?: CostEstimate | null };
       };
       if (!response.ok || !payload.report) {
         if (payload.code === "AI_ANALYSIS_NOT_CONFIGURED") {
