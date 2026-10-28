@@ -26,7 +26,7 @@ export function NavLink({
 
 export function WorkspaceNavLink() {
   return (
-    <NavLink href="/app" prefix="/app" className="button button-small workspace-nav">
+    <NavLink href="/app" className="button button-small workspace-nav">
       <LocalizedText en="Workspace" />
     </NavLink>
   );

@@ -60,7 +60,7 @@ export default async function WorkspacePage({
       {(waiting[0] ?? unstarted[0]) && <Link className="button button-quiet" href={`/app/missions/${(waiting[0] ?? unstarted[0]).id}`}>Open mission</Link>}
     </section>}
 
-    <section className="mission-search" id="mission-search" aria-labelledby="mission-search-heading">
+    <section className="mission-search" id="mission-search" aria-labelledby="mission-search-heading" tabIndex={-1}>
       <div>
         <p className="eyebrow">Find a mission</p>
         <h2 id="mission-search-heading">Search your missions</h2>
