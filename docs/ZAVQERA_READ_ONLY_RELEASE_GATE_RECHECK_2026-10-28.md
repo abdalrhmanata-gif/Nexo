@@ -92,3 +92,18 @@ On commit `8503407832ce1e24d12d1a17284f5f23f4c92ca0`:
 - Web Unit, Web CI/production build, Flutter CI and W25 isolated atomic-fence tests: **PASS**.
 - Netlify workflow: **success with deploy job skipped**; no deployment occurred.
 - W21 disposable PostgreSQL 17 gate: migration replay, pgTAP launch gate, Mission Authority regressions, AI quota/workspace tests, actual-ledger idempotency and race proofs, one-time dispatch/reconciliation claim races, and fake-provider W72 integration have all reported **PASS**. The browser full-loop step was still running at the latest check; cleanup verification and final evidence upload had therefore not yet completed. Do not call W21 a full pass until the workflow completes successfully.
+
+
+## Additional integrity finding — hosted legacy Research completion RPC
+
+A further read-only catalog inspection fetched the live definitions of both `public.complete_read_only_research_execution(uuid, text, jsonb, jsonb, text, text)` and `private.complete_read_only_research_execution(...)`:
+
+- Both six-argument signatures still exist in Development.
+- The private function is `SECURITY DEFINER` and its live definition checks caller identity, workspace edit rights, read-only agent authority, a running execution and lease validity. It nevertheless accepts caller-supplied result/evidence and writes them as the execution result.
+- The public wrapper is `SECURITY INVOKER`, delegates to the private helper, and the live grants catalog reports `authenticated` EXECUTE on both signatures. `authenticated` also has USAGE on the private schema. The project's API-exposed schema configuration was not available for confirmation during this check.
+
+This is an **integrity boundary gap**: until the six-argument user-callable completion RPC is disabled and replaced by the W79 requester-bound trusted-server contract, the database still grants authenticated callers a legacy completion path. I did not make a mutating call to test it.
+
+Candidate W67 explicitly revokes all API/trusted-role execution on the legacy signatures to fail closed during rollout; W79 later drops both signatures and installs the seven-argument trusted completion function. I did not apply W67/W79 or any ad-hoc GRANT/REVOKE: the live migration provenance has unresolved drift and the documented rollout requires ordered reviewed migrations. This risk should be treated as a priority release blocker, not as proof of cross-tenant access.
+
+**Containment decision:** keep Research unavailable, do not register/enable a provider, and do not treat caller-supplied research citations as trusted evidence. First reconcile the historical migrations and approve a complete ordered Development rollout (or an independently reviewed, ledger-consistent emergency containment plan).
