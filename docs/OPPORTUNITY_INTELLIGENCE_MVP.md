@@ -10,14 +10,18 @@ Opportunity Intelligence should be Zavqera's route from **signal → evidence �
 - Rate five explicit factors (1–5): strategic fit (25%), potential value (25%), timing (15%), evidence strength (20%), and execution ease (15%; inverse of estimated effort).
 - Rank opportunities using the visible, deterministic 20–100 score.
 - Treat a high score as **a reason to validate**, never as an instruction to proceed: source links are user-provided and not independently verified.
-- Convert an opportunity to a prefilled Mission with evidence review, assumption testing, decision criteria, and initial steps.
-- Keep the opportunity list in browser local storage on that device. Do not send these records to the backend.
+- Convert an opportunity to a prefilled Mission with evidence review, assumption testing, decision criteria, initial steps, and a concise handoff of the first two recorded sources.
+- Open prefilled public web-search and news-search queries in the user's browser; no search result is fetched or represented as verified by the app.
+- Maintain a local evidence ledger for each opportunity: source URL/title, user's observation in their own words, source type, date published (when known), review timestamp, user-estimated reliability, and whether the observation supports, challenges, or only contextualizes the thesis.
+- Detect duplicate source URLs after removing fragments and common tracking parameters, including duplicates against the original source field.
+- Surface support and counter-signals side by side; recording evidence does not certify a claim as true.
+- Keep the opportunity list and evidence notes in browser local storage on that device. Do not send these records to the backend.
 
 The score is a prioritization aid, not probability, verified market evidence, financial advice, or a revenue forecast. Score and evidence quality are user-entered judgments in this version.
 
 ## Explicitly not in this MVP
 
-- Live web discovery, crawling, automatic source verification, and market-size or revenue estimates.
+- Automatic/live web discovery, crawling, automatic source verification, and market-size or revenue estimates. Search links launch an external search page; the user must review and record useful sources manually.
 - Scheduled monitoring, alerts, multi-user collaboration, account-level synchronization, and outcome-based model learning.
 - New Supabase tables, RPCs, Edge Functions, or changes to Supabase Main.
 - Automatic outreach, purchases, commitments, or other external side effects.
@@ -32,9 +36,9 @@ The score is a prioritization aid, not probability, verified market evidence, fi
 
 ## Release gates
 
-- The scoring module has deterministic unit tests for extreme values, bounds, thresholds, and explanations.
+- Scoring and evidence-ledger modules have deterministic unit tests for input bounds, unsafe URLs, duplicate sources, mixed signals, and priority explanations.
 - Opportunity creation, removal, local persistence, and mission prefill must pass the web build and integration checks.
-- Verify mobile layout and keyboard/screen-reader access.
+- Verify mobile layout and keyboard/screen-reader access for the evidence panel, form labels, details/summary rows, and source links.
 - Review browser-storage privacy wording and avoid collecting sensitive personal data.
-- Keep the feature opt-in and clearly disclose that this first version does not discover or independently verify sources.
+- Keep the feature opt-in and disclose that search is browser-led, source observations and reliability are user-entered, and no source is independently verified.
 - Do not add persistent backend storage or automated browsing to a hosted environment without a separate reviewed architecture change.
