@@ -139,6 +139,9 @@ test("AI endpoint requires authentication, explicit opt-in configuration, reques
   assert.match(route, /getAuthenticatedUser/);
   assert.match(route, /isSupabaseConfigured\(\)/);
   assert.match(route, /ZAVQERA_AI_ENABLED !== "true"/);
+  assert.match(route, /CONTEXT === "production"/);
+  assert.match(route, /ZAVQERA_AI_ALLOWED_USER_IDS/);
+  assert.match(route, /isApprovedPreviewTester/);
   assert.match(route, /ZAVQERA_AI_API_KEY/);
   assert.match(route, /MAX_ANALYSIS_REQUEST_BYTES/);
   assert.match(route, /MAX_REQUESTS_PER_WINDOW/);
@@ -146,6 +149,10 @@ test("AI endpoint requires authentication, explicit opt-in configuration, reques
   assert.match(route, /max_completion_tokens/);
   assert.match(route, /Cache-Control.*no-store/);
   assert.doesNotMatch(route, /console\.(log|error)\(/);
+  const allowlistCheckAt = route.indexOf("if (!isApprovedPreviewTester(user.id))");
+  const providerConfigAt = route.indexOf("const config = providerConfig()");
+  assert.ok(allowlistCheckAt >= 0 && allowlistCheckAt < providerConfigAt,
+    "unapproved testers must be rejected before provider configuration is read");
 });
 
 test("AI endpoint enforces persistent monthly quota before calling the paid provider", () => {
