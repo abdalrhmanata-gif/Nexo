@@ -81,6 +81,7 @@ export function normalizeOpportunityAnalysisRequest(value) {
       sourceDate: boundedString(raw.sourceDate, "evidence publication date", 80, 0, true),
       reliability: raw.reliability,
       checkedAt: boundedString(raw.checkedAt, "evidence review date", 80),
+      addedAt: raw.addedAt,
     };
   });
 
