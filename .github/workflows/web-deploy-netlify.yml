@@ -121,8 +121,9 @@ jobs:
           test "${root}" = "200"
           test "${signin}" = "200"
 
-          # With Supabase configured, middleware must bounce anonymous /app to sign-in.
+          # A server-side authentication boundary must bounce anonymous /app to sign-in,
+          # even if the platform does not wire middleware into an Edge Function.
           case "${appdest}" in
-            *"/auth/sign-in"*) echo "Auth middleware verified." ;;
-            *) echo "::error::/app did not redirect anonymously to /auth/sign-in. The deployment is likely running the local mock fallback."; exit 1 ;;
+            *"/auth/sign-in"*) echo "Server-side app authentication verified." ;;
+            *) echo "::error::Anonymous /app access did not redirect to /auth/sign-in. The protected layout must fail closed."; exit 1 ;;
           esac
