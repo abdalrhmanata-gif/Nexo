@@ -42,3 +42,8 @@ The score is a prioritization aid, not probability, verified market evidence, fi
 - Review browser-storage and external-search privacy wording; show what query is sent to Google and avoid collecting sensitive personal data.
 - Keep the feature opt-in and disclose that search is browser-led, source observations and reliability are user-entered, and no source is independently verified.
 - Do not add persistent backend storage or automated browsing to a hosted environment without a separate reviewed architecture change.
+
+
+## Deploy Preview security-scan note (2026-10-28)
+
+The Netlify Deploy Preview scanner had flagged the public Supabase publishable key in the generated middleware because an obsolete site environment variable was misconfigured with the key's value as the variable name and marked secret. The malformed variable was removed after confirming it was not referenced by repository code. The correctly named `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` remains non-secret; the Netlify secret scanner remains enabled. The currently published Netlify deploy was not changed. A new Deploy Preview must complete successfully before this feature is considered operationally verified on Netlify.
