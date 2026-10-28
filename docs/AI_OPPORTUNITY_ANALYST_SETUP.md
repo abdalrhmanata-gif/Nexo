@@ -12,7 +12,9 @@ The current Netlify site already has `OPENAI_API_KEY` and `OPENAI_MODEL` configu
 
 ## Enable only for a test deployment
 
-The route remains disabled unless `ZAVQERA_AI_ENABLED=true`. In Netlify, set this variable for **Deploy Previews only**, not Production, after the spending boundary is agreed. The route uses the existing `OPENAI_API_KEY` and `OPENAI_MODEL` if no `ZAVQERA_AI_API_KEY` / `ZAVQERA_AI_MODEL` override is supplied. Optional overrides:
+The route remains disabled unless `ZAVQERA_AI_ENABLED=true`. In Netlify, set this variable for **Deploy Previews only**, not Production. The server code also hard-blocks Netlify Production and requires `ZAVQERA_AI_ALLOWED_USER_IDS` to contain the signed-in Supabase user ID. If the allowlist is missing or the user is not listed, no AI provider call is made. Keep this allowlist limited to trusted testers while a provider-level hard spend limit is pending.
+
+The route uses the existing `OPENAI_API_KEY` and `OPENAI_MODEL` if no `ZAVQERA_AI_API_KEY` / `ZAVQERA_AI_MODEL` override is supplied. Optional overrides:
 
 - `ZAVQERA_AI_BASE_URL=https://api.openai.com/v1`
 - `ZAVQERA_AI_API_KEY=...` (optional; server-side secret only)
@@ -31,7 +33,9 @@ Keep the AI flag unset or false until you intentionally want to allow provider c
 
 ## Limits that are not solved by this MVP
 
-- The persistent quota counts generations, not token cost, and is not a global money-spend cap. It does not enforce an OpenAI organization/project budget. Do not publicly enable paid Production traffic until an OpenAI organization or project hard spend limit is set and verified, and global cost-based metering and alerting are implemented and tested.
+- The persistent quota counts generations, not token cost, and is not a global money-spend cap. The preview tester allowlist limits who may call AI, but it does not replace an OpenAI organization/project hard spend limit.
+- OpenAI has a dashboard-managed hard monthly spend limit and spend alerts. Configure a low project cap and alerts at 50%, 80%, and 100% in [OpenAI Platform project limits](https://platform.openai.com/settings/organization/projects/proj_IkqspC4ZYobOeK7RRMN83LNj/limits); also set an organization-wide hard limit if this API organization should have an overall ceiling. Hard-limit enforcement is not instantaneous, so some slight overrun is possible. This environment has no connected tool capable of writing those OpenAI billing settings, so they remain an external release gate.
+- Do not publicly enable paid Production traffic until the OpenAI hard limit and alerts are verified and global cost-based metering/alerting is implemented and tested.
 - The route cannot prove source content is true or that a cited note semantically supports a generated claim. The report provides clickable links to the exact user-supplied notes so users can inspect them.
 - It sends the submitted opportunity hypothesis and up to ten evidence notes to OpenAI. The UI discloses this at the point of use; do not use confidential or sensitive data.
 - No live provider request was made by this code change. No billing, database, or production environment setting was changed.
