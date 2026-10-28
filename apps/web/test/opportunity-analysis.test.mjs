@@ -148,6 +148,21 @@ test("AI endpoint requires authentication, explicit opt-in configuration, reques
   assert.doesNotMatch(route, /console\.(log|error)\(/);
 });
 
+test("AI endpoint enforces persistent monthly quota before calling the paid provider", () => {
+  const route = read("app/api/opportunities/analyze/route.ts");
+  assert.match(route, /createSupabaseServerClient/);
+  assert.match(route, /rpc\("reserve_ai_generation"/);
+  assert.match(route, /rpc\("consume_ai_generation"/);
+  assert.match(route, /AI_MONTHLY_QUOTA_EXCEEDED/);
+  assert.match(route, /AI_USAGE_UNAVAILABLE/);
+  assert.match(route, /AI_USAGE_FINALIZATION_FAILED/);
+  const reserveAt = route.indexOf('rpc("reserve_ai_generation"');
+  const consumeAt = route.indexOf('rpc("consume_ai_generation"');
+  const providerAt = route.indexOf("fetch(config.endpoint)");
+  assert.ok(reserveAt >= 0 && reserveAt < consumeAt && consumeAt < providerAt,
+    "durable quota reservation and consumption must precede the external provider call");
+});
+
 test("Opportunity Intelligence UI calls the server endpoint only on explicit user action and does not persist generated reports", () => {
   const panel = read("components/opportunity-analysis-panel.tsx");
   const opportunityPage = read("components/opportunity-intelligence.tsx");
@@ -164,7 +179,9 @@ test("provider setup is documented without putting keys in client-side environme
   const setup = readFileSync(join(repoRoot, "docs", "AI_OPPORTUNITY_ANALYST_SETUP.md"), "utf8");
   assert.match(env, /ZAVQERA_AI_ENABLED=false/);
   assert.match(env, /ZAVQERA_AI_API_KEY=/);
-  assert.match(setup, /Monthly plan entitlements and billing are not enforced/);
+  assert.match(setup, /persistent monthly per-user generation quota is enforced/i);
+  assert.match(setup, /not a global money-spend cap/i);
+  assert.match(setup, /OpenAI organization or project hard spend limit/i);
   assert.match(setup, /Never name a secret.*NEXT_PUBLIC_/i);
   assert.match(setup, /This code change itself does not set the enable flag or invoke a live provider/);
 });
