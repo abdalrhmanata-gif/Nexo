@@ -85,11 +85,11 @@ function missionHref(opportunity: Opportunity): string {
   const sourceNote = opportunity.evidenceUrl
     ? `Original source reference provided by the user (not independently verified): ${opportunity.evidenceUrl}`
     : "No original source reference has been attached.";
-  const evidenceNotes = opportunity.evidenceItems.slice(0, 4).map((item) =>
+  const evidenceNotes = opportunity.evidenceItems.slice(0, 3).map((item) =>
     `[${item.stance.toUpperCase()}] ${item.title} — ${item.url}. User-recorded observation: ${item.observation.slice(0, 220)}`
   ).join("\\n");
   const ledgerNote = opportunity.evidenceItems.length
-    ? `User-recorded evidence notes (not independently verified):\\n${evidenceNotes}`
+    ? `User-recorded evidence notes (not independently verified):\n${evidenceNotes}`
     : "No reviewed evidence notes are recorded yet. Search public sources and test assumptions before deciding.";
   const params = new URLSearchParams({
     fromOpportunity: "1",
@@ -306,8 +306,6 @@ export function OpportunityIntelligence() {
             <div className="opportunity-list">
               {ranked.map(({ opportunity, score }, index) => {
                 const priority = opportunityPriority(score);
-                const sourceAvailable = isHttpUrl(opportunity.evidenceUrl);
-                const safeSource = sourceAvailable ? opportunity.evidenceUrl : "";
                 return (
                   <article className="card opportunity-card" key={opportunity.id}>
                     <div className="opportunity-card-top">
