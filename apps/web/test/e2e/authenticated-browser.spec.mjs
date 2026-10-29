@@ -1,7 +1,8 @@
 import { randomBytes } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { createClient } from "@supabase/supabase-js";
 import { expect, test } from "@playwright/test";
-import { createFixtureLedger, isLoopbackUrl, writeLedgerFile } from "./harness.mjs";
+import { createFixtureLedger, isLoopbackUrl, readLedgerFile, writeLedgerFile } from "./harness.mjs";
 
 // Runs only after global-setup.mjs has reset a disposable local stack and
 // started the app against it. All fixture data lives in that stack and is
@@ -353,3 +354,153 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
     await contextB.close();
   }
 });
+
+test("authenticated Opportunity Intelligence backup flow exports, imports, and rejects unsafe files", async ({ browser }) => {
+  assertRuntime();
+  const blocked = [];
+  const previousEntries = readLedgerFile(runtime.ledgerPath).entries ?? [];
+  const ledger = createFixtureLedger({
+    runId: runtime.runId,
+    onChange: (json) => writeLedgerFile(runtime.ledgerPath, {
+      ...json,
+      entries: [...previousEntries, ...json.entries],
+    }),
+  });
+  const userA = freshUser("opportunity-backup-a");
+  const userB = freshUser("opportunity-backup-b");
+  const contextA = await browser.newContext({ baseURL: runtime.baseURL, acceptDownloads: true });
+  const contextB = await browser.newContext({ baseURL: runtime.baseURL, acceptDownloads: true });
+  await guardNetwork(contextA, blocked);
+  await guardNetwork(contextB, blocked);
+  const pageA = await contextA.newPage();
+  const pageB = await contextB.newPage();
+
+  const uploadJson = async (page, value, name = "opportunity-backup.json") => {
+    await page.locator("#opportunity-backup-file").setInputFiles({
+      name,
+      mimeType: "application/json",
+      buffer: Buffer.from(typeof value === "string" ? value : JSON.stringify(value)),
+    });
+  };
+  const storedOpportunities = (page) => page.evaluate(() => {
+    const raw = window.localStorage.getItem("zavqera.opportunity-intelligence.v1");
+    return raw ? JSON.parse(raw) : [];
+  });
+
+  try {
+    await test.step("sign in and record an opportunity with one evidence note", async () => {
+      await signUp(pageA, userA);
+      ledger.record("user", (await ownerSession(userA)).userId);
+      await pageA.goto("/app/opportunities");
+      await expect(pageA.getByRole("heading", { name: "Find the next move worth making." })).toBeVisible();
+
+      await pageA.getByLabel("Opportunity name", { exact: true }).fill("Backup regression opportunity");
+      await pageA.getByLabel("Opportunity thesis", { exact: true }).fill("A portable backup must preserve the opportunity and its evidence.");
+      await pageA.getByRole("button", { name: "Score and add opportunity" }).click();
+      const opportunityHeading = pageA.getByRole("heading", { name: "Backup regression opportunity" });
+      await expect(opportunityHeading).toBeVisible();
+
+      await pageA.getByRole("button", { name: "Research & add evidence" }).click();
+      await pageA.getByLabel("Source URL", { exact: true }).fill("https://example.com/backup-evidence");
+      await pageA.getByLabel("Source title", { exact: true }).fill("Backup evidence report");
+      await pageA.getByLabel("What does the source actually say?", { exact: true }).fill("The sample report supports testing portable backups across devices.");
+      await pageA.getByRole("button", { name: "Save evidence note" }).click();
+      await expect(pageA.getByRole("status")).toContainText("Evidence note added");
+      await expect(pageA.getByText("Backup evidence report", { exact: true })).toBeVisible();
+    });
+
+    let exportedBackup;
+    let originalLocalState;
+    await test.step("export a real downloaded JSON backup and verify its contents", async () => {
+      originalLocalState = await storedOpportunities(pageA);
+      expect(originalLocalState).toHaveLength(1);
+      const [download] = await Promise.all([
+        pageA.waitForEvent("download"),
+        pageA.getByRole("button", { name: "Export backup" }).click(),
+      ]);
+      const downloadPath = await download.path();
+      if (!downloadPath) throw new Error("The export download did not produce a readable file.");
+      exportedBackup = JSON.parse(await readFile(downloadPath, "utf8"));
+      expect(exportedBackup).toMatchObject({
+        format: "zavqera-opportunity-intelligence",
+        version: 1,
+        opportunityCount: 1,
+        evidenceCount: 1,
+      });
+      expect(exportedBackup.opportunities[0].evidenceItems[0]).toMatchObject({
+        title: "Backup evidence report",
+        url: "https://example.com/backup-evidence",
+      });
+    });
+
+    await test.step("skip a colliding ID without overwriting local data", async () => {
+      const staleCopy = structuredClone(exportedBackup);
+      staleCopy.opportunities[0].title = "Stale imported copy";
+      await uploadJson(pageA, staleCopy, "matching-local-id.json");
+      await expect(pageA.getByText(/Backup ready: matching-local-id\.json/)).toBeVisible();
+      await pageA.getByRole("button", { name: "Import and merge" }).click();
+      await expect(pageA.getByRole("status")).toContainText("Nothing was imported because every opportunity ID already exists");
+      await expect(pageA.getByRole("heading", { name: "Backup regression opportunity" })).toBeVisible();
+      await expect(pageA.getByRole("heading", { name: "Stale imported copy" })).toHaveCount(0);
+      expect(await storedOpportunities(pageA)).toEqual(originalLocalState);
+    });
+
+    await test.step("reject malformed JSON, unsafe record data, and duplicate IDs inside one file atomically", async () => {
+      await uploadJson(pageA, "{", "malformed.json");
+      await expect(pageA.getByRole("alert")).toContainText("This file is not valid JSON");
+      expect(await storedOpportunities(pageA)).toEqual(originalLocalState);
+
+      const unsafeRecord = structuredClone(exportedBackup);
+      unsafeRecord.opportunities[0].evidenceUrl = "javascript:alert(1)";
+      await uploadJson(pageA, unsafeRecord, "unsafe-url.json");
+      await expect(pageA.getByRole("alert")).toContainText("invalid opportunity or evidence data");
+      expect(await storedOpportunities(pageA)).toEqual(originalLocalState);
+
+      const duplicateIds = structuredClone(exportedBackup);
+      duplicateIds.opportunities.push(structuredClone(duplicateIds.opportunities[0]));
+      duplicateIds.opportunityCount = 2;
+      duplicateIds.evidenceCount = duplicateIds.opportunities.reduce((sum, item) => sum + item.evidenceItems.length, 0);
+      await uploadJson(pageA, duplicateIds, "duplicate-ids.json");
+      await expect(pageA.getByRole("alert")).toContainText("duplicate opportunity IDs");
+      expect(await storedOpportunities(pageA)).toEqual(originalLocalState);
+    });
+
+    await test.step("reject a file beyond the 2 MB limit before parsing it", async () => {
+      await pageA.locator("#opportunity-backup-file").setInputFiles({
+        name: "oversized.json",
+        mimeType: "application/json",
+        buffer: Buffer.alloc(2 * 1024 * 1024 + 1, 0x20),
+      });
+      await expect(pageA.getByRole("alert")).toContainText("larger than 2 MB");
+      expect(await storedOpportunities(pageA)).toEqual(originalLocalState);
+    });
+
+    await test.step("import into a separate authenticated browser context with no matching IDs", async () => {
+      await signUp(pageB, userB);
+      ledger.record("user", (await ownerSession(userB)).userId);
+      await pageB.goto("/app/opportunities");
+      await expect(pageB.getByRole("heading", { name: "Find the next move worth making." })).toBeVisible();
+      expect(await storedOpportunities(pageB)).toEqual([]);
+
+      await uploadJson(pageB, exportedBackup, "valid-exported-backup.json");
+      await expect(pageB.getByText(/Backup ready: valid-exported-backup\.json/)).toBeVisible();
+      await pageB.getByRole("button", { name: "Import and merge" }).click();
+      await expect(pageB.getByRole("status")).toContainText("Imported 1 opportunities with 1 evidence notes");
+      await expect(pageB.getByRole("heading", { name: "Backup regression opportunity" })).toBeVisible();
+      await expect(pageB.getByText("Backup evidence report", { exact: true })).toBeVisible();
+      expect(await storedOpportunities(pageB)).toEqual(exportedBackup.opportunities);
+    });
+
+    await test.step("confirm the backup controls remain reachable on a mobile-width viewport", async () => {
+      await pageB.setViewportSize({ width: 390, height: 844 });
+      await expect(pageB.getByRole("button", { name: "Export backup" })).toBeVisible();
+      await expect(pageB.locator('label[for="opportunity-backup-file"]')).toBeVisible();
+    });
+
+    expect(blocked, "requests left the loopback allowlist").toEqual([]);
+  } finally {
+    await contextA.close();
+    await contextB.close();
+  }
+});
+
