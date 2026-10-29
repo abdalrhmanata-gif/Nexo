@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { ActionStatus, MissionAction } from "../lib/view-models";
 import {
   actionStatusLabel,
@@ -11,6 +12,7 @@ import {
 } from "../lib/mission-content.mjs";
 
 export function ActionMutationControls({ missionId, action }: { missionId: string; action: MissionAction }) {
+  const router = useRouter();
   const [status, setStatus] = useState<ActionStatus>(action.status);
   const [followUp, setFollowUp] = useState(followUpInputValue(action.followUpAt));
   const [busy, setBusy] = useState(false);
@@ -28,29 +30,33 @@ export function ActionMutationControls({ missionId, action }: { missionId: strin
     event.preventDefault();
     setBusy(true);
     setMessage("");
-    const response = await fetch(`/api/missions/${missionId}/actions/${action.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        status,
-        expectedVersion: action.version,
-        // Only sent when Waiting is the target state. Every other state clears
-        // the follow-up in the database, so sending one would be rejected.
-        ...(wantsFollowUp ? { followUpAt: followUp ? new Date(`${followUp}T09:00:00`).toISOString() : null } : {}),
-      }),
-    });
-    if (response.status === 409) {
-      setMessage("This action changed elsewhere. Refreshing the authoritative state…");
-      window.setTimeout(() => window.location.reload(), 900);
-      return;
+    try {
+      const response = await fetch(`/api/missions/${missionId}/actions/${action.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status,
+          expectedVersion: action.version,
+          ...(wantsFollowUp ? { followUpAt: followUp ? new Date(`${followUp}T09:00:00`).toISOString() : null } : {}),
+        }),
+      });
+      if (response.status === 409) {
+        setMessage("This action changed elsewhere. Showing the latest saved state.");
+        router.refresh();
+        return;
+      }
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        setMessage(payload.error ?? "Action update was not accepted.");
+        return;
+      }
+      setMessage("Action saved.");
+      router.refresh();
+    } catch {
+      setMessage("The action could not be saved. Check your connection and try again.");
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
-    if (response.ok) {
-      window.location.reload();
-      return;
-    }
-    const payload = await response.json().catch(() => ({}));
-    setMessage(payload.error ?? "Action update was not accepted.");
   }
 
   return <form onSubmit={submit} className="action-control-group">
