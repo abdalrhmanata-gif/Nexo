@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ActionStatus, MissionAction } from "../lib/view-models";
 import {
@@ -17,6 +17,11 @@ export function ActionMutationControls({ missionId, action }: { missionId: strin
   const [followUp, setFollowUp] = useState(followUpInputValue(action.followUpAt));
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+
+  useEffect(() => {
+    setStatus(action.status);
+    setFollowUp(followUpInputValue(action.followUpAt));
+  }, [action.id, action.status, action.followUpAt, action.version]);
 
   if (isTerminalActionStatus(action.status)) {
     return <p className="action-final">{actionStatusLabel(action.status)} — no further changes.</p>;
