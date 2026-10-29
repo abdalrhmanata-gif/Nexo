@@ -44,7 +44,7 @@ export default function HomePage() {
         <div className="landing-trust-line"><span aria-hidden="true">✓</span> Review before action. Clear boundaries. No false certainty.</div>
         <Link className="landing-template-link" href="/templates">Browse mission templates <span aria-hidden="true">→</span></Link>
       </div>
-      <div className="landing-visual" aria-label="Illustrative view of a governed Mission">
+      <div className="landing-visual" role="group" aria-label="Illustrative view of a governed Mission">
         <div className="landing-visual-top"><span className="landing-window-dots"><i/><i/><i/></span><span>MISSION CONTROL</span><span className="landing-preview-tag">Illustrative view</span></div>
         <div className="landing-visual-heading"><span className="landing-mission-symbol" aria-hidden="true">◎</span><div><p>ACTIVE MISSION</p><strong>Validate a new opportunity</strong></div><span className="status status-active">Active</span></div>
         <p className="landing-visual-intent">Outcome: decide whether this idea is worth pursuing, using evidence and a small test.</p>
