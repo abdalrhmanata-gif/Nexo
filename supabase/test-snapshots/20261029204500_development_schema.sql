@@ -222,6 +222,7 @@ CREATE TABLE "public"."workspaces" (
   "created_at" timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
   "updated_at" timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+SET check_function_bodies = false;
 CREATE OR REPLACE FUNCTION private.set_updated_at()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -2375,6 +2376,7 @@ AS $function$
     p_execution_id, p_status, p_result, p_evidence, p_error_code, p_error_message
   );
 $function$;
+SET check_function_bodies = true;
 ALTER TABLE "private"."anonymous_ai_ip_windows" ADD CONSTRAINT "anonymous_ai_ip_windows_pkey" PRIMARY KEY (ip_hash, window_start);
 ALTER TABLE "private"."anonymous_ai_reservations" ADD CONSTRAINT "anonymous_ai_reservations_pkey" PRIMARY KEY (id);
 ALTER TABLE "private"."anonymous_ai_reservations" ADD CONSTRAINT "anonymous_ai_reservations_request_id_key" UNIQUE (request_id);
