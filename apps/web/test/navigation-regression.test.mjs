@@ -58,11 +58,56 @@ test("notification badge is global and obtains its count from an authenticated s
   assert.match(endpoint, /Cache-Control/);
 });
 
-test("business page does not pretend to send invitations without a secure backend", () => {
+test("business workspace emphasizes useful actions and is transparent about unavailable team features", () => {
   const page = read("app/app/business/page.tsx");
-  assert.match(page, /Invite a teammate/);
-  assert.match(page, /disabled/);
-  assert.match(page, /No invitation is sent/);
+  assert.match(page, /Team collaboration is in development/);
+  assert.match(page, /Secure invitations, team roles, and shared business access are not enabled yet/);
+  for (const route of ["/app/missions/new", "/templates", "/app/opportunities", "/app/notifications"]) {
+    assert.ok(page.includes(route), `missing business quick action ${route}`);
+  }
+  assert.match(page, /business-focus/);
+  assert.match(page, /business-metrics/);
+  assert.doesNotMatch(page, /<button[^>]*disabled/);
+  assert.doesNotMatch(page, /No invitation is sent/);
+});
+
+test("workspace provides total mission count and useful quick-start routes", () => {
+  const page = read("app/app/page.tsx");
+  assert.match(page, /All missions/);
+  assert.match(page, /workspace-quick-actions/);
+  for (const route of ["/app/missions/new", "/templates", "/app/opportunities"]) {
+    assert.ok(page.includes(route), `missing workspace shortcut ${route}`);
+  }
+});
+
+test("mission mutations refresh app-router data without a full-page reload", () => {
+  for (const path of [
+    "components/add-action-form.tsx",
+    "components/action-mutation-controls.tsx",
+    "components/mission-mutation-controls.tsx",
+    "components/verification-controls.tsx",
+  ]) {
+    const component = read(path);
+    assert.match(component, /router\.refresh\(\)/, `${path} must refresh the in-app view`);
+    assert.doesNotMatch(component, /window\.location\.reload\(\)/, `${path} must not force a full reload`);
+    assert.match(component, /catch/, `${path} must handle network failures`);
+  }
+});
+
+test("navigation identifies Workspace only on the workspace route", () => {
+  const nav = read("components/nav-link.tsx");
+  assert.match(nav, /NavLink href="\/app" className="nav-link workspace-nav"/);
+  assert.doesNotMatch(nav, /WorkspaceNavLink[\s\S]{0,250}prefix="\/app"/);
+});
+
+test("landing page explains real product value and uses functional paths", () => {
+  const page = read("app/page.tsx");
+  for (const route of ["/app", "/app/opportunities", "/templates", "/pricing"]) {
+    if (route === "/templates" || route === "/pricing") assert.match(page, /View proposed plans|Start from a template/);
+    else assert.ok(page.includes(route), `missing landing CTA ${route}`);
+  }
+  assert.match(page, /Review before action/);
+  assert.match(page, /Illustrative view/);
 });
 
 test("templates prefill the normal review-before-create mission flow", () => {
