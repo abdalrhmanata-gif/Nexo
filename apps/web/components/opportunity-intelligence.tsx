@@ -151,6 +151,7 @@ export function OpportunityIntelligence() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [form, setForm] = useState<OpportunityForm>(EMPTY_FORM);
   const [storageReady, setStorageReady] = useState(false);
+  const [isOpportunityFormOpen, setIsOpportunityFormOpen] = useState(true);
   const [error, setError] = useState("");
   const [opportunityQuery, setOpportunityQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<"ALL" | "HIGH_SCORE" | "VALIDATE" | "HOLD">("ALL");
@@ -183,6 +184,10 @@ export function OpportunityIntelligence() {
       setError("Browser storage is unavailable. Export or copy important details before leaving this page.");
     }
   }, [opportunities, storageReady]);
+
+  useEffect(() => {
+    if (storageReady) setIsOpportunityFormOpen(opportunities.length === 0);
+  }, [storageReady, opportunities.length]);
 
   const ranked = useMemo(
     () => opportunities
@@ -329,7 +334,16 @@ export function OpportunityIntelligence() {
             <span className="opportunity-note-icon" aria-hidden="true">✓</span>
             <div><strong>Decision support, not false certainty.</strong><span> Scores explain your inputs; they are not market forecasts or a promise of revenue.</span></div>
           </div>
-          <a className="button opportunity-hero-cta" href="#add-opportunity-form"><span aria-hidden="true">＋</span> Add opportunity</a>
+          <button
+            className="button opportunity-hero-cta"
+            type="button"
+            aria-expanded={isOpportunityFormOpen}
+            aria-controls="add-opportunity-card"
+            onClick={() => setIsOpportunityFormOpen((open) => !open)}
+          >
+            <span aria-hidden="true">{isOpportunityFormOpen ? "−" : "＋"}</span>
+            {isOpportunityFormOpen ? "Hide form" : "Add opportunity"}
+          </button>
         </div>
       </div>
 
@@ -387,8 +401,9 @@ export function OpportunityIntelligence() {
         </div>
       </section>
 
-      <div className="opportunity-layout">
-        <section className="card opportunity-form-card" aria-labelledby="add-opportunity-heading">
+      <div className={`opportunity-layout ${isOpportunityFormOpen ? "opportunity-layout--form-open" : "opportunity-layout--form-collapsed"}`}>
+        {isOpportunityFormOpen && (
+        <section id="add-opportunity-card" className="card opportunity-form-card" aria-labelledby="add-opportunity-heading">
           <p className="eyebrow">Step 1 · Capture</p>
           <h2 id="add-opportunity-heading">Add an opportunity</h2>
           <p className="opportunity-muted">Write down the opportunity and the assumptions behind it. Start with a hypothesis; evidence can be added later.</p>
@@ -426,6 +441,7 @@ export function OpportunityIntelligence() {
             <button className="button" type="submit">Score and add opportunity</button>
           </form>
         </section>
+        )}
 
         <section className="opportunity-results" aria-labelledby="ranked-opportunities-heading">
           <div className="section-heading opportunity-results-heading">
@@ -463,7 +479,7 @@ export function OpportunityIntelligence() {
           {storageReady && ranked.length === 0 && (
             <div className="empty-state opportunity-empty">
               <h3>Your radar starts here</h3>
-              <p>Add an opportunity on the left. Zavqera will score it against the same transparent rubric as every other candidate.</p>
+              <p>Add your first opportunity to begin comparing options. The score is a guide to support your decision, not a market forecast.</p>
             </div>
           )}
 
