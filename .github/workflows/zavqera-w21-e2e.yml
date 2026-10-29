@@ -2,6 +2,12 @@ name: ZAVQERA W21 Isolated Browser E2E
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - "zavqera/pricing-opportunity-clarity-20261028"
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/zavqera-w21-e2e.yml"
 
 permissions:
   contents: read
@@ -30,6 +36,11 @@ jobs:
       - name: Install web dependencies
         working-directory: apps/web
         run: npm ci
+
+      - name: Install Playwright Chromium and system dependencies
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+
 
       - name: Verify required Development DB secret
         env:
