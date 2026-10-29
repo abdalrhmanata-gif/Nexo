@@ -101,7 +101,7 @@ export function MissionMutationControls({
 
     {isTerminalMissionStatus(status)
       ? <p className="action-final">{missionStatusLabel(status)} — this mission is closed.</p>
-      : <form onSubmit={transition}>
+      : <form key={status} onSubmit={transition}>
         <div className="field">
           <label htmlFor="status">Mission state</label>
           <select id="status" name="status" defaultValue={nextStates[0]} disabled={busy}>
