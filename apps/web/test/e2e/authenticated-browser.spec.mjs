@@ -96,9 +96,8 @@ async function signUp(page, user) {
   await page.getByLabel("Password", { exact: true }).fill(user.password);
   await formWith(page, page.getByLabel("Email", { exact: true })).locator('button[type="submit"]').click();
   await expect(page, "Sign-up must return a session; disable email confirmations on the disposable stack.").toHaveURL(/\/app$/);
-  // The URL can update before Next.js finishes its client-side router.refresh().
-  // Wait for the authenticated app shell before starting another document navigation.
-  await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
+  // Wait for the actual authenticated route content, not just the URL transition.
+  await expect(page.getByRole("heading", { name: "What needs your attention" })).toBeVisible();
 }
 
 async function signIn(page, user) {
@@ -107,7 +106,8 @@ async function signIn(page, user) {
   await page.getByLabel("Password", { exact: true }).fill(user.password);
   await formWith(page, page.getByLabel("Email", { exact: true })).locator('button[type="submit"]').click();
   await expect(page).toHaveURL(/\/app$/);
-  await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
+  // A real route heading confirms the server-rendered app has settled after the URL change.
+  await expect(page.getByRole("heading", { name: "What needs your attention" })).toBeVisible();
 }
 
 async function signOut(page) {
