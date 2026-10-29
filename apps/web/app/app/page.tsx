@@ -32,7 +32,7 @@ export default async function WorkspacePage({
     mission.name, mission.intent, ...mission.criteria, ...mission.actions.map((action) => action.title),
   ].some((value) => value.toLocaleLowerCase().includes(normalizedQuery)));
 
-  return <div className="container">
+  return <div className="container workspace-page">
     {errorMessage && <div className="field-error" role="alert">{errorMessage}</div>}
     <div className="section-heading">
       <div>
@@ -60,6 +60,24 @@ export default async function WorkspacePage({
       {(waiting[0] ?? unstarted[0]) && <Link className="button button-quiet" href={`/app/missions/${(waiting[0] ?? unstarted[0]).id}`}>Open mission</Link>}
     </section>}
 
+    <section className="workspace-quick-actions" aria-label="Quick actions">
+      <Link className="workspace-quick-action" href="/app/missions/new">
+        <span className="workspace-quick-icon quick-icon-create" aria-hidden="true">＋</span>
+        <span><strong>Create a mission</strong><small>Start with a concrete outcome</small></span>
+        <span className="workspace-quick-arrow" aria-hidden="true">→</span>
+      </Link>
+      <Link className="workspace-quick-action" href="/templates">
+        <span className="workspace-quick-icon quick-icon-template" aria-hidden="true">▤</span>
+        <span><strong>Use a template</strong><small>Build on a proven starting point</small></span>
+        <span className="workspace-quick-arrow" aria-hidden="true">→</span>
+      </Link>
+      <Link className="workspace-quick-action" href="/app/opportunities">
+        <span className="workspace-quick-icon quick-icon-opportunity" aria-hidden="true">↗</span>
+        <span><strong>Evaluate an idea</strong><small>Compare opportunities before committing</small></span>
+        <span className="workspace-quick-arrow" aria-hidden="true">→</span>
+      </Link>
+    </section>
+
     <section className="mission-search" id="mission-search" aria-labelledby="mission-search-heading">
       <div>
         <p className="eyebrow">Find a mission</p>
@@ -76,7 +94,10 @@ export default async function WorkspacePage({
       {query && <p className="mission-search-result" aria-live="polite"><strong>{visibleMissions.length}</strong> {visibleMissions.length === 1 ? "mission" : "missions"} found for “{query}”.</p>}
     </section>
 
-    {missions.length > 0 && <div className="stats" aria-label="Mission status filters">
+    {missions.length > 0 && <div className="stats workspace-stats" aria-label="Mission status filters">
+      <Link className={`stat${!selectedStatus ? " stat-selected" : ""}`} href={query ? `/app?q=${encodeURIComponent(query)}#mission-search` : "/app"} aria-current={!selectedStatus ? "page" : undefined}>
+        <strong>{missions.length}</strong><span>All missions</span>
+      </Link>
       <Link className={`stat${selectedStatus === "ACTIVE" ? " stat-selected" : ""}`} href={query ? `/app?status=ACTIVE&q=${encodeURIComponent(query)}#mission-search` : "/app?status=ACTIVE"} aria-current={selectedStatus === "ACTIVE" ? "page" : undefined}>
         <strong>{active.length}</strong><span>Active</span>
       </Link>
