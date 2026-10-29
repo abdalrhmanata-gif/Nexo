@@ -931,3 +931,11 @@ a:hover { color:var(--teal); }
 @media (prefers-reduced-motion:reduce) {
   .landing-capability-card,.landing-visual,.business-metric,.business-shortcut { transition:none; }
 }
+
+/* Final polish for wordmark visibility and the low-friction landing CTA. */
+.brand .brand-wordmark { margin-top:0; color:var(--navy); font-size:18px; letter-spacing:.11em; }
+.brand .brand-subtitle { margin-top:5px; color:#73859a; font-size:9px; letter-spacing:.18em; }
+.landing-template-link { display:inline-flex; align-items:center; gap:6px; margin-top:13px; color:#557286; font-size:12px; font-weight:700; }
+.landing-template-link span { transition:transform .16s ease; }
+.landing-template-link:hover { color:#087f78; }
+.landing-template-link:hover span { transform:translateX(2px); }
