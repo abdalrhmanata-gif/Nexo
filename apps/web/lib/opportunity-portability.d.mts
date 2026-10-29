@@ -31,3 +31,12 @@ export declare const MAX_IMPORTED_OPPORTUNITIES: number;
 export declare const MAX_EVIDENCE_ITEMS_PER_OPPORTUNITY: number;
 export declare function createOpportunityBackup(opportunities: PortableOpportunity[], exportedAt?: string): OpportunityBackup;
 export declare function parseOpportunityBackup(raw: string): OpportunityBackup;
+export declare function mergeOpportunityBackup(
+  currentOpportunities: PortableOpportunity[],
+  backup: OpportunityBackup,
+): {
+  opportunities: PortableOpportunity[];
+  addedCount: number;
+  skippedCount: number;
+  evidenceCount: number;
+};
