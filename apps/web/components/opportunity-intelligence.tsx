@@ -402,8 +402,7 @@ export function OpportunityIntelligence() {
       </section>
 
       <div className={`opportunity-layout ${isOpportunityFormOpen ? "opportunity-layout--form-open" : "opportunity-layout--form-collapsed"}`}>
-        {isOpportunityFormOpen && (
-        <section id="add-opportunity-card" className="card opportunity-form-card" aria-labelledby="add-opportunity-heading">
+        <section id="add-opportunity-card" className="card opportunity-form-card" aria-labelledby="add-opportunity-heading" hidden={!isOpportunityFormOpen}>
           <p className="eyebrow">Step 1 · Capture</p>
           <h2 id="add-opportunity-heading">Add an opportunity</h2>
           <p className="opportunity-muted">Write down the opportunity and the assumptions behind it. Start with a hypothesis; evidence can be added later.</p>
@@ -441,7 +440,6 @@ export function OpportunityIntelligence() {
             <button className="button" type="submit">Score and add opportunity</button>
           </form>
         </section>
-        )}
 
         <section className="opportunity-results" aria-labelledby="ranked-opportunities-heading">
           <div className="section-heading opportunity-results-heading">
