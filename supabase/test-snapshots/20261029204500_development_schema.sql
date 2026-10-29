@@ -231,7 +231,7 @@ begin
   new.updated_at = timezone('utc', now());
   return new;
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION public.handle_new_user_profile()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -244,7 +244,7 @@ begin
   on conflict (id) do nothing;
   return new;
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.handle_new_user_profile()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -257,7 +257,7 @@ begin
   on conflict (id) do nothing;
   return new;
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.create_mission_verification(p_mission_id uuid, p_status text, p_criteria jsonb, p_evidence jsonb, p_confidence numeric DEFAULT NULL::numeric, p_failure_reason text DEFAULT NULL::text)
  RETURNS mission_verifications
  LANGUAGE plpgsql
@@ -277,7 +277,7 @@ begin
  values(v_mission.id,v_mission.owner_id,p_status,p_criteria,p_evidence,p_confidence,p_failure_reason,timezone('utc',now())) returning * into v_verification;
  perform public.record_mission_event(v_mission.id,'VERIFICATION_RECORDED',jsonb_build_object('verification_id',v_verification.id,'status',v_verification.status,'confidence',v_verification.confidence,'recorded_by',auth.uid()));
  return v_verification;
-end; $function$
+end; $function$;
 CREATE OR REPLACE FUNCTION private.commit_verified_mission_outcome(p_mission_id uuid, p_verification_id uuid, p_result jsonb, p_success_score numeric DEFAULT 1, p_status text DEFAULT 'COMPLETED'::text)
  RETURNS mission_outcomes
  LANGUAGE plpgsql
@@ -305,12 +305,12 @@ begin
  perform public.transition_mission(v_mission.id,p_status,v_mission.version);
  perform public.record_mission_event(v_mission.id,'OUTCOME_COMMITTED',jsonb_build_object('outcome_id',v_outcome.id,'verification_id',v_verification.id,'status',v_outcome.status,'success_score',v_outcome.success_score,'mission_completed',v_should_complete,'recorded_by',auth.uid()));
  return v_outcome;
-end; $function$
+end; $function$;
 CREATE OR REPLACE FUNCTION private.block_mission_history_mutation()
  RETURNS trigger
  LANGUAGE plpgsql
  SET search_path TO 'pg_catalog'
-AS $function$ begin raise exception using errcode='42501', message='Mission history is append-only'; end; $function$
+AS $function$ begin raise exception using errcode='42501', message='Mission history is append-only'; end; $function$;
 CREATE OR REPLACE FUNCTION private.transition_mission(p_mission_id uuid, p_to_status text, p_expected_version bigint)
  RETURNS missions
  LANGUAGE plpgsql
@@ -339,7 +339,7 @@ begin
  update public.missions set status=p_to_status,version=version+1 where id=v_mission.id returning * into v_mission;
  perform public.record_mission_event(v_mission.id,'MISSION_STATUS_TRANSITION',jsonb_build_object('from_status',v_from_status,'to_status',v_mission.status,'version',v_mission.version));
  return v_mission;
-end; $function$
+end; $function$;
 CREATE OR REPLACE FUNCTION private.update_mission_details(p_mission_id uuid, p_objective text, p_expected_version bigint)
  RETURNS missions
  LANGUAGE plpgsql
@@ -397,7 +397,7 @@ begin
 
   return v_mission;
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION public.prevent_mission_action_reparent()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -419,7 +419,7 @@ begin
 
   return new;
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.record_mission_event(p_mission_id uuid, p_event_type text, p_payload jsonb)
  RETURNS void
  LANGUAGE plpgsql
@@ -459,7 +459,7 @@ begin
     coalesce(p_payload, '{}'::jsonb)
   );
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION public.prevent_mission_action_delete_with_history()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -480,7 +480,7 @@ BEGIN
 
   RETURN OLD;
 END;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.transition_mission_action(p_action_id uuid, p_to_status text, p_expected_version bigint, p_follow_up_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_set_follow_up boolean DEFAULT false)
  RETURNS mission_actions
  LANGUAGE plpgsql
@@ -502,7 +502,7 @@ begin
  update public.mission_actions set status=p_to_status,follow_up_at=v_next_follow_up,version=version+1 where id=v_action.id returning * into v_action;
  perform public.record_mission_event(v_action.mission_id,'ACTION_STATUS_TRANSITION',jsonb_build_object('action_id',v_action.id,'from_status',v_from_status,'to_status',v_action.status,'version',v_action.version));
  return v_action;
-end; $function$
+end; $function$;
 CREATE OR REPLACE FUNCTION public.guard_mission_action_insert()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -528,7 +528,7 @@ begin
   end if;
   return new;
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.get_ai_usage()
  RETURNS TABLE(period_start date, plan text, monthly_limit integer, generations_used integer, remaining integer)
  LANGUAGE plpgsql
@@ -572,7 +572,7 @@ begin
   select v_period_start, v_plan, v_limit, coalesce(v_used, 0),
          greatest(v_limit - coalesce(v_used, 0), 0);
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.reserve_ai_generation(p_request_id text)
  RETURNS TABLE(allowed boolean, reservation_id uuid, period_start date, plan text, monthly_limit integer, generations_used integer, remaining integer)
  LANGUAGE plpgsql
@@ -675,7 +675,7 @@ exception
     select false, null::uuid, v_period_start, v_plan, v_limit, v_used,
            greatest(v_limit - coalesce(v_used, 0), 0);
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.consume_ai_generation(p_reservation_id uuid)
  RETURNS boolean
  LANGUAGE plpgsql
@@ -698,7 +698,7 @@ begin
 
   return found;
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.release_ai_generation(p_reservation_id uuid)
  RETURNS boolean
  LANGUAGE plpgsql
@@ -733,7 +733,7 @@ begin
 
   return v_released;
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.create_mission_with_actions(p_workspace_id uuid, p_objective text, p_actions jsonb DEFAULT '[]'::jsonb)
  RETURNS missions
  LANGUAGE plpgsql
@@ -752,7 +752,7 @@ begin
   insert into public.mission_actions(mission_id,title,position,status) values(v_mission.id,v_title,v_position,'PENDING'); v_position:=v_position+1;
  end loop;
  return v_mission;
-end; $function$
+end; $function$;
 CREATE OR REPLACE FUNCTION public.commit_verified_mission_outcome(p_mission_id uuid, p_verification_id uuid, p_result jsonb, p_success_score numeric DEFAULT 1, p_status text DEFAULT 'COMPLETED'::text)
  RETURNS mission_outcomes
  LANGUAGE sql
@@ -761,14 +761,14 @@ AS $function$
   select private.commit_verified_mission_outcome(
     p_mission_id, p_verification_id, p_result, p_success_score, p_status
   );
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION public.consume_ai_generation(p_reservation_id uuid)
  RETURNS boolean
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public'
 AS $function$
   select private.consume_ai_generation(p_reservation_id);
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION public.create_mission_verification(p_mission_id uuid, p_status text, p_criteria jsonb, p_evidence jsonb, p_confidence numeric DEFAULT NULL::numeric, p_failure_reason text DEFAULT NULL::text)
  RETURNS mission_verifications
  LANGUAGE sql
@@ -777,42 +777,42 @@ AS $function$
   select private.create_mission_verification(
     p_mission_id, p_status, p_criteria, p_evidence, p_confidence, p_failure_reason
   );
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION public.create_mission_with_actions(p_workspace_id uuid, p_objective text, p_actions jsonb DEFAULT '[]'::jsonb)
  RETURNS missions
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public'
 AS $function$
   select private.create_mission_with_actions(p_workspace_id, p_objective, p_actions);
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION public.get_ai_usage()
  RETURNS TABLE(period_start date, plan text, monthly_limit integer, generations_used integer, remaining integer)
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public'
 AS $function$
   select * from private.get_ai_usage();
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION public.release_ai_generation(p_reservation_id uuid)
  RETURNS boolean
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public'
 AS $function$
   select private.release_ai_generation(p_reservation_id);
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION public.reserve_ai_generation(p_request_id text)
  RETURNS TABLE(allowed boolean, reservation_id uuid, period_start date, plan text, monthly_limit integer, generations_used integer, remaining integer)
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public'
 AS $function$
   select * from private.reserve_ai_generation(p_request_id);
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION public.transition_mission(p_mission_id uuid, p_to_status text, p_expected_version bigint)
  RETURNS missions
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public'
 AS $function$
   select private.transition_mission(p_mission_id, p_to_status, p_expected_version);
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION public.transition_mission_action(p_action_id uuid, p_to_status text, p_expected_version bigint, p_follow_up_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_set_follow_up boolean DEFAULT false)
  RETURNS mission_actions
  LANGUAGE sql
@@ -821,14 +821,14 @@ AS $function$
   select private.transition_mission_action(
     p_action_id, p_to_status, p_expected_version, p_follow_up_at, p_set_follow_up
   );
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION public.update_mission_details(p_mission_id uuid, p_objective text, p_expected_version bigint)
  RETURNS missions
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public'
 AS $function$
   select private.update_mission_details(p_mission_id, p_objective, p_expected_version);
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.reserve_anonymous_ai_generation(p_visitor_hash text, p_ip_hash text, p_request_id uuid)
  RETURNS TABLE(allowed boolean, reservation_id uuid, remaining integer, reason text)
  LANGUAGE plpgsql
@@ -886,7 +886,7 @@ begin
 
   return query select true, v_reservation, 0, null::text;
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.consume_anonymous_ai_generation(p_reservation_id uuid)
  RETURNS boolean
  LANGUAGE plpgsql
@@ -914,7 +914,7 @@ begin
 
   return true;
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.release_anonymous_ai_generation(p_reservation_id uuid)
  RETURNS boolean
  LANGUAGE plpgsql
@@ -942,7 +942,7 @@ begin
 
   return true;
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION public.reserve_anonymous_ai_generation(p_visitor_hash text, p_ip_hash text, p_request_id uuid)
  RETURNS TABLE(allowed boolean, reservation_id uuid, remaining integer, reason text)
  LANGUAGE sql
@@ -950,7 +950,7 @@ CREATE OR REPLACE FUNCTION public.reserve_anonymous_ai_generation(p_visitor_hash
  SET search_path TO 'pg_catalog'
 AS $function$
   select * from private.reserve_anonymous_ai_generation(p_visitor_hash, p_ip_hash, p_request_id);
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION public.consume_anonymous_ai_generation(p_reservation_id uuid)
  RETURNS boolean
  LANGUAGE sql
@@ -958,7 +958,7 @@ CREATE OR REPLACE FUNCTION public.consume_anonymous_ai_generation(p_reservation_
  SET search_path TO 'pg_catalog'
 AS $function$
   select private.consume_anonymous_ai_generation(p_reservation_id);
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION public.release_anonymous_ai_generation(p_reservation_id uuid)
  RETURNS boolean
  LANGUAGE sql
@@ -966,32 +966,32 @@ CREATE OR REPLACE FUNCTION public.release_anonymous_ai_generation(p_reservation_
  SET search_path TO 'pg_catalog'
 AS $function$
   select private.release_anonymous_ai_generation(p_reservation_id);
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION public.record_mission_event(p_mission_id uuid, p_event_type text, p_payload jsonb)
  RETURNS void
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public'
 AS $function$
   select private.record_mission_event(p_mission_id, p_event_type, p_payload);
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.is_workspace_member(p_workspace_id uuid, p_user_id uuid DEFAULT auth.uid())
  RETURNS boolean
  LANGUAGE sql
  STABLE SECURITY DEFINER
  SET search_path TO 'public', 'private'
-AS $function$ select exists(select 1 from public.workspace_members wm where wm.workspace_id=p_workspace_id and wm.user_id=p_user_id); $function$
+AS $function$ select exists(select 1 from public.workspace_members wm where wm.workspace_id=p_workspace_id and wm.user_id=p_user_id); $function$;
 CREATE OR REPLACE FUNCTION private.workspace_role(p_workspace_id uuid, p_user_id uuid DEFAULT auth.uid())
  RETURNS text
  LANGUAGE sql
  STABLE SECURITY DEFINER
  SET search_path TO 'public', 'private'
-AS $function$ select wm.role from public.workspace_members wm where wm.workspace_id=p_workspace_id and wm.user_id=p_user_id limit 1; $function$
+AS $function$ select wm.role from public.workspace_members wm where wm.workspace_id=p_workspace_id and wm.user_id=p_user_id limit 1; $function$;
 CREATE OR REPLACE FUNCTION private.can_edit_workspace(p_workspace_id uuid, p_user_id uuid DEFAULT auth.uid())
  RETURNS boolean
  LANGUAGE sql
  STABLE SECURITY DEFINER
  SET search_path TO 'public', 'private'
-AS $function$ select private.workspace_role(p_workspace_id,p_user_id) in ('owner','admin','member'); $function$
+AS $function$ select private.workspace_role(p_workspace_id,p_user_id) in ('owner','admin','member'); $function$;
 CREATE OR REPLACE FUNCTION private.request_mission_approval(p_mission_id uuid, p_action_id uuid, p_scope jsonb)
  RETURNS mission_approvals
  LANGUAGE plpgsql
@@ -1108,7 +1108,7 @@ begin
   );
   return v_approval;
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.decide_mission_approval(p_approval_id uuid, p_decision text, p_note text DEFAULT NULL::text)
  RETURNS mission_approvals
  LANGUAGE plpgsql
@@ -1156,17 +1156,17 @@ begin
   );
   return v_approval;
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION public.request_mission_approval(p_mission_id uuid, p_action_id uuid, p_scope jsonb)
  RETURNS mission_approvals
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public'
-AS $function$ select private.request_mission_approval(p_mission_id,p_action_id,p_scope); $function$
+AS $function$ select private.request_mission_approval(p_mission_id,p_action_id,p_scope); $function$;
 CREATE OR REPLACE FUNCTION public.decide_mission_approval(p_approval_id uuid, p_decision text, p_note text DEFAULT NULL::text)
  RETURNS mission_approvals
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public'
-AS $function$ select private.decide_mission_approval(p_approval_id,p_decision,p_note); $function$
+AS $function$ select private.decide_mission_approval(p_approval_id,p_decision,p_note); $function$;
 CREATE OR REPLACE FUNCTION private.start_agent_execution(p_mission_id uuid, p_action_id uuid, p_agent_id uuid, p_idempotency_key text, p_request jsonb DEFAULT '{}'::jsonb)
  RETURNS agent_executions
  LANGUAGE plpgsql
@@ -1306,7 +1306,7 @@ begin
   );
   return v_execution;
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.complete_agent_execution(p_execution_id uuid, p_status text, p_result jsonb DEFAULT NULL::jsonb, p_evidence jsonb DEFAULT NULL::jsonb, p_error_code text DEFAULT NULL::text, p_error_message text DEFAULT NULL::text)
  RETURNS agent_executions
  LANGUAGE plpgsql
@@ -1383,17 +1383,17 @@ begin
 
   return v_execution;
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION public.start_agent_execution(p_mission_id uuid, p_action_id uuid, p_agent_id uuid, p_idempotency_key text, p_request jsonb DEFAULT '{}'::jsonb)
  RETURNS agent_executions
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public'
-AS $function$ select private.start_agent_execution(p_mission_id,p_action_id,p_agent_id,p_idempotency_key,p_request); $function$
+AS $function$ select private.start_agent_execution(p_mission_id,p_action_id,p_agent_id,p_idempotency_key,p_request); $function$;
 CREATE OR REPLACE FUNCTION public.complete_agent_execution(p_execution_id uuid, p_status text, p_result jsonb DEFAULT NULL::jsonb, p_evidence jsonb DEFAULT NULL::jsonb, p_error_code text DEFAULT NULL::text, p_error_message text DEFAULT NULL::text)
  RETURNS agent_executions
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public'
-AS $function$ select private.complete_agent_execution(p_execution_id,p_status,p_result,p_evidence,p_error_code,p_error_message); $function$
+AS $function$ select private.complete_agent_execution(p_execution_id,p_status,p_result,p_evidence,p_error_code,p_error_message); $function$;
 CREATE OR REPLACE FUNCTION private.create_workspace_invitation(p_workspace_id uuid, p_email text, p_role text, p_token_hash text, p_expires_at timestamp with time zone)
  RETURNS workspace_invitations
  LANGUAGE plpgsql
@@ -1414,12 +1414,12 @@ begin
  values(p_workspace_id,v_email,p_role,auth.uid(),p_token_hash,p_expires_at) returning * into v_inv;
  perform private.record_workspace_activity(p_workspace_id,'WORKSPACE_INVITATION_CREATED','workspace_invitation',v_inv.id,jsonb_build_object('email',v_email,'role',p_role));
  return v_inv;
-end; $function$
+end; $function$;
 CREATE OR REPLACE FUNCTION public.create_workspace_invitation(p_workspace_id uuid, p_email text, p_role text, p_token_hash text, p_expires_at timestamp with time zone)
  RETURNS workspace_invitations
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public'
-AS $function$ select private.create_workspace_invitation(p_workspace_id,p_email,p_role,p_token_hash,p_expires_at); $function$
+AS $function$ select private.create_workspace_invitation(p_workspace_id,p_email,p_role,p_token_hash,p_expires_at); $function$;
 CREATE OR REPLACE FUNCTION private.get_workspace_invitation(p_token_hash text)
  RETURNS TABLE(id uuid, email text, role text, status text, expires_at timestamp with time zone, created_at timestamp with time zone)
  LANGUAGE plpgsql
@@ -1430,12 +1430,12 @@ begin
  if p_token_hash is null or char_length(p_token_hash) <> 64 then raise exception 'INVALID_INVITATION_TOKEN' using errcode='22023'; end if;
  update public.workspace_invitations set status='EXPIRED' where token_hash=p_token_hash and status='PENDING' and expires_at <= timezone('utc',now());
  return query select wi.id,wi.email,wi.role,wi.status,wi.expires_at,wi.created_at from public.workspace_invitations wi where wi.token_hash=p_token_hash limit 1;
-end; $function$
+end; $function$;
 CREATE OR REPLACE FUNCTION public.get_workspace_invitation(p_token_hash text)
  RETURNS TABLE(id uuid, email text, role text, status text, expires_at timestamp with time zone, created_at timestamp with time zone)
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public'
-AS $function$ select * from private.get_workspace_invitation(p_token_hash); $function$
+AS $function$ select * from private.get_workspace_invitation(p_token_hash); $function$;
 CREATE OR REPLACE FUNCTION private.accept_workspace_invitation(p_token_hash text)
  RETURNS workspace_invitations
  LANGUAGE plpgsql
@@ -1457,12 +1457,12 @@ begin
  update public.workspace_invitations set status='ACCEPTED',accepted_at=timezone('utc',now()) where id=v_inv.id returning * into v_inv;
  perform private.record_workspace_activity(v_inv.workspace_id,'WORKSPACE_INVITATION_ACCEPTED','workspace_invitation',v_inv.id,jsonb_build_object('user_id',auth.uid(),'role',v_inv.role));
  return v_inv;
-end; $function$
+end; $function$;
 CREATE OR REPLACE FUNCTION public.accept_workspace_invitation(p_token_hash text)
  RETURNS workspace_invitations
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public'
-AS $function$ select private.accept_workspace_invitation(p_token_hash); $function$
+AS $function$ select private.accept_workspace_invitation(p_token_hash); $function$;
 CREATE OR REPLACE FUNCTION private.revoke_workspace_invitation(p_invitation_id uuid)
  RETURNS workspace_invitations
  LANGUAGE plpgsql
@@ -1479,12 +1479,12 @@ begin
  update public.workspace_invitations set status='REVOKED' where id=v_inv.id returning * into v_inv;
  perform private.record_workspace_activity(v_inv.workspace_id,'WORKSPACE_INVITATION_REVOKED','workspace_invitation',v_inv.id,jsonb_build_object('role',v_inv.role));
  return v_inv;
-end; $function$
+end; $function$;
 CREATE OR REPLACE FUNCTION public.revoke_workspace_invitation(p_invitation_id uuid)
  RETURNS workspace_invitations
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public'
-AS $function$ select private.revoke_workspace_invitation(p_invitation_id); $function$
+AS $function$ select private.revoke_workspace_invitation(p_invitation_id); $function$;
 CREATE OR REPLACE FUNCTION private.list_workspace_members(p_workspace_id uuid)
  RETURNS TABLE(id uuid, user_id uuid, email text, role text, created_at timestamp with time zone)
  LANGUAGE plpgsql
@@ -1501,14 +1501,14 @@ begin
     join auth.users au on au.id=wm.user_id
     where wm.workspace_id=p_workspace_id
     order by wm.created_at;
-end; $function$
+end; $function$;
 CREATE OR REPLACE FUNCTION public.list_workspace_members(p_workspace_id uuid)
  RETURNS TABLE(id uuid, user_id uuid, email text, role text, created_at timestamp with time zone)
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public'
 AS $function$
   select * from private.list_workspace_members(p_workspace_id);
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.update_workspace_member_role(p_member_id uuid, p_role text)
  RETURNS workspace_members
  LANGUAGE plpgsql
@@ -1531,14 +1531,14 @@ begin
   update public.workspace_members set role=p_role,updated_at=timezone('utc',now()) where id=v_member.id returning * into v_member;
   perform private.record_workspace_activity(v_member.workspace_id,'MEMBER_ROLE_CHANGED','workspace_member',v_member.id,jsonb_build_object('user_id',v_member.user_id,'from_role',v_old_role,'to_role',p_role));
   return v_member;
-end; $function$
+end; $function$;
 CREATE OR REPLACE FUNCTION public.update_workspace_member_role(p_member_id uuid, p_role text)
  RETURNS workspace_members
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public'
 AS $function$
   select * from private.update_workspace_member_role(p_member_id,p_role);
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.remove_workspace_member(p_member_id uuid)
  RETURNS workspace_members
  LANGUAGE plpgsql
@@ -1563,14 +1563,14 @@ begin
   delete from public.workspace_members where id=v_member.id;
   perform private.record_workspace_activity(v_member.workspace_id,'MEMBER_REMOVED','workspace_member',v_member.id,jsonb_build_object('user_id',v_member.user_id,'role',v_member.role));
   return v_member;
-end; $function$
+end; $function$;
 CREATE OR REPLACE FUNCTION public.remove_workspace_member(p_member_id uuid)
  RETURNS workspace_members
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public'
 AS $function$
   select * from private.remove_workspace_member(p_member_id);
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.record_workspace_activity(p_workspace_id uuid, p_event_type text, p_entity_type text, p_entity_id uuid, p_payload jsonb DEFAULT '{}'::jsonb)
  RETURNS uuid
  LANGUAGE plpgsql
@@ -1586,14 +1586,14 @@ begin
   values(p_workspace_id,auth.uid(),p_event_type,p_entity_type,p_entity_id,coalesce(p_payload,'{}'::jsonb))
   returning id into v_id;
   return v_id;
-end; $function$
+end; $function$;
 CREATE OR REPLACE FUNCTION public.list_workspace_activity(p_workspace_id uuid, p_limit integer DEFAULT 50)
  RETURNS TABLE(id uuid, event_type text, entity_type text, entity_id uuid, payload jsonb, actor_user_id uuid, created_at timestamp with time zone)
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public'
 AS $function$
  select * from private.list_workspace_activity(p_workspace_id,p_limit);
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.list_workspace_activity(p_workspace_id uuid, p_limit integer DEFAULT 50)
  RETURNS TABLE(id uuid, event_type text, entity_type text, entity_id uuid, payload jsonb, actor_user_id uuid, created_at timestamp with time zone)
  LANGUAGE plpgsql
@@ -1608,7 +1608,7 @@ begin
   union all
   select me.id,me.event_type,'mission',me.mission_id,me.payload,null::uuid,me.created_at from public.mission_events me join public.missions m on m.id=me.mission_id where m.workspace_id=p_workspace_id
  ) x order by x.created_at desc limit greatest(1,least(coalesce(p_limit,50),200));
-end; $function$
+end; $function$;
 CREATE OR REPLACE FUNCTION private.ensure_owned_workspace()
  RETURNS uuid
  LANGUAGE plpgsql
@@ -1668,14 +1668,14 @@ begin
 
   return v_workspace_id;
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION public.ensure_owned_workspace()
  RETURNS uuid
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public', 'private'
 AS $function$
   select private.ensure_owned_workspace();
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.heartbeat_agent_execution(p_execution_id uuid)
  RETURNS agent_executions
  LANGUAGE plpgsql
@@ -1718,7 +1718,7 @@ begin
 
   return v_execution;
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.request_agent_execution_cancellation(p_execution_id uuid)
  RETURNS agent_executions
  LANGUAGE plpgsql
@@ -1767,7 +1767,7 @@ begin
 
   return v_execution;
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.reconcile_stale_agent_execution(p_execution_id uuid)
  RETURNS agent_executions
  LANGUAGE plpgsql
@@ -1827,7 +1827,7 @@ begin
 
   return v_execution;
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.retry_agent_execution(p_execution_id uuid, p_new_idempotency_key text)
  RETURNS agent_executions
  LANGUAGE plpgsql
@@ -1997,29 +1997,29 @@ begin
   );
   return v_existing;
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION public.heartbeat_agent_execution(p_execution_id uuid)
  RETURNS agent_executions
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public'
-AS $function$ select private.heartbeat_agent_execution(p_execution_id); $function$
+AS $function$ select private.heartbeat_agent_execution(p_execution_id); $function$;
 CREATE OR REPLACE FUNCTION public.request_agent_execution_cancellation(p_execution_id uuid)
  RETURNS agent_executions
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public'
-AS $function$ select private.request_agent_execution_cancellation(p_execution_id); $function$
+AS $function$ select private.request_agent_execution_cancellation(p_execution_id); $function$;
 CREATE OR REPLACE FUNCTION public.reconcile_stale_agent_execution(p_execution_id uuid)
  RETURNS agent_executions
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public'
-AS $function$ select private.reconcile_stale_agent_execution(p_execution_id); $function$
+AS $function$ select private.reconcile_stale_agent_execution(p_execution_id); $function$;
 CREATE OR REPLACE FUNCTION public.retry_agent_execution(p_execution_id uuid, p_new_idempotency_key text)
  RETURNS agent_executions
  LANGUAGE sql
  SET search_path TO 'pg_catalog', 'public'
 AS $function$
   select private.retry_agent_execution(p_execution_id, p_new_idempotency_key);
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.record_second_mission_conversion()
  RETURNS trigger
  LANGUAGE plpgsql
@@ -2036,7 +2036,7 @@ begin
   end if;
   return new;
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.agent_execution_approval_scope(p_workspace_id uuid, p_mission_id uuid, p_mission_version bigint, p_action_id uuid, p_action_version bigint, p_agent_id uuid, p_authority jsonb, p_request jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -2089,7 +2089,7 @@ begin
     'payload_preview', private.agent_execution_payload_shape(p_request -> 'payload', 0)
   );
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.agent_execution_payload_shape(p_value jsonb, p_depth integer DEFAULT 0)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -2163,7 +2163,7 @@ begin
 
   return jsonb_build_object('type', coalesce(v_type, 'unknown'));
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.agent_execution_has_meaningful_value(p_value jsonb, p_depth integer DEFAULT 0)
  RETURNS boolean
  LANGUAGE plpgsql
@@ -2204,7 +2204,7 @@ begin
 
   return false;
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION private.complete_read_only_research_execution(p_execution_id uuid, p_status text, p_result jsonb, p_evidence jsonb, p_error_code text DEFAULT NULL::text, p_error_message text DEFAULT NULL::text)
  RETURNS agent_executions
  LANGUAGE plpgsql
@@ -2365,7 +2365,7 @@ begin
 
   return v_execution;
 end;
-$function$
+$function$;
 CREATE OR REPLACE FUNCTION public.complete_read_only_research_execution(p_execution_id uuid, p_status text, p_result jsonb, p_evidence jsonb, p_error_code text DEFAULT NULL::text, p_error_message text DEFAULT NULL::text)
  RETURNS agent_executions
  LANGUAGE sql
@@ -2374,7 +2374,7 @@ AS $function$
   select private.complete_read_only_research_execution(
     p_execution_id, p_status, p_result, p_evidence, p_error_code, p_error_message
   );
-$function$
+$function$;
 ALTER TABLE "private"."anonymous_ai_ip_windows" ADD CONSTRAINT "anonymous_ai_ip_windows_pkey" PRIMARY KEY (ip_hash, window_start);
 ALTER TABLE "private"."anonymous_ai_reservations" ADD CONSTRAINT "anonymous_ai_reservations_pkey" PRIMARY KEY (id);
 ALTER TABLE "private"."anonymous_ai_reservations" ADD CONSTRAINT "anonymous_ai_reservations_request_id_key" UNIQUE (request_id);
