@@ -84,6 +84,26 @@ test("rejects unsafe URLs, invalid ratings, invalid evidence, and duplicate IDs 
   assert.throws(() => parseOpportunityBackup(encoded([opportunity(), opportunity()])), /duplicate opportunity IDs/i);
 });
 
+
+test("export refuses a backup that would exceed the same 2 MB import limit", () => {
+  const largeEvidence = Array.from({ length: 200 }, (_, index) => ({
+    ...evidence,
+    id: `evidence-${index}`,
+    url: `https://example.com/report/${index}`,
+    observation: "x".repeat(1200),
+  }));
+  const manyOpportunities = Array.from({ length: 20 }, (_, index) => opportunity({
+    id: `opportunity-${index}`,
+    evidenceItems: largeEvidence.map((item) => ({ ...item, id: `${item.id}-${index}`, url: `${item.url}?opportunity=${index}` })),
+  }));
+  assert.throws(() => createOpportunityBackup(manyOpportunities), /exceed 2 MB/i);
+});
+
+test("rejects oversized evidence text instead of trimming or silently losing it", () => {
+  const tooLongEvidence = { ...evidence, observation: "x".repeat(1201) };
+  assert.throws(() => parseOpportunityBackup(encoded([opportunity({ evidenceItems: [tooLongEvidence] })])), /invalid opportunity or evidence data/i);
+});
+
 test("rejects inconsistent counts rather than silently dropping data", () => {
   assert.throws(() => parseOpportunityBackup(encoded([opportunity()], { evidenceCount: 0 })), /counts do not match/i);
 });
