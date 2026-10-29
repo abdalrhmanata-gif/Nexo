@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type CSSProperties, type FormEvent } from "react";
-import { MAX_OPPORTUNITY_BACKUP_BYTES, createOpportunityBackup, parseOpportunityBackup, type OpportunityBackup } from "../lib/opportunity-portability.mjs";
+import { MAX_OPPORTUNITY_BACKUP_BYTES, createOpportunityBackup, mergeOpportunityBackup, parseOpportunityBackup, type OpportunityBackup } from "../lib/opportunity-portability.mjs";
 import { opportunityPriority, priorityDescription, scoreOpportunity } from "../lib/opportunity-intelligence.mjs";
 import { isOpportunityEvidenceItem, type OpportunityEvidenceItem } from "../lib/evidence-ledger.mjs";
 import { OpportunityEvidencePanel } from "./opportunity-evidence-panel";
@@ -254,25 +254,18 @@ export function OpportunityIntelligence() {
 
   function importBackup() {
     if (!backupPreview) return;
-    const existingIds = new Set(opportunities.map((item) => item.id));
-    const additions = backupPreview.opportunities.filter((item) => !existingIds.has(item.id));
-    const skipped = backupPreview.opportunities.length - additions.length;
+    const merge = mergeOpportunityBackup(opportunities, backupPreview);
 
-    if (additions.length > 0) {
-      setOpportunities((current) => {
-        const currentIds = new Set(current.map((item) => item.id));
-        const safeAdditions = backupPreview.opportunities.filter((item) => !currentIds.has(item.id));
-        return [...safeAdditions, ...current];
-      });
+    if (merge.addedCount > 0) {
+      setOpportunities((current) => mergeOpportunityBackup(current, backupPreview).opportunities);
     }
-    setBackupNotice(additions.length
-      ? `Imported ${additions.length} opportunities with ${additions.reduce((sum, item) => sum + item.evidenceItems.length, 0)} evidence notes. ${skipped} existing record(s) with matching IDs were skipped; no existing records were overwritten.`
+    setBackupNotice(merge.addedCount
+      ? `Imported ${merge.addedCount} opportunities with ${merge.evidenceCount} evidence notes. ${merge.skippedCount} existing record(s) with matching IDs were skipped; no existing records were overwritten.`
       : "Nothing was imported because every opportunity ID already exists. Your current records were left unchanged.");
     setBackupPreview(null);
     setBackupFileName("");
     if (backupInputRef.current) backupInputRef.current.value = "";
   }
-
   function updateForm<K extends keyof OpportunityForm>(key: K, value: OpportunityForm[K]) {
     setForm((current) => ({ ...current, [key]: value }));
   }
