@@ -47,7 +47,7 @@ test("Opportunity Intelligence exposes safe local backup and non-overwriting imp
   assert.match(feature, /accept="\.json,application\/json"/);
   assert.match(feature, /currentIds = new Set\(current\.map/);
   assert.match(feature, /no existing records were overwritten/i);
-  assert.match(feature, /not synced to your account or database/i);
+  assert.match(feature, /Cloud sync, live discovery.*not connected yet/i);
   assert.match(portability, /MAX_OPPORTUNITY_BACKUP_BYTES/);
   assert.match(portability, /item\.url && !isHttpSourceUrl/);
 });
