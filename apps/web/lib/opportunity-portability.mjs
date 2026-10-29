@@ -24,6 +24,19 @@ function isRating(value) {
   return Number.isInteger(value) && value >= 1 && value <= 5;
 }
 
+function isPortableEvidence(value) {
+  return isOpportunityEvidenceItem(value)
+    && isText(value.id, 128, { required: true })
+    && isText(value.url, 500, { required: true })
+    && isText(value.title, 180, { required: true })
+    && isText(value.observation, 1200, { required: true })
+    && isText(value.sourceDate, 50)
+    && isText(value.checkedAt, 100, { required: true })
+    && Number.isFinite(Date.parse(value.checkedAt))
+    && Number.isFinite(value.addedAt)
+    && value.addedAt >= 0;
+}
+
 function portableOpportunity(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const item = value;
@@ -36,7 +49,7 @@ function portableOpportunity(value) {
   if (!["strategicFit", "potentialValue", "urgency", "evidenceStrength", "effort"].every((key) => isRating(item[key]))) return false;
   if (!Number.isFinite(item.createdAt) || item.createdAt < 0) return false;
   if (!Array.isArray(item.evidenceItems) || item.evidenceItems.length > MAX_EVIDENCE_ITEMS_PER_OPPORTUNITY) return false;
-  return item.evidenceItems.every(isOpportunityEvidenceItem);
+  return item.evidenceItems.every(isPortableEvidence);
 }
 
 function projectOpportunity(item) {
@@ -80,7 +93,7 @@ export function createOpportunityBackup(opportunities, exportedAt = new Date().t
     ids.add(item.id);
     return projectOpportunity(item);
   });
-  return {
+  const backup = {
     format: OPPORTUNITY_BACKUP_FORMAT,
     version: OPPORTUNITY_BACKUP_VERSION,
     exportedAt,
@@ -88,6 +101,10 @@ export function createOpportunityBackup(opportunities, exportedAt = new Date().t
     evidenceCount: projected.reduce((sum, item) => sum + item.evidenceItems.length, 0),
     opportunities: projected,
   };
+  if (new TextEncoder().encode(JSON.stringify(backup, null, 2)).byteLength > MAX_OPPORTUNITY_BACKUP_BYTES) {
+    throw new Error("This backup would exceed 2 MB. Export smaller groups of opportunities or reduce large evidence notes.");
+  }
+  return backup;
 }
 
 export function parseOpportunityBackup(raw) {
