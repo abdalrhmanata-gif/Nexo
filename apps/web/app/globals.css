@@ -995,3 +995,15 @@ a:hover { color:var(--teal); }
   .opportunity-portability-actions .button { width:100%; }
   .opportunity-backup-preview-actions { display:grid; grid-template-columns:minmax(0,1fr); }
 }
+
+/* Opportunity Intelligence: keep the radar primary once a user has opportunities. */
+.opportunity-layout--form-collapsed {
+  grid-template-columns:minmax(0,1fr);
+}
+.opportunity-layout--form-collapsed .opportunity-results {
+  grid-column:1 / -1;
+}
+@media (max-width:1100px) {
+  .opportunity-layout--form-open .opportunity-form-card { order:1; }
+  .opportunity-layout--form-open .opportunity-results { order:2; }
+}
