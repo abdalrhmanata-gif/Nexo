@@ -96,6 +96,9 @@ async function signUp(page, user) {
   await page.getByLabel("Password", { exact: true }).fill(user.password);
   await formWith(page, page.getByLabel("Email", { exact: true })).locator('button[type="submit"]').click();
   await expect(page, "Sign-up must return a session; disable email confirmations on the disposable stack.").toHaveURL(/\/app$/);
+  // The URL can update before Next.js finishes its client-side router.refresh().
+  // Wait for the authenticated app shell before starting another document navigation.
+  await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
 }
 
 async function signIn(page, user) {
@@ -104,6 +107,7 @@ async function signIn(page, user) {
   await page.getByLabel("Password", { exact: true }).fill(user.password);
   await formWith(page, page.getByLabel("Email", { exact: true })).locator('button[type="submit"]').click();
   await expect(page).toHaveURL(/\/app$/);
+  await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
 }
 
 async function signOut(page) {
