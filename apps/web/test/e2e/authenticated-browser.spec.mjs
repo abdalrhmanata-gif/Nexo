@@ -399,12 +399,12 @@ test("authenticated Opportunity Intelligence backup flow exports, imports, and r
       await pageA.getByRole("button", { name: "Score and add opportunity" }).click();
       const opportunityHeading = pageA.getByRole("heading", { name: "Backup regression opportunity" });
       await expect(opportunityHeading).toBeVisible();
-      await expect(pageA.getByRole("heading", { name: "Add an opportunity" })).toHaveCount(0);
+      await expect(pageA.getByRole("heading", { name: "Add an opportunity" })).toBeHidden();
 
       await pageA.getByRole("button", { name: "Add opportunity", exact: true }).click();
       await expect(pageA.getByRole("heading", { name: "Add an opportunity" })).toBeVisible();
       await pageA.getByRole("button", { name: "Hide form", exact: true }).click();
-      await expect(pageA.getByRole("heading", { name: "Add an opportunity" })).toHaveCount(0);
+      await expect(pageA.getByRole("heading", { name: "Add an opportunity" })).toBeHidden();
 
       await pageA.getByRole("button", { name: "Research & add evidence" }).click();
       await pageA.getByLabel("Source URL", { exact: true }).fill("https://example.com/backup-evidence");
