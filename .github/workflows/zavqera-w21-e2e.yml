@@ -8,6 +8,7 @@ on:
     paths:
       - "apps/web/**"
       - ".github/workflows/zavqera-w21-e2e.yml"
+      - "supabase/test-snapshots/**"
 
 permissions:
   contents: read
@@ -42,23 +43,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
 
-      - name: Verify required Development DB secret
-        env:
-          ZAVQERA_DEVELOPMENT_DB_URL: ${{ secrets.ZAVQERA_DEVELOPMENT_DB_URL }}
-        run: |
-          set -euo pipefail
-          if [ -z "${ZAVQERA_DEVELOPMENT_DB_URL}" ]; then
-            echo "::error::Missing GitHub Actions secret ZAVQERA_DEVELOPMENT_DB_URL."
-            exit 1
-          fi
-          case "${ZAVQERA_DEVELOPMENT_DB_URL}" in
-            *mrwmmbytcymqgwvcoywd.supabase.co*) ;;
-            *) echo "::error::Database URL is not the ZAVQERA Development project."; exit 1 ;;
-          esac
-
       - name: Create disposable Supabase workdir
-        env:
-          ZAVQERA_DEVELOPMENT_DB_URL: ${{ secrets.ZAVQERA_DEVELOPMENT_DB_URL }}
         run: |
           set -euo pipefail
           workdir="${RUNNER_TEMP}/zavqera-e2e"
@@ -106,12 +91,11 @@ jobs:
 
           schema_dir="${workdir}/supabase/migrations"
           schema_file="${schema_dir}/$(date -u +%Y%m%d%H%M%S)_development_schema.sql"
+          schema_source="supabase/test-snapshots/20261029204500_development_schema.sql"
+          test -s "${schema_source}"
+          cp "${schema_source}" "${schema_file}"
 
-          supabase db dump \
-            --db-url "${ZAVQERA_DEVELOPMENT_DB_URL}" \
-            --schema public,private \
-            -f "${schema_file}"
-
+          # Auth schema is supplied by the disposable Supabase stack; this one app trigger is part of the local fixture.
           cat >> "${schema_file}" <<'SQL'
 
           CREATE TRIGGER on_auth_user_created
@@ -126,9 +110,6 @@ jobs:
 
           echo "${workdir}" > "${RUNNER_TEMP}/zavqera-e2e-workdir"
           sha256sum "${schema_file}" > "${RUNNER_TEMP}/zavqera-e2e-schema.sha256"
-
-          unset ZAVQERA_DEVELOPMENT_DB_URL
-
       - name: Run authenticated browser E2E
         working-directory: apps/web
         env:
