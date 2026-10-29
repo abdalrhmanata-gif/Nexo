@@ -213,7 +213,7 @@ test("Supabase startup errors expose only sanitized diagnostics", () => {
       "SERVICE_ROLE_KEY=must-not-appear",
       "postgresql://postgres:db-password@localhost:54322/postgres",
       "sb_secret_should-not-appear",
-    ].join("\\n"),
+    ].join("\n"),
   });
   assert.throws(() => startFreshStack(plan, run, {}), (error) => {
     assert.match(error.message, /syntax error at or near "FROM"/);
