@@ -4,6 +4,7 @@ import {
   MAX_OPPORTUNITY_BACKUP_BYTES,
   OPPORTUNITY_BACKUP_FORMAT,
   createOpportunityBackup,
+  mergeOpportunityBackup,
   parseOpportunityBackup,
 } from "../lib/opportunity-portability.mjs";
 
@@ -111,4 +112,49 @@ test("rejects inconsistent counts rather than silently dropping data", () => {
 test("refuses to export invalid records or duplicate identifiers", () => {
   assert.throws(() => createOpportunityBackup([opportunity({ title: "" })]), /invalid data/i);
   assert.throws(() => createOpportunityBackup([opportunity(), opportunity()]), /duplicate opportunity IDs/i);
+});
+
+test("merge imports only new IDs and never overwrites a matching local record", () => {
+  const local = opportunity({
+    id: "opportunity-1",
+    title: "Keep the local record",
+    evidenceItems: [],
+  });
+  const collidingImport = opportunity({
+    id: "opportunity-1",
+    title: "Do not replace this local record",
+  });
+  const newImport = opportunity({
+    id: "opportunity-2",
+    title: "Imported new opportunity",
+  });
+  const backup = parseOpportunityBackup(encoded([collidingImport, newImport]));
+  const localBefore = structuredClone(local);
+
+  const merged = mergeOpportunityBackup([local], backup);
+
+  assert.deepEqual(merged.opportunities, [newImport, local]);
+  assert.equal(merged.addedCount, 1);
+  assert.equal(merged.skippedCount, 1);
+  assert.equal(merged.evidenceCount, 1);
+  assert.deepEqual(local, localBefore);
+});
+
+test("merge leaves local data unchanged when every imported ID already exists", () => {
+  const local = opportunity({
+    id: "opportunity-1",
+    title: "Authoritative local title",
+  });
+  const backup = parseOpportunityBackup(encoded([
+    opportunity({ id: "opportunity-1", title: "Stale imported title" }),
+  ]));
+  const current = [local];
+  const before = structuredClone(current);
+
+  const merged = mergeOpportunityBackup(current, backup);
+
+  assert.deepEqual(merged.opportunities, before);
+  assert.equal(merged.addedCount, 0);
+  assert.equal(merged.skippedCount, 1);
+  assert.equal(merged.evidenceCount, 0);
 });
