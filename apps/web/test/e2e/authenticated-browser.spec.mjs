@@ -405,7 +405,7 @@ test("authenticated Opportunity Intelligence backup flow exports, imports, and r
       await pageA.getByLabel("Source title", { exact: true }).fill("Backup evidence report");
       await pageA.getByLabel("What does the source actually say?", { exact: true }).fill("The sample report supports testing portable backups across devices.");
       await pageA.getByRole("button", { name: "Save evidence note" }).click();
-      await expect(pageA.getByRole("status")).toContainText("Evidence note added");
+      await expect(pageA.locator(".evidence-ledger [role=\"status\"]")).toContainText("Evidence note added");
       await expect(pageA.getByText("Backup evidence report", { exact: true })).toBeVisible();
     });
 
@@ -439,7 +439,7 @@ test("authenticated Opportunity Intelligence backup flow exports, imports, and r
       await uploadJson(pageA, staleCopy, "matching-local-id.json");
       await expect(pageA.getByText(/Backup ready: matching-local-id\.json/)).toBeVisible();
       await pageA.getByRole("button", { name: "Import and merge" }).click();
-      await expect(pageA.getByRole("status")).toContainText("Nothing was imported because every opportunity ID already exists");
+      await expect(pageA.locator(".opportunity-portability .opportunity-backup-status[role=\"status\"]")).toContainText("Nothing was imported because every opportunity ID already exists");
       await expect(pageA.getByRole("heading", { name: "Backup regression opportunity" })).toBeVisible();
       await expect(pageA.getByRole("heading", { name: "Stale imported copy" })).toHaveCount(0);
       expect(await storedOpportunities(pageA)).toEqual(originalLocalState);
@@ -485,7 +485,7 @@ test("authenticated Opportunity Intelligence backup flow exports, imports, and r
       await uploadJson(pageB, exportedBackup, "valid-exported-backup.json");
       await expect(pageB.getByText(/Backup ready: valid-exported-backup\.json/)).toBeVisible();
       await pageB.getByRole("button", { name: "Import and merge" }).click();
-      await expect(pageB.getByRole("status")).toContainText("Imported 1 opportunities with 1 evidence notes");
+      await expect(pageB.locator(".opportunity-portability .opportunity-backup-status[role=\"status\"]")).toContainText("Imported 1 opportunities with 1 evidence notes");
       await expect(pageB.getByRole("heading", { name: "Backup regression opportunity" })).toBeVisible();
       await expect(pageB.getByText("Backup evidence report", { exact: true })).toBeVisible();
       expect(await storedOpportunities(pageB)).toEqual(exportedBackup.opportunities);
