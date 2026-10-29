@@ -90,6 +90,7 @@ jobs:
           printf '%s\n' 'zavqera-e2e-local' > "${workdir}/ZAVQERA_E2E_DISPOSABLE"
 
           schema_dir="${workdir}/supabase/migrations"
+          mkdir -p "${schema_dir}"
           schema_file="${schema_dir}/$(date -u +%Y%m%d%H%M%S)_development_schema.sql"
           schema_source="supabase/test-snapshots/20261029204500_development_schema.sql"
           test -s "${schema_source}"
