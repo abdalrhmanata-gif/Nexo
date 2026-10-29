@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent, type CSSProperties, type FormEvent } from "react";
+import { MAX_OPPORTUNITY_BACKUP_BYTES, createOpportunityBackup, parseOpportunityBackup, type OpportunityBackup } from "../lib/opportunity-portability.mjs";
 import { opportunityPriority, priorityDescription, scoreOpportunity } from "../lib/opportunity-intelligence.mjs";
 import { isOpportunityEvidenceItem, type OpportunityEvidenceItem } from "../lib/evidence-ledger.mjs";
 import { OpportunityEvidencePanel } from "./opportunity-evidence-panel";
@@ -153,6 +154,12 @@ export function OpportunityIntelligence() {
   const [error, setError] = useState("");
   const [opportunityQuery, setOpportunityQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<"ALL" | "HIGH_SCORE" | "VALIDATE" | "HOLD">("ALL");
+  const backupInputRef = useRef<HTMLInputElement>(null);
+  const [backupPreview, setBackupPreview] = useState<OpportunityBackup | null>(null);
+  const [backupFileName, setBackupFileName] = useState("");
+  const [backupError, setBackupError] = useState("");
+  const [backupNotice, setBackupNotice] = useState("");
+  const [backupBusy, setBackupBusy] = useState(false);
 
   useEffect(() => {
     try {
@@ -198,6 +205,73 @@ export function OpportunityIntelligence() {
     ({ opportunity, score }) => score >= 80 && opportunity.evidenceItems.length > 0,
   ).length;
   const missingEvidenceReview = ranked.filter(({ opportunity }) => opportunity.evidenceItems.length === 0).length;
+
+  function exportBackup() {
+    setBackupError("");
+    setBackupNotice("");
+    try {
+      const backup = createOpportunityBackup(opportunities);
+      const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `zavqera-opportunities-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setBackupNotice(`Backup exported: ${backup.opportunityCount} opportunities and ${backup.evidenceCount} evidence notes. Store the file securely; it contains the details you recorded.`);
+    } catch (cause) {
+      setBackupError(cause instanceof Error ? cause.message : "The backup could not be exported.");
+    }
+  }
+
+  async function selectBackup(event: ChangeEvent<HTMLInputElement>) {
+    const input = event.currentTarget;
+    const file = input.files?.[0];
+    setBackupError("");
+    setBackupNotice("");
+    setBackupPreview(null);
+    setBackupFileName("");
+    if (!file) return;
+    if (file.size > MAX_OPPORTUNITY_BACKUP_BYTES) {
+      setBackupError("This file is larger than 2 MB. Nothing was imported.");
+      input.value = "";
+      return;
+    }
+    setBackupBusy(true);
+    try {
+      const parsed = parseOpportunityBackup(await file.text());
+      setBackupPreview(parsed);
+      setBackupFileName(file.name);
+    } catch (cause) {
+      setBackupError(cause instanceof Error ? cause.message : "The backup could not be read.");
+      input.value = "";
+    } finally {
+      setBackupBusy(false);
+    }
+  }
+
+  function importBackup() {
+    if (!backupPreview) return;
+    const existingIds = new Set(opportunities.map((item) => item.id));
+    const additions = backupPreview.opportunities.filter((item) => !existingIds.has(item.id));
+    const skipped = backupPreview.opportunities.length - additions.length;
+
+    if (additions.length > 0) {
+      setOpportunities((current) => {
+        const currentIds = new Set(current.map((item) => item.id));
+        const safeAdditions = backupPreview.opportunities.filter((item) => !currentIds.has(item.id));
+        return [...safeAdditions, ...current];
+      });
+    }
+    setBackupNotice(additions.length
+      ? `Imported ${additions.length} opportunities with ${additions.reduce((sum, item) => sum + item.evidenceItems.length, 0)} evidence notes. ${skipped} existing record(s) with matching IDs were skipped; no existing records were overwritten.`
+      : "Nothing was imported because every opportunity ID already exists. Your current records were left unchanged.");
+    setBackupPreview(null);
+    setBackupFileName("");
+    if (backupInputRef.current) backupInputRef.current.value = "";
+  }
 
   function updateForm<K extends keyof OpportunityForm>(key: K, value: OpportunityForm[K]) {
     setForm((current) => ({ ...current, [key]: value }));
@@ -265,6 +339,45 @@ export function OpportunityIntelligence() {
           <a className="button opportunity-hero-cta" href="#add-opportunity-form"><span aria-hidden="true">＋</span> Add opportunity</a>
         </div>
       </div>
+
+      <section className="opportunity-portability" aria-label="Opportunity data backup">
+        <div className="opportunity-portability-copy">
+          <span className="opportunity-portability-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 16V4M7 9l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </span>
+          <div>
+            <strong>Keep your opportunity data portable</strong>
+            <p>Export your opportunities and evidence notes to a backup file, or merge a backup from another device. Data stays in this browser unless you move it yourself.</p>
+          </div>
+        </div>
+        <div className="opportunity-portability-actions">
+          <button className="button button-small" type="button" onClick={exportBackup} disabled={!storageReady || opportunities.length === 0} title={opportunities.length === 0 ? "Add an opportunity before exporting a backup" : "Download your opportunity data"}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v12m-5-5 5 5 5-5M4 20h16" /></svg>
+            Export backup
+          </button>
+          <label className="button button-quiet button-small opportunity-import-label" htmlFor="opportunity-backup-file">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" /></svg>
+            Choose backup
+          </label>
+          <input ref={backupInputRef} id="opportunity-backup-file" className="visually-hidden" type="file" accept=".json,application/json" aria-label="Choose a Zavqera opportunity backup file" onChange={selectBackup} disabled={!storageReady || backupBusy} />
+        </div>
+        {backupBusy && <p className="opportunity-backup-status" role="status">Checking backup file…</p>}
+        {backupPreview && (
+          <div className="opportunity-backup-preview">
+            <div>
+              <strong>Backup ready: {backupFileName}</strong>
+              <p>{backupPreview.opportunityCount} opportunities · {backupPreview.evidenceCount} evidence notes. {backupPreview.exportedAt.slice(0, 10)} export.</p>
+              <small>Existing records with matching IDs will be skipped. Nothing currently saved will be overwritten.</small>
+            </div>
+            <div className="opportunity-backup-preview-actions">
+              <button className="button button-small" type="button" onClick={importBackup} disabled={backupBusy}>Import and merge</button>
+              <button className="button button-quiet button-small" type="button" onClick={() => { setBackupPreview(null); setBackupFileName(""); setBackupError(""); if (backupInputRef.current) backupInputRef.current.value = ""; }}>Cancel</button>
+            </div>
+          </div>
+        )}
+        {backupError && <p className="field-error opportunity-backup-status" role="alert">{backupError}</p>}
+        {backupNotice && <p className="success-state opportunity-backup-status" role="status">{backupNotice}</p>}
+      </section>
 
       <section className="opportunity-metrics" aria-label="Opportunity overview">
         <div className="opportunity-metric">
@@ -431,7 +544,7 @@ export function OpportunityIntelligence() {
           <span><b>60–79</b> Validate — test the weakest assumption first.</span>
           <span><b>20–59</b> Keep on radar — improve evidence or reduce effort.</span>
         </div>
-        <p className="opportunity-storage-note">Privacy and scope: opportunities are saved only in this browser on this device. They are not synced to your account or database. This first version prioritizes opportunities you enter; live discovery, automatic source verification, recurring monitoring, and outcome-based learning are not connected yet.</p>
+        <p className="opportunity-storage-note">Privacy and portability: opportunities and evidence notes are stored only in this browser. Export a backup to move them to another device; the file may contain sensitive business information, so store it securely. Import merges records and skips matching IDs without overwriting existing data. Cloud sync, live discovery, automatic source verification, recurring monitoring, and outcome-based learning are not connected yet.</p>
       </section>
     </div>
   );
