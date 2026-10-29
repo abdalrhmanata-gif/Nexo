@@ -38,6 +38,20 @@ test("current Opportunity Intelligence remains local-first and does not call an 
   assert.doesNotMatch(feature, /createSupabase|openai|anthropic/i);
 });
 
+
+test("Opportunity Intelligence exposes safe local backup and non-overwriting import controls", () => {
+  const feature = read("components/opportunity-intelligence.tsx");
+  const portability = read("lib/opportunity-portability.mjs");
+  assert.match(feature, /createOpportunityBackup\(opportunities\)/);
+  assert.match(feature, /parseOpportunityBackup\(await file\.text\(\)\)/);
+  assert.match(feature, /accept="\.json,application\/json"/);
+  assert.match(feature, /currentIds = new Set\(current\.map/);
+  assert.match(feature, /no existing records were overwritten/i);
+  assert.match(feature, /not synced to your account or database/i);
+  assert.match(portability, /MAX_OPPORTUNITY_BACKUP_BYTES/);
+  assert.match(portability, /item\.url && !isHttpSourceUrl/);
+});
+
 test("AI Opportunity Intelligence product strategy records evidence rules, phases, and release gates", () => {
   const strategyPath = join(repoRoot, "docs", "OPPORTUNITY_INTELLIGENCE_PRODUCT_STRATEGY.md");
   assert.equal(existsSync(strategyPath), true);
