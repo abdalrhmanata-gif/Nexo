@@ -42,6 +42,7 @@ export default function HomePage() {
           <Link className="button button-quiet" href="/app/opportunities">Explore Opportunity Intelligence</Link>
         </div>
         <div className="landing-trust-line"><span aria-hidden="true">✓</span> Review before action. Clear boundaries. No false certainty.</div>
+        <Link className="landing-template-link" href="/templates">Browse mission templates <span aria-hidden="true">→</span></Link>
       </div>
       <div className="landing-visual" aria-label="Illustrative view of a governed Mission">
         <div className="landing-visual-top"><span className="landing-window-dots"><i/><i/><i/></span><span>MISSION CONTROL</span><span className="landing-preview-tag">Illustrative view</span></div>
