@@ -54,6 +54,19 @@ test("Opportunity Intelligence exposes safe local backup and non-overwriting imp
   assert.match(portability, /item\.evidenceUrl && !isHttpSourceUrl/);
 });
 
+test("saved opportunities keep the radar primary and capture stays one click away", () => {
+  const feature = read("components/opportunity-intelligence.tsx");
+  const styles = read("app/globals.css");
+  assert.match(feature, /const \\[isOpportunityFormOpen, setIsOpportunityFormOpen\\] = useState\\(true\\)/);
+  assert.match(feature, /setIsOpportunityFormOpen\\(opportunities\\.length === 0\\)/);
+  assert.match(feature, /aria-expanded=\\{isOpportunityFormOpen\\}/);
+  assert.match(feature, /aria-controls="add-opportunity-card"/);
+  assert.match(feature, /opportunity-layout--form-collapsed/);
+  assert.match(feature, /Add your first opportunity to begin comparing options\\./);
+  assert.match(styles, /\\.opportunity-layout--form-collapsed\\s*\\{\\s*grid-template-columns:minmax\\(0,1fr\\);/);
+  assert.match(styles, /opportunity-layout--form-open \\.opportunity-form-card \\{ order:1; \\}/);
+});
+
 test("AI Opportunity Intelligence product strategy records evidence rules, phases, and release gates", () => {
   const strategyPath = join(repoRoot, "docs", "OPPORTUNITY_INTELLIGENCE_PRODUCT_STRATEGY.md");
   assert.equal(existsSync(strategyPath), true);
