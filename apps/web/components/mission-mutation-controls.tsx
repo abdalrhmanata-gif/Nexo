@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { MissionLifecycleStatus } from "../lib/view-models";
 import {
   allowedNextMissionStatuses,
@@ -24,29 +25,36 @@ export function MissionMutationControls({
   status: MissionLifecycleStatus;
   version: number;
 }) {
+  const router = useRouter();
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function send(body: Record<string, unknown>) {
     setBusy(true);
     setMessage("");
-    const response = await fetch(`/api/missions/${missionId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (response.status === 409) {
-      setMessage("This mission changed elsewhere. Refreshing the authoritative state…");
-      window.setTimeout(() => window.location.reload(), 900);
-      return;
+    try {
+      const response = await fetch(`/api/missions/${missionId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (response.status === 409) {
+        setMessage("This mission changed elsewhere. Showing the latest saved state.");
+        router.refresh();
+        return;
+      }
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        setMessage(payload.error ?? "Mission update was not accepted.");
+        return;
+      }
+      setMessage("Mission saved.");
+      router.refresh();
+    } catch {
+      setMessage("The mission could not be saved. Check your connection and try again.");
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
-    if (response.ok) {
-      window.location.reload();
-      return;
-    }
-    const payload = await response.json().catch(() => ({}));
-    setMessage(payload.error ?? "Mission update was not accepted.");
   }
 
   // The stored objective holds the name, the intent and the success criteria
