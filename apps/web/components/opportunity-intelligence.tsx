@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type FormEvent } from "react";
 import { opportunityPriority, priorityDescription, scoreOpportunity } from "../lib/opportunity-intelligence.mjs";
 import { isOpportunityEvidenceItem, type OpportunityEvidenceItem } from "../lib/evidence-ledger.mjs";
 import { OpportunityEvidencePanel } from "./opportunity-evidence-panel";
@@ -151,6 +151,8 @@ export function OpportunityIntelligence() {
   const [form, setForm] = useState<OpportunityForm>(EMPTY_FORM);
   const [storageReady, setStorageReady] = useState(false);
   const [error, setError] = useState("");
+  const [opportunityQuery, setOpportunityQuery] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState<"ALL" | "HIGH_SCORE" | "VALIDATE" | "HOLD">("ALL");
 
   useEffect(() => {
     try {
@@ -181,6 +183,16 @@ export function OpportunityIntelligence() {
       .sort((a, b) => b.score - a.score || b.opportunity.createdAt - a.opportunity.createdAt),
     [opportunities],
   );
+
+  const visibleRanked = useMemo(() => {
+    const query = opportunityQuery.trim().toLocaleLowerCase();
+    return ranked.filter(({ opportunity, score }) => {
+      const matchesQuery = !query || [opportunity.title, opportunity.target, opportunity.thesis]
+        .some((value) => value.toLocaleLowerCase().includes(query));
+      const matchesPriority = priorityFilter === "ALL" || opportunityPriority(score) === priorityFilter;
+      return matchesQuery && matchesPriority;
+    });
+  }, [ranked, opportunityQuery, priorityFilter]);
 
   const highScoreWithEvidence = ranked.filter(
     ({ opportunity, score }) => score >= 80 && opportunity.evidenceItems.length > 0,
@@ -231,20 +243,42 @@ export function OpportunityIntelligence() {
   return (
     <div className="container opportunity-page">
       <div className="opportunity-hero">
-        <p className="eyebrow">Opportunity Intelligence · Early access</p>
-        <h1 className="detail-title">Find the next move worth making.</h1>
+        <div className="opportunity-title-row">
+          <span className="opportunity-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M4 19V12M10 19V5M16 19V9M22 19V3" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+            </svg>
+          </span>
+          <div>
+            <p className="eyebrow">Opportunity Intelligence <span className="opportunity-early-access">Early access</span></p>
+            <h1 className="detail-title">Find the next move worth making.</h1>
+          </div>
+        </div>
         <p className="detail-intent">
-          Compare opportunities using an explicit rubric, expose missing evidence, and turn the strongest candidate into a governed Mission.
+          Compare opportunities, challenge assumptions, and turn the strongest candidate into a governed Mission.
         </p>
-        <div className="opportunity-hero-note">
-          <strong>Decision support, not false certainty.</strong> Scores explain how an opportunity ranks against your inputs. They are not market forecasts, verified facts, or a promise of revenue.
+        <div className="opportunity-hero-bottom">
+          <div className="opportunity-hero-note">
+            <span className="opportunity-note-icon" aria-hidden="true">✓</span>
+            <div><strong>Decision support, not false certainty.</strong><span> Scores explain your inputs; they are not market forecasts or a promise of revenue.</span></div>
+          </div>
+          <a className="button opportunity-hero-cta" href="#add-opportunity-form"><span aria-hidden="true">＋</span> Add opportunity</a>
         </div>
       </div>
 
       <section className="opportunity-metrics" aria-label="Opportunity overview">
-        <div className="opportunity-metric"><strong>{opportunities.length}</strong><span>Opportunities tracked</span></div>
-        <div className="opportunity-metric"><strong>{highScoreWithEvidence}</strong><span>High score with evidence notes</span></div>
-        <div className="opportunity-metric"><strong>{missingEvidenceReview}</strong><span>Need evidence review</span></div>
+        <div className="opportunity-metric">
+          <span className="opportunity-metric-icon opportunity-icon-tracked" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m12 3 8 4.5-8 4.5-8-4.5L12 3Z M4 12l8 4.5 8-4.5 M4 16.5l8 4.5 8-4.5" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg></span>
+          <div className="opportunity-metric-copy"><strong>{opportunities.length}</strong><span>Opportunities tracked</span></div>
+        </div>
+        <div className="opportunity-metric">
+          <span className="opportunity-metric-icon opportunity-icon-strong" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.2 5.9-.9L12 3Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg></span>
+          <div className="opportunity-metric-copy"><strong>{highScoreWithEvidence}</strong><span>Strong candidates</span><small>High score + evidence notes</small></div>
+        </div>
+        <div className="opportunity-metric">
+          <span className="opportunity-metric-icon opportunity-icon-evidence" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="1.8" /><path d="m15.5 15.5 5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><path d="M10.5 7.5v3M10.5 13.5h.01" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg></span>
+          <div className="opportunity-metric-copy"><strong>{missingEvidenceReview}</strong><span>Need evidence review</span><small>Start by validating assumptions</small></div>
+        </div>
       </section>
 
       <div className="opportunity-layout">
@@ -253,7 +287,7 @@ export function OpportunityIntelligence() {
           <h2 id="add-opportunity-heading">Add an opportunity</h2>
           <p className="opportunity-muted">Write down the opportunity and the assumptions behind it. Start with a hypothesis; evidence can be added later.</p>
 
-          <form className="form-grid opportunity-form" onSubmit={addOpportunity}>
+          <form id="add-opportunity-form" className="form-grid opportunity-form" onSubmit={addOpportunity}>
             <div className="field">
               <label htmlFor="opportunity-title">Opportunity name</label>
               <input id="opportunity-title" value={form.title} maxLength={100} onChange={(event) => updateForm("title", event.target.value)} placeholder="e.g. Reach an underserved customer segment" required />
@@ -292,9 +326,32 @@ export function OpportunityIntelligence() {
             <div>
               <p className="eyebrow">Step 2 · Prioritize</p>
               <h2 id="ranked-opportunities-heading">Opportunity radar</h2>
-              <p>Highest score first. Check evidence before committing.</p>
+              <p>Ranked by transparent criteria. Evidence still needs human review.</p>
             </div>
+            <span className="opportunity-result-count">{ranked.length} {ranked.length === 1 ? "opportunity" : "opportunities"}</span>
           </div>
+
+          {storageReady && ranked.length > 0 && (
+            <div className="opportunity-toolbar">
+              <label className="opportunity-search">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="1.8" /><path d="m15.5 15.5 5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+                <span className="visually-hidden">Search opportunities</span>
+                <input type="search" value={opportunityQuery} onChange={(event) => setOpportunityQuery(event.target.value)} placeholder="Search opportunities…" aria-label="Search opportunities" />
+              </label>
+              <div className="opportunity-filter-group" role="group" aria-label="Filter opportunities by priority">
+                {([
+                  { value: "ALL", label: "All" },
+                  { value: "HIGH_SCORE", label: "Strong" },
+                  { value: "VALIDATE", label: "Validate" },
+                  { value: "HOLD", label: "On hold" },
+                ] as const).map((filter) => (
+                  <button key={filter.value} type="button" className={`opportunity-filter${priorityFilter === filter.value ? " is-active" : ""}`} aria-pressed={priorityFilter === filter.value} onClick={() => setPriorityFilter(filter.value)}>
+                    {filter.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {!storageReady && <div className="empty-state"><p>Loading opportunities saved in this browser…</p></div>}
           {storageReady && ranked.length === 0 && (
@@ -304,9 +361,17 @@ export function OpportunityIntelligence() {
             </div>
           )}
 
-          {storageReady && ranked.length > 0 && (
+          {storageReady && ranked.length > 0 && visibleRanked.length === 0 && (
+            <div className="empty-state opportunity-empty">
+              <h3>No matching opportunities</h3>
+              <p>Try another search or choose a different priority filter.</p>
+              <button className="button button-quiet button-small" type="button" onClick={() => { setOpportunityQuery(""); setPriorityFilter("ALL"); }}>Clear filters</button>
+            </div>
+          )}
+
+          {storageReady && visibleRanked.length > 0 && (
             <div className="opportunity-list">
-              {ranked.map(({ opportunity, score }, index) => {
+              {visibleRanked.map(({ opportunity, score }, index) => {
                 const priority = opportunityPriority(score);
                 return (
                   <article className="card opportunity-card" key={opportunity.id}>
@@ -319,7 +384,7 @@ export function OpportunityIntelligence() {
                         <h3>{opportunity.title}</h3>
                         {opportunity.target && <p className="opportunity-target">For: {opportunity.target}</p>}
                       </div>
-                      <div className="opportunity-score" aria-label={`Priority score ${score} out of 100`}>
+                      <div className="opportunity-score" style={{ "--opportunity-score": `${score}%` } as CSSProperties} aria-label={`Priority score ${score} out of 100`}>
                         <strong>{score}</strong><span>/100</span>
                       </div>
                     </div>
