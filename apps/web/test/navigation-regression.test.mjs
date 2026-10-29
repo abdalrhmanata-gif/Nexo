@@ -103,8 +103,7 @@ test("navigation identifies Workspace only on the workspace route", () => {
 test("landing page explains real product value and uses functional paths", () => {
   const page = read("app/page.tsx");
   for (const route of ["/app", "/app/opportunities", "/templates", "/pricing"]) {
-    if (route === "/templates" || route === "/pricing") assert.match(page, /View proposed plans|Start from a template/);
-    else assert.ok(page.includes(route), `missing landing CTA ${route}`);
+    assert.ok(page.includes(route), `missing landing CTA ${route}`);
   }
   assert.match(page, /Review before action/);
   assert.match(page, /Illustrative view/);
