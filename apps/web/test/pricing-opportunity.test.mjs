@@ -11,7 +11,7 @@ const read = (path) => readFileSync(join(webRoot, path), "utf8");
 test("monthly Opportunity Intelligence prices and report allowances are explicitly proposed, not live", () => {
   const pricing = read("app/pricing/page.tsx");
   assert.match(pricing, /Proposed launch pricing, not active offers/);
-  assert.match(pricing, /Paid billing, AI Opportunity Briefs, and usage enforcement are not enabled yet/);
+  assert.match(pricing, /Paid billing and usage enforcement are not enabled; AI Opportunity Brief access is restricted to an approved preview tester/);
   assert.match(pricing, /\$19/);
   assert.match(pricing, /\$49/);
   assert.match(pricing, /AI Opportunity Briefs per month \(planned\)/);
@@ -23,7 +23,7 @@ test("monthly Opportunity Intelligence prices and report allowances are explicit
 test("pricing positions Opportunity Intelligence as part of the monthly plan without pretending AI is live", () => {
   const pricing = read("app/pricing/page.tsx");
   assert.match(pricing, /inside the monthly plan—not as a surprise add-on/);
-  assert.match(pricing, /server-side AI analyst route is now implemented.*disabled until an approved provider/i);
+  assert.match(pricing, /guarded server-side AI analyst route exists for restricted preview access only\. It is not generally available/i);
   assert.match(pricing, /each factual claim must cite a source or be clearly labeled as an inference or unknown/);
   assert.match(pricing, /href="\/app\/opportunities"/);
   assert.match(pricing, /Market monitoring and alerts/i);
