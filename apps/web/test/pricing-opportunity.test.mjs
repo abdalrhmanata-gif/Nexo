@@ -49,7 +49,7 @@ test("Opportunity Intelligence exposes safe local backup and non-overwriting imp
   assert.match(feature, /no existing records were overwritten/i);
   assert.match(feature, /Cloud sync, live discovery.*not connected yet/i);
   assert.match(portability, /MAX_OPPORTUNITY_BACKUP_BYTES/);
-  assert.match(portability, /item\.url && !isHttpSourceUrl/);
+  assert.match(portability, /item\.evidenceUrl && !isHttpSourceUrl/);
 });
 
 test("AI Opportunity Intelligence product strategy records evidence rules, phases, and release gates", () => {
