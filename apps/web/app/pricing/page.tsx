@@ -49,7 +49,7 @@ export default function PricingPage() {
       <p className="eyebrow"><LocalizedText en="Pricing" /></p>
       <h1><LocalizedText en="Find the opportunity. Prove it. Turn it into action." /></h1>
       <p><LocalizedText en="One monthly plan should take you from an early idea to evidence, a clear decision, and a governed Mission." /></p>
-      <p className="pricing-status"><LocalizedText en="Proposed launch pricing, not active offers. Paid billing, AI Opportunity Briefs, and usage enforcement are not enabled yet." /></p>
+      <p className="pricing-status"><LocalizedText en="Proposed launch pricing, not active offers. Paid billing and usage enforcement are not enabled; AI Opportunity Brief access is restricted to an approved preview tester." /></p>
     </section>
     <section className="pricing" aria-labelledby="pricing-heading">
       <h2 id="pricing-heading" className="visually-hidden"><LocalizedText en="Proposed monthly plans" /></h2>
@@ -72,7 +72,7 @@ export default function PricingPage() {
     <section className="pricing-note card" aria-labelledby="opportunity-intelligence-pricing-heading">
       <p className="eyebrow"><LocalizedText en="The product we intend to build" /></p>
       <h2 id="opportunity-intelligence-pricing-heading"><LocalizedText en="Opportunity Intelligence belongs inside the monthly plan—not as a surprise add-on." /></h2>
-      <p><LocalizedText en="The current early-access feature scores the information you enter, keeps your evidence ledger in this browser, and can turn a reviewed opportunity into a Mission. A server-side AI analyst route is now implemented, but it remains disabled until an approved provider and server-side credentials are configured; the route does not fetch source pages itself." /></p>
+      <p><LocalizedText en="The current early-access feature scores the information you enter, keeps your evidence ledger in this browser, and can turn a reviewed opportunity into a Mission. A guarded server-side AI analyst route exists for restricted preview access only. It is not generally available, and the route does not fetch source pages itself." /></p>
       <ul>
         <li><LocalizedText en="AI challenge: find weak assumptions, contradictions, missing evidence, and reasons an idea may fail." /></li>
         <li><LocalizedText en="Evidence-first report: each factual claim must cite a source or be clearly labeled as an inference or unknown." /></li>
