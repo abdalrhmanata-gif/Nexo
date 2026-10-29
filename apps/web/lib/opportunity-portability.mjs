@@ -155,3 +155,28 @@ export function parseOpportunityBackup(raw) {
     opportunities,
   };
 }
+
+/**
+ * Merge an already-validated backup without ever replacing a local record.
+ * Backups are validated by parseOpportunityBackup before reaching this helper.
+ */
+export function mergeOpportunityBackup(currentOpportunities, backup) {
+  if (!Array.isArray(currentOpportunities)
+    || backup?.format !== OPPORTUNITY_BACKUP_FORMAT
+    || backup?.version !== OPPORTUNITY_BACKUP_VERSION
+    || !Array.isArray(backup?.opportunities)) {
+    throw new Error("Choose a validated Zavqera Opportunity Intelligence backup.");
+  }
+
+  const existingIds = new Set(currentOpportunities
+    .map((item) => item?.id)
+    .filter((id) => typeof id === "string"));
+  const additions = backup.opportunities.filter((item) => !existingIds.has(item.id));
+
+  return {
+    opportunities: [...additions, ...currentOpportunities],
+    addedCount: additions.length,
+    skippedCount: backup.opportunities.length - additions.length,
+    evidenceCount: additions.reduce((sum, item) => sum + item.evidenceItems.length, 0),
+  };
+}
