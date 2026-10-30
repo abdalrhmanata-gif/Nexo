@@ -48,10 +48,15 @@ test("language control supports English, Norwegian, Arabic, and right-to-left di
   assert.match(language, /localStorage\.setItem/);
 });
 
-test("notification badge is global and obtains its count from an authenticated server boundary", () => {
+test("notification badge is scoped to workspace routes and avoids hidden-tab polling", () => {
   const bell = read("components/notification-bell.tsx");
   const endpoint = read("app/api/notifications/route.ts");
-  assert.doesNotMatch(bell, /inBusinessWorkspace/);
+  assert.match(bell, /usePathname/);
+  assert.match(bell, /pathname === "\/app" \|\| pathname\.startsWith\("\/app\/"\)/);
+  assert.match(bell, /if \(!isWorkspaceRoute\) return null/);
+  assert.match(bell, /if \(document\.visibilityState !== "visible"\) return/);
+  assert.match(bell, /document\.addEventListener\("visibilitychange"/);
+  assert.match(bell, /document\.removeEventListener\("visibilitychange"/);
   assert.match(bell, /fetch\("\/api\/notifications"/);
   assert.match(endpoint, /createSupabaseMissionRepository/);
   assert.match(endpoint, /repository\.listMissions\(\)/);
