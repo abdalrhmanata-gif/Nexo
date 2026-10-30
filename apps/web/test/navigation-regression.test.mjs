@@ -131,7 +131,10 @@ test("brand link exposes its visible label and landing proof badges meet AA cont
   const shell = read("components/shell.tsx");
   assert.match(shell, /<Link className="brand" href="\/">/);
   assert.doesNotMatch(shell, /aria-label="Zavqera home"/);
+  assert.match(shell, /className="visually-hidden"/);
+  assert.match(shell, /LocalizedText en="Home" nb="Hjem" ar="الرئيسية"/);
   const css = read("app/globals.css");
+  assert.match(css, /\.topbar \.brand \.visually-hidden \{ display:block; \}/);
   assert.match(css, /\.landing-proof-icon \{[^}]*background:#e3f5f0; color:#08685f;/);
 });
 
