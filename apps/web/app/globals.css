@@ -839,7 +839,7 @@ a:hover { color:var(--teal); }
 .landing-proof-strip { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; padding:17px; border:1px solid #dce6ec; border-radius:14px; background:rgba(255,255,255,.75); }
 .landing-proof-strip > div { display:flex; align-items:center; justify-content:center; gap:12px; padding:6px 12px; }
 .landing-proof-strip > div + div { border-left:1px solid #e1e9ef; }
-.landing-proof-icon { display:grid; place-items:center; flex:none; width:33px; height:33px; border-radius:10px; background:#e3f5f0; color:#0b827a; font-size:10px; font-weight:850; }
+.landing-proof-icon { display:grid; place-items:center; flex:none; width:33px; height:33px; border-radius:10px; background:#e3f5f0; color:#08685f; font-size:10px; font-weight:850; }
 .landing-proof-strip > div:nth-child(2) .landing-proof-icon { background:#eaf1ff; color:#315d9c; }
 .landing-proof-strip > div:nth-child(3) .landing-proof-icon { background:#fff1dc; color:#98601a; }
 .landing-proof-strip > div > span:last-child { display:flex; flex-direction:column; gap:3px; }
