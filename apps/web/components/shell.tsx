@@ -28,8 +28,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <span className="visually-hidden"><LocalizedText en="Home" nb="Hjem" ar="الرئيسية" /></span>
         </Link>
         <nav className="primary-nav" aria-label="Primary navigation">
-          <Link className="nav-link nav-search" href="/app#mission-search"><NavIcon name="search" /><LocalizedText en="Search" nb="Søk" ar="بحث" /></Link>
-          <Link className="nav-link nav-new-mission" href="/app/missions/new"><NavIcon name="plus" /><LocalizedText en="New mission" nb="Nytt oppdrag" ar="مهمة جديدة" /></Link>
+          <Link className="nav-link nav-search" href="/app#mission-search" prefetch={false}><NavIcon name="search" /><LocalizedText en="Search" nb="Søk" ar="بحث" /></Link>
+          <Link className="nav-link nav-new-mission" href="/app/missions/new" prefetch={false}><NavIcon name="plus" /><LocalizedText en="New mission" nb="Nytt oppdrag" ar="مهمة جديدة" /></Link>
           <NavLink className="nav-link nav-business" href="/app/business"><NavIcon name="business" /><LocalizedText en="Business" nb="Bedrift" ar="الأعمال" /></NavLink>
           <NavLink className="nav-link nav-templates" href="/templates"><NavIcon name="templates" /><LocalizedText en="Templates" nb="Maler" ar="القوالب" /></NavLink>
           <NavLink className="nav-link nav-pricing" href="/pricing"><NavIcon name="pricing" /><LocalizedText en="Pricing" nb="Priser" ar="الأسعار" /></NavLink>
