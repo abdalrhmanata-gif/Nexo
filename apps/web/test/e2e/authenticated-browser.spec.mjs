@@ -499,13 +499,13 @@ test("authenticated Opportunity Intelligence backup flow exports, imports, and r
 
     await test.step("reject malformed JSON, unsafe record data, and duplicate IDs inside one file atomically", async () => {
       await uploadJson(pageA, "{", "malformed.json");
-      await expect(pageA.getByRole("alert")).toContainText("This file is not valid JSON");
+      await expect(pageA.locator(".opportunity-backup-status[role=\"alert\"]")).toContainText("This file is not valid JSON");
       expect(await storedOpportunities(pageA)).toEqual(originalLocalState);
 
       const unsafeRecord = structuredClone(exportedBackup);
       unsafeRecord.opportunities[0].evidenceUrl = "javascript:alert(1)";
       await uploadJson(pageA, unsafeRecord, "unsafe-url.json");
-      await expect(pageA.getByRole("alert")).toContainText("invalid opportunity or evidence data");
+      await expect(pageA.locator(".opportunity-backup-status[role=\"alert\"]")).toContainText("invalid opportunity or evidence data");
       expect(await storedOpportunities(pageA)).toEqual(originalLocalState);
 
       const duplicateIds = structuredClone(exportedBackup);
@@ -513,7 +513,7 @@ test("authenticated Opportunity Intelligence backup flow exports, imports, and r
       duplicateIds.opportunityCount = 2;
       duplicateIds.evidenceCount = duplicateIds.opportunities.reduce((sum, item) => sum + item.evidenceItems.length, 0);
       await uploadJson(pageA, duplicateIds, "duplicate-ids.json");
-      await expect(pageA.getByRole("alert")).toContainText("duplicate opportunity IDs");
+      await expect(pageA.locator(".opportunity-backup-status[role=\"alert\"]")).toContainText("duplicate opportunity IDs");
       expect(await storedOpportunities(pageA)).toEqual(originalLocalState);
     });
 
@@ -523,7 +523,7 @@ test("authenticated Opportunity Intelligence backup flow exports, imports, and r
         mimeType: "application/json",
         buffer: Buffer.alloc(2 * 1024 * 1024 + 1, 0x20),
       });
-      await expect(pageA.getByRole("alert")).toContainText("larger than 2 MB");
+      await expect(pageA.locator(".opportunity-backup-status[role=\"alert\"]")).toContainText("larger than 2 MB");
       expect(await storedOpportunities(pageA)).toEqual(originalLocalState);
     });
 
