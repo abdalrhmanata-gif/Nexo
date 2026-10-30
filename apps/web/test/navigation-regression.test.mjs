@@ -218,7 +218,7 @@ test("all literal Opportunity Intelligence translations exist in every non-Engli
     read("components/opportunity-analysis-panel.tsx"),
   ];
   const keys = new Set(components.flatMap((source) =>
-    [...source.matchAll(/\\bt\\("([^"]+)"\\)/g)].map((match) => match[1])
+    [...source.matchAll(/\bt\("([^"]+)"\)/g)].map((match) => match[1])
   ));
   for (const language of ["nb", "ar", "es", "fr", "de"]) {
     for (const key of keys) {
@@ -229,7 +229,7 @@ test("all literal Opportunity Intelligence translations exist in every non-Engli
 
 test("Opportunity Intelligence hook and all long-form informational copy use the translator", () => {
   const opportunity = read("components/opportunity-intelligence.tsx");
-  assert.match(opportunity, /export function OpportunityIntelligence\\(\\) \\{\\s+const t = useUiTranslation\\(\\);/);
+  assert.match(opportunity, /export function OpportunityIntelligence\(\) \{\s+const t = useUiTranslation\(\);/);
   assert.doesNotMatch(opportunity, /<p className="opportunity-storage-note">Privacy and portability:/);
-  assert.doesNotMatch(opportunity, /<p><strong>\\{t\\("Priority ="\\)\\}<\\/strong> 25% strategic fit/);
+  assert.doesNotMatch(opportunity, /<p><strong>\{t\("Priority ="\)\}<\/strong> 25% strategic fit/);
 });

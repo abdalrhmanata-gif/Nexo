@@ -554,7 +554,7 @@ export function OpportunityIntelligence() {
           <span><b>60–79</b> {t("Validate — test the weakest assumption first.")}</span>
           <span><b>20–59</b> {t("Keep on radar — improve evidence or reduce effort.")}</span>
         </div>
-        <p className="opportunity-storage-note">{t("Privacy and portability: opportunities and evidence notes are stored only in this browser. Export a backup to move them to another device; the file may contain sensitive business information, so store it securely. Import merges records and skips matching IDs without overwriting existing data. Cloud sync, live discovery, automatic source verification, recurring monitoring, and outcome-based learning are not connected yet.")}</p>
+        <p className="opportunity-storage-note">{t("{t(\"Privacy and portability: opportunities and evidence notes are stored only in this browser. Export a backup to move them to another device; the file may contain sensitive business information, so store it securely. Import merges records and skips matching IDs without overwriting existing data. Cloud sync, live discovery, automatic source verification, recurring monitoring, and outcome-based learning are not connected yet.\")}")}</p>
       </section>
     </div>
   );
