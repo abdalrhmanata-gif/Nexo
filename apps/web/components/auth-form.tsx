@@ -58,16 +58,3 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     <button className="button" type="submit" disabled={loading}>{loading ? "Working…" : mode === "sign-in" ? "Sign in" : "Create account"}</button>
   </form>;
 }
-
-export function SignOutButton() {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  async function signOut() {
-    setLoading(true);
-    const { createSupabaseBrowserClient } = await import("../lib/supabase/browser");
-    await createSupabaseBrowserClient().auth.signOut();
-    router.push("/auth/sign-in");
-    router.refresh();
-  }
-  return <button className="button button-small" onClick={signOut} disabled={loading}>{loading ? "Signing out…" : "Sign out"}</button>;
-}
