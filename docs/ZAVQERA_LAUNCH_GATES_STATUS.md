@@ -1,5 +1,13 @@
 # ZAVQERA Launch Gates Status
 
+## Current PR #29 verification — 2026-10-25
+
+- PR head `2921438c9736256a0651093a76b9a46fae38e5b1` passed [W21](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/40195077112), [Web Unit](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/40195077103), [Web CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/40195077092), and [Flutter CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/40195077102). W21 used disposable PostgreSQL 17, passed 606 assertions across 42 SQL/pgTAP files, and verified cleanup. This is isolated CI evidence, not hosted schema parity.
+- The Netlify workflow's real OpenAI planning smoke test now requires a same-repository PR and explicit `[live-openai-planning]` body marker. No live provider request was made for this candidate.
+- The PR deployment job is excluded from PR events and manual/push deployment is branch-allowlisted. It uses Netlify `deploy-preview` context and contains no `--prod` option. PR route verification remains enabled separately. This is a workflow/source finding, not production deployment evidence.
+- Merge-resolution commit `532a12ee6f6039634812c18ab855265dbf0cae86` exposed a duplicate top-level `pull_request` key; [Netlify workflow run 40196733336](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/40196733336) failed before creating jobs. The duplicate is removed, the regression test now enforces exactly one PR trigger, and local targeted checks pass; CI on the corrected head is pending.
+- PR #29 remains OPEN / Draft / Unmerged; Issue #23 remains open. This branch update resolves the two base-branch conflicts; the resulting exact head still needs CI and independent review.
+
 **Decision: BLOCKED — this candidate is not production-ready and public launch is not authorized.**
 
 Candidate code branch: `zavqera/alternative-web-deployment`
@@ -43,8 +51,8 @@ The Web dependency patch updates `next` and `eslint-config-next` to 15.5.28, `sh
 | W25 isolated PostgreSQL fence | **PASS, scoped** | [W25 CI](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/40186325447) passed on `017da48`. This proves the isolated test harness's budget/idempotency race invariants, not production-schema correctness. |
 | Netlify workflow safety | **PASS** | [Workflow run](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/40186325348) passed its credential gate and skipped deployment because deploy credentials are absent. The checked-in workflow now uses a `deploy-preview` context, captures that draft URL, and verifies that preview; a regression test rejects production flags. **No preview was actually deployed or tested.** |
 | Local authenticated browser E2E on `017da48` | **BLOCKED / NOT RUN** | Docker is unavailable in this environment. The local preflight also requires `ZAVQERA_E2E_MODE=disposable-full-loop` and `ZAVQERA_E2E_SUPABASE_WORKDIR`; neither was configured. |
-| W21 disposable full-loop E2E | **PASS on PR #29 merge candidate; not rerun on `017da48`** | [W21 run](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/39003536607) tested merge commit `bd40ab09498dd07088eb77d862dbf6da9cc69370`, whose parents were target base `46dc6029f084fb000ba511478d6e8aec3eb532b3` and PR #29 head `1b02272a7281b2e9ebf9020cd21a8ac9de3e577e`. Its artifact records PostgreSQL 17, repository migrations, and verified cleanup. This evidence does not claim a run on the current candidate. |
-| Current-branch W21 workflow | **BLOCKED** | `.github/workflows/zavqera-w21-e2e.yml` requires the GitHub Actions secret `ZAVQERA_DEVELOPMENT_DB_URL` to snapshot Development schema. That secret is absent; do not substitute `SUPABASE_DEV_SERVICE_ROLE_KEY`. The owner must configure the specifically scoped Development connection through GitHub Actions secrets, or provide an authorized local Docker/Supabase environment. |
+| W21 disposable full-loop E2E | **PASS on current PR head `2921438`** | [W21 run](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/40195077112) passed on exact PR head `2921438c9736256a0651093a76b9a46fae38e5b1`: disposable PostgreSQL 17, 42 SQL/pgTAP files, 606 assertions, browser E2E, and verified cleanup. It does not establish hosted Development parity or production recovery. |
+| Current-branch W21 workflow | **PASS, isolated** | The checked-in workflow starts a disposable local Supabase/PostgreSQL stack and replays repository migrations; it does not require `ZAVQERA_DEVELOPMENT_DB_URL` or dump a hosted schema. The exact-head run is linked above. |
 | Live AI provider verification | **NOT RUN** | No current Netlify Deploy Preview secret scope or valid non-production provider key could be verified. No live provider calls were made. |
 | Hosted password-reset flow | **NOT RUN** | Local auth/confirmation tests pass, but a hosted reset email/session flow was not run. Netlify and Supabase dashboards were not available; avoid repeated reset emails. |
 | Hosted Development migration parity, RLS, grants, and advisors | **BLOCKED / NOT VERIFIED** | No live Supabase read was performed in this audit and no SQL was executed. Issue #31 contains prior migration-ledger and private AI-table access concerns; those reports were not revalidated here. |
@@ -57,7 +65,7 @@ The Web dependency patch updates `next` and `eslint-config-next` to 15.5.28, `sh
 - The Development migration ledger and effective hosted RLS/API permissions were not re-read. The earlier Issue #31 report of migration-history drift and three private anonymous-AI tables with RLS disabled remains an unresolved, historical report—not a newly verified live finding.
 - The W21 disposable PostgreSQL replay and cleanup evidence is for the PR #29 merge candidate described above. It is not a live Development migration-history check.
 - The final target-branch Netlify workflow is preview-only. Its run skipped all deploy and route-verification steps because `NETLIFY_AUTH_TOKEN`/`NETLIFY_SITE_ID` are not configured; no production deploy occurred.
-- PR #29's current workflow/test version separately permits `--prod` on its allowlisted release branches. PR #29 was not modified. **Do not merge it until its deployment workflow is reviewed and changed to the approved non-production behavior.**
+- At PR head `2921438`, the Netlify workflow uses `--context deploy-preview`, has no `--prod` option, excludes pull requests and non-allowlisted refs from the deploy job, and retains a separate PR preview-verification job. Its live OpenAI smoke test is opt-in only; no live provider call was made. This branch update resolves the base conflicts; fresh exact-head CI and independent review are still required.
 - No secret values were requested, printed, added, or committed.
 - The tested code candidate is `017da48`; the report is a separate documentation-only commit and does not alter that candidate. `main` was not changed. PR #29 remains Draft.
 
@@ -69,8 +77,8 @@ Product unit/regression coverage passes, including mission/action lifecycle, fol
 
 ## Required next actions
 
-1. Keep PR #29 Draft. Have its owner change the production-capable deploy workflow to a non-production preview flow, then rerun its checks; do not merge until resolved.
-2. Have the release owner authorize one safe W21 route: configure the exact Development-only `ZAVQERA_DEVELOPMENT_DB_URL` GitHub secret without sharing its value, or run the documented disposable local stack with Docker. Never use Supabase Main.
+1. Keep PR #29 Draft. Resolve its two conflicts against the current base branch and rerun required checks on the resulting exact PR head; obtain independent review before any merge decision.
+2. Preserve W21's disposable-only workflow. Do not add a hosted Development schema dump as a prerequisite for isolated E2E.
 3. Provide authorized read-only Development access to reconcile migration history and review effective RLS, grants, privileged functions, and advisors. Do not apply migrations as part of that audit.
 4. Configure a non-production provider key directly in the correct Netlify Deploy Preview secret scope, then run bounded AI success/failure tests; do not send the key through chat or logs.
 5. Run one authorized hosted password-reset test and verify cleanup/session behavior without repeated email requests.

@@ -107,7 +107,8 @@ for path in WEB_POLICY_FILES:
         text,
     ):
         errors.append(f'authoritative Web code imports browser Supabase client: {relpath}')
-    if re.search(r'service[_-]?role|SUPABASE_SERVICE_ROLE', text, re.I):
+    trusted_admin_client = WEB_ROOT / 'lib' / 'supabase' / 'admin.ts'
+    if re.search(r'service[_-]?role|SUPABASE_SERVICE_ROLE', text, re.I) and path != trusted_admin_client:
         errors.append(f'service-role credential/client referenced by Web code: {relpath}')
     if path != WEB_REPOSITORY and re.search(
         r'\.from\(\s*["\'](?:' + '|'.join(AUTHORITATIVE_TABLES) + r')["\']\s*\)',
@@ -126,6 +127,29 @@ for path in WEB_POLICY_FILES:
 
 if not WEB_REPOSITORY.is_file():
     errors.append('missing authoritative Web repository: apps/web/lib/supabase/mission-repository.ts')
+
+# A privileged service-role client is permitted only in this exact server-only
+# module and only when consumed by the dedicated internal worker route.
+TRUSTED_ADMIN_CLIENT = WEB_ROOT / 'lib' / 'supabase' / 'admin.ts'
+TRUSTED_WORKER_ROUTE = WEB_ROOT / 'app' / 'api' / 'internal' / 'agent-executions' / '[executionId]' / 'route.ts'
+if TRUSTED_ADMIN_CLIENT.is_file():
+    admin_source = TRUSTED_ADMIN_CLIENT.read_text(encoding='utf-8')
+    if not re.search(r'^\s*import\s+["\']server-only["\']', admin_source, re.M):
+        errors.append('trusted Supabase admin client must import server-only')
+    if not re.search(r'createClient\(supabaseUrl,\s*serviceRoleKey', admin_source):
+        errors.append('trusted Supabase admin client must use the configured service-role key only in the isolated factory')
+    if not TRUSTED_WORKER_ROUTE.is_file():
+        errors.append('trusted Supabase admin client exists without the dedicated internal worker route')
+    else:
+        route_source = TRUSTED_WORKER_ROUTE.read_text(encoding='utf-8')
+        if not re.search(r'from\s+["\'][^"\']*supabase/admin["\']', route_source):
+            errors.append('internal worker route must be the explicit consumer of the trusted Supabase admin client')
+    for path in WEB_POLICY_FILES:
+        if path == TRUSTED_WORKER_ROUTE:
+            continue
+        source = path.read_text(encoding='utf-8')
+        if re.search(r'from\s+["\'][^"\']*supabase/admin["\']', source):
+            errors.append(f'trusted Supabase admin client imported outside internal worker route: {path.relative_to(ROOT).as_posix()}')
 
 report = {
     'status': 'STATIC_PASS' if not errors else 'STATIC_FAIL',

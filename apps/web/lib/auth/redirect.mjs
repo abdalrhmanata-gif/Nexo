@@ -29,3 +29,39 @@ export function resolveRequestOrigin(headers, fallbackUrl) {
   const proto = headers.get("x-forwarded-proto") || new URL(fallbackUrl).protocol.replace(":", "");
   return `${proto}://${host}`;
 }
+
+/**
+ * Use Netlify's preview permalink for auth callbacks in Deploy Previews.
+ * A configured public site URL may point to production and must not pull a
+ * preview password-reset flow onto another origin.
+ */
+export function getAuthCallbackConfiguredSiteUrl({
+  context,
+  pullRequest,
+  deployPrimeUrl,
+  publicSiteUrl,
+} = {}) {
+  const isDeployPreview = String(context ?? "").trim().toLowerCase() === "deploy-preview"
+    || String(pullRequest ?? "").trim().toLowerCase() === "true";
+  const preferred = isDeployPreview ? deployPrimeUrl : publicSiteUrl;
+  return typeof preferred === "string" ? preferred.trim() : "";
+}
+
+/**
+ * Prefer an explicitly configured public origin for email callbacks. This
+ * prevents an untrusted Host / forwarded-host header from choosing the
+ * destination after an authentication token has been exchanged.
+ */
+export function resolveAuthCallbackOrigin(configuredSiteUrl, headers, fallbackUrl) {
+  if (typeof configuredSiteUrl === "string" && configuredSiteUrl.trim()) {
+    try {
+      const parsed = new URL(configuredSiteUrl);
+      if (parsed.protocol === "https:" || parsed.hostname === "localhost" || parsed.hostname === "127.0.0.1") {
+        return parsed.origin;
+      }
+    } catch {
+      // Fall through to the request origin when the optional value is invalid.
+    }
+  }
+  return resolveRequestOrigin(headers, fallbackUrl);
+}

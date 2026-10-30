@@ -44,3 +44,12 @@ Those choices require:
 4. an isolated PostgreSQL test demonstrating the required atomic fence.
 
 No hosted Development or Supabase Main change is authorized by this document.
+
+
+## Read-only hosted Development schema parity check — 2026-10-12
+
+The persistence design was exercised on a disposable PostgreSQL 17 stack, including independent-session idempotency, budget-reservation, dispatch-claim, and reconciliation-claim race proofs. The W72 integration uses fake providers and proves durable ledger settlement; it does not prove the hosted Development database has the same schema.
+
+A read-only inventory of hosted `ZAVQERA Development` found migration history stops at W65. The branch includes W66, W68–W71, and W73–W79 migrations. The hosted `agent_executions` table is missing the newer dispatch-claim and reconciliation-claim columns, and the current table inventory did not show `mission_authority_budgets` or `mission_authority_budget_reservations`.
+
+**Status:** persistent gateway/fence is verified locally; hosted schema parity remains **BLOCKED / NOT VERIFIED**. Do not close the live-schema acceptance criterion and do not apply migrations here: this project’s Mission Authority issue guardrails prohibit changes to the hosted Development schema. A separate authorized migration plan/review is required before hosted Research or provider dispatch can be certified.

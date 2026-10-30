@@ -79,3 +79,47 @@ Port `3210` on `127.0.0.1` must be free (override with `ZAVQERA_E2E_BASE_URL=htt
   executable on PATH are absent, and no isolated schema/workdir is configured.
   `npm run test:e2e` therefore remains BLOCKED, not PASS. The owner-run setup above
   is the accepted W21 alternative; it does not claim a browser run occurred.
+
+
+## Transactional email invitations (Netlify Deploy Preview)
+
+Workspace invitations are only reported as accepted after the email provider accepts the message. The invitation token is never returned by the API or persisted in plaintext.
+
+To enable actual delivery in a Deploy Preview:
+
+1. Create a Resend account and verify a domain you control. Use the sender address only after Resend has verified the domain's sending DNS records.
+2. Create a server-side Resend API key restricted to sending email where the provider supports that permission. Never commit the key or paste it into chat.
+3. In Netlify, open the site's environment-variable settings and add:
+   - `RESEND_API_KEY`: the secret Resend API key.
+   - `RESEND_FROM_EMAIL`: a sender such as `ZAVQERA <invites@your-verified-domain.com>` using the verified domain.
+4. Scope these values to **Deploy Previews** while validating this PR. Do not change Production variables as part of this task.
+5. Trigger a fresh Deploy Preview. The invitation API uses Netlify's `DEPLOY_PRIME_URL` as the link origin for previews, applies an idempotency key per stored invitation, and refuses to claim an email was delivered when provider configuration is missing or a request is rejected.
+
+A successful provider API response confirms the message was accepted for sending; it does not prove it reached the recipient's inbox. Check provider event/log records for delivery, bounce, or suppression. If a network timeout makes the provider result ambiguous, the invitation stays pending so a link that may already have been emailed is not invalidated automatically.
+
+
+## Authenticated live Mission research verification (Development-only)
+
+The one-run live research test is deliberately separate from the local W21 gate and only runs for same-repository PR #29 when the PR body contains the temporary marker `[live-openai-research]`. It validates the actual Netlify Deploy Preview and the fixed ZAVQERA Development project before logging in or creating any Mission.
+
+**Preferred setup: use a dedicated pre-provisioned Development test account rather than an Auth Admin secret.**
+
+1. In the Supabase dashboard for **ZAVQERA Development** (`mrwmmbytcymqgwvcoywd`), create one dedicated test user in Authentication → Users. Mark it as email-confirmed so the test does not depend on invitation or confirmation-email delivery. Do not use a real person's account or any Production user.
+2. Generate a unique, strong password for this test-only user. Do not commit or paste the credentials into source code, PR comments, logs or chat.
+3. In GitHub repository Settings → Secrets and variables → Actions, add these repository secrets:
+   - `SUPABASE_DEV_TEST_EMAIL`: the dedicated Development test user's email.
+   - `SUPABASE_DEV_TEST_PASSWORD`: its generated password.
+4. The workflow checks that both secrets are present without printing their values. The browser then signs in through the real application UI. A successful live research test creates a Mission and immutable research/audit history in Development; those records are intentionally retained as provenance and must not be deleted or cleaned by weakening database protections.
+5. Do not run this marked workflow repeatedly: it creates another persisted Mission each time. Add the marker to PR #29 only for one intentional run, wait until the authenticated research job has started, then remove the marker. Verify that the workflow captured the marker before removing it.
+
+**Trusted-completion feature gate:** `ZAVQERA_TRUSTED_RESEARCH_COMPLETION_ENABLED` defaults to `false`. Keep this flag false until hosted Development has an authorized migration plan, the required W79 trusted RPC signature has been applied through the separately approved process, and a read-only catalog check confirms exact signature/permission parity. A green disposable W21 run is not proof of hosted schema parity. Only enable this flag in the intended Deploy Preview after that separate verification; never set it to `true` just to make the UI test pass. The live endpoint additionally requires `ZAVQERA_TRUSTED_RESEARCH_DEPLOY_CONTEXT=deploy-preview` to be configured only for Netlify Deploy Previews and with the Functions runtime scope, a valid `ZAVQERA_EXECUTION_WORKER_TOKEN`, and a resolvable trusted worker origin before it reserves quota or calls OpenAI. This is an explicit ZAVQERA runtime setting rather than a dependency on Netlify's build-only `CONTEXT` variable. If any prerequisite is missing, the route returns 503 without starting Research.
+
+The previous `SUPABASE_DEV_SERVICE_ROLE_KEY` path remains a fallback, but modern `sb_secret_…` keys are not legacy JWTs and may be rejected by the hosted Auth Admin mutation path. The pre-provisioned-account path avoids requiring a service-role key for the test. Either path is restricted to Development, and the test refuses to proceed if the Netlify preview or configured Supabase URL does not match the expected Development target.
+
+The test proves live OpenAI research, actual public citations, persisted research history and source links after reload. It performs no external side effects. A successful plan-generation smoke test alone is not proof that live Mission research works.
+
+
+
+### Hosted Research schema preflight
+
+Before live Mission Research reserves AI quota or calls the provider, the server uses the token-protected internal worker route to verify that the exact trusted-completion RPC signature is available. The probe deliberately sends an invalid UUID argument and only interprets PostgreSQL SQLSTATE `22P02` for that UUID coercion as proof that PostgREST resolved the expected signature; it cannot select or mutate an execution row. Missing-function/schema-cache/permission/network errors fail closed, so hosted schema drift stops Research before provider spend. This does not apply or migrate hosted Development and does not replace the separately authorized migration-parity review.

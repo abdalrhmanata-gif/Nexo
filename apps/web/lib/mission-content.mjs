@@ -212,7 +212,7 @@ export function formatFollowUp(value, now = new Date()) {
   const date0 = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
   const now0 = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
   const days = Math.round((date0 - now0) / 86400000);
-  const absolute = date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  const absolute = formatDateOnly(value);
   if (days < 0) return { absolute, relative: days === -1 ? "yesterday" : `${Math.abs(days)} days ago`, overdue: true };
   if (days === 0) return { absolute, relative: "today", overdue: false };
   if (days === 1) return { absolute, relative: "tomorrow", overdue: false };
@@ -317,8 +317,161 @@ export function summariseEventPayload(payload) {
   return parts.join(" · ").slice(0, 160);
 }
 
+export function formatDateOnly(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+}
+
+export function formatDateTime(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  const day = date.getDate();
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
+  const time = date.toLocaleTimeString("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  });
+  return `${day}/${month}/${year}, ${time}`;
+}
+
+const EVENT_LABELS = {
+  APPROVAL_REQUESTED: "Approval requested",
+  APPROVAL_DECIDED: "Approval decision",
+  AGENT_EXECUTION_STARTED: "Agent execution started",
+  AGENT_EXECUTION_COMPLETED: "Agent execution completed",
+  AGENT_EXECUTION_CANCEL_REQUESTED: "Agent cancellation requested",
+  AGENT_EXECUTION_RECONCILED: "Execution reconciled",
+  AGENT_EXECUTION_RETRY_STARTED: "Execution retry started",
+  VERIFICATION_RECORDED: "Verification recorded",
+  OUTCOME_COMMITTED: "Outcome committed",
+  WORKSPACE_INVITATION_CREATED: "Invitation created",
+  WORKSPACE_INVITATION_ACCEPTED: "Invitation accepted",
+  WORKSPACE_INVITATION_REVOKED: "Invitation revoked",
+  MEMBER_ROLE_CHANGED: "Member role changed",
+  MEMBER_REMOVED: "Member removed",
+};
+
 export function humaniseEventType(eventType) {
   if (typeof eventType !== "string" || !eventType.trim()) return "Mission event";
-  const words = eventType.replaceAll("_", " ").trim().toLowerCase();
-  return words.charAt(0).toUpperCase() + words.slice(1);
+  return EVENT_LABELS[eventType] ?? (() => {
+    const words = eventType.replaceAll("_", " ").trim().toLowerCase();
+    return words.charAt(0).toUpperCase() + words.slice(1);
+  })();
+}
+
+
+/**
+ * Presents only allowlisted approval-scope fields. Never stringify the raw
+ * scope because it can contain internal identifiers or future sensitive data.
+ */
+const APPROVAL_SCOPE_FIELDS = [
+  ["type", "Request type", "text"],
+  ["summary", "Requested operation", "text"],
+  ["destination", "Destination", "text"],
+  ["audience", "Audience", "text"],
+  ["request_hash", "Request SHA-256", "text"],
+  ["bounded_action", "Bounded action", "boolean"],
+  ["reason", "Reason", "text"],
+  ["summary", "Execution summary", "text"],
+  ["purpose", "Purpose", "text"],
+  ["requested_action", "Requested action", "text"],
+  ["action", "Requested action", "text"],
+  ["effect", "Potential effect", "text"],
+  ["resource", "Resource", "text"],
+  ["data_scope", "Data scope", "text"],
+  ["allowed_actions", "Allowed actions", "list"],
+  ["not_allowed_actions", "Not allowed", "list"],
+  ["forbidden_actions", "Forbidden actions", "list"],
+  ["read_only", "Read-only", "boolean"],
+  ["external_side_effects", "External side effects", "boolean"],
+  ["requires_approval", "Requires approval", "boolean"],
+  ["budget", "Budget", "scalar"],
+  ["max_items", "Maximum items", "scalar"],
+  ["expires_at", "Expiry", "scalar"],
+  ["description", "Description", "text"],
+];
+
+function approvalScopeValue(value, kind) {
+  if (kind === "boolean" && typeof value === "boolean") return value ? "Yes" : "No";
+  if ((kind === "text" || kind === "scalar") && (typeof value === "string" || typeof value === "number")) {
+    const text = String(value).trim();
+    return text ? text.slice(0, 100) : "";
+  }
+  if (kind === "list" && Array.isArray(value)) {
+    return value
+      .filter((item) => typeof item === "string" || typeof item === "number")
+      .map((item) => String(item).trim())
+      .filter(Boolean)
+      .slice(0, 3)
+      .join(", ")
+      .slice(0, 100);
+  }
+  return "";
+}
+
+export function summariseApprovalScope(scope) {
+  if (!scope || typeof scope !== "object" || Array.isArray(scope)) {
+    return "No readable scope details were provided; inspect the mission before deciding.";
+  }
+  const parts = [];
+  for (const [field, label, kind] of APPROVAL_SCOPE_FIELDS) {
+    if (!Object.prototype.hasOwnProperty.call(scope, field)) continue;
+    const value = approvalScopeValue(scope[field], kind);
+    if (value) parts.push(`${label}: ${value}`);
+    if (parts.length >= 5) break;
+  }
+  return parts.length
+    ? parts.join(" · ").slice(0, 360)
+    : "No readable scope details were provided; inspect the mission before deciding.";
+}
+
+
+/**
+ * Render the DB-generated approval payload shape. This formatter deliberately
+ * accepts only type/field metadata; it never reads request payload values.
+ */
+function payloadShapeDescription(shape, depth = 0) {
+  if (!shape || typeof shape !== "object" || Array.isArray(shape)) return "unknown";
+  const type = ["object", "array", "string", "number", "boolean", "null", "missing"].includes(shape.type)
+    ? shape.type
+    : "unknown";
+  if (shape.details_omitted === true || depth >= 3) return `${type} (nested structure omitted)`;
+
+  if (type === "object") {
+    const fields = Array.isArray(shape.fields)
+      ? shape.fields.slice(0, 8).map((entry) => {
+          if (!entry || typeof entry !== "object") return "field (unknown)";
+          const field = typeof entry.field === "string"
+            ? entry.field.replace(/[^A-Za-z0-9_. -]/g, "").slice(0, 64) || "field"
+            : "field";
+          return `${field} (${payloadShapeDescription(entry.shape, depth + 1)})`;
+        })
+      : [];
+    const omitted = Number.isInteger(shape.omitted_fields) && shape.omitted_fields > 0
+      ? `; ${shape.omitted_fields} additional field(s) omitted`
+      : "";
+    return fields.length ? `object: ${fields.join(", ")}${omitted}` : "object (no visible fields)";
+  }
+
+  if (type === "array") {
+    if (shape.empty === true) return "array (empty)";
+    return shape.item_shape
+      ? `array (sample item shape: ${payloadShapeDescription(shape.item_shape, depth + 1)})`
+      : "array (item structure unavailable)";
+  }
+
+  return type;
+}
+
+export function summariseApprovalPayloadPreview(preview) {
+  if (!preview || typeof preview !== "object" || Array.isArray(preview)) {
+    return "No safe payload-shape preview is attached; do not approve execution from this request.";
+  }
+  return `Field names and data types only; values hidden: ${payloadShapeDescription(preview)}`.slice(0, 600);
 }

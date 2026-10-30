@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import net from "node:net";
@@ -11,6 +12,9 @@ export const OPT_IN_MODE = "disposable-full-loop";
 export const PROJECT_ID_PATTERN = /^zavqera-e2e-[a-z0-9-]{1,40}$/;
 export const MARKER_FILE = "ZAVQERA_E2E_DISPOSABLE";
 export const SCHEMA_DUMP_PATTERN = /^\d{14}_development_schema\.sql$/;
+export const REPO_MIGRATION_SOURCE = "repo-migrations";
+export const E2E_COMPAT_MIGRATION_NAME = "20260921180005_e2e_historical_auth_compat.sql";
+const E2E_EXCLUDED_SERVICES = "studio,imgproxy,realtime,storage-api,postgres-meta,edge-runtime,logflare,vector,supavisor";
 export const DEFAULT_BASE_URL = "http://127.0.0.1:3210";
 export const LEDGER_LIMIT = 64;
 export const LEDGER_KINDS = ["user", "mission", "action", "verification", "outcome"];
@@ -122,6 +126,9 @@ export function checkStaticPreconditions(env, { repoRoot, fsApi = { existsSync, 
   }
 
   const workdir = env.ZAVQERA_E2E_SUPABASE_WORKDIR;
+  const migrationSource = env.ZAVQERA_E2E_MIGRATION_SOURCE === REPO_MIGRATION_SOURCE
+    ? REPO_MIGRATION_SOURCE
+    : "development-schema";
   let projectId = null;
   if (!workdir) {
     reasons.push("Set ZAVQERA_E2E_SUPABASE_WORKDIR to the dedicated disposable Supabase workdir (see apps/web/README.md).");
@@ -162,19 +169,38 @@ export function checkStaticPreconditions(env, { repoRoot, fsApi = { existsSync, 
         reasons.push(`The workdir must contain a ${MARKER_FILE} file whose only content is its project_id. This is the operator's explicit consent that all of its local data may be destroyed.`);
       }
 
-      // The repository migrations cannot rebuild Development (its W5 history
-      // tables were never committed), so the stack must be built from exactly
-      // one operator-supplied schema dump and nothing else.
       let migrations = [];
       try {
-        migrations = fsApi.readdirSync(path.join(resolved, "supabase", "migrations")).filter((name) => name.endsWith(".sql"));
+        migrations = fsApi.readdirSync(path.join(resolved, "supabase", "migrations"))
+          .filter((name) => name.endsWith(".sql"))
+          .sort();
       } catch {
         migrations = [];
       }
-      if (migrations.length !== 1 || !SCHEMA_DUMP_PATTERN.test(migrations[0])) {
+
+      if (migrationSource === REPO_MIGRATION_SOURCE) {
+        let repositoryMigrations = [];
+        try {
+          repositoryMigrations = fsApi.readdirSync(path.join(repoRoot, "supabase", "migrations"))
+            .filter((name) => name.endsWith(".sql"))
+            .sort();
+        } catch {
+          repositoryMigrations = [];
+        }
+        const repoComparable = migrations.filter((name) => name !== E2E_COMPAT_MIGRATION_NAME);
+        const compatCount = migrations.filter((name) => name === E2E_COMPAT_MIGRATION_NAME).length;
+        if (!repositoryMigrations.length
+            || compatCount !== 1
+            || repoComparable.length !== repositoryMigrations.length
+            || repoComparable.some((name, index) => name !== repositoryMigrations[index])) {
+          projectId = null;
+          reasons.push("repo-migrations mode requires the repository migration set plus exactly one disposable historical-auth compatibility migration.");
+        }
+      } else if (migrations.length !== 1 || !SCHEMA_DUMP_PATTERN.test(migrations[0])) {
         projectId = null;
-        reasons.push("supabase/migrations in the disposable workdir must contain exactly one file, <timestamp>_development_schema.sql, holding the Development schema dump. Do not copy repository migrations there.");
+        reasons.push("supabase/migrations must contain exactly one file, <timestamp>_development_schema.sql, created from the Development schema.");
       }
+
       if (fsApi.existsSync(path.join(resolved, "supabase", ".temp", "project-ref"))) {
         projectId = null;
         reasons.push("The disposable workdir is linked to a hosted project (supabase/.temp/project-ref exists). Use an unlinked workdir.");
@@ -185,7 +211,7 @@ export function checkStaticPreconditions(env, { repoRoot, fsApi = { existsSync, 
   return {
     ok: reasons.length === 0,
     reasons,
-    plan: reasons.length === 0 ? { workdir: path.resolve(workdir), projectId, baseURL: normaliseUrl(baseURL), port } : null,
+    plan: reasons.length === 0 ? { workdir: path.resolve(workdir), projectId, baseURL: normaliseUrl(baseURL), port, migrationSource } : null,
   };
 }
 
@@ -222,6 +248,21 @@ export function validateStackStatus(raw, env = {}) {
     ? status.PUBLISHABLE_KEY
     : typeof status.ANON_KEY === "string" ? status.ANON_KEY : "";
 
+  // The recovery E2E needs a local admin JWT to mint a recovery token without SMTP.
+  // Keep it non-enumerable on the internal target and never copy it into the app server env.
+  const serviceRoleKey = typeof status.SERVICE_ROLE_KEY === "string" ? status.SERVICE_ROLE_KEY : "";
+  if (!serviceRoleKey) {
+    reasons.push("The disposable stack reported no service-role JWT for the recovery E2E.");
+  } else {
+    if (serviceRoleKey.startsWith("sb_secret_")) reasons.push("The disposable admin credential is not a local service-role JWT.");
+    if (serviceRoleKey === publishableKey || serviceRoleKey === status.SECRET_KEY) {
+      reasons.push("The reported service-role JWT equals another key.");
+    }
+    if (decodeJwtRole(serviceRoleKey) !== "service_role") {
+      reasons.push("The disposable admin credential does not carry the service_role claim.");
+    }
+  }
+
   if (!isLoopbackUrl(apiUrl) || referencesRemoteSupabase(apiUrl)) {
     reasons.push("The disposable stack API_URL is not a loopback http URL.");
   }
@@ -242,7 +283,17 @@ export function validateStackStatus(raw, env = {}) {
     reasons.push("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY does not match the disposable stack. Unset it.");
   }
 
-  return { ok: reasons.length === 0, reasons, target: reasons.length === 0 ? { apiUrl, publishableKey } : null };
+  let target = null;
+  if (reasons.length === 0) {
+    target = { apiUrl, publishableKey };
+    Object.defineProperty(target, "serviceRoleKey", {
+      value: serviceRoleKey,
+      enumerable: false,
+      configurable: false,
+      writable: false,
+    });
+  }
+  return { ok: reasons.length === 0, reasons, target };
 }
 
 /**
@@ -337,9 +388,22 @@ export function createCommandRunner({ spawnSyncImpl = spawnSync, env = process.e
     return {
       status: typeof result.status === "number" ? result.status : -1,
       stdout: typeof result.stdout === "string" ? result.stdout : "",
+      stderr: typeof result.stderr === "string" ? result.stderr : "",
       missing: result.error?.code === "ENOENT",
     };
   };
+}
+
+function redactDiagnostic(text) {
+  return String(text || "")
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .slice(-24)
+    .join("\n")
+    .replace(/(postgres(?:ql)?:\/\/[^:\s]+:)[^@\s]+(@)/gi, "$1REDACTED$2")
+    .replace(/eyJ[A-Za-z0-9_-]{20,}/g, "REDACTED")
+    .replace(/sb_[A-Za-z0-9_-]{20,}/g, "REDACTED")
+    .replace(/[A-Za-z0-9_-]{96,}/g, "REDACTED");
 }
 
 function supabaseArgs(plan, ...args) {
@@ -381,9 +445,23 @@ export function destroyStack(plan, run) {
  */
 export function startFreshStack(plan, run, env = {}) {
   destroyStack(plan, run);
-  const start = run("supabase", supabaseArgs(plan, "start"), { timeoutMs: 900_000 });
+  const start = run(
+    "supabase",
+    supabaseArgs(plan, "start", "--ignore-health-check", "-x", E2E_EXCLUDED_SERVICES),
+    { timeoutMs: 900_000 },
+  );
   if (start.status !== 0) {
-    throw new Error("`supabase start` failed for the disposable workdir. Output is suppressed because it contains local keys; run it manually to inspect.");
+    throw new Error(
+      `\`supabase start\` failed (exit ${start.status}) for the disposable workdir.\n${redactDiagnostic(start.stderr || start.stdout)}`,
+    );
+  }
+  if (plan.migrationSource === REPO_MIGRATION_SOURCE) {
+    const reset = run("supabase", supabaseArgs(plan, "db", "reset", "--yes"), { timeoutMs: 900_000 });
+    if (reset.status !== 0) {
+      throw new Error(
+        `\`supabase db reset\` failed (exit ${reset.status}) while replaying repository migrations.\n${redactDiagnostic(reset.stderr || reset.stdout)}`,
+      );
+    }
   }
   const status = run("supabase", supabaseArgs(plan, "status", "-o", "json"));
   if (status.status !== 0) throw new Error("`supabase status -o json` failed for the disposable workdir.");
@@ -401,11 +479,36 @@ export function isPortFree(port, host = "127.0.0.1") {
   });
 }
 
-export function buildAppEnv(baseEnv, target) {
+const TRUSTED_WORKER_TOKEN_PATTERN = /^[A-Za-z0-9._~-]{32,512}$/;
+
+export function buildAppEnv(baseEnv, target, { workerToken, baseURL = DEFAULT_BASE_URL } = {}) {
   const env = { ...baseEnv };
   for (const name of [...FORBIDDEN_ENV, ...LEGACY_ENV]) delete env[name];
+  // Never inherit caller-supplied privileged values. Only inject credentials
+  // returned by the freshly started, verified disposable loopback stack.
+  delete env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY;
+  delete env.ZAVQERA_EXECUTION_WORKER_TOKEN;
+
+  if (!target || !isLoopbackUrl(target.apiUrl)
+      || !target.serviceRoleKey
+      || target.serviceRoleKey === target.publishableKey
+      || decodeJwtRole(target.serviceRoleKey) !== "service_role") {
+    throw new HarnessBlockedError(["The application server requires a validated service-role JWT from the disposable loopback stack."]);
+  }
+  if (!isLoopbackUrl(baseURL)) {
+    throw new HarnessBlockedError(["The internal worker origin must remain on a loopback URL."]);
+  }
+  if (typeof workerToken !== "string" || !TRUSTED_WORKER_TOKEN_PATTERN.test(workerToken)) {
+    throw new HarnessBlockedError(["The internal worker needs a fresh high-entropy bearer token."]);
+  }
+
   env.NEXT_PUBLIC_SUPABASE_URL = target.apiUrl;
   env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY = target.publishableKey;
+  // These values are scoped to the local Next.js server process only. They
+  // are not NEXT_PUBLIC variables and are never passed to the browser context.
+  env.SUPABASE_SERVICE_ROLE_KEY = target.serviceRoleKey;
+  env.ZAVQERA_EXECUTION_WORKER_TOKEN = workerToken;
+  env.ZAVQERA_E2E_RUNTIME_BASE_URL = normaliseUrl(baseURL);
   env.NEXT_TELEMETRY_DISABLED = "1";
   return env;
 }
@@ -461,6 +564,64 @@ export async function assertAppTargetsDisposableStack(baseURL, { fetchImpl = fet
   if (supabase.targetsDevelopmentProject !== false) {
     throw new HarnessBlockedError(["The started app reports that it targets the Development project."]);
   }
+}
+
+/**
+ * Exercise the real internal mission-action HTTP route against a running,
+ * disposable local app and prove an unregistered adapter is denied before
+ * the runtime's privileged-client/dispatch path.
+ *
+ * This check must remain loopback-only and the worker token must never be
+ * copied to browser state or included in diagnostics.
+ */
+export async function assertMissionActionRouteFailsClosed(baseURL, workerToken, { fetchImpl = fetch } = {}) {
+  let origin;
+  try {
+    origin = new URL(baseURL);
+  } catch {
+    throw new HarnessBlockedError(["Mission-action route smoke test requires a valid loopback origin."]);
+  }
+  if (!isLoopbackUrl(baseURL) || origin.pathname !== "/" || origin.search || origin.hash) {
+    throw new HarnessBlockedError(["Mission-action route smoke test is restricted to a plain loopback origin."]);
+  }
+  if (typeof workerToken !== "string" || !TRUSTED_WORKER_TOKEN_PATTERN.test(workerToken)) {
+    throw new HarnessBlockedError(["Mission-action route smoke test requires the fresh trusted-worker token."]);
+  }
+
+  const executionId = randomUUID();
+  const audience = `zavqera-e2e-unregistered-${randomUUID()}`;
+  let response;
+  try {
+    response = await fetchImpl(`${normaliseUrl(baseURL)}/api/internal/agent-executions/${executionId}`, {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${workerToken}`,
+        "content-type": "application/json",
+      },
+      body: JSON.stringify({ operation: "dispatch", audience }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch {
+    throw new Error("Mission-action route fail-closed smoke test received no response from the disposable local app.");
+  }
+
+  let body;
+  try {
+    body = await response.json();
+  } catch {
+    throw new Error("Mission-action route fail-closed smoke test received a non-JSON response.");
+  }
+  if (response.status !== 503
+      || body?.error !== "No reviewed provider adapter is registered. No provider call occurred.") {
+    throw new Error(`Mission-action route did not prove the unregistered-adapter deny path (HTTP ${response.status}).`);
+  }
+
+  return {
+    status: 503,
+    outcome: "unregistered_adapter_denied",
+    providerCall: "not_attempted",
+  };
 }
 
 /** Read-only checks used by `npm run test:e2e` before Playwright starts. */

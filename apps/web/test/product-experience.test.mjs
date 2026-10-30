@@ -13,6 +13,8 @@ import {
   parseMissionObjective,
   routeToVerifying,
   verificationReadiness,
+  formatDateOnly,
+  formatDateTime,
 } from "../lib/mission-content.mjs";
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -270,11 +272,118 @@ test("the workspace stays reachable on a small screen", () => {
   assert.match(newMission, /href="\/app"/);
 });
 
-test("success criteria and first steps are separate fields", () => {
-  const source = read("app/app/missions/new/page.tsx");
+test("one-goal-first mission creation keeps review fields after the AI draft", () => {
+  const source = read("components/mission-create-form.tsx");
   assert.match(source, /name="criteria"/);
   assert.match(source, /name="actions"/);
-  assert.doesNotMatch(source, /becomes both a success criterion and an action/);
+  assert.match(source, /Draft my mission/);
+  assert.match(source, /Want more control\? Add details/);
+  assert.match(source, /setDrafted\(true\)/);
+  assert.match(source, /setCriteria\(plan\.successCriteria\.join/);
+  assert.match(source, /setActions\(plan\.steps\.map/);
   // Omitting the steps must keep the pre-W19 behaviour of seeding from criteria.
-  assert.match(source, /steps \? toLines\(steps\) : toLines\(criteria\)/);
+  const page = read("app/app/missions/new/page.tsx");
+  assert.match(page, /steps \? toLines\(steps\) : toLines\(criteria\)/);
+  assert.doesNotMatch(page, /becomes both a success criterion and an action/);
+});
+
+
+test("homepage presents the final launch pricing tiers and quotas", () => {
+  const page = read("app/page.tsx");
+  for (const value of ["$0", "$9", "$25", "5", "50", "300", "Free", "Plus", "Pro"]) {
+    assert.ok(page.includes(value), `homepage pricing is missing ${value}`);
+  }
+  assert.ok(page.includes("Billing is not enabled yet"));
+});
+
+test("homepage communicates bounded delegation and the one-goal-first product loop", () => {
+  const page = read("app/page.tsx");
+  assert.match(page, /From thought to mission/);
+  assert.match(page, /Describe the result\. Get a mission you can actually use\./);
+  assert.match(page, /Give AI a mission\. Keep control of the outcome\./);
+  assert.match(page, /A clear mission and intent/);
+  assert.match(page, /Success criteria/);
+  assert.match(page, /Practical first steps/);
+  assert.match(page, /Clear boundaries before execution/);
+  assert.match(page, /Explore mission templates/);
+  assert.match(page, /Skip the blank page\. Start with a proven pattern\./);
+});
+
+test("homepage eyebrow wraps on narrow screens instead of causing horizontal overflow", () => {
+  const css = read("app/globals.css");
+  assert.match(css, /@media \(max-width:700px\) \{\s*\.hero \.eyebrow \{ white-space:normal; \}\s*\}/);
+});
+
+test("homepage calls to action and product principles are localized for Norwegian and Arabic", () => {
+  const page = read("app/page.tsx");
+  const shell = read("components/shell.tsx");
+  assert.match(page, /en="Try ZAVQERA free" nb="Prøv ZAVQERA gratis" ar="جرّب ZAVQERA مجانًا"/);
+  assert.match(page, /en="Start with the outcome\." nb="Begynn med resultatet\." ar="ابدأ بالنتيجة\."/);
+  assert.match(page, /en="Review before action\." nb="Gå gjennom før handling\." ar="راجع الخطة قبل التنفيذ\."/);
+  assert.match(page, /en="See what needs attention\." nb="Se hva som krever oppmerksomhet\." ar="اعرف ما الذي يحتاج إلى اهتمام\."/);
+  assert.match(page, /aria-labelledby="product-principles-heading"/);
+  assert.match(page, /en="Product principles" nb="Prinsipper for produktet" ar="مبادئ المنتج"/);
+  assert.match(shell, /en="Pricing" nb="Priser" ar="الأسعار"/);
+});
+
+test("AI mission entry removes the blank-page moment with starter goals", () => {
+  const source = read("components/mission-create-form.tsx");
+  assert.match(source, /Try an example/);
+  assert.match(source, /getMissionStarterExamples\(language\)/);
+  assert.match(source, /Mention deadlines, budget limits, allowed research, and actions that must not happen/);
+});
+
+
+
+test("workspace provides search navigation and searches across mission content", () => {
+  const shell = read("components/shell.tsx");
+  assert.match(shell, /href="\/app#mission-search"/);
+  assert.match(shell, /LocalizedText en="Search"/);
+
+  const page = read("app/app/page.tsx");
+  assert.match(page, /id="mission-search"/);
+  assert.match(page, /name="q"/);
+  assert.match(page, /mission\.name/);
+  assert.match(page, /mission\.intent/);
+  assert.match(page, /\.criteria/);
+  assert.match(page, /\.actions\.map/);
+  assert.match(page, /No matching missions/);
+});
+
+
+test("mission dates use day/month/year order", () => {
+  assert.equal(formatDateOnly("2026-10-08T09:48:55.000Z"), "8/10/2026");
+  assert.match(formatDateTime("2026-10-08T09:48:55.000Z"), /^8\/10\/2026, /);
+  const repository = read("lib/supabase/mission-repository.ts");
+  assert.match(repository, /formatDateTime\(row\.created_at\)/);
+  assert.match(repository, /updated: formatDateTime\(row\.updated_at\)/);
+});
+
+
+test("workspace search supports keyboard focus and escape clearing", () => {
+  const page = read("app/app/page.tsx");
+  const helper = read("components/mission-search-enhancements.tsx");
+  assert.match(page, /MissionSearchEnhancements/);
+  assert.match(helper, /metaKey \|\| event\.ctrlKey/);
+  assert.match(helper, /event\.key\.toLowerCase\(\) === "k"/);
+  assert.match(helper, /event\.key === "Escape"/);
+  assert.match(helper, /input\.form\?\.requestSubmit\(\)/);
+  const css = read("app/globals.css");
+  assert.match(css, /mission-search-shortcut/);
+});
+
+
+test("mission templates create a low-friction sharing loop", () => {
+  const templates = read("lib/mission-templates.ts");
+  const gallery = read("app/templates/page.tsx");
+  const tryForm = read("components/anonymous-plan-form.tsx");
+  const home = read("app/page.tsx");
+  assert.match(templates, /family-travel-research/);
+  assert.match(templates, /competitor-research/);
+  assert.match(gallery, /Preview & try free/);
+  assert.match(gallery, /Preview a free AI plan before signing up/);
+  assert.match(gallery, /\/try\?template=/);
+  assert.match(tryForm, /missionTemplateById/);
+  assert.match(tryForm, /if \(template\)[\s\S]*setGoal\(template\.goal\)[\s\S]*sessionStorage\.removeItem\(DRAFT_KEY\)/);
+  assert.match(home, /mission-template-callout/);
 });
