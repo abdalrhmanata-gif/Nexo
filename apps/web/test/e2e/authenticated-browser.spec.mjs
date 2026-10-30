@@ -47,6 +47,20 @@ async function ownerSession(user) {
   return { client, userId: data.user.id };
 }
 
+async function assertOwnedWorkspaceMembership(client, userId) {
+  const { data, error } = await client
+    .from("workspace_members")
+    .select("workspace_id, role")
+    .eq("user_id", userId)
+    .eq("role", "owner")
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  expect(data, "New accounts must receive owner membership during workspace bootstrap.").toBeTruthy();
+  expect(data.role).toBe("owner");
+  return data.workspace_id;
+}
+
 async function readMission(client, missionId) {
   const { data, error } = await client.from("missions").select("id, status, version").eq("id", missionId).maybeSingle();
   if (error) throw error;
@@ -420,7 +434,9 @@ test("authenticated Opportunity Intelligence backup flow exports, imports, and r
   try {
     await test.step("sign in and record an opportunity with one evidence note", async () => {
       await signUp(pageA, userA);
-      ledger.record("user", (await ownerSession(userA)).userId);
+      const ownerA = await ownerSession(userA);
+      ledger.record("user", ownerA.userId);
+      await assertOwnedWorkspaceMembership(ownerA.client, ownerA.userId);
       await pageA.getByRole("link", { name: "Evaluate an idea" }).click();
       await expect(pageA.getByRole("heading", { name: "Find the next move worth making." })).toBeVisible();
 
@@ -513,7 +529,9 @@ test("authenticated Opportunity Intelligence backup flow exports, imports, and r
 
     await test.step("import into a separate authenticated browser context with no matching IDs", async () => {
       await signUp(pageB, userB);
-      ledger.record("user", (await ownerSession(userB)).userId);
+      const ownerB = await ownerSession(userB);
+      ledger.record("user", ownerB.userId);
+      await assertOwnedWorkspaceMembership(ownerB.client, ownerB.userId);
       await pageB.goto("/app/opportunities");
       await expect(pageB.getByRole("heading", { name: "Find the next move worth making." })).toBeVisible();
       expect(await storedOpportunities(pageB)).toEqual([]);
