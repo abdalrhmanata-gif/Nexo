@@ -48,6 +48,14 @@ test("middleware does not bounce signed-in users away from confirmation endpoint
   assert.match(middleware, /startsWith\("\/auth\/"\) && user && !isConfirmationEndpoint/);
 });
 
+test("the /app route fails closed when deployment middleware is unavailable", async () => {
+  const layout = await source("app/app/layout.tsx");
+  assert.match(layout, /isSupabaseConfigured\(\)/);
+  assert.match(layout, /export const dynamic = "force-dynamic"/);
+  assert.match(layout, /getAuthenticatedUser\(\)\.catch\(\(\) => null\)/);
+  assert.match(layout, /if \(!user\)\s*\{\s*redirect\("\/auth\/sign-in\?next=%2Fapp"\);?\s*\}/);
+});
+
 test("confirmation redirect targets cannot leave the application origin", () => {
   assert.equal(safeNextPath("/app/missions/abc"), "/app/missions/abc");
   assert.equal(safeNextPath(DEFAULT_POST_AUTH_PATH), "/app");
@@ -122,5 +130,7 @@ test("mission deletion is authorized server-side and never trusts the client", a
   assert.doesNotMatch(route, /\b(owner_id|user_id)\b/);
 
   const repository = await source("lib/supabase/mission-repository.ts");
-  assert.match(repository, /ownedWorkspace\(supabase, user\.id\)/);
+  assert.match(repository, /supabase\.rpc\("ensure_owned_workspace"\)/);
+  assert.match(repository, /ownedWorkspace\(supabase\)/);
+  assert.doesNotMatch(repository, /\.from\("workspaces"\)\.insert\(/);
 });

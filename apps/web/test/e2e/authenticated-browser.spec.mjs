@@ -1,7 +1,8 @@
 import { randomBytes } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { createClient } from "@supabase/supabase-js";
 import { expect, test } from "@playwright/test";
-import { createFixtureLedger, isLoopbackUrl, writeLedgerFile } from "./harness.mjs";
+import { createFixtureLedger, isLoopbackUrl, readLedgerFile, writeLedgerFile } from "./harness.mjs";
 
 // Runs only after global-setup.mjs has reset a disposable local stack and
 // started the app against it. All fixture data lives in that stack and is
@@ -44,6 +45,40 @@ async function ownerSession(user) {
   const { data, error } = await client.auth.signInWithPassword(user);
   if (error || !data.user) throw new Error("The account created through the app does not exist on the disposable stack.");
   return { client, userId: data.user.id };
+}
+
+async function assertOwnedWorkspaceMembership(client, userId) {
+  const { data, error } = await client
+    .from("workspace_members")
+    .select("workspace_id, role")
+    .eq("user_id", userId)
+    .eq("role", "owner")
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  expect(data, "New accounts must receive owner membership during workspace bootstrap.").toBeTruthy();
+  expect(data.role).toBe("owner");
+
+  const { data: agents, error: agentsError } = await client
+    .from("workspace_agents")
+    .select("id, workspace_id, name, status, authority, created_by")
+    .eq("workspace_id", data.workspace_id)
+    .eq("name", "ZAVQERA Research Agent");
+  if (agentsError) throw agentsError;
+  expect(agents, "Workspace bootstrap must create the default Research Agent exactly once.").toHaveLength(1);
+  expect(agents[0]).toMatchObject({
+    workspace_id: data.workspace_id,
+    name: "ZAVQERA Research Agent",
+    status: "ACTIVE",
+    created_by: userId,
+    authority: {
+      mode: "read_only",
+      external_side_effects: false,
+      requires_approval: false,
+    },
+  });
+
+  return data.workspace_id;
 }
 
 async function readMission(client, missionId) {
@@ -89,12 +124,37 @@ async function submit(page, field, { method, path, expectStatus }) {
   return settled;
 }
 
+
+async function waitForWorkspace(page) {
+  const pageErrors = [];
+  const onPageError = (error) => pageErrors.push(error.message);
+  page.on("pageerror", onPageError);
+  try {
+    // Select the destination itself; its accessible name includes supporting copy.
+    await page.locator('a.workspace-quick-action[href="/app/opportunities"]').waitFor({ state: "visible" });
+  } catch (error) {
+    const body = await page.locator("body").innerText().catch(() => "<body unavailable>");
+    throw new Error(
+      [
+        "The authenticated workspace did not render its Opportunity Intelligence shortcut.",
+        "URL: " + page.url(),
+        "Body: " + body.slice(0, 1600),
+        "Page errors: " + (pageErrors.join(" | ") || "none"),
+        "Original failure: " + (error instanceof Error ? error.message : String(error)),
+      ].join("\n"),
+    );
+  } finally {
+    page.off("pageerror", onPageError);
+  }
+}
+
 async function signUp(page, user) {
   await page.goto("/auth/sign-up");
   await page.getByLabel("Email", { exact: true }).fill(user.email);
   await page.getByLabel("Password", { exact: true }).fill(user.password);
   await formWith(page, page.getByLabel("Email", { exact: true })).locator('button[type="submit"]').click();
   await expect(page, "Sign-up must return a session; disable email confirmations on the disposable stack.").toHaveURL(/\/app$/);
+  await waitForWorkspace(page);
 }
 
 async function signIn(page, user) {
@@ -103,6 +163,7 @@ async function signIn(page, user) {
   await page.getByLabel("Password", { exact: true }).fill(user.password);
   await formWith(page, page.getByLabel("Email", { exact: true })).locator('button[type="submit"]').click();
   await expect(page).toHaveURL(/\/app$/);
+  await waitForWorkspace(page);
 }
 
 async function signOut(page) {
@@ -353,3 +414,167 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
     await contextB.close();
   }
 });
+
+test("authenticated Opportunity Intelligence backup flow exports, imports, and rejects unsafe files", async ({ browser }) => {
+  assertRuntime();
+  const blocked = [];
+  const previousEntries = readLedgerFile(runtime.ledgerPath).entries ?? [];
+  const ledger = createFixtureLedger({
+    runId: runtime.runId,
+    onChange: (json) => writeLedgerFile(runtime.ledgerPath, {
+      ...json,
+      entries: [...previousEntries, ...json.entries],
+    }),
+  });
+  const userA = freshUser("opportunity-backup-a");
+  const userB = freshUser("opportunity-backup-b");
+  const contextA = await browser.newContext({ baseURL: runtime.baseURL, acceptDownloads: true });
+  const contextB = await browser.newContext({ baseURL: runtime.baseURL, acceptDownloads: true });
+  await guardNetwork(contextA, blocked);
+  await guardNetwork(contextB, blocked);
+  const pageA = await contextA.newPage();
+  const pageB = await contextB.newPage();
+  pageA.setDefaultTimeout(15_000);
+  pageB.setDefaultTimeout(15_000);
+  pageA.setDefaultNavigationTimeout(30_000);
+  pageB.setDefaultNavigationTimeout(30_000);
+
+  const uploadJson = async (page, value, name = "opportunity-backup.json") => {
+    await page.locator("#opportunity-backup-file").setInputFiles({
+      name,
+      mimeType: "application/json",
+      buffer: Buffer.from(typeof value === "string" ? value : JSON.stringify(value)),
+    });
+  };
+  const storedOpportunities = (page) => page.evaluate(() => {
+    const raw = window.localStorage.getItem("zavqera.opportunity-intelligence.v1");
+    return raw ? JSON.parse(raw) : [];
+  });
+
+  try {
+    await test.step("sign in and record an opportunity with one evidence note", async () => {
+      await signUp(pageA, userA);
+      const ownerA = await ownerSession(userA);
+      ledger.record("user", ownerA.userId);
+      await assertOwnedWorkspaceMembership(ownerA.client, ownerA.userId);
+      await pageA.getByRole("link", { name: "Evaluate an idea" }).click();
+      await expect(pageA.getByRole("heading", { name: "Find the next move worth making." })).toBeVisible();
+
+      await pageA.getByLabel("Opportunity name", { exact: true }).fill("Backup regression opportunity");
+      await pageA.getByLabel("Opportunity thesis", { exact: true }).fill("A portable backup must preserve the opportunity and its evidence.");
+      await pageA.getByRole("button", { name: "Score and add opportunity" }).click();
+      const opportunityHeading = pageA.getByRole("heading", { name: "Backup regression opportunity" });
+      await expect(opportunityHeading).toBeVisible();
+      await expect(pageA.getByRole("heading", { name: "Add an opportunity" })).toBeHidden();
+
+      await pageA.getByRole("button", { name: "Add opportunity", exact: true }).click();
+      await expect(pageA.getByRole("heading", { name: "Add an opportunity" })).toBeVisible();
+      await pageA.getByRole("button", { name: "Hide form", exact: true }).click();
+      await expect(pageA.getByRole("heading", { name: "Add an opportunity" })).toBeHidden();
+
+      await pageA.getByRole("button", { name: "Research & add evidence" }).click();
+      await pageA.getByLabel("Source URL", { exact: true }).fill("https://example.com/backup-evidence");
+      await pageA.getByLabel("Source title", { exact: true }).fill("Backup evidence report");
+      await pageA.getByLabel("What does the source actually say?", { exact: true }).fill("The sample report supports testing portable backups across devices.");
+      await pageA.getByRole("button", { name: "Save evidence note" }).click();
+      await expect(pageA.locator(".evidence-ledger [role=\"status\"]")).toContainText("Evidence note added");
+      await expect(pageA.getByText("Backup evidence report", { exact: true })).toBeVisible();
+    });
+
+    let exportedBackup;
+    let originalLocalState;
+    await test.step("export a real downloaded JSON backup and verify its contents", async () => {
+      originalLocalState = await storedOpportunities(pageA);
+      expect(originalLocalState).toHaveLength(1);
+      const [download] = await Promise.all([
+        pageA.waitForEvent("download"),
+        pageA.getByRole("button", { name: "Export backup" }).click(),
+      ]);
+      const downloadPath = await download.path();
+      if (!downloadPath) throw new Error("The export download did not produce a readable file.");
+      exportedBackup = JSON.parse(await readFile(downloadPath, "utf8"));
+      expect(exportedBackup).toMatchObject({
+        format: "zavqera-opportunity-intelligence",
+        version: 1,
+        opportunityCount: 1,
+        evidenceCount: 1,
+      });
+      expect(exportedBackup.opportunities[0].evidenceItems[0]).toMatchObject({
+        title: "Backup evidence report",
+        url: "https://example.com/backup-evidence",
+      });
+    });
+
+    await test.step("skip a colliding ID without overwriting local data", async () => {
+      const staleCopy = structuredClone(exportedBackup);
+      staleCopy.opportunities[0].title = "Stale imported copy";
+      await uploadJson(pageA, staleCopy, "matching-local-id.json");
+      await expect(pageA.getByText(/Backup ready: matching-local-id\.json/)).toBeVisible();
+      await pageA.getByRole("button", { name: "Import and merge" }).click();
+      await expect(pageA.locator(".opportunity-portability .opportunity-backup-status[role=\"status\"]")).toContainText("Nothing was imported because every opportunity ID already exists");
+      await expect(pageA.getByRole("heading", { name: "Backup regression opportunity" })).toBeVisible();
+      await expect(pageA.getByRole("heading", { name: "Stale imported copy" })).toHaveCount(0);
+      expect(await storedOpportunities(pageA)).toEqual(originalLocalState);
+    });
+
+    await test.step("reject malformed JSON, unsafe record data, and duplicate IDs inside one file atomically", async () => {
+      await uploadJson(pageA, "{", "malformed.json");
+      await expect(pageA.locator(".opportunity-backup-status[role=\"alert\"]")).toContainText("This file is not valid JSON");
+      expect(await storedOpportunities(pageA)).toEqual(originalLocalState);
+
+      const unsafeRecord = structuredClone(exportedBackup);
+      unsafeRecord.opportunities[0].evidenceUrl = "javascript:alert(1)";
+      await uploadJson(pageA, unsafeRecord, "unsafe-url.json");
+      await expect(pageA.locator(".opportunity-backup-status[role=\"alert\"]")).toContainText("invalid opportunity or evidence data");
+      expect(await storedOpportunities(pageA)).toEqual(originalLocalState);
+
+      const duplicateIds = structuredClone(exportedBackup);
+      duplicateIds.opportunities.push(structuredClone(duplicateIds.opportunities[0]));
+      duplicateIds.opportunityCount = 2;
+      duplicateIds.evidenceCount = duplicateIds.opportunities.reduce((sum, item) => sum + item.evidenceItems.length, 0);
+      await uploadJson(pageA, duplicateIds, "duplicate-ids.json");
+      await expect(pageA.locator(".opportunity-backup-status[role=\"alert\"]")).toContainText("duplicate opportunity IDs");
+      expect(await storedOpportunities(pageA)).toEqual(originalLocalState);
+    });
+
+    await test.step("reject a file beyond the 2 MB limit before parsing it", async () => {
+      await pageA.locator("#opportunity-backup-file").setInputFiles({
+        name: "oversized.json",
+        mimeType: "application/json",
+        buffer: Buffer.alloc(2 * 1024 * 1024 + 1, 0x20),
+      });
+      await expect(pageA.locator(".opportunity-backup-status[role=\"alert\"]")).toContainText("larger than 2 MB");
+      expect(await storedOpportunities(pageA)).toEqual(originalLocalState);
+    });
+
+    await test.step("import into a separate authenticated browser context with no matching IDs", async () => {
+      await signUp(pageB, userB);
+      const ownerB = await ownerSession(userB);
+      ledger.record("user", ownerB.userId);
+      await assertOwnedWorkspaceMembership(ownerB.client, ownerB.userId);
+      await pageB.goto("/app/opportunities");
+      await expect(pageB.getByRole("heading", { name: "Find the next move worth making." })).toBeVisible();
+      expect(await storedOpportunities(pageB)).toEqual([]);
+
+      await uploadJson(pageB, exportedBackup, "valid-exported-backup.json");
+      await expect(pageB.getByText(/Backup ready: valid-exported-backup\.json/)).toBeVisible();
+      await pageB.getByRole("button", { name: "Import and merge" }).click();
+      await expect(pageB.locator(".opportunity-portability .opportunity-backup-status[role=\"status\"]")).toContainText("Imported 1 opportunities with 1 evidence notes");
+      await expect(pageB.getByRole("heading", { name: "Backup regression opportunity" })).toBeVisible();
+      await expect(pageB.getByText("Backup evidence report", { exact: true })).toBeVisible();
+      expect(await storedOpportunities(pageB)).toEqual(exportedBackup.opportunities);
+    });
+
+    await test.step("confirm the backup controls remain reachable on a mobile-width viewport", async () => {
+      await pageB.setViewportSize({ width: 390, height: 844 });
+      await expect(pageB.getByRole("button", { name: "Export backup" })).toBeVisible();
+      await expect(pageB.locator('label[for="opportunity-backup-file"]')).toBeVisible();
+    });
+
+    expect(blocked, "requests left the loopback allowlist").toEqual([]);
+  } finally {
+    await contextA.close();
+    await contextB.close();
+  }
+});
+

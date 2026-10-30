@@ -28,6 +28,12 @@ const templates = [
   },
 ];
 
+function TemplateIcon({ id }: { id: string }) {
+  if (id === "launch-plan") return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20 10 4l4 7 6 2-16 7Z" /><path d="m10 4 4 7" /></svg>;
+  if (id === "research-decision") return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m15.5 15.5 5 5M8 10.5h5M10.5 8v5" /></svg>;
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h10M4 19h6" /><circle cx="18" cy="12" r="2" /><circle cx="14" cy="19" r="2" /></svg>;
+}
+
 function templateHref(template: typeof templates[number]) {
   const params = new URLSearchParams({
     name: template.title,
@@ -47,6 +53,7 @@ export default function TemplatesPage() {
     </section>
     <section className="grid" aria-label="Mission templates">
       {templates.map((template) => <article className="card template-card" key={template.id}>
+        <div className={`template-icon template-icon-${template.id}`}><TemplateIcon id={template.id} /></div>
         <p className="eyebrow"><LocalizedText en="Mission template" nb="Oppdragsmal" ar="قالب مهمة" /></p>
         <h2><LocalizedText en={template.title} nb={template.title} ar={template.title} /></h2>
         <p><LocalizedText en={template.description} nb={template.description} ar={template.description} /></p>

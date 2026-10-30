@@ -1,8 +1,10 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 
 export function AddActionForm({ missionId }: { missionId: string }) {
+  const router = useRouter();
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -16,18 +18,25 @@ export function AddActionForm({ missionId }: { missionId: string }) {
     }
     setBusy(true);
     setMessage("");
-    const response = await fetch(`/api/missions/${missionId}/actions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: trimmed }),
-    });
-    if (response.ok) {
-      window.location.reload();
-      return;
+    try {
+      const response = await fetch(`/api/missions/${missionId}/actions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: trimmed }),
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        setMessage(payload.error ?? "That action could not be added.");
+        return;
+      }
+      setTitle("");
+      setMessage("Action added.");
+      router.refresh();
+    } catch {
+      setMessage("The action could not be saved. Check your connection and try again.");
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
-    const payload = await response.json().catch(() => ({}));
-    setMessage(payload.error ?? "That action could not be added.");
   }
 
   return <form onSubmit={submit} className="add-action">

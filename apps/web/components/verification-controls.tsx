@@ -1,9 +1,11 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { MissionVerification } from "../lib/view-models";
 
 export function VerificationControls({ missionId, verification }: { missionId: string; verification?: MissionVerification }) {
+  const router = useRouter();
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -12,19 +14,29 @@ export function VerificationControls({ missionId, verification }: { missionId: s
     setBusy(true);
     setMessage("");
     const form = new FormData(event.currentTarget);
-    const response = await fetch(`/api/missions/${missionId}/verification`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        status: "VERIFIED",
-        criteria: { summary: String(form.get("criteria") ?? "") },
-        evidence: { summary: String(form.get("evidence") ?? "") },
-        confidence: Number(form.get("confidence") ?? 0),
-      }),
-    });
-    setBusy(false);
-    setMessage(response.ok ? "Verification recorded. You can now commit the verified outcome." : ((await response.json()).error ?? "Verification failed."));
-    if (response.ok) window.location.reload();
+    try {
+      const response = await fetch(`/api/missions/${missionId}/verification`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: "VERIFIED",
+          criteria: { summary: String(form.get("criteria") ?? "") },
+          evidence: { summary: String(form.get("evidence") ?? "") },
+          confidence: Number(form.get("confidence") ?? 0),
+        }),
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        setMessage(payload.error ?? "Verification failed.");
+        return;
+      }
+      setMessage("Verification recorded. Refreshing mission state…");
+      router.refresh();
+    } catch {
+      setMessage("Verification could not be saved. Check your connection and try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function commit(event: FormEvent<HTMLFormElement>) {
@@ -32,14 +44,24 @@ export function VerificationControls({ missionId, verification }: { missionId: s
     setBusy(true);
     setMessage("");
     const form = new FormData(event.currentTarget);
-    const response = await fetch(`/api/missions/${missionId}/outcome`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ verificationId: verification?.id, result: { summary: String(form.get("result") ?? "") }, successScore: Number(form.get("score") ?? 1), status: "COMPLETED" }),
-    });
-    setBusy(false);
-    setMessage(response.ok ? "Verified outcome committed." : ((await response.json()).error ?? "Outcome could not be committed."));
-    if (response.ok) window.location.reload();
+    try {
+      const response = await fetch(`/api/missions/${missionId}/outcome`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ verificationId: verification?.id, result: { summary: String(form.get("result") ?? "") }, successScore: Number(form.get("score") ?? 1), status: "COMPLETED" }),
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        setMessage(payload.error ?? "Outcome could not be committed.");
+        return;
+      }
+      setMessage("Verified outcome committed.");
+      router.refresh();
+    } catch {
+      setMessage("Outcome could not be committed. Check your connection and try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   if (verification?.status === "VERIFIED") return <div className="form-grid"><form onSubmit={commit}><div className="field"><label htmlFor="result">Outcome result</label><textarea id="result" name="result" required /></div><div className="field"><label htmlFor="score">Success score</label><input id="score" name="score" type="number" min="0" max="1" step="0.01" defaultValue="1" /></div><button className="button" type="submit" disabled={busy}>Commit verified outcome</button></form>{message && <div className="field-error" role="alert">{message}</div>}</div>;

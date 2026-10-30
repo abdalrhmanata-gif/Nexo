@@ -62,7 +62,7 @@ const goodStatus = () => JSON.stringify({
 });
 
 /** Scripted stand-in for the supabase/docker runner; records every call. */
-function fakeRunner({ leftover = "", dockerFails = false, startFails = false, status = goodStatus() } = {}) {
+function fakeRunner({ leftover = "", dockerFails = false, startFails = false, startStdout = "", startStderr = "", status = goodStatus() } = {}) {
   const calls = [];
   const run = (command, args) => {
     calls.push([command, ...args].join(" "));
@@ -70,7 +70,7 @@ function fakeRunner({ leftover = "", dockerFails = false, startFails = false, st
       if (dockerFails) return { status: 1, stdout: "" };
       return { status: 0, stdout: leftover };
     }
-    if (args[0] === "start") return { status: startFails ? 1 : 0, stdout: "" };
+    if (args[0] === "start") return { status: startFails ? 1 : 0, stdout: startStdout, stderr: startStderr };
     if (args[0] === "status") return { status: 0, stdout: status };
     return { status: 0, stdout: "" };
   };
@@ -204,6 +204,24 @@ test("a fresh stack is destroyed and verified empty before it is started", () =>
   ]);
 });
 
+test("Supabase startup errors expose only sanitized diagnostics", () => {
+  const plan = { workdir: "/tmp/zavqera-e2e", projectId: PROJECT_ID };
+  const { run } = fakeRunner({
+    startFails: true,
+    startStderr: [
+      'ERROR: syntax error at or near "FROM"',
+      "SERVICE_ROLE_KEY=must-not-appear",
+      "postgresql://postgres:db-password@localhost:54322/postgres",
+      "sb_secret_should-not-appear",
+    ].join("\n"),
+  });
+  assert.throws(() => startFreshStack(plan, run, {}), (error) => {
+    assert.match(error.message, /syntax error at or near "FROM"/);
+    assert.doesNotMatch(error.message, /must-not-appear|db-password|postgresql:\/\/|sb_secret_/);
+    return true;
+  });
+});
+
 test("leftover data or an unverifiable teardown stops the run before start", () => {
   const plan = { workdir: "/tmp/zavqera-e2e", projectId: PROJECT_ID };
   for (const options of [{ leftover: "supabase_db_zavqera-e2e-unit\n" }, { dockerFails: true }]) {
@@ -232,7 +250,7 @@ test("command runner only runs supabase/docker without a shell and strips privil
   assert.equal(seen[0].options.shell, false);
   assert.deepEqual(Object.keys(seen[0].options.env), ["PATH"]);
   const missing = createCommandRunner({ spawnSyncImpl: () => ({ status: null, error: { code: "ENOENT" } }) })("supabase", ["--version"]);
-  assert.deepEqual(missing, { status: -1, stdout: "", missing: true });
+  assert.deepEqual(missing, { status: -1, stdout: "", stderr: "", missing: true });
 });
 
 test("app env points only at the disposable stack", () => {
@@ -297,5 +315,6 @@ test("Playwright discovers the full-loop spec without starting anything", { skip
   assert.equal(result.status, 0, result.stderr || result.stdout);
   assert.match(result.stdout, /authenticated-browser\.spec\.mjs/);
   assert.match(result.stdout, /disposable full loop/);
-  assert.match(result.stdout, /Total: 1 test/);
+  assert.match(result.stdout, /authenticated Opportunity Intelligence backup flow/);
+  assert.match(result.stdout, /Total: 2 tests/);
 });

@@ -86,13 +86,16 @@ function toMission(row: MissionRow, actions: ActionRow[] = [], verifications: Mi
   };
 }
 
-async function ownedWorkspace(supabase: SupabaseClient, userId: string) {
-  const existing = await supabase.from("workspaces").select("id").eq("owner_id", userId).order("created_at").limit(1).maybeSingle();
-  if (existing.error) throw existing.error;
-  if (existing.data) return existing.data.id as string;
-  const created = await supabase.from("workspaces").insert({ owner_id: userId, name: "My workspace" }).select("id").single();
-  if (created.error) throw created.error;
-  return created.data.id as string;
+async function ownedWorkspace(supabase: SupabaseClient) {
+  // Workspace creation must go through the database's atomic bootstrap RPC.
+  // It creates or repairs the owner's membership and provisions the bounded
+  // read-only Research Agent; direct table inserts leave the workspace unusable.
+  const result = await supabase.rpc("ensure_owned_workspace");
+  if (result.error) throw result.error;
+  if (typeof result.data !== "string" || !result.data) {
+    throw new Error("Workspace bootstrap did not return a workspace ID.");
+  }
+  return result.data;
 }
 
 async function actionsFor(supabase: SupabaseClient, missionId: string) {
@@ -125,7 +128,7 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
   const supabase = await createSupabaseServerClient();
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) throw new Error("Authentication required.");
-  const workspaceId = await ownedWorkspace(supabase, user.id);
+  const workspaceId = await ownedWorkspace(supabase);
   const missionSelect = "id, objective, status, version, updated_at";
 
   async function completeMission(row: MissionRow) {

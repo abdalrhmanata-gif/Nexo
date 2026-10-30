@@ -3,8 +3,8 @@ name: ZAVQERA Web Deploy (Netlify)
 # Deploys the ZAVQERA Web MVP (apps/web) to Netlify.
 #
 # This workflow is inert until the repository owner adds NETLIFY_AUTH_TOKEN.
-# It never prints secret values; NEXT_PUBLIC_* values are injected as masked
-# secrets so the Development backend is active in the deployed build.
+# It never prints secret values. Only the public Development URL and publishable
+# key are set inline; no service-role key or provider secret is stored in this workflow.
 
 on:
   workflow_dispatch:
@@ -12,6 +12,7 @@ on:
     branches:
       - "zavqera/integrate-origin-main-clean"
       - "zavqera/alternative-web-deployment"
+      - "zavqera/pricing-opportunity-clarity-20261028"
     paths:
       - "apps/web/**"
       - "netlify.toml"
@@ -20,6 +21,13 @@ on:
 permissions:
   contents: read
 
+env:
+  # Public Netlify site identifier; the only deployment credential is the token.
+  NETLIFY_SITE_ID: "53e470f1-30da-497e-85f6-16179db4c985"
+  # Public client configuration for ZAVQERA Development (publishable, never a service-role key).
+  NEXT_PUBLIC_SUPABASE_URL: "https://mrwmmbytcymqgwvcoywd.supabase.co"
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_okCtCgHLflR_wRWGnIXY3Q_6mxRm0GL"
+
 concurrency:
   group: zavqera-netlify-deploy-${{ github.ref }}
   cancel-in-progress: true
@@ -27,7 +35,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,11 +44,10 @@ jobs:
         id: creds
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
         run: |
-          if [ -z "${NETLIFY_AUTH_TOKEN}" ] || [ -z "${NETLIFY_SITE_ID}" ]; then
+          if [ -z "${NETLIFY_AUTH_TOKEN}" ]; then
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::NETLIFY_AUTH_TOKEN and/or NETLIFY_SITE_ID are not configured. Skipping deploy."
+            echo "::warning::NETLIFY_AUTH_TOKEN is not configured. Skipping draft preview deploy."
           else
             echo "ready=true" >> "$GITHUB_OUTPUT"
           fi
@@ -48,8 +55,8 @@ jobs:
       - name: Check Supabase Development configuration
         if: steps.creds.outputs.ready == 'true'
         env:
-          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_URL: ${{ env.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
         run: |
           if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_KEY}" ]; then
             echo "::error::NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY must be set, otherwise /app silently falls back to the local mock repository."
@@ -73,6 +80,15 @@ jobs:
         working-directory: apps/web
         run: npm ci
 
+      - name: Setup Chrome for Lighthouse
+        if: steps.creds.outputs.ready == 'true'
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
+          install-dependencies: true
+
+
       - name: Static authorization boundary tests
         if: steps.creds.outputs.ready == 'true'
         working-directory: apps/web
@@ -88,9 +104,8 @@ jobs:
         if: steps.creds.outputs.ready == 'true'
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ env.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
         run: |
           set -euo pipefail
           response="$(npx --yes netlify-cli@latest deploy --build --context deploy-preview --json)"
@@ -115,8 +130,159 @@ jobs:
           test "${root}" = "200"
           test "${signin}" = "200"
 
-          # With Supabase configured, middleware must bounce anonymous /app to sign-in.
+          # A server-side authentication boundary must bounce anonymous /app to sign-in,
+          # even if the platform does not wire middleware into an Edge Function.
           case "${appdest}" in
-            *"/auth/sign-in"*) echo "Auth middleware verified." ;;
-            *) echo "::error::/app did not redirect anonymously to /auth/sign-in. The deployment is likely running the local mock fallback."; exit 1 ;;
+            *"/auth/sign-in"*) echo "Server-side app authentication verified." ;;
+            *) echo "::error::Anonymous /app access did not redirect to /auth/sign-in. The protected layout must fail closed."; exit 1 ;;
           esac
+
+      - name: Run Lighthouse mobile and desktop audits
+        if: steps.creds.outputs.ready == 'true'
+        env:
+          PREVIEW_URL: ${{ steps.deploy.outputs.preview_url }}
+          CHROME_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p lighthouse-reports/mobile lighthouse-reports/desktop
+          printf '%s\n' "${PREVIEW_URL}/" "${PREVIEW_URL}/auth/sign-in" > lighthouse-reports/urls.txt
+          "${CHROME_PATH}" --version
+          audit_success=false
+          for attempt in 1 2 3; do
+            echo "Lighthouse audit attempt ${attempt}/3"
+            rm -f lighthouse-reports/mobile/*.report.json lighthouse-reports/mobile/*.report.html
+            rm -f lighthouse-reports/desktop/*.report.json lighthouse-reports/desktop/*.report.html
+
+            mobile_status=0
+            npx --yes lighthouse@13.6.0 \
+              --url-file=lighthouse-reports/urls.txt \
+              --output=json --output=html \
+              --output-path=lighthouse-reports/mobile \
+              --only-categories=performance,accessibility,best-practices,seo \
+              --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" \
+              --throttling-method=simulate \
+              --quiet || mobile_status=$?
+
+            desktop_status=0
+            npx --yes lighthouse@13.6.0 \
+              --url-file=lighthouse-reports/urls.txt \
+              --output=json --output=html \
+              --output-path=lighthouse-reports/desktop \
+              --preset=desktop \
+              --only-categories=performance,accessibility,best-practices,seo \
+              --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" \
+              --quiet || desktop_status=$?
+
+            if [ "${mobile_status}" -eq 0 ] && [ "${desktop_status}" -eq 0 ] && node -e '
+              const fs = require("node:fs");
+              const path = require("node:path");
+              const files = [];
+              for (const dir of ["mobile", "desktop"]) {
+                for (const name of fs.readdirSync(path.join("lighthouse-reports", dir))) {
+                  if (name.endsWith(".report.json")) files.push(path.join("lighthouse-reports", dir, name));
+                }
+              }
+              if (files.length !== 4) process.exit(1);
+              if (files.some(file => JSON.parse(fs.readFileSync(file, "utf8")).runtimeError)) process.exit(1);
+            '; then
+              audit_success=true
+              break
+            fi
+
+            echo "::warning::Lighthouse did not complete cleanly on attempt ${attempt}; retrying both device profiles."
+            sleep 5
+          done
+          node <<'NODE'
+          const fs = require("node:fs");
+          const path = require("node:path");
+          const root = "lighthouse-reports";
+          const files = [];
+          function walk(dir) {
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+              const full = path.join(dir, entry.name);
+              if (entry.isDirectory()) walk(full);
+              else if (entry.name.endsWith(".report.json")) files.push(full);
+            }
+          }
+          walk(root);
+          if (files.length !== 4) {
+            throw new Error("Expected 4 Lighthouse JSON reports (2 routes x 2 devices); found " + files.length + ".");
+          }
+          const round = (n) => Number.isFinite(n) ? Math.round(n * 100) / 100 : null;
+          const seconds = (n) => Number.isFinite(n) ? round(n / 1000) : null;
+          const results = files.map((file) => {
+            const report = JSON.parse(fs.readFileSync(file, "utf8"));
+            const audits = report.audits || {};
+            const category = (id) => round((report.categories && report.categories[id] ? report.categories[id].score : NaN) * 100);
+            const resources = audits["resource-summary"] && audits["resource-summary"].details ? audits["resource-summary"].details.items || [] : [];
+            const scriptBytes = resources.find((item) => item.resourceType === "script")?.transferSize;
+            return {
+              report: file,
+              url: report.finalDisplayedUrl || report.requestedUrl,
+              device: file.includes("/mobile/") ? "mobile" : "desktop",
+              scores: {
+                performance: category("performance"),
+                accessibility: category("accessibility"),
+                bestPractices: category("best-practices"),
+                seo: category("seo")
+              },
+              metrics: {
+                firstContentfulPaintSeconds: seconds(audits["first-contentful-paint"]?.numericValue),
+                largestContentfulPaintSeconds: seconds(audits["largest-contentful-paint"]?.numericValue),
+                totalBlockingTimeMs: round(audits["total-blocking-time"]?.numericValue),
+                cumulativeLayoutShift: round(audits["cumulative-layout-shift"]?.numericValue),
+                speedIndexSeconds: seconds(audits["speed-index"]?.numericValue),
+                javascriptTransferBytes: Number.isFinite(scriptBytes) ? scriptBytes : null
+              }
+            };
+          });
+          fs.writeFileSync(path.join(root, "summary.json"), JSON.stringify({
+            createdAt: new Date().toISOString(),
+            commit: process.env.GITHUB_SHA,
+            previewUrl: process.env.PREVIEW_URL,
+            lighthouseVersion: "13.6.0",
+            reports: results
+          }, null, 2) + "\n");
+          const lines = [
+            "# ZAVQERA Lighthouse audit",
+            "",
+            "Commit: " + process.env.GITHUB_SHA,
+            "Preview: " + process.env.PREVIEW_URL,
+            "Pages: / and /auth/sign-in",
+            "Runs: mobile (simulated throttling) and desktop",
+            "",
+            "| Page | Device | Performance | Accessibility | Best practices | SEO | LCP (s) | TBT (ms) | CLS | JS transfer (KB) |",
+            "|---|---|---:|---:|---:|---:|---:|---:|---:|---:|"
+          ];
+          for (const item of results) {
+            const page = new URL(item.url).pathname || "/";
+            const m = item.metrics;
+            lines.push("| " + page + " | " + item.device + " | " +
+              (item.scores.performance ?? "n/a") + " | " +
+              (item.scores.accessibility ?? "n/a") + " | " +
+              (item.scores.bestPractices ?? "n/a") + " | " +
+              (item.scores.seo ?? "n/a") + " | " +
+              (m.largestContentfulPaintSeconds ?? "n/a") + " | " +
+              (m.totalBlockingTimeMs ?? "n/a") + " | " +
+              (m.cumulativeLayoutShift ?? "n/a") + " | " +
+              (m.javascriptTransferBytes == null ? "n/a" : round(m.javascriptTransferBytes / 1024)) + " |");
+          }
+          lines.push("", "Scores are observational, not a deployment gate. Compare runs made with the same Lighthouse and Chrome versions and similar runner conditions.", "");
+          fs.writeFileSync(path.join(root, "summary.md"), lines.join("\n"));
+          console.log(lines.join("\n"));
+          NODE
+
+          if [ "${audit_success}" != "true" ]; then
+            echo "::error::Lighthouse could not produce four clean page/device reports after three attempts."
+            exit 1
+          fi
+
+      - name: Upload Lighthouse reports
+        if: always() && steps.creds.outputs.ready == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: zavqera-lighthouse-${{ github.run_id }}
+          path: lighthouse-reports/
+          retention-days: 30
+          if-no-files-found: warn

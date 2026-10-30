@@ -337,9 +337,26 @@ export function createCommandRunner({ spawnSyncImpl = spawnSync, env = process.e
     return {
       status: typeof result.status === "number" ? result.status : -1,
       stdout: typeof result.stdout === "string" ? result.stdout : "",
+      stderr: typeof result.stderr === "string" ? result.stderr : "",
       missing: result.error?.code === "ENOENT",
     };
   };
+}
+
+function safeStartDiagnostic(result) {
+  const lines = `${result?.stdout ?? ""}\n${result?.stderr ?? ""}`.split(/\r?\n/);
+  const safe = lines
+    .filter((line) => /error|failed|fatal|syntax|denied|timed out|timeout|not exist|could not|unable|unhealthy|migration|container|daemon|connection refused/i.test(line))
+    .filter((line) => !/sb_(?:publishable|secret)_|\beyJ[A-Za-z0-9_-]{10,}\.|service[_ -]?role[_ -]?key|anon[_ -]?key|publishable[_ -]?key|secret[_ -]?key|jwt|password\s*[:=]|database[_ -]?url|connection string/i.test(line))
+    .map((line) => line
+      .replace(/postgres(?:ql)?:\/\/[^\s"'\x60]+/gi, "[redacted connection string]")
+      .replace(/sb_(?:publishable|secret)_[A-Za-z0-9_-]+/gi, "[redacted key]")
+      .replace(/\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g, "[redacted token]")
+      .replace(/\b(password|token|secret|key)\s*[:=]\s*\S+/gi, "$1=[redacted]")
+      .slice(0, 300))
+    .filter(Boolean)
+    .slice(-10);
+  return safe.join("\n");
 }
 
 function supabaseArgs(plan, ...args) {
@@ -383,10 +400,20 @@ export function startFreshStack(plan, run, env = {}) {
   destroyStack(plan, run);
   const start = run("supabase", supabaseArgs(plan, "start"), { timeoutMs: 900_000 });
   if (start.status !== 0) {
-    throw new Error("`supabase start` failed for the disposable workdir. Output is suppressed because it contains local keys; run it manually to inspect.");
+    const diagnostic = safeStartDiagnostic(start);
+    throw new Error([
+      "`supabase start` failed for the disposable workdir. Raw CLI output remains suppressed.",
+      diagnostic ? `Sanitized diagnostics:\n${diagnostic}` : "No safe diagnostic lines were available.",
+    ].join("\n"));
   }
   const status = run("supabase", supabaseArgs(plan, "status", "-o", "json"));
-  if (status.status !== 0) throw new Error("`supabase status -o json` failed for the disposable workdir.");
+  if (status.status !== 0) {
+    const diagnostic = safeStartDiagnostic(status);
+    throw new Error([
+      "`supabase status -o json` failed for the disposable workdir. Raw CLI output remains suppressed.",
+      diagnostic ? `Sanitized diagnostics:\n${diagnostic}` : "No safe diagnostic lines were available.",
+    ].join("\n"));
+  }
   const verdict = validateStackStatus(status.stdout, env);
   if (!verdict.ok) throw new HarnessBlockedError(verdict.reasons);
   return verdict.target;
