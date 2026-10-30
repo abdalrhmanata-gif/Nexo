@@ -236,10 +236,10 @@ test("Opportunity Intelligence hook and all long-form informational copy use the
 
 test("template prefill content follows the selected locale", () => {
   const templates = read("app/templates/page.tsx");
-  assert.match(templates, /function templateHref\\(template: typeof templates\\[number\\], t: \\(source: string\\) => string\\)/);
-  assert.match(templates, /intent: t\\(template\\.intent\\)/);
-  assert.match(templates, /criteria: template\\.criteria\\.map\\(t\\)/);
-  assert.match(templates, /actions: template\\.actions\\.map\\(t\\)/);
+  assert.match(templates, /function templateHref\(template: typeof templates\[number\], t: \(source: string\) => string\)/);
+  assert.match(templates, /intent: t\(template\.intent\)/);
+  assert.match(templates, /criteria: template\.criteria\.map\(t\)/);
+  assert.match(templates, /actions: template\.actions\.map\(t\)/);
   for (const locale of ["nb", "ar", "es", "fr", "de"]) {
     for (const phrase of [
       "Prepare and validate a small project launch while keeping cost, timing, and risk visible.",
