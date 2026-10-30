@@ -378,6 +378,10 @@ test("authenticated Opportunity Intelligence backup flow exports, imports, and r
   await guardNetwork(contextB, blocked);
   const pageA = await contextA.newPage();
   const pageB = await contextB.newPage();
+  pageA.setDefaultTimeout(15_000);
+  pageB.setDefaultTimeout(15_000);
+  pageA.setDefaultNavigationTimeout(30_000);
+  pageB.setDefaultNavigationTimeout(30_000);
 
   const uploadJson = async (page, value, name = "opportunity-backup.json") => {
     await page.locator("#opportunity-backup-file").setInputFiles({
