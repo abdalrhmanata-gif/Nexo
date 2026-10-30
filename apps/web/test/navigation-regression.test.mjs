@@ -220,9 +220,17 @@ test("all literal Opportunity Intelligence translations exist in every non-Engli
   const keys = new Set(components.flatMap((source) =>
     [...source.matchAll(/\bt\("([^"]+)"\)/g)].map((match) => match[1]).filter((key) => !/^https?:\/\//i.test(key))
   ));
+  const naturallySharedWords = {
+    nb: new Set(["For:"]),
+    fr: new Set(["Effort"]),
+    de: new Set(["optional"]),
+  };
   for (const language of ["nb", "ar", "es", "fr", "de"]) {
     for (const key of keys) {
-      assert.notEqual(translateUiText(language, key), key, `missing ${language} translation: ${key}`);
+      assert.notEqual(translateUiText(language, key), undefined, `missing ${language} key: ${key}`);
+      if (!naturallySharedWords[language]?.has(key)) {
+        assert.notEqual(translateUiText(language, key), key, `missing ${language} translation: ${key}`);
+      }
     }
   }
 });
