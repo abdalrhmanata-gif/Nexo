@@ -2,7 +2,6 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createSupabaseBrowserClient } from "../lib/supabase/browser";
 import { safeNextPath } from "../lib/auth/redirect.mjs";
 
 const CONFIRMATION_ERRORS: Record<string, string> = {
@@ -29,6 +28,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     if (!email || !email.includes("@")) return setError("Enter a valid email address.");
     if (password.length < 8) return setError("Password must be at least 8 characters.");
     setLoading(true);
+    const { createSupabaseBrowserClient } = await import("../lib/supabase/browser");
     const supabase = createSupabaseBrowserClient();
     const nextPath = safeNextPath(searchParams.get("next"));
     const result = mode === "sign-in"
@@ -64,6 +64,7 @@ export function SignOutButton() {
   const [loading, setLoading] = useState(false);
   async function signOut() {
     setLoading(true);
+    const { createSupabaseBrowserClient } = await import("../lib/supabase/browser");
     await createSupabaseBrowserClient().auth.signOut();
     router.push("/auth/sign-in");
     router.refresh();
