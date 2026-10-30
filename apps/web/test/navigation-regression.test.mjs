@@ -63,6 +63,14 @@ test("notification badge is scoped to workspace routes and avoids hidden-tab pol
   assert.match(endpoint, /Cache-Control/);
 });
 
+test("Supabase browser SDK is loaded only when the user submits an auth action", () => {
+  const auth = read("components/auth-form.tsx");
+  assert.doesNotMatch(auth, /^import .*supabase\/browser/m);
+  assert.equal((auth.match(/await import\("\.\.\/lib\/supabase\/browser"\)/g) ?? []).length, 2);
+  assert.match(auth, /async function submit/);
+  assert.match(auth, /async function signOut/);
+});
+
 test("business workspace emphasizes useful actions and is transparent about unavailable team features", () => {
   const page = read("app/app/business/page.tsx");
   assert.match(page, /Team collaboration is in development/);
