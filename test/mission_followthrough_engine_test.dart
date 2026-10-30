@@ -98,6 +98,7 @@ class _Verifier implements FollowThroughVerifier {
 
 MissionFollowThroughEngine _engine({
   bool completed = true,
+  void Function()? onExecute,
 }) {
   return MissionFollowThroughEngine(
     executionGateway: ExecutionGateway(
@@ -105,6 +106,7 @@ MissionFollowThroughEngine _engine({
         'demo': _Adapter(
           DemoProviderAdapter('demo', 'demo-model'),
           completed: completed,
+          onExecute: onExecute,
         ),
       },
     ),
@@ -114,7 +116,9 @@ MissionFollowThroughEngine _engine({
 class _Adapter implements domain.AgentProviderAdapter {
   final domain.AgentProviderAdapter delegate;
   final bool completed;
-  const _Adapter(this.delegate, {required this.completed});
+  final void Function()? onExecute;
+  const _Adapter(this.delegate,
+      {required this.completed, this.onExecute});
 
   @override
   String get providerId => delegate.providerId;
@@ -122,6 +126,7 @@ class _Adapter implements domain.AgentProviderAdapter {
   @override
   Future<domain.ExecutionResponse> execute(
       domain.ExecutionRequest request) async {
+    onExecute?.call();
     final response = await delegate.execute(request);
     return domain.ExecutionResponse(
       provider: response.provider,
@@ -142,7 +147,10 @@ void main() {
   );
 
   test('commits only a successfully verified execution', () async {
-    final result = await _engine().executeAndCommit(
+    var providerCalls = 0;
+    final result = await _engine(
+      onExecute: () => providerCalls++,
+    ).executeAndCommit(
       policyDecision: allow,
       lease: _lease(),
       action: _action(),
@@ -155,17 +163,20 @@ void main() {
 
     expect(result.committed, isTrue);
     expect(result.outcomeId, 'out_run-1_verification-1');
+    expect(providerCalls, 1);
   });
 
   test('rejects missing or expired authority before execution', () async {
+    var providerCalls = 0;
+    final engine = _engine(onExecute: () => providerCalls++);
     final denied = AuthorizationResult(
       decision: AuthorizationDecision.deny,
       reason: 'approval required',
       evaluatedAt: _now,
       policyRevision: 'policy-1',
     );
-    expect(
-      () => _engine().executeAndCommit(
+    await expectLater(
+      engine.executeAndCommit(
         policyDecision: denied,
         lease: _lease(),
         action: _action(),
@@ -177,8 +188,9 @@ void main() {
       ),
       throwsA(isA<StateError>()),
     );
-    expect(
-      () => _engine().executeAndCommit(
+    expect(providerCalls, 0);
+    await expectLater(
+      engine.executeAndCommit(
         policyDecision: allow,
         lease: _lease(expiresAt: _now),
         action: _action(),
@@ -190,6 +202,7 @@ void main() {
       ),
       throwsA(isA<StateError>()),
     );
+    expect(providerCalls, 0);
   });
 
   test('does not commit failed execution or failed verification', () async {
@@ -221,9 +234,12 @@ void main() {
     );
   });
 
-  test('rejects an execution or evidence binding mismatch', () async {
-    expect(
-      () => _engine().executeAndCommit(
+  test('rejects an execution or evidence binding mismatch before provider I/O',
+      () async {
+    var providerCalls = 0;
+    final engine = _engine(onExecute: () => providerCalls++);
+    await expectLater(
+      engine.executeAndCommit(
         policyDecision: allow,
         lease: _lease(),
         action: _action(),
@@ -246,5 +262,6 @@ void main() {
       ),
       throwsA(isA<StateError>()),
     );
+    expect(providerCalls, 0);
   });
 }
