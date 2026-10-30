@@ -25,6 +25,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <Link className="brand" href="/">
           <span className="brand-wordmark">ZAVQERA</span>
           <span className="brand-subtitle"><LocalizedText en="MISSION CONTROL" nb="KONTROLLSENTER" ar="مركز التحكم" /></span>
+          <span className="visually-hidden"><LocalizedText en="Home" nb="Hjem" ar="الرئيسية" /></span>
         </Link>
         <nav className="primary-nav" aria-label="Primary navigation">
           <Link className="nav-link nav-search" href="/app#mission-search"><NavIcon name="search" /><LocalizedText en="Search" nb="Søk" ar="بحث" /></Link>
