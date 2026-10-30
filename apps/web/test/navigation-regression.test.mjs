@@ -233,3 +233,27 @@ test("Opportunity Intelligence hook and all long-form informational copy use the
   assert.doesNotMatch(opportunity, /<p className="opportunity-storage-note">Privacy and portability:/);
   assert.doesNotMatch(opportunity, /<p><strong>\{t\("Priority ="\)\}<\/strong> 25% strategic fit/);
 });
+
+test("template prefill content follows the selected locale", () => {
+  const templates = read("app/templates/page.tsx");
+  assert.match(templates, /function templateHref\\(template: typeof templates\\[number\\], t: \\(source: string\\) => string\\)/);
+  assert.match(templates, /intent: t\\(template\\.intent\\)/);
+  assert.match(templates, /criteria: template\\.criteria\\.map\\(t\\)/);
+  assert.match(templates, /actions: template\\.actions\\.map\\(t\\)/);
+  for (const locale of ["nb", "ar", "es", "fr", "de"]) {
+    for (const phrase of [
+      "Prepare and validate a small project launch while keeping cost, timing, and risk visible.",
+      "Compare realistic options using trustworthy evidence and make a decision with assumptions and uncertainties clearly stated.",
+      "Improve one recurring workflow without disrupting critical operations, and confirm whether the change helped.",
+      "Describe the target user and problem",
+      "Collect evidence for demand",
+      "Draft milestones, costs, and risks",
+      "Define the decision and constraints",
+      "Collect primary or authoritative sources",
+      "Compare options and record open questions",
+      "Map the current steps and bottlenecks",
+      "Choose a small reversible change",
+      "Review results and decide whether to keep it"
+    ]) assert.notEqual(translateUiText(locale, phrase), phrase);
+  }
+});

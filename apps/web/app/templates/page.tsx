@@ -1,5 +1,7 @@
+"use client";
+
 import Link from "next/link";
-import { LocalizedText } from "../../components/localized-text";
+import { LocalizedText, useUiTranslation } from "../../components/localized-text";
 
 const templates = [
   {
@@ -34,17 +36,18 @@ function TemplateIcon({ id }: { id: string }) {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h10M4 19h6" /><circle cx="18" cy="12" r="2" /><circle cx="14" cy="19" r="2" /></svg>;
 }
 
-function templateHref(template: typeof templates[number]) {
+function templateHref(template: typeof templates[number], t: (source: string) => string) {
   const params = new URLSearchParams({
-    name: template.title,
-    intent: template.intent,
-    criteria: template.criteria.join("\n"),
-    actions: template.actions.join("\n"),
+    name: t(template.title),
+    intent: t(template.intent),
+    criteria: template.criteria.map(t).join("\n"),
+    actions: template.actions.map(t).join("\n"),
   });
   return `/app/missions/new?${params.toString()}`;
 }
 
 export default function TemplatesPage() {
+  const t = useUiTranslation();
   return <div className="container templates-page">
     <section className="hero template-hero-panel">
       <p className="eyebrow"><LocalizedText en="Mission templates" nb="Oppdragsmaler" ar="قوالب المهام" /></p>
@@ -58,7 +61,7 @@ export default function TemplatesPage() {
         <h2><LocalizedText en={template.title} /></h2>
         <p><LocalizedText en={template.description} /></p>
         <ul className="template-criteria">{template.criteria.map((criterion) => <li key={criterion}><LocalizedText en={criterion} /></li>)}</ul>
-        <Link className="button" href={templateHref(template)}><LocalizedText en="Use this template" nb="Bruk denne malen" ar="استخدم هذا القالب" /></Link>
+        <Link className="button" href={templateHref(template, t)}><LocalizedText en="Use this template" nb="Bruk denne malen" ar="استخدم هذا القالب" /></Link>
       </article>)}
     </section>
     <p className="action-hint template-note"><LocalizedText en="A template only pre-fills a draft. Nothing is created until you review it and submit the mission form." nb="En mal fyller bare ut et utkast. Ingenting opprettes før du har gjennomgått og sendt inn skjemaet." ar="القالب يملأ مسودة فقط. لا تُنشأ أي مهمة حتى تراجع النموذج وترسله." /></p>
