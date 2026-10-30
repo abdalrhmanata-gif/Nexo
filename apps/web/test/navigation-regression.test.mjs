@@ -127,6 +127,14 @@ test("landing page explains real product value and uses functional paths", () =>
   assert.match(page, /Illustrative view/);
 });
 
+test("brand link exposes its visible label and landing proof badges meet AA contrast", () => {
+  const shell = read("components/shell.tsx");
+  assert.match(shell, /<Link className="brand" href="\/">/);
+  assert.doesNotMatch(shell, /aria-label="Zavqera home"/);
+  const css = read("app/globals.css");
+  assert.match(css, /\.landing-proof-icon \{[^}]*background:#e3f5f0; color:#08685f;/);
+});
+
 test("templates prefill the normal review-before-create mission flow", () => {
   const templates = read("app/templates/page.tsx");
   const missionForm = read("app/app/missions/new/page.tsx");
