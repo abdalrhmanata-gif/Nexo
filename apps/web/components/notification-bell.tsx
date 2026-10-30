@@ -1,21 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LocalizedText } from "./localized-text";
 
 export function NotificationBell() {
-  const pathname = usePathname();
-  const isWorkspaceRoute = pathname === "/app" || pathname.startsWith("/app/");
   const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!isWorkspaceRoute) {
-      setCount(null);
-      return;
-    }
-
     let mounted = true;
     const refresh = async () => {
       if (document.visibilityState !== "visible") return;
@@ -42,9 +34,7 @@ export function NotificationBell() {
       window.removeEventListener("focus", refreshWhenVisible);
       document.removeEventListener("visibilitychange", refreshWhenVisible);
     };
-  }, [isWorkspaceRoute]);
-
-  if (!isWorkspaceRoute) return null;
+  }, []);
 
   return <Link href="/app/notifications" className="notification-bell" aria-label={count === null ? "Notifications" : "Notifications, " + count + " items need attention"} title="Notifications">
     <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
