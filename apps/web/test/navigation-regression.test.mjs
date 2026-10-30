@@ -15,8 +15,9 @@ test("primary navigation restores the key destinations and keeps Opportunity Int
   for (const route of ["/app#mission-search", "/app/missions/new", "/app/business", "/templates", "/pricing", "/app/opportunities"]) {
     assert.ok(shell.includes(route), `missing navigation route ${route}`);
   }
-  assert.match(shell, /<WorkspaceNavActions\s*\/>/);
-  assert.doesNotMatch(shell, /NotificationBell|SignOutButton/);
+  assert.ok(shell.includes("<NotificationBell />"));
+  assert.ok(shell.includes("<SignOutButton />"));
+  assert.ok(!shell.includes("WorkspaceNavActions"));
   assert.match(shell, /<LanguageSwitcher\s*\/>/);
 });
 
@@ -53,26 +54,26 @@ test("notification badge is scoped to workspace routes and pauses in hidden tabs
   const bell = read("components/notification-bell.tsx");
   const shell = read("components/shell.tsx");
   const endpoint = read("app/api/notifications/route.ts");
-  assert.match(bell, /usePathname/);
-  assert.match(bell, /pathname === "\\/app" \\|\\| pathname\\.startsWith\\("\\/app\\/"\\)/);
-  assert.match(bell, /if \\(!isWorkspaceRoute\\) return null/);
-  assert.match(shell, /<NotificationBell\\s*\\/>/);
-  assert.match(shell, /<SignOutButton\\s*\\/>/);
-  assert.match(bell, /if \\(document\\.visibilityState !== "visible"\\) return/);
-  assert.match(bell, /document\\.addEventListener\\("visibilitychange"/);
-  assert.match(bell, /document\\.removeEventListener\\("visibilitychange"/);
-  assert.match(bell, /fetch\\("\\/api\\/notifications"/);
-  assert.match(endpoint, /createSupabaseMissionRepository/);
-  assert.match(endpoint, /repository\\.listMissions\\(\\)/);
-  assert.match(endpoint, /Cache-Control/);
+  assert.ok(bell.includes("usePathname"));
+  assert.ok(bell.includes('const isWorkspaceRoute = pathname === "/app" || pathname.startsWith("/app/");'));
+  assert.ok(bell.includes("if (!isWorkspaceRoute) return null;"));
+  assert.ok(shell.includes("<NotificationBell />"));
+  assert.ok(shell.includes("<SignOutButton />"));
+  assert.ok(bell.includes('if (document.visibilityState !== "visible") return;'));
+  assert.ok(bell.includes('document.addEventListener("visibilitychange"'));
+  assert.ok(bell.includes('document.removeEventListener("visibilitychange"'));
+  assert.ok(bell.includes('fetch("/api/notifications"'));
+  assert.ok(endpoint.includes("createSupabaseMissionRepository"));
+  assert.ok(endpoint.includes("repository.listMissions()"));
+  assert.ok(endpoint.includes("Cache-Control"));
 });
 
 test("Supabase browser SDK is loaded only when the user submits an auth action", () => {
   const auth = read("components/auth-form.tsx");
-  assert.doesNotMatch(auth, /^import .*supabase\\/browser/m);
-  assert.equal((auth.match(/await import\\("\\\.\\.\\/lib\\/supabase\\/browser"\\)/g) ?? []).length, 2);
-  assert.match(auth, /async function submit/);
-  assert.match(auth, /async function signOut/);
+  assert.ok(!auth.includes('import { createSupabaseBrowserClient } from "../lib/supabase/browser"'));
+  assert.equal(auth.split('await import("../lib/supabase/browser")').length - 1, 2);
+  assert.ok(auth.includes("async function submit"));
+  assert.ok(auth.includes("async function signOut"));
 });
 
 test("business workspace emphasizes useful actions and is transparent about unavailable team features", () => {
