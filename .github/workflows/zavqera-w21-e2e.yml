@@ -42,7 +42,6 @@ jobs:
         working-directory: apps/web
         run: npx playwright install --with-deps chromium
 
-
       - name: Create disposable Supabase workdir
         run: |
           set -euo pipefail
@@ -111,6 +110,7 @@ jobs:
 
           echo "${workdir}" > "${RUNNER_TEMP}/zavqera-e2e-workdir"
           sha256sum "${schema_file}" > "${RUNNER_TEMP}/zavqera-e2e-schema.sha256"
+
       - name: Run authenticated browser E2E
         working-directory: apps/web
         env:
@@ -122,14 +122,25 @@ jobs:
           unset SUPABASE_SERVICE_ROLE_KEY SUPABASE_SECRET_KEY SERVICE_ROLE_KEY SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD
           unset ZAVQERA_E2E_USER_A_EMAIL ZAVQERA_E2E_USER_A_PASSWORD ZAVQERA_E2E_USER_B_EMAIL ZAVQERA_E2E_USER_B_PASSWORD
           log="${RUNNER_TEMP}/w21-e2e.log"
-          npm run test:e2e -- --grep "authenticated Opportunity Intelligence backup flow" 2>&1 | tee "${log}"
-          status="${PIPESTATUS[0]}"
-          printf 'e2e_exit_status=%s\n' "${status}" > "${RUNNER_TEMP}/w21-e2e-result.env"
+          result_file="${RUNNER_TEMP}/w21-e2e-result.env"
+
+          # Disable errexit only around the test command so its exit code is
+          # always captured and persisted before any later validation runs.
+          set +e
+          npm run test:e2e -- --grep "authenticated Opportunity Intelligence backup flow" > "${log}" 2>&1
+          status=$?
+          set -e
+
+          cat "${log}"
+          printf 'e2e_exit_status=%s\n' "${status}" > "${result_file}"
+          echo "W21 E2E exit status: ${status}"
+
           if grep -q '"cleanup"[[:space:]]*:[[:space:]]*"VERIFIED"' "${log}"; then
             echo "W21 cleanup proof: VERIFIED"
           else
             echo "::error::W21 cleanup proof not found in the test output."
             status=1
+            printf 'e2e_exit_status=%s\n' "${status}" > "${result_file}"
           fi
           exit "${status}"
 
@@ -137,6 +148,18 @@ jobs:
         if: always()
         run: |
           set -euo pipefail
+          e2e_status="not-recorded"
+          if [ -s "${RUNNER_TEMP}/w21-e2e-result.env" ]; then
+            e2e_status="$(sed -n 's/^e2e_exit_status=//p' "${RUNNER_TEMP}/w21-e2e-result.env" | tail -n 1)"
+          fi
+          cleanup="NOT_VERIFIED_OR_RUN_DID_NOT_REACH_TEARDOWN"
+          if [ -f "${RUNNER_TEMP}/w21-e2e.log" ] && grep -q '"cleanup"[[:space:]]*:[[:space:]]*"VERIFIED"' "${RUNNER_TEMP}/w21-e2e.log"; then
+            cleanup="VERIFIED"
+          fi
+          schema_sha256="not-generated"
+          if [ -f "${RUNNER_TEMP}/zavqera-e2e-schema.sha256" ]; then
+            schema_sha256="$(cut -d' ' -f1 "${RUNNER_TEMP}/zavqera-e2e-schema.sha256")"
+          fi
           {
             echo "result=${{ job.status }}"
             echo "git_sha=${GITHUB_SHA}"
@@ -146,21 +169,19 @@ jobs:
             echo "supabase_cli=$(supabase --version)"
             echo "playwright=$(cd apps/web && npx --no-install playwright --version)"
             echo "postgres_major=17"
-            if [ -f "${RUNNER_TEMP}/zavqera-e2e-result.env" ]; then
-              cat "${RUNNER_TEMP}/zavqera-e2e-result.env"
-            else
-              echo "e2e_exit_status=not-recorded"
-            fi
-            if [ -f "${RUNNER_TEMP}/zavqera-e2e-schema.sha256" ]; then
-              echo -n "schema_sha256="
-              cut -d' ' -f1 "${RUNNER_TEMP}/zavqera-e2e-schema.sha256"
-            fi
-            if [ -f "${RUNNER_TEMP}/w21-e2e.log" ] && grep -q '"cleanup"[[:space:]]*:[[:space:]]*"VERIFIED"' "${RUNNER_TEMP}/w21-e2e.log"; then
-              echo "cleanup=VERIFIED"
-            else
-              echo "cleanup=NOT_VERIFIED_OR_RUN_DID_NOT_REACH_TEARDOWN"
-            fi
+            echo "e2e_exit_status=${e2e_status}"
+            echo "schema_sha256=${schema_sha256}"
+            echo "cleanup=${cleanup}"
           } > "${RUNNER_TEMP}/W21_EVIDENCE.txt"
+
+          if [ "${e2e_status}" != "0" ]; then
+            echo "::error::W21 E2E exit status was not recorded as 0 (actual: ${e2e_status})."
+            exit 1
+          fi
+          if [ "${cleanup}" != "VERIFIED" ]; then
+            echo "::error::W21 cleanup proof is missing."
+            exit 1
+          fi
 
       - name: Upload sanitized W21 evidence
         if: always()
