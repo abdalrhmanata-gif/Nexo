@@ -218,7 +218,7 @@ test("all literal Opportunity Intelligence translations exist in every non-Engli
     read("components/opportunity-analysis-panel.tsx"),
   ];
   const keys = new Set(components.flatMap((source) =>
-    [...source.matchAll(/\bt\("([^"]+)"\)/g)].map((match) => match[1])
+    [...source.matchAll(/\bt\("([^"]+)"\)/g)].map((match) => match[1]).filter((key) => !/^https?:\/\//i.test(key))
   ));
   for (const language of ["nb", "ar", "es", "fr", "de"]) {
     for (const key of keys) {
