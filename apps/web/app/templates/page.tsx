@@ -55,9 +55,9 @@ export default function TemplatesPage() {
       {templates.map((template) => <article className="card template-card" key={template.id}>
         <div className={`template-icon template-icon-${template.id}`}><TemplateIcon id={template.id} /></div>
         <p className="eyebrow"><LocalizedText en="Mission template" nb="Oppdragsmal" ar="قالب مهمة" /></p>
-        <h2><LocalizedText en={template.title} nb={template.title} ar={template.title} /></h2>
-        <p><LocalizedText en={template.description} nb={template.description} ar={template.description} /></p>
-        <ul className="template-criteria">{template.criteria.map((criterion) => <li key={criterion}><LocalizedText en={criterion} nb={criterion} ar={criterion} /></li>)}</ul>
+        <h2><LocalizedText en={template.title} /></h2>
+        <p><LocalizedText en={template.description} /></p>
+        <ul className="template-criteria">{template.criteria.map((criterion) => <li key={criterion}><LocalizedText en={criterion} /></li>)}</ul>
         <Link className="button" href={templateHref(template)}><LocalizedText en="Use this template" nb="Bruk denne malen" ar="استخدم هذا القالب" /></Link>
       </article>)}
     </section>

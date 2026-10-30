@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Mission } from "../lib/view-models";
 import { nextStepFor } from "../lib/mission-content.mjs";
+import { LocalizedText } from "./localized-text";
 import { StatusPill } from "./shell";
 
 export function MissionCard({ mission }: { mission: Mission }) {
@@ -9,7 +10,7 @@ export function MissionCard({ mission }: { mission: Mission }) {
     <article className="card mission-card">
       <div className="card-heading">
         <div>
-          <p className="eyebrow">Mission</p>
+          <p className="eyebrow"><LocalizedText en="Mission" /></p>
           <h3><Link href={`/app/missions/${mission.id}`}>{mission.name}</Link></h3>
         </div>
         <StatusPill status={mission.status} />
@@ -20,13 +21,13 @@ export function MissionCard({ mission }: { mission: Mission }) {
         <span className="next-step-detail">{next.detail}</span>
       </p>
       <div className="progress-row">
-        <span>{mission.actionsTotal ? `${mission.actionsCompleted} of ${mission.actionsTotal} actions complete` : "No actions yet"}</span>
+        <span>{mission.actionsTotal ? <>{mission.actionsCompleted} {mission.actionsCompleted === 1 ? "of 1" : "of " + mission.actionsTotal} <LocalizedText en="actions complete" /></> : <LocalizedText en="No actions yet" />}</span>
         <strong>{mission.progress}%</strong>
       </div>
       <div className="progress mission-progress" role="progressbar" aria-label={`Mission progress for ${mission.name}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={mission.progress}><span style={{ width: `${mission.progress}%` }} /></div>
-      <div className="card-meta"><span>Updated {mission.updated}</span></div>
+      <div className="card-meta"><span><LocalizedText en="Updated" /> {mission.updated}</span></div>
       <Link className="button button-small mission-open" href={`/app/missions/${mission.id}`}>
-        Open mission <span aria-hidden="true">→</span><span className="visually-hidden">: {mission.name}</span>
+        <LocalizedText en="Open mission" /> <span aria-hidden="true">→</span><span className="visually-hidden">: {mission.name}</span>
       </Link>
     </article>
   );
