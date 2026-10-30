@@ -148,22 +148,51 @@ jobs:
           mkdir -p lighthouse-reports/mobile lighthouse-reports/desktop
           printf '%s\n' "${PREVIEW_URL}/" "${PREVIEW_URL}/auth/sign-in" > lighthouse-reports/urls.txt
           "${CHROME_PATH}" --version
-          npx --yes lighthouse@13.6.0 \
-            --url-file=lighthouse-reports/urls.txt \
-            --output=json --output=html \
-            --output-path=lighthouse-reports/mobile \
-            --only-categories=performance,accessibility,best-practices,seo \
-            --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" \
-            --throttling-method=simulate \
-            --quiet
-          npx --yes lighthouse@13.6.0 \
-            --url-file=lighthouse-reports/urls.txt \
-            --output=json --output=html \
-            --output-path=lighthouse-reports/desktop \
-            --preset=desktop \
-            --only-categories=performance,accessibility,best-practices,seo \
-            --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" \
-            --quiet
+          audit_success=false
+          for attempt in 1 2 3; do
+            echo "Lighthouse audit attempt ${attempt}/3"
+            rm -f lighthouse-reports/mobile/*.report.json lighthouse-reports/mobile/*.report.html
+            rm -f lighthouse-reports/desktop/*.report.json lighthouse-reports/desktop/*.report.html
+
+            mobile_status=0
+            npx --yes lighthouse@13.6.0 \
+              --url-file=lighthouse-reports/urls.txt \
+              --output=json --output=html \
+              --output-path=lighthouse-reports/mobile \
+              --only-categories=performance,accessibility,best-practices,seo \
+              --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" \
+              --throttling-method=simulate \
+              --quiet || mobile_status=$?
+
+            desktop_status=0
+            npx --yes lighthouse@13.6.0 \
+              --url-file=lighthouse-reports/urls.txt \
+              --output=json --output=html \
+              --output-path=lighthouse-reports/desktop \
+              --preset=desktop \
+              --only-categories=performance,accessibility,best-practices,seo \
+              --chrome-flags="--headless --no-sandbox --disable-dev-shm-usage" \
+              --quiet || desktop_status=$?
+
+            if [ "${mobile_status}" -eq 0 ] && [ "${desktop_status}" -eq 0 ] && node -e '
+              const fs = require("node:fs");
+              const path = require("node:path");
+              const files = [];
+              for (const dir of ["mobile", "desktop"]) {
+                for (const name of fs.readdirSync(path.join("lighthouse-reports", dir))) {
+                  if (name.endsWith(".report.json")) files.push(path.join("lighthouse-reports", dir, name));
+                }
+              }
+              if (files.length !== 4) process.exit(1);
+              if (files.some(file => JSON.parse(fs.readFileSync(file, "utf8")).runtimeError)) process.exit(1);
+            '; then
+              audit_success=true
+              break
+            fi
+
+            echo "::warning::Lighthouse did not complete cleanly on attempt ${attempt}; retrying both device profiles."
+            sleep 5
+          done
           node <<'NODE'
           const fs = require("node:fs");
           const path = require("node:path");
@@ -243,6 +272,11 @@ jobs:
           fs.writeFileSync(path.join(root, "summary.md"), lines.join("\n"));
           console.log(lines.join("\n"));
           NODE
+
+          if [ "${audit_success}" != "true" ]; then
+            echo "::error::Lighthouse could not produce four clean page/device reports after three attempts."
+            exit 1
+          fi
 
       - name: Upload Lighthouse reports
         if: always() && steps.creds.outputs.ready == 'true'
