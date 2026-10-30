@@ -395,7 +395,7 @@ test("authenticated Opportunity Intelligence backup flow exports, imports, and r
     await test.step("sign in and record an opportunity with one evidence note", async () => {
       await signUp(pageA, userA);
       ledger.record("user", (await ownerSession(userA)).userId);
-      await pageA.goto("/app/opportunities");
+      await pageA.getByRole("link", { name: "Evaluate an idea" }).click();
       await expect(pageA.getByRole("heading", { name: "Find the next move worth making." })).toBeVisible();
 
       await pageA.getByLabel("Opportunity name", { exact: true }).fill("Backup regression opportunity");
