@@ -90,14 +90,37 @@ async function submit(page, field, { method, path, expectStatus }) {
   return settled;
 }
 
+
+async function waitForWorkspace(page) {
+  const pageErrors = [];
+  const onPageError = (error) => pageErrors.push(error.message);
+  page.on("pageerror", onPageError);
+  try {
+    // Select the destination itself; its accessible name includes supporting copy.
+    await page.locator('a[href="/app/opportunities"]').waitFor({ state: "visible" });
+  } catch (error) {
+    const body = await page.locator("body").innerText().catch(() => "<body unavailable>");
+    throw new Error(
+      [
+        "The authenticated workspace did not render its Opportunity Intelligence shortcut.",
+        "URL: " + page.url(),
+        "Body: " + body.slice(0, 1600),
+        "Page errors: " + (pageErrors.join(" | ") || "none"),
+        "Original failure: " + (error instanceof Error ? error.message : String(error)),
+      ].join("\n"),
+    );
+  } finally {
+    page.off("pageerror", onPageError);
+  }
+}
+
 async function signUp(page, user) {
   await page.goto("/auth/sign-up");
   await page.getByLabel("Email", { exact: true }).fill(user.email);
   await page.getByLabel("Password", { exact: true }).fill(user.password);
   await formWith(page, page.getByLabel("Email", { exact: true })).locator('button[type="submit"]').click();
   await expect(page, "Sign-up must return a session; disable email confirmations on the disposable stack.").toHaveURL(/\/app$/);
-  // Wait for a stable workspace control instead of networkidle; app requests may remain active.
-  await page.getByRole("link", { name: "Evaluate an idea" }).waitFor({ state: "visible" });
+  await waitForWorkspace(page);
 }
 
 async function signIn(page, user) {
@@ -106,8 +129,7 @@ async function signIn(page, user) {
   await page.getByLabel("Password", { exact: true }).fill(user.password);
   await formWith(page, page.getByLabel("Email", { exact: true })).locator('button[type="submit"]').click();
   await expect(page).toHaveURL(/\/app$/);
-  // Wait for a stable workspace control instead of networkidle; app requests may remain active.
-  await page.getByRole("link", { name: "Evaluate an idea" }).waitFor({ state: "visible" });
+  await waitForWorkspace(page);
 }
 
 async function signOut(page) {
