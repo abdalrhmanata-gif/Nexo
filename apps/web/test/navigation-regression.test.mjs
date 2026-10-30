@@ -15,7 +15,8 @@ test("primary navigation restores the key destinations and keeps Opportunity Int
   for (const route of ["/app#mission-search", "/app/missions/new", "/app/business", "/templates", "/pricing", "/app/opportunities"]) {
     assert.ok(shell.includes(route), `missing navigation route ${route}`);
   }
-  assert.match(shell, /<NotificationBell\s*\/>/);
+  assert.match(shell, /<WorkspaceNavActions\s*\/>/);
+  assert.doesNotMatch(shell, /NotificationBell|SignOutButton/);
   assert.match(shell, /<LanguageSwitcher\s*\/>/);
 });
 
@@ -48,12 +49,18 @@ test("language control supports English, Norwegian, Arabic, and right-to-left di
   assert.match(language, /localStorage\.setItem/);
 });
 
-test("notification badge is scoped to workspace routes and avoids hidden-tab polling", () => {
+test("workspace-only navigation controls are lazy-loaded and notifications pause in hidden tabs", () => {
+  const actions = read("components/workspace-nav-actions.tsx");
   const bell = read("components/notification-bell.tsx");
+  const shell = read("components/shell.tsx");
   const endpoint = read("app/api/notifications/route.ts");
-  assert.match(bell, /usePathname/);
-  assert.match(bell, /pathname === "\/app" \|\| pathname\.startsWith\("\/app\/"\)/);
-  assert.match(bell, /if \(!isWorkspaceRoute\) return null/);
+  assert.match(actions, /usePathname/);
+  assert.match(actions, /pathname === "\/app" \|\| pathname\.startsWith\("\/app\/"\)/);
+  assert.match(actions, /dynamic\([\s\S]*notification-bell/);
+  assert.match(actions, /dynamic\([\s\S]*sign-out-button/);
+  assert.match(actions, /if \(!isWorkspaceRoute\) return null/);
+  assert.doesNotMatch(shell, /NotificationBell|SignOutButton/);
+  assert.doesNotMatch(bell, /usePathname/);
   assert.match(bell, /if \(document\.visibilityState !== "visible"\) return/);
   assert.match(bell, /document\.addEventListener\("visibilitychange"/);
   assert.match(bell, /document\.removeEventListener\("visibilitychange"/);
@@ -65,10 +72,13 @@ test("notification badge is scoped to workspace routes and avoids hidden-tab pol
 
 test("Supabase browser SDK is loaded only when the user submits an auth action", () => {
   const auth = read("components/auth-form.tsx");
+  const signOut = read("components/sign-out-button.tsx");
   assert.doesNotMatch(auth, /^import .*supabase\/browser/m);
-  assert.equal((auth.match(/await import\("\.\.\/lib\/supabase\/browser"\)/g) ?? []).length, 2);
+  assert.match(auth, /await import\("\.\.\/lib\/supabase\/browser"\)/);
+  assert.doesNotMatch(signOut, /^import .*supabase\/browser/m);
+  assert.match(signOut, /await import\("\.\.\/lib\/supabase\/browser"\)/);
   assert.match(auth, /async function submit/);
-  assert.match(auth, /async function signOut/);
+  assert.match(signOut, /async function signOut/);
 });
 
 test("business workspace emphasizes useful actions and is transparent about unavailable team features", () => {
