@@ -140,7 +140,7 @@ test("landing page explains real product value and uses functional paths", () =>
 
 test("brand link exposes its visible label and landing proof badges meet AA contrast", () => {
   const shell = read("components/shell.tsx");
-  assert.match(shell, /<Link className="brand" href="\/">/);
+  assert.match(shell, /<Link className="brand" href="\/" prefetch=\{false\}>/);
   assert.doesNotMatch(shell, /aria-label="Zavqera home"/);
   assert.match(shell, /className="visually-hidden"/);
   assert.match(shell, /LocalizedText en="Home" nb="Hjem" ar="الرئيسية"/);
