@@ -210,3 +210,26 @@ test("Arabic uses right-to-left direction while all six languages remain selecta
   for (const locale of ['"en"', '"nb"', '"ar"', '"es"', '"fr"', '"de"']) assert.ok(language.includes(locale));
   assert.match(language, /document\.documentElement\.dir = language === "ar" \? "rtl" : "ltr"/);
 });
+
+test("all literal Opportunity Intelligence translations exist in every non-English locale", () => {
+  const components = [
+    read("components/opportunity-intelligence.tsx"),
+    read("components/opportunity-evidence-panel.tsx"),
+    read("components/opportunity-analysis-panel.tsx"),
+  ];
+  const keys = new Set(components.flatMap((source) =>
+    [...source.matchAll(/\\bt\\("([^"]+)"\\)/g)].map((match) => match[1])
+  ));
+  for (const language of ["nb", "ar", "es", "fr", "de"]) {
+    for (const key of keys) {
+      assert.notEqual(translateUiText(language, key), key, `missing ${language} translation: ${key}`);
+    }
+  }
+});
+
+test("Opportunity Intelligence hook and all long-form informational copy use the translator", () => {
+  const opportunity = read("components/opportunity-intelligence.tsx");
+  assert.match(opportunity, /export function OpportunityIntelligence\\(\\) \\{\\s+const t = useUiTranslation\\(\\);/);
+  assert.doesNotMatch(opportunity, /<p className="opportunity-storage-note">Privacy and portability:/);
+  assert.doesNotMatch(opportunity, /<p><strong>\\{t\\("Priority ="\\)\\}<\\/strong> 25% strategic fit/);
+});

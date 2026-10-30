@@ -150,6 +150,7 @@ function RatingField({
 }
 
 export function OpportunityIntelligence() {
+  const t = useUiTranslation();
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [form, setForm] = useState<OpportunityForm>(EMPTY_FORM);
   const [storageReady, setStorageReady] = useState(false);
@@ -547,13 +548,13 @@ export function OpportunityIntelligence() {
 
       <section className="opportunity-method" aria-labelledby="opportunity-method-heading">
         <h2 id="opportunity-method-heading">{t("How the score works")}</h2>
-        <p><strong>{t("Priority =")}</strong> 25% strategic fit + 25% potential value + 15% timing + 20% evidence strength + 15% execution ease. Ratings are 1–5; execution ease is the inverse of effort.</p>
+        <p><strong>{t("Priority =")}</strong> {t("25% strategic fit + 25% potential value + 15% timing + 20% evidence strength + 15% execution ease. Ratings are 1–5; execution ease is the inverse of effort.")}</p>
         <div className="opportunity-thresholds">
           <span><b>80–100</b> {t("Strong candidate — confirm evidence and take a bounded next step.")}</span>
           <span><b>60–79</b> {t("Validate — test the weakest assumption first.")}</span>
           <span><b>20–59</b> {t("Keep on radar — improve evidence or reduce effort.")}</span>
         </div>
-        <p className="opportunity-storage-note">Privacy and portability: opportunities and evidence notes are stored only in this browser. Export a backup to move them to another device; the file may contain sensitive business information, so store it securely. Import merges records and skips matching IDs without overwriting existing data. Cloud sync, live discovery, automatic source verification, recurring monitoring, and outcome-based learning are not connected yet.</p>
+        <p className="opportunity-storage-note">{t("Privacy and portability: opportunities and evidence notes are stored only in this browser. Export a backup to move them to another device; the file may contain sensitive business information, so store it securely. Import merges records and skips matching IDs without overwriting existing data. Cloud sync, live discovery, automatic source verification, recurring monitoring, and outcome-based learning are not connected yet.")}</p>
       </section>
     </div>
   );
