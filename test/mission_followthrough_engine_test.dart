@@ -117,8 +117,11 @@ class _Adapter implements domain.AgentProviderAdapter {
   final domain.AgentProviderAdapter delegate;
   final bool completed;
   final void Function()? onExecute;
-  const _Adapter(this.delegate,
-      {required this.completed, this.onExecute});
+  const _Adapter(
+    this.delegate, {
+    required this.completed,
+    this.onExecute,
+  });
 
   @override
   String get providerId => delegate.providerId;
@@ -234,8 +237,9 @@ void main() {
     );
   });
 
-  test('rejects an execution or evidence binding mismatch before provider I/O',
-      () async {
+  test(
+    'rejects an execution or evidence binding mismatch before provider I/O',
+    () async {
     var providerCalls = 0;
     final engine = _engine(onExecute: () => providerCalls++);
     await expectLater(
