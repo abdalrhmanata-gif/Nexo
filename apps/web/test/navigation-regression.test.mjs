@@ -54,23 +54,23 @@ test("notification badge is scoped to workspace routes and pauses in hidden tabs
   const shell = read("components/shell.tsx");
   const endpoint = read("app/api/notifications/route.ts");
   assert.match(bell, /usePathname/);
-  assert.match(bell, /pathname === "\/app" \|\| pathname\.startsWith\("\/app\/"\)/);
-  assert.match(bell, /if \(!isWorkspaceRoute\) return null/);
-  assert.match(shell, /<NotificationBell\s*\/>/);
-  assert.match(shell, /<SignOutButton\s*\/>/);
-  assert.match(bell, /if \(document\.visibilityState !== "visible"\) return/);
-  assert.match(bell, /document\.addEventListener\("visibilitychange"/);
-  assert.match(bell, /document\.removeEventListener\("visibilitychange"/);
-  assert.match(bell, /fetch\("\/api\/notifications"/);
+  assert.match(bell, /pathname === "\\/app" \\|\\| pathname\\.startsWith\\("\\/app\\/"\\)/);
+  assert.match(bell, /if \\(!isWorkspaceRoute\\) return null/);
+  assert.match(shell, /<NotificationBell\\s*\\/>/);
+  assert.match(shell, /<SignOutButton\\s*\\/>/);
+  assert.match(bell, /if \\(document\\.visibilityState !== "visible"\\) return/);
+  assert.match(bell, /document\\.addEventListener\\("visibilitychange"/);
+  assert.match(bell, /document\\.removeEventListener\\("visibilitychange"/);
+  assert.match(bell, /fetch\\("\\/api\\/notifications"/);
   assert.match(endpoint, /createSupabaseMissionRepository/);
-  assert.match(endpoint, /repository\.listMissions\(\)/);
+  assert.match(endpoint, /repository\\.listMissions\\(\\)/);
   assert.match(endpoint, /Cache-Control/);
 });
 
 test("Supabase browser SDK is loaded only when the user submits an auth action", () => {
   const auth = read("components/auth-form.tsx");
-  assert.doesNotMatch(auth, /^import .*supabase\/browser/m);
-  assert.equal((auth.match(/await import\("\.\.\/lib\/supabase\/browser"\)/g) ?? []).length, 2);
+  assert.doesNotMatch(auth, /^import .*supabase\\/browser/m);
+  assert.equal((auth.match(/await import\\("\\\.\\.\\/lib\\/supabase\\/browser"\\)/g) ?? []).length, 2);
   assert.match(auth, /async function submit/);
   assert.match(auth, /async function signOut/);
 });
