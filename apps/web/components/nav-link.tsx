@@ -18,7 +18,7 @@ export function NavLink({
   const pathname = usePathname();
   const isCurrent = prefix ? pathname === prefix || pathname.startsWith(`${prefix}/`) : pathname === href;
   return (
-    <Link href={href} className={className} aria-current={isCurrent ? "page" : undefined}>
+    <Link href={href} prefetch={false} className={className} aria-current={isCurrent ? "page" : undefined}>
       {children}
     </Link>
   );
