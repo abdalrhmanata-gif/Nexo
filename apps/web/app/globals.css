@@ -1007,3 +1007,4 @@ a:hover { color:var(--teal); }
   .opportunity-layout--form-open .opportunity-form-card { order:1; }
   .opportunity-layout--form-open .opportunity-results { order:2; }
 }
+.topbar .brand .visually-hidden { display:block; }
