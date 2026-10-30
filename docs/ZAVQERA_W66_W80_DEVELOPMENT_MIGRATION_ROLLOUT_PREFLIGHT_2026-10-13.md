@@ -1,4 +1,4 @@
-# ZAVQERA W66–W80 hosted Development rollout preflight and recovery plan
+# ZAVQERA W66–W82 hosted Development rollout preflight and recovery plan
 
 **Prepared:** 2026-10-13  
 **Reviewed branch:** `zavqera/ai-planner-integration`  
@@ -86,3 +86,111 @@ Do not run hosted live Research, send a real invitation, register a real provide
 Hosted Development migration parity is **NOT VERIFIED / NOT APPLIED**. Authenticated hosted Research with persisted citations/history, real Resend inbox delivery, password-reset email/callback, manual desktop/mobile visual QA, leaked-password protection, and a real reviewed provider adapter remain separate gates. Universal Mission Authority enforcement across all relevant external side-effect paths remains **NOT PROVEN**.
 
 PR #29 must remain OPEN / Draft / UNMERGED. This plan makes no change to hosted Development, Supabase Main/Production, Git `main`, deployment, DNS, billing, or any real-provider side effect.
+
+## Fresh read-only hosted Development audit — 2026-10-14 17:50 UTC
+
+This section supersedes any assumption that the 2026-10-13 snapshot alone is sufficient. The current connected project was queried read-only at **2026-10-14 17:50:16.867775+00**. Project ID: `mrwmmbytcymqgwvcoywd`; PostgreSQL 17.6; region `eu-west-1`. No database writes, DDL, grants, migration, or live Research request were performed.
+
+### Current migration ledger and source delta
+
+- Hosted `supabase_migrations.schema_migrations`: **74 rows**, latest version **`20261011150000` / W65**.
+- The isolated source inventory reported **87 checked-in migration files**. All 16 checked-in migration files after W65 through W82 (W66–W71 and W73–W82; W72 has no SQL migration) remain unapplied on hosted Development.
+- Result: migration parity is still **NOT VERIFIED / NOT APPLIED**. Do not infer parity from the successful disposable replay. The exact isolated W80 run is [here](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/38608523334): PostgreSQL 17 replay through W80 exit 0; pgTAP **49 planned / 49 reported / 0 failed**; W81 and W82 replay exit 0; cleanup verified.
+
+### Confirmed hosted schema gaps through W82
+
+- `public.mission_authority_budgets` and `public.mission_authority_budget_reservations` are absent.
+- `public.agent_executions` is missing the W69 dispatch-claim quartet: `dispatch_claimed_at`, `dispatch_claim_authority_hash`, `dispatch_claim_request_hash`, `dispatch_claim_budget_revision`.
+- It is missing the three W70 reconciliation-claim fields queried in the repository contract: `reconciliation_claimed_at`, `reconciliation_lease_expires_at`, `reconciliation_claim_token`; and all W81 research-claim fields: `research_claimed_at`, `research_claim_request_hash`, `research_claim_authority_hash`, `research_claim_mission_version`.
+- `public.ai_usage_reservations` exists with RLS enabled and a deny-direct-access policy, but the W82 identity columns `generation_kind` and `request_hash` are absent.
+- The W81 `claim_read_only_research_execution(uuid, uuid, text)` signature was not found. The W82 `reserve_ai_generation(text, text, text)` signature was not found.
+
+### Confirmed legacy executable paths and grant differences
+
+- Both legacy six-argument `complete_read_only_research_execution(uuid, text, jsonb, jsonb, text, text)` functions still exist in `public` and `private`.
+- Effective EXECUTE on the legacy public function is currently `authenticated=true`, `service_role=true`, `anon=false`. The private implementation is SECURITY DEFINER and currently has `authenticated=true`, `service_role=false`, `anon=false`. This is not the W67/W79 contract; keep hosted Research fail-closed.
+- The legacy one-argument `reserve_ai_generation(text)` still exists in both `public` and `private`; catalog checks returned `authenticated=true` and `service_role=true`. W82's replacement signature is absent.
+- The W66 table-write boundary is also absent in the current effective catalog: `service_role` currently has SELECT/INSERT/UPDATE/DELETE on `public.agent_executions`. Do not treat the local W66–W82 replay as proof those grants are fixed in hosted Development.
+
+### RLS/security-advisor finding that needs separate review
+
+Supabase's current table/advisory response flags RLS disabled (**CRITICAL**) on:
+- `private.anonymous_ai_visitors`
+- `private.anonymous_ai_ip_windows`
+- `private.anonymous_ai_reservations`
+
+The read-only catalog query confirmed RLS is disabled and found **no direct SELECT/INSERT/UPDATE/DELETE privileges for `anon`, `authenticated`, or `service_role` on those three tables**, and no `private` schema USAGE for `anon` (while `authenticated` has schema USAGE). The advisory wording says these tables are fully exposed, but the direct privilege check did not confirm direct table access for those roles. Record this as a critical configuration/advisory discrepancy requiring investigation, not as proof of direct public access and not as a reason to ignore the warning. There are no policies on these three tables in the current catalog result.
+
+Do **not** blindly enable RLS without a reviewed policy/access design: enabling it with no policies may break intended internal operations. No remediation was applied.
+
+A follow-up read-only function-call/ACL query at **2026-10-14 17:56:42.503374+00** found the public `reserve_anonymous_ai_generation`, `consume_anonymous_ai_generation`, and `release_anonymous_ai_generation` wrappers are SECURITY DEFINER but executable only by `service_role` (`anon=false`, `authenticated=false`). Their private helper implementations are not executable by those API roles either, and the catalog search found no other SQL function body calling these helpers. Therefore this catalog snapshot did **not** establish a callable anon/authenticated path into these tables. Keep the CRITICAL RLS advisory open as a defense-in-depth/configuration issue and investigate the Data API/application path before deciding on a policy change; this nuance is not a license to disregard the advisor.
+
+Supabase Auth also currently reports `auth_leaked_password_protection` / **Leaked Password Protection Disabled** (WARN). The performance advisor lists 15 unused indexes; this is informational and should be judged against actual workload before any removal.
+
+### Final required sequence additions
+
+Continue in timestamp order after W80:
+- **W81 — `20261014110000_w81_read_only_research_jit_claim.sql`**: add requester-bound single-use Research claim columns and RPCs, then verify that hosted routes stay blocked until the exact claim/completion contract and grants are present.
+- **W82 — `20261014130000_w82_ai_generation_reservation_identity.sql`**: replace the one-argument AI reservation API with the three-argument request-identity contract and verify `generation_kind` / `request_hash`, privilege grants, and mismatched-retry behavior.
+
+### Current approval boundary
+
+The result remains **NO-GO for hosted Research and any Development migration**. The smallest owner decision required is explicit authorization for a **Development-only W66–W82 rollout** on project `mrwmmbytcymqgwvcoywd`, explicitly superseding the current Issue #23 schema-change restriction, with a reviewed backup/restore plan and a controlled migration window. Until that authorization exists, continue only with local tests, source review, and read-only checks. Never modify Supabase Main/Production, perform real provider effects, or register a provider adapter.
+
+
+## Current hosted Development reconciliation and AI containment status — 2026-10-22
+
+**Scope:** read-only Supabase metadata/function reads and GitHub source inventory. No SQL statement, RPC invocation, migration, secret read/write, provider request, or production action was performed for this refresh.
+
+### Migration ledger comparison
+
+- Live Development ledger: **74 migration rows**, latest `20261011150000 / w65_agent_execution_table_write_boundary`.
+- Pinned candidate source snapshot: `zavqera/ai-planner-integration` at commit `1b02272a7281b2e9ebf9020cd21a8ac9de3e577e`, containing **87 checked-in SQL migration files**.
+- Exact version + name tuple matches: **46**.
+- Source tuples absent as exact tuples in the hosted ledger: **41**.
+- Hosted tuples absent as exact tuples in the source snapshot: **28**; these comprise **22 same-name/different-version entries** and **6 hosted-only names**.
+- All **16 source SQL migration files after W65 through W82** (W66–W71 and W73–W82; W72 has no SQL migration file in this snapshot) are absent from the hosted migration ledger. W81 and W82 therefore remain unapplied in the current ledger.
+
+This is a version/name reconciliation only. It does **not** establish SQL-byte equality, the exact historical file that originally ran, or a deployment receipt. Do not “repair” the ledger or apply migrations based on tuple comparison alone.
+
+### Current published `ai-plan` containment state
+
+A fresh read-only recheck observed `ai-plan` **ACTIVE version 4**, `verify_jwt=true`, updated `2026-10-22T12:06:41.488Z`, reported bundle SHA-256 `245907cc77df7c5df142cc1ea89f26d930cfbb75e8a1c7b028b2a72abd52773f`.
+
+The currently published source is a short temporary fail-closed stub (23 source lines):
+- `OPTIONS` returns CORS preflight; non-POST methods return 405; every POST returns `503 ai_quota_enforcement_not_configured`.
+- It makes no OpenAI/provider request, reads no provider secret, and does not parse the request body.
+- JWT verification remains enabled at the function gateway.
+
+This version is **more restrictive than a provider-enabled implementation**, which is the intended containment effect. However, its current deployed source differs from the source files in PR #45 / commit `7ee74ebdd58c6cbfadb0f6d6a5b7196505ab0aa6`; Supabase metadata/read-back did not identify who or what created version 4. Do not attribute this deployment to a particular actor without separate deployment audit evidence. Preserve fail-closed behavior and reconcile the deployed stub with version-controlled source in a reviewed, code-only change before future feature re-enablement. The earlier version-3 note is superseded by this current version-4 read-back.
+
+### Static security review — findings, not independent approval
+
+- PR #43 / W82 remains **OPEN / Draft / Unmerged**. It creates a requester-bound reservation API and adds request identity columns, but the source migration's grants and the historic hosted ACL records differ. In particular, the candidate grants `authenticated` EXECUTE on the public reservation wrapper and private helper functions. Before any hosted rollout, an independent reviewer must establish the intended direct RPC surface, `private` schema reachability, and the effective privileges under the actual Data API configuration.
+- PR #40 / W83 remains **OPEN / Draft / Unmerged**. Its isolated PostgreSQL 17/pgTAP evidence is useful but does not prove hosted schema/grant parity or modern secret-key behavior against the live gateway.
+- The direct Flutter Edge path remains blocked by the published version-4 stub. The web route's separate reservation/settlement implementation is not proof that the direct Flutter path is protected by the same authoritative quota.
+- The latest Supabase security-advisor response returned `auth_leaked_password_protection` / **WARN: disabled**. This response does not supersede the previously recorded catalog-level RLS/ACL discrepancies; those require a fresh, scoped, authorized catalog capture and independent interpretation.
+
+### Review and release decision
+
+As of this refresh, direct GitHub review-submission checks returned **zero submitted reviews** for PRs #40, #43 and #45, and audit PR #3. The public independent-review intake has earlier invitations to `Farenhytee` and `eugenicum`, but no attributable independent review is recorded. The available actions in this execution do not grant repository collaborator access; no permissions were changed.
+
+**NO-GO remains.** Issue #23 prohibits hosted Development schema changes and hosted E2E unless its approval boundary is explicitly superseded. Keep migrations W66–W82 unapplied, do not change secrets/ACLs, do not make a live-provider call, and do not promote this to Production. Next valid gate is independent review of the published evidence plus migration SQL-byte/deployment-receipt reconciliation; only then can an owner-authorized, separately reviewed Development change be evaluated.
+
+
+### Independent reviewer assignment attempt — 2026-10-22
+
+Formal GitHub review requests were attempted for `Farenhytee` and `eugenicum` on PRs #40 (W83), #43 (W82), and #45 (AI fail-closed). GitHub rejected the requests with HTTP 422: `Reviews may only be requested from collaborators`. A separate permission lookup returning `read` did not satisfy GitHub's collaborator requirement. The available GitHub actions do not expose a collaborator-invitation/write operation, so no membership or repository permissions were changed. The owner must invite an independent reviewer through repository access settings; after acceptance, request formal PR review again. Until a review is actually submitted, **independent review remains NOT DONE**.
+
+
+### Targeted schema catalog confirmation — 2026-10-22 (read-only metadata)
+
+A second scoped read-only metadata call listed **20 tables across `public` and `private`**, including columns and RLS flags. No table rows or secret values were read.
+
+Confirmed on the live Development catalog:
+- `public.ai_usage_reservations` has RLS enabled and 27 rows, but its columns currently omit `generation_kind` and `request_hash`; the visible `state` constraint remains `reserved/consumed/released` and does not include `unknown`. This corroborates that W82 is not applied.
+- `public.mission_authority_budgets` and `public.mission_authority_budget_reservations` are absent.
+- `public.agent_executions` (RLS enabled; 3 rows) lacks `dispatch_claimed_at`, `dispatch_claim_authority_hash`, `dispatch_claim_request_hash`, `dispatch_claim_budget_revision`, `reconciliation_claimed_at`, `reconciliation_lease_expires_at`, `reconciliation_claim_token`, and W81 research-claim fields.
+- `private.anonymous_ai_visitors` (385 rows), `private.anonymous_ai_ip_windows` (384 rows), and `private.anonymous_ai_reservations` (386 rows) all report **RLS disabled**.
+
+These RLS flags are a concrete defense-in-depth finding; they do **not**, by themselves, prove public table access. Prior ACL/catalog evidence reported no direct table privileges for `anon`, `authenticated`, or `service_role` on these private tables, but a current exact-ACL and exposed-schema/API-path capture is not available from this metadata call. Do not blindly enable RLS without reviewing intended server-side access and policies. The existing security-advisor output and catalog metadata must be adjudicated by an independent reviewer before any change.

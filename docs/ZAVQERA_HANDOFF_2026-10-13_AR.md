@@ -741,3 +741,62 @@ W21's artifact records synthetic merge-test SHA `1c249d51288a450783a481039249cf3
 
 ### Launch/security state unchanged
 PR #29 remains OPEN / Draft / UNMERGED; Issue #23 remains OPEN. Provider registry intentionally empty. This static regression guard does not analyze arbitrary runtime-generated imports or package internals and is not a runtime sandbox, network trace, or proof of universal JIT mediation. Hosted Development remains last documented at W65; W66–W80 are NOT APPLIED, so hosted Research remains blocked. No hosted DB changes, Supabase Main/Production changes, DNS/billing changes, real provider side effect, or production deployment occurred.
+
+
+# CURRENT CONTINUITY CHECKPOINT — 2026-10-23
+**This section supersedes older status snapshots above where they conflict.** Preserve the full earlier history; do not replace it with this summary. Before any new write, refresh live GitHub/Supabase state.
+
+## A. Current top-level decision
+- **Public/paid launch: NO-GO.** candidate_sha=NONE; hosted_write_authorized=false.
+- Product is ZAVQERA; repo is https://github.com/abdalrhmanata-gif/Nexo. User prefers concise Arabic updates, tangible execution, no unnecessary questions.
+- Use Netlify (not Vercel unless explicitly asked). Do not use paid services or burn Codex credits.
+- Never modify Supabase Main/Production, billing, DNS, or production deployment. No hosted migration, secret change, live provider request, or paid test without its own explicit authorization. User agreed to the safest Development containment step only; that did not grant blanket authorization for subsequent hosted writes.
+- Keep security-sensitive PRs Draft/unmerged pending independent review and exact-head checks.
+
+## B. Development Supabase: deployed Edge function state (latest read-back)
+Project ID mrwmmbytcymqgwvcoywd, region eu-west-1, PostgreSQL 17. Current read-back observed:
+- Function ai-plan: **ACTIVE version 4**, verify_jwt=true, updated 2026-10-22T12:06:41.488Z, bundle SHA-256 245907cc77df7c5df142cc1ea89f26d930cfbb75e8a1c7b028b2a72abd52773f.
+- Version 4 is a short fail-closed stub: CORS preflight for OPTIONS, 405 for non-POST, all POST requests return 503 ai_quota_enforcement_not_configured. It makes no OpenAI/provider request, reads no provider secret and does not parse a request body. Gateway JWT verification is on.
+- This current stub differs from the version-controlled files in PR #45 / commit 7ee74ebdd58c6cbfadb0f6d6a5b7196505ab0aa6. Supabase read-back does not identify who/what created version 4. Do not attribute cause to an actor without deployment audit evidence.
+- Earlier, version 3 was deployed by explicit user agreement as a containment step; later read-back found v4, so version-3 claims are superseded. The last attempt to make a live HTTP smoke request was blocked by unavailable outbound DNS/network. Deployment metadata/source was read, but runtime HTTP 503 has NOT been independently observed.
+- Impact: Flutter direct Edge planning is deliberately unavailable. Do not re-enable provider access by flipping the quota constant. Reconcile the live stub to reviewed version-controlled source only through a separately authorized code change, and keep it fail-closed until the authoritative quota contract is proven.
+- No secret values were intentionally read or changed, no OpenAI call was made, no DB migration/write was done in the containment deployment. Note: an earlier read-only Netlify environment listing unexpectedly exposed an unmasked Development-context value for an ambiguous secret-scoped variable beginning ZAVQERA_SERVER_DB_. Its value was not copied into source/comments/logs or used. Owner should verify whether that variable is live and rotate/remove through approved secret management if warranted; do not repeat broad environment listing that may reveal values.
+
+## C. Hosted migration ledger reconciliation (read-only snapshot)
+- Candidate branch zavqera/ai-planner-integration was read at source snapshot SHA 1b02272a7281b2e9ebf9020cd21a8ac9de3e577e.
+- Source tree contains 87 SQL migration files; Development hosted ledger contains 74 rows, latest 20261011150000 / w65_agent_execution_table_write_boundary.
+- Exact version+name tuple matches: 46. Source tuples absent as exact tuples from hosted ledger: 41. Hosted tuples absent as exact tuples from source snapshot: 28, including 22 same-name/different-version and 6 hosted-only names.
+- All 16 source SQL files after W65 through W82 (W66–W71 and W73–W82; W72 has no SQL migration file in this snapshot) are absent from hosted ledger. W81 and W82 are not applied according to the current ledger.
+- These are version/name tuples only, NOT SQL-byte equality, historical execution proof, or deployment receipts. Do not repair the ledger or apply migrations from tuple comparison alone.
+- Issue #23's guardrail prohibits hosted Development schema changes and hosted E2E. Keep W66–W82 unapplied pending independent review and exact SQL/deployment provenance reconciliation.
+
+## D. PRs/issues to recheck first
+- PR #45: https://github.com/abdalrhmanata-gif/Nexo/pull/45 — OPEN / Draft / Unmerged. Purpose: fail-closed direct AI Edge path. Candidate HEAD recorded dc793f160c978de6cb7da6ada0c4971bef82f160; exact earlier containment source commit is 7ee74ebdd58c6cbfadb0f6d6a5b7196505ab0aa6. Exact-commit AI Plan Function CI #11 and Flutter CI #3132 passed: https://github.com/abdalrhmanata-gif/Nexo/actions/runs/39474956527 and https://github.com/abdalrhmanata-gif/Nexo/actions/runs/39474956481. Isolated CI is not hosted provenance or independent security approval.
+- PR #43: https://github.com/abdalrhmanata-gif/Nexo/pull/43 — OPEN / Draft / Unmerged. W82 SELECT-target cleanup; exact HEAD recorded 51c3c911b9f7eda344067f1c7d804d8ab83d61ff. Isolated PostgreSQL 17/pgTAP and W21 gates passed, but hosted parity is unproven.
+- PR #40: OPEN / Draft / Unmerged (recheck exact live URL/state). W83 isolated PostgreSQL/pgTAP evidence is not proof of hosted ACL/schema parity.
+- PR #46: https://github.com/abdalrhmanata-gif/Nexo/pull/46 — OPEN / Draft / Unmerged at recorded HEAD 5bdadd00785c4907841af18139ef3cad1e55758e. Web Unit, Web CI/build and Flutter CI passed on that SHA. Netlify workflow failed solely because repository secret NETLIFY_AUTH_TOKEN is missing; local runtime smoke passed (/=200, /auth/sign-in=200, unauthenticated /api/ai/plan=401). Production deploy job was skipped. To unblock preview, owner must add NETLIFY_AUTH_TOKEN privately at https://github.com/abdalrhmanata-gif/Nexo/settings/secrets/actions and rerun the failed workflow. Never ask the user to paste the token into chat.
+- Issue #23: https://github.com/abdalrhmanata-gif/Nexo/issues/23 — OPEN. Mission Authority universal enforcement is not proven; keep empty trusted provider adapter registry; no real provider adapter.
+- Issue #31: https://github.com/abdalrhmanata-gif/Nexo/issues/31 — release/hosted evidence and blockers. Latest containment notes include the observed v3 deployment and later v4 stub; recheck comments before adding more.
+- Independent reviewer: no submitted reviews were found in the checked PR review endpoints for #40, #43, #45 and audit PR #3. A prior intake mentioned Farenhytee and eugenicum, but no attributable independent review was recorded. Available tool permissions do not allow adding collaborators/requesting a review from a non-collaborator. Do not claim independent review occurred.
+
+## E. Quota/AI architecture — release blocker
+- Flutter lib/application/zavqera_ai_planner.dart sends {goal, context} without request ID (recorded at SHA 760ece4). Direct Edge path does not share the web route's persistent reservation/settlement contract.
+- ai-plan fail-closed stub is intentional containment. The web route's separate reservation logic does not prove the Flutter direct path is protected.
+- W82 is candidate code only; actual Development schema/ACL state differs from candidate artifacts and needs exact current catalog capture and independent interpretation. Do not invent RPCs or schema.
+- The prior Development audit observed auth_leaked_password_protection WARN/disabled. Confirm via a safe advisor read when resuming.
+- No live-provider test until: (1) a single authoritative quota path is selected, (2) reservation/consume/release and UNKNOWN reconciliation are proven under concurrency/idempotency, (3) independent security review approves the actual grants/schema, (4) explicit limited-cost provider test authorization is given. Do not read or expose secrets.
+- Password-reset verification remains untested. Only after explicit authorization, use a dedicated test account; no real email test or provider side effect without authorization.
+
+## F. Netlify preview blocker
+PR #46 contains a real draft-preview workflow path, but it cannot deploy until the repo secret NETLIFY_AUTH_TOKEN is added privately by the owner. The workflow run previously failed at the missing-token guard before a Netlify deploy call; it did not create a draft URL. After the owner adds the secret, rerun the failed workflow, inspect the returned URL, and verify /, /auth/sign-in, /app and unauthenticated AI endpoint behavior. No production deploy.
+
+## G. Next exact execution sequence
+1. Re-read current PR/branch heads, latest workflows, Development ai-plan metadata/source, migration ledger and advisor status. Treat all SHAs and run IDs above as checkpoint evidence, not guaranteed current state.
+2. Reconcile version-4 live stub with the reviewed fail-closed source in Git; do not alter hosted Development again unless user explicitly authorizes that exact deployment. No schema/migration changes.
+3. Continue a static ACL/grant review for W82/W83 and document exact differences. Do not apply migrations or execute catalog-mutating statements. Find a genuinely independent reviewer through repository permissions workflow; do not fabricate review.
+4. For Netlify preview, wait for owner to add NETLIFY_AUTH_TOKEN privately, then rerun the PR #46 workflow and verify the returned draft URL and routes. No production deploy.
+5. Only after the above gates, evaluate a tightly scoped test plan. Do not test live OpenAI or password reset without separate authorization.
+6. Update this handoff file after each material checkpoint, preserving old evidence and adding a dated superseding section.
+
+## H. New conversation prompt (copy/paste)
+Resume ZAVQERA/NEXO from docs/ZAVQERA_HANDOFF_2026-10-13_AR.md, especially the section CURRENT CONTINUITY CHECKPOINT — 2026-10-23. First refresh live GitHub and Supabase state; do not assume checkpoint SHAs/statuses are still current. Current top-level decision is NO-GO. Development project mrwmmbytcymqgwvcoywd; the latest read-back observed ai-plan version 4 as a fail-closed stub returning 503 on POST, but it differs from version-controlled PR #45 source and its origin is unknown. Development migration ledger was 74 rows through W65 vs 87 SQL files in candidate source; W66–W82 must remain unapplied. PR #45 and #43 are Draft/unmerged; PR #46 preview is blocked by missing private GitHub secret NETLIFY_AUTH_TOKEN. No independent review is recorded. Do not touch Main/Production, secrets, hosted migrations, billing/DNS, or live provider calls without separate explicit authorization. Continue with concrete safe work, preserve all existing evidence, and do not claim a test/review/deployment unless directly verified.
