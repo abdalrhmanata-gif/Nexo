@@ -7,6 +7,17 @@ import test from "node:test";
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (path) => readFileSync(join(webRoot, path), "utf8");
 
+test("global navigation and auth cross-links do not prefetch unopened pages", () => {
+  const shell = read("components/shell.tsx");
+  assert.match(shell, /<Link className="brand" href="\/" prefetch=\{false\}>/);
+  assert.match(shell, /href="\/app#mission-search"[^>]*prefetch=\{false\}/);
+  assert.match(shell, /href="\/app\/missions\/new"[^>]*prefetch=\{false\}/);
+  const nav = read("components/nav-link.tsx");
+  assert.match(nav, /<Link href=\{href\} prefetch=\{false\}/);
+  const signIn = read("app/auth/sign-in/page.tsx");
+  assert.match(signIn, /<Link href="\/auth\/sign-up" prefetch=\{false\}>/);
+});
+
 test("primary navigation restores the key destinations and keeps Opportunity Intelligence", () => {
   const shell = read("components/shell.tsx");
   for (const label of ["Search", "New mission", "Business", "Templates", "Pricing", "Opportunity Intelligence"]) {
