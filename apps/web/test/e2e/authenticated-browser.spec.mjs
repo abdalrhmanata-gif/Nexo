@@ -111,7 +111,7 @@ async function waitForWorkspace(page) {
   page.on("pageerror", onPageError);
   try {
     // Select the destination itself; its accessible name includes supporting copy.
-    await page.locator('a[href="/app/opportunities"]').waitFor({ state: "visible" });
+    await page.locator('a.workspace-quick-action[href="/app/opportunities"]').waitFor({ state: "visible" });
   } catch (error) {
     const body = await page.locator("body").innerText().catch(() => "<body unavailable>");
     throw new Error(
