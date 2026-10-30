@@ -22,7 +22,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="site-shell">
       <header className="topbar">
-        <Link className="brand" href="/" aria-label="Zavqera home">
+        <Link className="brand" href="/">
           <span className="brand-wordmark">ZAVQERA</span>
           <span className="brand-subtitle"><LocalizedText en="MISSION CONTROL" nb="KONTROLLSENTER" ar="مركز التحكم" /></span>
         </Link>
