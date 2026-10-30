@@ -96,8 +96,8 @@ async function signUp(page, user) {
   await page.getByLabel("Password", { exact: true }).fill(user.password);
   await formWith(page, page.getByLabel("Email", { exact: true })).locator('button[type="submit"]').click();
   await expect(page, "Sign-up must return a session; disable email confirmations on the disposable stack.").toHaveURL(/\/app$/);
-  // Next.js can update the URL before the route transition settles; wait before navigating again.
-  await page.waitForLoadState("networkidle");
+  // Wait for a stable workspace control instead of networkidle; app requests may remain active.
+  await page.getByRole("link", { name: "Evaluate an idea" }).waitFor({ state: "visible" });
 }
 
 async function signIn(page, user) {
@@ -106,8 +106,8 @@ async function signIn(page, user) {
   await page.getByLabel("Password", { exact: true }).fill(user.password);
   await formWith(page, page.getByLabel("Email", { exact: true })).locator('button[type="submit"]').click();
   await expect(page).toHaveURL(/\/app$/);
-  // Wait for the client-side route transition to settle before interacting with the workspace.
-  await page.waitForLoadState("networkidle");
+  // Wait for a stable workspace control instead of networkidle; app requests may remain active.
+  await page.getByRole("link", { name: "Evaluate an idea" }).waitFor({ state: "visible" });
 }
 
 async function signOut(page) {
