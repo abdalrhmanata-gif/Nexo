@@ -7,6 +7,7 @@ import { opportunityPriority, priorityDescription, scoreOpportunity } from "../l
 import { isOpportunityEvidenceItem, type OpportunityEvidenceItem } from "../lib/evidence-ledger.mjs";
 import { OpportunityEvidencePanel } from "./opportunity-evidence-panel";
 import { OpportunityAnalysisPanel } from "./opportunity-analysis-panel";
+import { useUiTranslation } from "./localized-text";
 
 type Opportunity = {
   id: string;
@@ -132,15 +133,16 @@ function RatingField({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const t = useUiTranslation();
   return (
     <div className="field">
       <label htmlFor={id}>{label}</label>
       <select id={id} value={value} onChange={(event) => onChange(event.target.value)}>
-        <option value="1">1 — Very low</option>
-        <option value="2">2 — Low</option>
-        <option value="3">3 — Medium</option>
-        <option value="4">4 — High</option>
-        <option value="5">5 — Very high</option>
+        <option value="1">1 — {t("Very low")}</option>
+        <option value="2">2 — {t("Low")}</option>
+        <option value="3">3 — {t("Medium")}</option>
+        <option value="4">4 — {t("High")}</option>
+        <option value="5">5 — {t("Very high")}</option>
       </select>
       <small>{help}</small>
     </div>
@@ -181,7 +183,7 @@ export function OpportunityIntelligence() {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(opportunities));
     } catch {
-      setError("Browser storage is unavailable. Export or copy important details before leaving this page.");
+      setError(t("Browser storage is unavailable. Export or copy important details before leaving this page."));
     }
   }, [opportunities, storageReady]);
 
@@ -225,9 +227,9 @@ export function OpportunityIntelligence() {
       anchor.click();
       anchor.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setBackupNotice(`Backup exported: ${backup.opportunityCount} opportunities and ${backup.evidenceCount} evidence notes. Store the file securely; it contains the details you recorded.`);
+      setBackupNotice(`${t("Backup exported:")} ${backup.opportunityCount} ${t("opportunities and")} ${backup.evidenceCount} ${t("evidence notes. Store the file securely; it contains the details you recorded.")}`);
     } catch (cause) {
-      setBackupError(cause instanceof Error ? cause.message : "The backup could not be exported.");
+      setBackupError(cause instanceof Error ? t(cause.message) : t("The backup could not be exported."));
     }
   }
 
@@ -240,7 +242,7 @@ export function OpportunityIntelligence() {
     setBackupFileName("");
     if (!file) return;
     if (file.size > MAX_OPPORTUNITY_BACKUP_BYTES) {
-      setBackupError("This file is larger than 2 MB. Nothing was imported.");
+      setBackupError(t("This file is larger than 2 MB. Nothing was imported."));
       input.value = "";
       return;
     }
@@ -250,7 +252,7 @@ export function OpportunityIntelligence() {
       setBackupPreview(parsed);
       setBackupFileName(file.name);
     } catch (cause) {
-      setBackupError(cause instanceof Error ? cause.message : "The backup could not be read.");
+      setBackupError(cause instanceof Error ? t(cause.message) : t("The backup could not be read."));
       input.value = "";
     } finally {
       setBackupBusy(false);
@@ -265,8 +267,8 @@ export function OpportunityIntelligence() {
       setOpportunities((current) => mergeOpportunityBackup(current, backupPreview).opportunities);
     }
     setBackupNotice(merge.addedCount
-      ? `Imported ${merge.addedCount} opportunities with ${merge.evidenceCount} evidence notes. ${merge.skippedCount} existing record(s) with matching IDs were skipped; no existing records were overwritten.`
-      : "Nothing was imported because every opportunity ID already exists. Your current records were left unchanged.");
+      ? `${t("Imported")} ${merge.addedCount} ${t("opportunities with")} ${merge.evidenceCount} ${t("evidence notes. ")}${merge.skippedCount} ${t("existing records with matching IDs were skipped; no existing records were overwritten.")}`
+      : t("Nothing was imported because every opportunity ID already exists. Your current records were left unchanged."));
     setBackupPreview(null);
     setBackupFileName("");
     if (backupInputRef.current) backupInputRef.current.value = "";
@@ -283,11 +285,11 @@ export function OpportunityIntelligence() {
     const evidenceUrl = form.evidenceUrl.trim();
 
     if (!title || !thesis) {
-      setError("Add an opportunity name and a concise explanation of why it may matter.");
+      setError(t("Add an opportunity name and a concise explanation of why it may matter."));
       return;
     }
     if (evidenceUrl && !isHttpUrl(evidenceUrl)) {
-      setError("Use a full public http:// or https:// source URL, or leave the field blank.");
+      setError(t("Use a full public http:// or https:// source URL, or leave the field blank."));
       return;
     }
 
@@ -322,17 +324,17 @@ export function OpportunityIntelligence() {
             </svg>
           </span>
           <div>
-            <p className="eyebrow">Opportunity Intelligence <span className="opportunity-early-access">Early access</span></p>
-            <h1 className="detail-title">Find the next move worth making.</h1>
+            <p className="eyebrow">{t("Opportunity Intelligence")} <span className="opportunity-early-access">{t("Early access")}</span></p>
+            <h1 className="detail-title">{t("Find the next move worth making.")}</h1>
           </div>
         </div>
         <p className="detail-intent">
-          Compare opportunities, challenge assumptions, and turn the strongest candidate into a governed Mission.
+          {t("Compare opportunities, challenge assumptions, and turn the strongest candidate into a governed Mission.")}
         </p>
         <div className="opportunity-hero-bottom">
           <div className="opportunity-hero-note">
             <span className="opportunity-note-icon" aria-hidden="true">✓</span>
-            <div><strong>Decision support, not false certainty.</strong><span> Scores explain your inputs; they are not market forecasts or a promise of revenue.</span></div>
+            <div><strong>{t("Decision support, not false certainty.")}</strong><span> {t("Scores explain your inputs; they are not market forecasts or a promise of revenue.")}</span></div>
           </div>
           <button
             className="button opportunity-hero-cta"
@@ -342,43 +344,43 @@ export function OpportunityIntelligence() {
             onClick={() => setIsOpportunityFormOpen((open) => !open)}
           >
             <span aria-hidden="true">{isOpportunityFormOpen ? "−" : "＋"}</span>
-            {isOpportunityFormOpen ? "Hide form" : "Add opportunity"}
+            {isOpportunityFormOpen ? t("Hide form") : t("Add opportunity")}
           </button>
         </div>
       </div>
 
-      <section className="opportunity-portability" aria-label="Opportunity data backup">
+      <section className="opportunity-portability" aria-label={t("Opportunity data backup")}>
         <div className="opportunity-portability-copy">
           <span className="opportunity-portability-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none"><path d="M12 16V4M7 9l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </span>
           <div>
-            <strong>Keep your opportunity data portable</strong>
+            <strong>{t("Keep your opportunity data portable")}</strong>
             <p>Export your opportunities and evidence notes to a backup file, or merge a backup from another device. Data stays in this browser unless you move it yourself.</p>
           </div>
         </div>
         <div className="opportunity-portability-actions">
-          <button className="button button-small" type="button" onClick={exportBackup} disabled={!storageReady || opportunities.length === 0} title={opportunities.length === 0 ? "Add an opportunity before exporting a backup" : "Download your opportunity data"}>
+          <button className="button button-small" type="button" onClick={exportBackup} disabled={!storageReady || opportunities.length === 0} title={opportunities.length === 0 ? t("Add an opportunity before exporting a backup") : t("Download your opportunity data")}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v12m-5-5 5 5 5-5M4 20h16" /></svg>
-            Export backup
+            {t("Export backup")}
           </button>
           <label className="button button-quiet button-small opportunity-import-label" htmlFor="opportunity-backup-file">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" /></svg>
-            Choose backup
+            {t("Choose backup")}
           </label>
-          <input ref={backupInputRef} id="opportunity-backup-file" className="visually-hidden" type="file" accept=".json,application/json" aria-label="Choose a Zavqera opportunity backup file" onChange={selectBackup} disabled={!storageReady || backupBusy} />
+          <input ref={backupInputRef} id="opportunity-backup-file" className="visually-hidden" type="file" accept=".json,application/json" aria-label={t("Choose a Zavqera opportunity backup file")} onChange={selectBackup} disabled={!storageReady || backupBusy} />
         </div>
-        {backupBusy && <p className="opportunity-backup-status" role="status">Checking backup file…</p>}
+        {backupBusy && <p className="opportunity-backup-status" role="status">{t("Checking backup file…")}</p>}
         {backupPreview && (
           <div className="opportunity-backup-preview">
             <div>
-              <strong>Backup ready: {backupFileName}</strong>
-              <p>{backupPreview.opportunityCount} opportunities · {backupPreview.evidenceCount} evidence notes. {backupPreview.exportedAt.slice(0, 10)} export.</p>
-              <small>Existing records with matching IDs will be skipped. Nothing currently saved will be overwritten.</small>
+              <strong>{t("Backup ready:")} {backupFileName}</strong>
+              <p>{backupPreview.opportunityCount} {t("opportunities")} · {backupPreview.evidenceCount} {t("evidence notes")} · {backupPreview.exportedAt.slice(0, 10)} {t("export")}</p>
+              <small>{t("Existing records with matching IDs will be skipped. Nothing currently saved will be overwritten.")}</small>
             </div>
             <div className="opportunity-backup-preview-actions">
-              <button className="button button-small" type="button" onClick={importBackup} disabled={backupBusy}>Import and merge</button>
-              <button className="button button-quiet button-small" type="button" onClick={() => { setBackupPreview(null); setBackupFileName(""); setBackupError(""); if (backupInputRef.current) backupInputRef.current.value = ""; }}>Cancel</button>
+              <button className="button button-small" type="button" onClick={importBackup} disabled={backupBusy}>{t("Import and merge")}</button>
+              <button className="button button-quiet button-small" type="button" onClick={() => { setBackupPreview(null); setBackupFileName(""); setBackupError(""); if (backupInputRef.current) backupInputRef.current.value = ""; }}>{t("Cancel")}</button>
             </div>
           </div>
         )}
@@ -386,84 +388,84 @@ export function OpportunityIntelligence() {
         {backupNotice && <p className="success-state opportunity-backup-status" role="status">{backupNotice}</p>}
       </section>
 
-      <section className="opportunity-metrics" aria-label="Opportunity overview">
+      <section className="opportunity-metrics" aria-label={t("Opportunity overview")}>
         <div className="opportunity-metric">
           <span className="opportunity-metric-icon opportunity-icon-tracked" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m12 3 8 4.5-8 4.5-8-4.5L12 3Z M4 12l8 4.5 8-4.5 M4 16.5l8 4.5 8-4.5" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg></span>
-          <div className="opportunity-metric-copy"><strong>{opportunities.length}</strong><span>Opportunities tracked</span></div>
+          <div className="opportunity-metric-copy"><strong>{opportunities.length}</strong><span>{t("Opportunities tracked")}</span></div>
         </div>
         <div className="opportunity-metric">
           <span className="opportunity-metric-icon opportunity-icon-strong" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m12 3 2.6 5.3 5.9.9-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.2 5.9-.9L12 3Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg></span>
-          <div className="opportunity-metric-copy"><strong>{highScoreWithEvidence}</strong><span>Strong candidates</span><small>High score + evidence notes</small></div>
+          <div className="opportunity-metric-copy"><strong>{highScoreWithEvidence}</strong><span>{t("Strong candidates")}</span><small>{t("High score + evidence notes")}</small></div>
         </div>
         <div className="opportunity-metric">
           <span className="opportunity-metric-icon opportunity-icon-evidence" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="1.8" /><path d="m15.5 15.5 5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /><path d="M10.5 7.5v3M10.5 13.5h.01" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg></span>
-          <div className="opportunity-metric-copy"><strong>{missingEvidenceReview}</strong><span>Need evidence review</span><small>Start by validating assumptions</small></div>
+          <div className="opportunity-metric-copy"><strong>{missingEvidenceReview}</strong><span>{t("Need evidence review")}</span><small>{t("Start by validating assumptions")}</small></div>
         </div>
       </section>
 
       <div className={`opportunity-layout ${isOpportunityFormOpen ? "opportunity-layout--form-open" : "opportunity-layout--form-collapsed"}`}>
         <section id="add-opportunity-card" className="card opportunity-form-card" aria-labelledby="add-opportunity-heading" hidden={!isOpportunityFormOpen}>
-          <p className="eyebrow">Step 1 · Capture</p>
-          <h2 id="add-opportunity-heading">Add an opportunity</h2>
+          <p className="eyebrow">{t("Step 1 · Capture")}</p>
+          <h2 id="add-opportunity-heading">{t("Add an opportunity")}</h2>
           <p className="opportunity-muted">Write down the opportunity and the assumptions behind it. Start with a hypothesis; evidence can be added later.</p>
 
           <form id="add-opportunity-form" className="form-grid opportunity-form" onSubmit={addOpportunity}>
             <div className="field">
-              <label htmlFor="opportunity-title">Opportunity name</label>
-              <input id="opportunity-title" value={form.title} maxLength={100} onChange={(event) => updateForm("title", event.target.value)} placeholder="e.g. Reach an underserved customer segment" required />
+              <label htmlFor="opportunity-title">{t("Opportunity name")}</label>
+              <input id="opportunity-title" value={form.title} maxLength={100} onChange={(event) => updateForm("title", event.target.value)} placeholder={t("e.g. Reach an underserved customer segment")} required />
             </div>
             <div className="field">
-              <label htmlFor="opportunity-target">Who could benefit? <span className="field-optional">optional</span></label>
-              <input id="opportunity-target" value={form.target} maxLength={160} onChange={(event) => updateForm("target", event.target.value)} placeholder="Customer, user group, market, or internal team" />
+              <label htmlFor="opportunity-target">{t("Who could benefit?")} <span className="field-optional">{t("optional")}</span></label>
+              <input id="opportunity-target" value={form.target} maxLength={160} onChange={(event) => updateForm("target", event.target.value)} placeholder={t("Customer, user group, market, or internal team")} />
             </div>
             <div className="field">
-              <label htmlFor="opportunity-thesis">Opportunity thesis</label>
-              <textarea id="opportunity-thesis" value={form.thesis} maxLength={1200} onChange={(event) => updateForm("thesis", event.target.value)} placeholder="What is the unmet need, signal, or possible advantage? Why might it matter?" required />
-              <small>Separate what you know from what you suspect. Do not enter confidential or sensitive personal information.</small>
+              <label htmlFor="opportunity-thesis">{t("Opportunity thesis")}</label>
+              <textarea id="opportunity-thesis" value={form.thesis} maxLength={1200} onChange={(event) => updateForm("thesis", event.target.value)} placeholder={t("What is the unmet need, signal, or possible advantage? Why might it matter?")} required />
+              <small>{t("Separate what you know from what you suspect. Do not enter confidential or sensitive personal information.")}</small>
             </div>
             <div className="field">
-              <label htmlFor="opportunity-source">Public evidence source <span className="field-optional">optional</span></label>
+              <label htmlFor="opportunity-source">{t("Public evidence source")} <span className="field-optional">{t("optional")}</span></label>
               <input id="opportunity-source" inputMode="url" type="url" value={form.evidenceUrl} maxLength={500} onChange={(event) => updateForm("evidenceUrl", event.target.value)} placeholder="https://…" />
-              <small>A reference you provide. This early version does not fetch, crawl, or independently verify the URL.</small>
+              <small>{t("A reference you provide. This early version does not fetch, crawl, or independently verify the URL.")}</small>
             </div>
 
             <div className="opportunity-rubric-heading">
-              <h3>Score the opportunity</h3>
-              <p>Rate each factor from 1 to 5. Be conservative where evidence is weak.</p>
+              <h3>{t("Score the opportunity")}</h3>
+              <p>{t("Rate each factor from 1 to 5. Be conservative where evidence is weak.")}</p>
             </div>
-            <RatingField id="opportunity-fit" label="Strategic fit" help="How well does it match the user's goal and capabilities? (25%)" value={form.strategicFit} onChange={(value) => updateForm("strategicFit", value)} />
-            <RatingField id="opportunity-value" label="Potential value" help="How meaningful could the upside be if the thesis is true? (25%)" value={form.potentialValue} onChange={(value) => updateForm("potentialValue", value)} />
-            <RatingField id="opportunity-urgency" label="Timing" help="Is there a real reason to act soon? (15%)" value={form.urgency} onChange={(value) => updateForm("urgency", value)} />
-            <RatingField id="opportunity-evidence" label="Evidence strength" help="How strong is the evidence behind the main claim? (20%)" value={form.evidenceStrength} onChange={(value) => updateForm("evidenceStrength", value)} />
-            <RatingField id="opportunity-effort" label="Effort to test or deliver" help="Estimate the work required. Lower effort receives a higher score (15%)." value={form.effort} onChange={(value) => updateForm("effort", value)} />
+            <RatingField id="opportunity-fit" label={t("Strategic fit")} help={t("How well does it match the user's goal and capabilities? (25%)")} value={form.strategicFit} onChange={(value) => updateForm("strategicFit", value)} />
+            <RatingField id="opportunity-value" label={t("Potential value")} help={t("How meaningful could the upside be if the thesis is true? (25%)")} value={form.potentialValue} onChange={(value) => updateForm("potentialValue", value)} />
+            <RatingField id="opportunity-urgency" label={t("Timing")} help={t("Is there a real reason to act soon? (15%)")} value={form.urgency} onChange={(value) => updateForm("urgency", value)} />
+            <RatingField id="opportunity-evidence" label={t("Evidence strength")} help={t("How strong is the evidence behind the main claim? (20%)")} value={form.evidenceStrength} onChange={(value) => updateForm("evidenceStrength", value)} />
+            <RatingField id="opportunity-effort" label={t("Effort to test or deliver")} help={t("Estimate the work required. Lower effort receives a higher score (15%)")} value={form.effort} onChange={(value) => updateForm("effort", value)} />
             {error && <p className="field-error opportunity-error" role="alert">{error}</p>}
-            <button className="button" type="submit">Score and add opportunity</button>
+            <button className="button" type="submit">{t("Score and add opportunity")}</button>
           </form>
         </section>
 
         <section className="opportunity-results" aria-labelledby="ranked-opportunities-heading">
           <div className="section-heading opportunity-results-heading">
             <div>
-              <p className="eyebrow">Step 2 · Prioritize</p>
-              <h2 id="ranked-opportunities-heading">Opportunity radar</h2>
-              <p>Ranked by transparent criteria. Evidence still needs human review.</p>
+              <p className="eyebrow">{t("Step 2 · Prioritize")}</p>
+              <h2 id="ranked-opportunities-heading">{t("Opportunity radar")}</h2>
+              <p>{t("Ranked by transparent criteria. Evidence still needs human review.")}</p>
             </div>
-            <span className="opportunity-result-count">{ranked.length} {ranked.length === 1 ? "opportunity" : "opportunities"}</span>
+            <span className="opportunity-result-count">{ranked.length} {t(ranked.length === 1 ? "opportunity" : "opportunities")}</span>
           </div>
 
           {storageReady && ranked.length > 0 && (
             <div className="opportunity-toolbar">
               <label className="opportunity-search">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="1.8" /><path d="m15.5 15.5 5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
-                <span className="visually-hidden">Search opportunities</span>
-                <input type="search" value={opportunityQuery} onChange={(event) => setOpportunityQuery(event.target.value)} placeholder="Search opportunities…" aria-label="Search opportunities" />
+                <span className="visually-hidden">{t("Search opportunities")}</span>
+                <input type="search" value={opportunityQuery} onChange={(event) => setOpportunityQuery(event.target.value)} placeholder={t("Search opportunities…")} aria-label={t("Search opportunities")} />
               </label>
-              <div className="opportunity-filter-group" role="group" aria-label="Filter opportunities by priority">
+              <div className="opportunity-filter-group" role="group" aria-label={t("Filter opportunities by priority")}>
                 {([
-                  { value: "ALL", label: "All" },
-                  { value: "HIGH_SCORE", label: "Strong" },
-                  { value: "VALIDATE", label: "Validate" },
-                  { value: "HOLD", label: "On hold" },
+                  { value: "ALL", label: t("All") },
+                  { value: "HIGH_SCORE", label: t("Strong") },
+                  { value: "VALIDATE", label: t("Validate") },
+                  { value: "HOLD", label: t("On hold") },
                 ] as const).map((filter) => (
                   <button key={filter.value} type="button" className={`opportunity-filter${priorityFilter === filter.value ? " is-active" : ""}`} aria-pressed={priorityFilter === filter.value} onClick={() => setPriorityFilter(filter.value)}>
                     {filter.label}
@@ -473,19 +475,19 @@ export function OpportunityIntelligence() {
             </div>
           )}
 
-          {!storageReady && <div className="empty-state"><p>Loading opportunities saved in this browser…</p></div>}
+          {!storageReady && <div className="empty-state"><p>{t("Loading opportunities saved in this browser…")}</p></div>}
           {storageReady && ranked.length === 0 && (
             <div className="empty-state opportunity-empty">
-              <h3>Your radar starts here</h3>
-              <p>Add your first opportunity to begin comparing options. The score is a guide to support your decision, not a market forecast.</p>
+              <h3>{t("Your radar starts here")}</h3>
+              <p>{t("Add your first opportunity to begin comparing options. The score is a guide to support your decision, not a market forecast.")}</p>
             </div>
           )}
 
           {storageReady && ranked.length > 0 && visibleRanked.length === 0 && (
             <div className="empty-state opportunity-empty">
-              <h3>No matching opportunities</h3>
-              <p>Try another search or choose a different priority filter.</p>
-              <button className="button button-quiet button-small" type="button" onClick={() => { setOpportunityQuery(""); setPriorityFilter("ALL"); }}>Clear filters</button>
+              <h3>{t("No matching opportunities")}</h3>
+              <p>{t("Try another search or choose a different priority filter.")}</p>
+              <button className="button button-quiet button-small" type="button" onClick={() => { setOpportunityQuery(""); setPriorityFilter("ALL"); }}>{t("Clear filters")}</button>
             </div>
           )}
 
@@ -497,25 +499,25 @@ export function OpportunityIntelligence() {
                   <article className="card opportunity-card" key={opportunity.id}>
                     <div className="opportunity-card-top">
                       <span className="opportunity-rank">#{index + 1}</span>
-                      <span className={`opportunity-priority opportunity-priority-${priority.toLowerCase()}`}>{priority === "HIGH_SCORE" ? "High score · verify evidence" : priority === "VALIDATE" ? "Validate first" : "Low priority · keep on radar"}</span>
+                      <span className={`opportunity-priority opportunity-priority-${priority.toLowerCase()}`}>{priority === "HIGH_SCORE" ? t("High score · verify evidence") : priority === "VALIDATE" ? t("Validate first") : t("Low priority · keep on radar")}</span>
                     </div>
                     <div className="opportunity-score-row">
                       <div>
                         <h3>{opportunity.title}</h3>
-                        {opportunity.target && <p className="opportunity-target">For: {opportunity.target}</p>}
+                        {opportunity.target && <p className="opportunity-target">{t("For:")} {opportunity.target}</p>}
                       </div>
-                      <div className="opportunity-score" style={{ "--opportunity-score": `${score}%` } as CSSProperties} aria-label={`Priority score ${score} out of 100`}>
+                      <div className="opportunity-score" style={{ "--opportunity-score": `${score}%` } as CSSProperties} aria-label={`${t("Priority score")} ${score} / 100`}>
                         <strong>{score}</strong><span>/100</span>
                       </div>
                     </div>
                     <p className="opportunity-thesis">{opportunity.thesis}</p>
-                    <p className="opportunity-reason">{priorityDescription(priority)}</p>
+                    <p className="opportunity-reason">{t(priorityDescription(priority))}</p>
                     <div className="opportunity-factor-list" aria-label="Scoring factors">
-                      <span>Fit <b>{opportunity.strategicFit}/5</b></span>
-                      <span>Value <b>{opportunity.potentialValue}/5</b></span>
-                      <span>Timing <b>{opportunity.urgency}/5</b></span>
-                      <span>Evidence <b>{opportunity.evidenceStrength}/5</b></span>
-                      <span>Effort <b>{opportunity.effort}/5</b></span>
+                      <span>{t("Fit")} <b>{opportunity.strategicFit}/5</b></span>
+                      <span>{t("Value")} <b>{opportunity.potentialValue}/5</b></span>
+                      <span>{t("Timing")} <b>{opportunity.urgency}/5</b></span>
+                      <span>{t("Evidence")} <b>{opportunity.evidenceStrength}/5</b></span>
+                      <span>{t("Effort")} <b>{opportunity.effort}/5</b></span>
                     </div>
                     <OpportunityEvidencePanel
                       opportunity={opportunity}
@@ -532,8 +534,8 @@ export function OpportunityIntelligence() {
                     />
                     <OpportunityAnalysisPanel opportunity={opportunity} score={score} />
                     <div className="opportunity-card-actions">
-                      <Link className="button button-small" href={missionHref(opportunity)}>Turn into Mission</Link>
-                      <button className="button button-quiet button-small" type="button" onClick={() => setOpportunities((current) => current.filter((item) => item.id !== opportunity.id))} aria-label={`Remove ${opportunity.title}`}>Remove</button>
+                      <Link className="button button-small" href={missionHref(opportunity)}>{t("Turn into Mission")}</Link>
+                      <button className="button button-quiet button-small" type="button" onClick={() => setOpportunities((current) => current.filter((item) => item.id !== opportunity.id))} aria-label={`${t("Remove opportunity")}: ${opportunity.title}`}>{t("Remove")}</button>
                     </div>
                   </article>
                 );
@@ -544,12 +546,12 @@ export function OpportunityIntelligence() {
       </div>
 
       <section className="opportunity-method" aria-labelledby="opportunity-method-heading">
-        <h2 id="opportunity-method-heading">How the score works</h2>
-        <p><strong>Priority =</strong> 25% strategic fit + 25% potential value + 15% timing + 20% evidence strength + 15% execution ease. Ratings are 1–5; execution ease is the inverse of effort.</p>
+        <h2 id="opportunity-method-heading">{t("How the score works")}</h2>
+        <p><strong>{t("Priority =")}</strong> 25% strategic fit + 25% potential value + 15% timing + 20% evidence strength + 15% execution ease. Ratings are 1–5; execution ease is the inverse of effort.</p>
         <div className="opportunity-thresholds">
-          <span><b>80–100</b> Strong candidate — confirm evidence and take a bounded next step.</span>
-          <span><b>60–79</b> Validate — test the weakest assumption first.</span>
-          <span><b>20–59</b> Keep on radar — improve evidence or reduce effort.</span>
+          <span><b>80–100</b> {t("Strong candidate — confirm evidence and take a bounded next step.")}</span>
+          <span><b>60–79</b> {t("Validate — test the weakest assumption first.")}</span>
+          <span><b>20–59</b> {t("Keep on radar — improve evidence or reduce effort.")}</span>
         </div>
         <p className="opportunity-storage-note">Privacy and portability: opportunities and evidence notes are stored only in this browser. Export a backup to move them to another device; the file may contain sensitive business information, so store it securely. Import merges records and skips matching IDs without overwriting existing data. Cloud sync, live discovery, automatic source verification, recurring monitoring, and outcome-based learning are not connected yet.</p>
       </section>

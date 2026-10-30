@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import test from "node:test";
+import { translateUiText, UI_TRANSLATIONS } from "../lib/ui-translations.mjs";
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (path) => readFileSync(join(webRoot, path), "utf8");
@@ -158,4 +159,54 @@ test("templates prefill the normal review-before-create mission flow", () => {
     assert.match(missionForm, new RegExp(`params\\.${field}`));
   }
   assert.match(templates, /Nothing is created until you review/);
+});
+
+test("primary product surfaces have translations in every supported language", () => {
+  const required = [
+    "What needs your attention",
+    "Launch a small project",
+    "Make an evidence-based decision",
+    "Find the opportunity. Prove it. Turn it into action.",
+    "Find the next move worth making.",
+    "Opportunity radar",
+    "Keep your opportunity data portable",
+    "Evidence ledger",
+    "Generate AI brief",
+    "Proposed launch pricing, not active offers. Paid billing and usage enforcement are not enabled; AI Opportunity Brief access is restricted to an approved preview tester.",
+  ];
+  for (const language of ["nb", "ar", "es", "fr", "de"]) {
+    for (const label of required) {
+      assert.notEqual(translateUiText(language, label), label, `missing ${language} translation for: ${label}`);
+      assert.ok(translateUiText(language, label).trim().length > 0);
+    }
+  }
+  assert.ok(Object.keys(UI_TRANSLATIONS.ar).length >= required.length);
+});
+
+test("template cards no longer force English text as Norwegian or Arabic translations", () => {
+  const templates = read("app/templates/page.tsx");
+  assert.doesNotMatch(templates, /nb=\{template\.(?:title|description)\}|ar=\{template\.(?:title|description)\}/);
+  assert.doesNotMatch(templates, /nb=\{criterion\}|ar=\{criterion\}/);
+  for (const label of ["Launch a small project", "Make an evidence-based decision", "Improve a weekly workflow"]) {
+    assert.ok(templates.includes(label));
+    for (const language of ["nb", "ar", "es", "fr", "de"]) assert.notEqual(translateUiText(language, label), label);
+  }
+});
+
+test("Workspace and Opportunity Intelligence UI use the shared language layer", () => {
+  const workspace = read("app/app/page.tsx");
+  const opportunity = read("components/opportunity-intelligence.tsx");
+  const evidence = read("components/opportunity-evidence-panel.tsx");
+  const analyst = read("components/opportunity-analysis-panel.tsx");
+  assert.ok(workspace.includes("<LocalizedText"));
+  assert.ok(opportunity.includes("useUiTranslation"));
+  assert.ok(evidence.includes("useUiTranslation"));
+  assert.ok(analyst.includes("useUiTranslation"));
+  for (const file of [opportunity, evidence, analyst]) assert.ok(file.includes('from "./localized-text"'));
+});
+
+test("Arabic uses right-to-left direction while all six languages remain selectable", () => {
+  const language = read("components/language-switcher.tsx");
+  for (const locale of ['"en"', '"nb"', '"ar"', '"es"', '"fr"', '"de"']) assert.ok(language.includes(locale));
+  assert.match(language, /document\.documentElement\.dir = language === "ar" \? "rtl" : "ltr"/);
 });
