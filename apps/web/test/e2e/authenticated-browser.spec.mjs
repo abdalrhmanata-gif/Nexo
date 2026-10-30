@@ -58,6 +58,26 @@ async function assertOwnedWorkspaceMembership(client, userId) {
   if (error) throw error;
   expect(data, "New accounts must receive owner membership during workspace bootstrap.").toBeTruthy();
   expect(data.role).toBe("owner");
+
+  const { data: agents, error: agentsError } = await client
+    .from("workspace_agents")
+    .select("id, workspace_id, name, status, authority, created_by")
+    .eq("workspace_id", data.workspace_id)
+    .eq("name", "ZAVQERA Research Agent");
+  if (agentsError) throw agentsError;
+  expect(agents, "Workspace bootstrap must create the default Research Agent exactly once.").toHaveLength(1);
+  expect(agents[0]).toMatchObject({
+    workspace_id: data.workspace_id,
+    name: "ZAVQERA Research Agent",
+    status: "ACTIVE",
+    created_by: userId,
+    authority: {
+      mode: "read_only",
+      external_side_effects: false,
+      requires_approval: false,
+    },
+  });
+
   return data.workspace_id;
 }
 
