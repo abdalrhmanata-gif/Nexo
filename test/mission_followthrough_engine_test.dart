@@ -237,9 +237,7 @@ void main() {
     );
   });
 
-  test(
-    'rejects an execution or evidence binding mismatch before provider I/O',
-    () async {
+  test('rejects binding mismatches before provider I/O', () async {
     var providerCalls = 0;
     final engine = _engine(onExecute: () => providerCalls++);
     await expectLater(
