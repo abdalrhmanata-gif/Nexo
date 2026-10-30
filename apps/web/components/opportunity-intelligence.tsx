@@ -185,7 +185,7 @@ export function OpportunityIntelligence() {
     } catch {
       setError(t("Browser storage is unavailable. Export or copy important details before leaving this page."));
     }
-  }, [opportunities, storageReady]);
+  }, [opportunities, storageReady, t]);
 
   useEffect(() => {
     if (storageReady) setIsOpportunityFormOpen(opportunities.length === 0);
@@ -356,7 +356,7 @@ export function OpportunityIntelligence() {
           </span>
           <div>
             <strong>{t("Keep your opportunity data portable")}</strong>
-            <p>Export your opportunities and evidence notes to a backup file, or merge a backup from another device. Data stays in this browser unless you move it yourself.</p>
+            <p>{t("Export your opportunities and evidence notes to a backup file, or merge a backup from another device. Data stays in this browser unless you move it yourself.")}</p>
           </div>
         </div>
         <div className="opportunity-portability-actions">
@@ -407,7 +407,7 @@ export function OpportunityIntelligence() {
         <section id="add-opportunity-card" className="card opportunity-form-card" aria-labelledby="add-opportunity-heading" hidden={!isOpportunityFormOpen}>
           <p className="eyebrow">{t("Step 1 · Capture")}</p>
           <h2 id="add-opportunity-heading">{t("Add an opportunity")}</h2>
-          <p className="opportunity-muted">Write down the opportunity and the assumptions behind it. Start with a hypothesis; evidence can be added later.</p>
+          <p className="opportunity-muted">{t("Write down the opportunity and the assumptions behind it. Start with a hypothesis; evidence can be added later.")}</p>
 
           <form id="add-opportunity-form" className="form-grid opportunity-form" onSubmit={addOpportunity}>
             <div className="field">
@@ -425,7 +425,7 @@ export function OpportunityIntelligence() {
             </div>
             <div className="field">
               <label htmlFor="opportunity-source">{t("Public evidence source")} <span className="field-optional">{t("optional")}</span></label>
-              <input id="opportunity-source" inputMode="url" type="url" value={form.evidenceUrl} maxLength={500} onChange={(event) => updateForm("evidenceUrl", event.target.value)} placeholder="https://…" />
+              <input id="opportunity-source" inputMode="url" type="url" value={form.evidenceUrl} maxLength={500} onChange={(event) => updateForm("evidenceUrl", event.target.value)} placeholder={t("https://…")} />
               <small>{t("A reference you provide. This early version does not fetch, crawl, or independently verify the URL.")}</small>
             </div>
 
@@ -512,7 +512,7 @@ export function OpportunityIntelligence() {
                     </div>
                     <p className="opportunity-thesis">{opportunity.thesis}</p>
                     <p className="opportunity-reason">{t(priorityDescription(priority))}</p>
-                    <div className="opportunity-factor-list" aria-label="Scoring factors">
+                    <div className="opportunity-factor-list" aria-label={t("Scoring factors")}>
                       <span>{t("Fit")} <b>{opportunity.strategicFit}/5</b></span>
                       <span>{t("Value")} <b>{opportunity.potentialValue}/5</b></span>
                       <span>{t("Timing")} <b>{opportunity.urgency}/5</b></span>

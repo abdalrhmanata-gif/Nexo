@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { LocalizedText } from "../../components/localized-text";
-import { MissionSearchEnhancements } from "../../components/mission-search-enhancements";
 import { MissionCard } from "../../components/mission-card";
+import { LocalizedSearchInput } from "../../components/localized-search-input";
 import { localMockMissionRepository } from "../../lib/local-mock-repository";
 import { isSupabaseConfigured } from "../../lib/supabase/config";
 import { createSupabaseMissionRepository } from "../../lib/supabase/mission-repository";
@@ -89,10 +89,9 @@ export default async function WorkspacePage({
       <form className="mission-search-form" method="get" action="/app" role="search">
         {selectedStatus && <input type="hidden" name="status" value={selectedStatus} />}
         <label className="visually-hidden" htmlFor="mission-search-input"><LocalizedText en="Search missions" /></label>
-        <input id="mission-search-input" name="q" type="search" defaultValue={query} maxLength={120} placeholder="Search missions…" autoComplete="off" />
+        <LocalizedSearchInput id="mission-search-input" name="q" defaultValue={query} maxLength={120} />
         <button className="button" type="submit"><LocalizedText en="Search" /></button>
         {query && <Link className="button button-quiet" href={selectedStatus ? `/app?status=${selectedStatus}#mission-search` : "/app#mission-search"}><LocalizedText en="Clear" /></Link>}
-        <MissionSearchEnhancements />
       </form>
       {query && <p className="mission-search-result" aria-live="polite"><strong>{visibleMissions.length}</strong> <LocalizedText en={visibleMissions.length === 1 ? "mission found for" : "missions found for"} /> “{query}”.</p>}
     </section>

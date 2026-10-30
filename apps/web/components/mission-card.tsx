@@ -21,7 +21,7 @@ export function MissionCard({ mission }: { mission: Mission }) {
         <span className="next-step-detail">{next.detail}</span>
       </p>
       <div className="progress-row">
-        <span>{mission.actionsTotal ? <>{mission.actionsCompleted} {mission.actionsCompleted === 1 ? "of 1" : "of " + mission.actionsTotal} <LocalizedText en="actions complete" /></> : <LocalizedText en="No actions yet" />}</span>
+        <span>{mission.actionsTotal ? <>{mission.actionsCompleted} <LocalizedText en="of" /> {mission.actionsTotal} <LocalizedText en="actions complete" /></> : <LocalizedText en="No actions yet" />}</span>
         <strong>{mission.progress}%</strong>
       </div>
       <div className="progress mission-progress" role="progressbar" aria-label={`Mission progress for ${mission.name}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={mission.progress}><span style={{ width: `${mission.progress}%` }} /></div>
