@@ -130,5 +130,7 @@ test("mission deletion is authorized server-side and never trusts the client", a
   assert.doesNotMatch(route, /\b(owner_id|user_id)\b/);
 
   const repository = await source("lib/supabase/mission-repository.ts");
-  assert.match(repository, /ownedWorkspace\(supabase, user\.id\)/);
+  assert.match(repository, /supabase\.rpc\("ensure_owned_workspace"\)/);
+  assert.match(repository, /ownedWorkspace\(supabase\)/);
+  assert.doesNotMatch(repository, /\.from\("workspaces"\)\.insert\(/);
 });
