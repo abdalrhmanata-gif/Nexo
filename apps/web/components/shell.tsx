@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { SignOutButton } from "./auth-form";
 import { LanguageSwitcher } from "./language-switcher";
 import { LocalizedText } from "./localized-text";
 import { NavLink, WorkspaceNavLink } from "./nav-link";
-import { WorkspaceNavActions } from "./workspace-nav-actions";
+import { NotificationBell } from "./notification-bell";
 
 function NavIcon({ name }: { name: "search" | "plus" | "business" | "templates" | "pricing" | "workspace" | "opportunities" }) {
   const common = { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true as const };
@@ -33,8 +34,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <NavLink className="nav-link nav-pricing" href="/pricing"><NavIcon name="pricing" /><LocalizedText en="Pricing" nb="Priser" ar="الأسعار" /></NavLink>
           <WorkspaceNavLink />
           <NavLink href="/app/opportunities" className="nav-link nav-opportunities"><NavIcon name="opportunities" /><LocalizedText en="Opportunity Intelligence" nb="Mulighetsanalyse" ar="تحليل الفرص" /></NavLink>
+          <NotificationBell />
           <LanguageSwitcher />
-          <WorkspaceNavActions />
+          <SignOutButton />
         </nav>
       </header>
       <main>{children}</main>
