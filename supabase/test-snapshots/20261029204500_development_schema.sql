@@ -296,9 +296,13 @@ begin
  select * into v_verification from public.mission_verifications where id=p_verification_id and mission_id=p_mission_id for update;
  if not found then raise exception 'VERIFICATION_NOT_FOUND_OR_FORBIDDEN' using errcode='42501'; end if;
  if v_verification.status<>'VERIFIED' then raise exception 'VERIFICATION_NOT_VERIFIED' using errcode='22023'; end if;
- if v_mission.status<>'VERIFYING' then raise exception 'MISSION_NOT_VERIFYING' using errcode='22023'; end if;
- select * into v_outcome from public.mission_outcomes where verification_id=p_verification_id for update;
+ -- Return a previously committed outcome before checking the lifecycle state.
+ -- A retry after COMPLETED/FAILED must remain idempotent.
+ select * into v_outcome from public.mission_outcomes
+  where verification_id=p_verification_id and mission_id=p_mission_id
+  for update;
  if found then return v_outcome; end if;
+ if v_mission.status<>'VERIFYING' then raise exception 'MISSION_NOT_VERIFYING' using errcode='22023'; end if;
  if p_status='COMPLETED' and exists(select 1 from public.mission_actions where mission_id=v_mission.id and status not in('COMPLETED','CANCELLED')) then raise exception 'ALL_ACTIONS_MUST_BE_COMPLETED' using errcode='22023'; end if;
  v_should_complete:=p_status='COMPLETED';
  insert into public.mission_outcomes(mission_id,owner_id,verification_id,status,result,success_score,verified)
