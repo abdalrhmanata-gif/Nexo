@@ -11,6 +11,7 @@ export const OPT_IN_MODE = "disposable-full-loop";
 export const PROJECT_ID_PATTERN = /^zavqera-e2e-[a-z0-9-]{1,40}$/;
 export const MARKER_FILE = "ZAVQERA_E2E_DISPOSABLE";
 export const SCHEMA_DUMP_PATTERN = /^\d{14}_development_schema\.sql$/;
+export const W22_MIGRATION_NAME = "20261031210000_w22_idempotent_verified_outcome_replay.sql";
 export const DEFAULT_BASE_URL = "http://127.0.0.1:3210";
 export const LEDGER_LIMIT = 64;
 export const LEDGER_KINDS = ["user", "mission", "action", "verification", "outcome"];
@@ -163,17 +164,20 @@ export function checkStaticPreconditions(env, { repoRoot, fsApi = { existsSync, 
       }
 
       // The repository migrations cannot rebuild Development (its W5 history
-      // tables were never committed), so the stack must be built from exactly
-      // one operator-supplied schema dump and nothing else.
+      // tables were never committed). The disposable stack therefore accepts
+      // exactly one schema dump plus this single reviewed forward-only fix.
+      // No other repository migration is permitted in the temporary workdir.
       let migrations = [];
       try {
         migrations = fsApi.readdirSync(path.join(resolved, "supabase", "migrations")).filter((name) => name.endsWith(".sql"));
       } catch {
         migrations = [];
       }
-      if (migrations.length !== 1 || !SCHEMA_DUMP_PATTERN.test(migrations[0])) {
+      const schemaDumps = migrations.filter((name) => SCHEMA_DUMP_PATTERN.test(name));
+      const approvedW22 = migrations.filter((name) => name === W22_MIGRATION_NAME);
+      if (migrations.length !== 2 || schemaDumps.length !== 1 || approvedW22.length !== 1) {
         projectId = null;
-        reasons.push("supabase/migrations in the disposable workdir must contain exactly one file, <timestamp>_development_schema.sql, holding the Development schema dump. Do not copy repository migrations there.");
+        reasons.push(`supabase/migrations in the disposable workdir must contain exactly one <timestamp>_development_schema.sql file and the single allowlisted ${W22_MIGRATION_NAME} migration. All other migrations are refused.`);
       }
       if (fsApi.existsSync(path.join(resolved, "supabase", ".temp", "project-ref"))) {
         projectId = null;
