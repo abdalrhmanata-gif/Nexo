@@ -353,6 +353,7 @@ jobs:
           planned="$(sed -n 's/^1\.\.\([0-9][0-9]*\)$/\1/p' "${log}" | tail -n 1)"
           tap_assertions="$(grep -Ec '^(ok|not ok) [0-9]+' "${log}" || true)"
           summary_tests="$(grep -oE 'Tests=[0-9]+' "${log}" | tail -n 1 | cut -d= -f2 || true)"
+          if [ -z "${planned}" ]; then planned="${summary_tests}"; fi
           failed_subtests="$(grep -oE 'Failed [0-9]+' "${log}" | tail -n 1 | grep -oE '[0-9]+' | tail -n 1 || true)"
           if [ -z "${failed_subtests}" ]; then
             failed_subtests="$(grep -oE 'failed [0-9]+' "${log}" | tail -n 1 | grep -oE '[0-9]+' | tail -n 1 || true)"
