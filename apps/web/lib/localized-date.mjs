@@ -42,3 +42,25 @@ export function formatUiAbsoluteDate(value, language) {
     year: "numeric",
   }).format(date);
 }
+
+
+export function formatUiDateTime(value, language) {
+  if (typeof value !== "string" || !value.trim()) return "";
+  const relative = value.trim();
+  const minutesAgo = relative.match(/^(\\d+)\\s*(?:min|mins|minutes?)\\s+ago$/i);
+  if (minutesAgo) {
+    return new Intl.RelativeTimeFormat(localeFor(language), { numeric: "auto" }).format(-Number(minutesAgo[1]), "minute");
+  }
+  const hoursAgo = relative.match(/^(\\d+)\\s*(?:hr|hrs|hours?)\\s+ago$/i);
+  if (hoursAgo) {
+    return new Intl.RelativeTimeFormat(localeFor(language), { numeric: "auto" }).format(-Number(hoursAgo[1]), "hour");
+  }
+  const relativeDate = formatUiRelativeDate(relative, language);
+  if (relativeDate !== relative) return relativeDate;
+  const date = new Date(relative);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat(localeFor(language), {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+}
