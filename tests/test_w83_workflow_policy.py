@@ -94,6 +94,8 @@ class W83WorkflowPolicyTests(unittest.TestCase):
         self.assertIn('Tests=[0-9]+', w85_step)
         self.assertIn('"${tap_log}"', w85_step)
         self.assertIn("All tests successful[.]$", w85_step)
+        self.assertGreaterEqual(w83_step.count("|| true"), 3)
+        self.assertGreaterEqual(w85_step.count("|| true"), 3)
         self.assertIn("20261031193000_w85_anonymous_ai_quota_rls_deny_by_default.sql", self.w83)
         self.assertIn("w85_anonymous_ai_quota_rls_deny_by_default.sql", self.w83)
         self.assertIn("supabase test db --local", self.w83)
