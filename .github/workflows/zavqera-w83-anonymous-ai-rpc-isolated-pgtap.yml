@@ -429,9 +429,27 @@ jobs:
             supabase/tests/w85_anonymous_ai_quota_rls_deny_by_default.sql) 2>&1 | tee "${tap_log}"
           tap_status="${PIPESTATUS[0]}"
           set -e
-          reported="$(grep -Ec '^(ok|not ok) [0-9]+' "${tap_log}" || true)"
-          failed="$(grep -Ec '^not ok [0-9]+' "${tap_log}" || true)"
-          if [ "${tap_status}" -ne 0 ] || [ "${reported}" -ne "${expected}" ] || [ "${failed}" -ne 0 ]; then
+          tap_assertions="$(grep -Ec '^(ok|not ok) [0-9]+' "${tap_log}" || true)"
+          summary_tests="$(sed -nE 's/.*Tests=([0-9]+).*/\\1/p' "${tap_log}" | tail -n 1)"
+          failed_subtests="$(sed -nE 's/^Failed ([0-9]+)\\/[0-9]+ subtests.*/\\1/p' "${tap_log}" | tail -n 1)"
+          if [ -z "${failed_subtests}" ]; then
+            failed_subtests="$(sed -nE 's/^Looks like you failed ([0-9]+) tests of [0-9]+.*/\\1/p' "${tap_log}" | tail -n 1)"
+          fi
+          if [ "${tap_assertions}" -gt 0 ]; then
+            reported="${tap_assertions}"
+            failed="$(grep -Ec '^not ok [0-9]+' "${tap_log}" || true)"
+          elif [ -n "${summary_tests}" ] && [ "${tap_status}" -eq 0 ] \\
+            && grep -Eq '^(Result: PASS|All tests successful\\.)' "${tap_log}"; then
+            reported="${summary_tests}"
+            failed=0
+          elif [ -n "${summary_tests}" ] && [ -n "${failed_subtests}" ]; then
+            reported="${summary_tests}"
+            failed="${failed_subtests}"
+          else
+            reported="${summary_tests:-0}"
+            failed=not-reported
+          fi
+          if [ "${tap_status}" -ne 0 ] || [ "${reported}" -ne "${expected}" ] || [ "${failed}" != "0" ]; then
             echo "::error::W85 pgTAP failed: expected=${expected}, reported=${reported}, failed=${failed}, exit=${tap_status}"
             exit 1
           fi
