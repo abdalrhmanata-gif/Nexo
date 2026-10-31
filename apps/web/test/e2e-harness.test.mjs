@@ -19,6 +19,7 @@ import {
   createFixtureLedger,
   destroyStack,
   isLoopbackUrl,
+  loopbackOriginAllowlist,
   runPreflight,
   runWithGuaranteedCleanup,
   startFreshStack,
@@ -89,6 +90,26 @@ test("loopback allowlist accepts only plain local http origins", () => {
     "not a url",
     "",
   ]) assert.equal(isLoopbackUrl(bad), false, bad);
+});
+
+test("browser allowlist accepts loopback aliases only on the two approved local ports", () => {
+  const allowed = loopbackOriginAllowlist("http://127.0.0.1:3210", "http://127.0.0.1:54321");
+  for (const origin of [
+    "http://127.0.0.1:3210",
+    "http://localhost:3210",
+    "http://[::1]:3210",
+    "http://127.0.0.1:54321",
+    "http://localhost:54321",
+    "http://[::1]:54321",
+  ]) assert.equal(allowed.has(origin), true, origin);
+
+  for (const origin of [
+    "http://localhost:3211",
+    "http://127.0.0.1:54322",
+    "https://localhost:3210",
+    "http://example.com:3210",
+    "http://localhost",
+  ]) assert.equal(allowed.has(origin), false, origin);
 });
 
 test("static preconditions refuse each missing or unsafe precondition", (t) => {
