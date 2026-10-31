@@ -86,7 +86,7 @@ export function ActionMutationControls({ missionId, action }: { missionId: strin
     }
   }
 
-  return <form onSubmit={submit} className="action-control-group">
+  return <form onSubmit={submit} className="action-control-group" data-action-version={actionVersion}>
     <div className="action-control">
       <label className="visually-hidden" htmlFor={"status-" + action.id}>Status for {action.title}</label>
       <select
