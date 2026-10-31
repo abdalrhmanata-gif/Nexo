@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap;
-select plan(8);
+select plan(9);
 
 select ok(
   (select count(*) = 3
@@ -20,6 +20,16 @@ select ok(
       and c.relname in ('anonymous_ai_visitors', 'anonymous_ai_ip_windows', 'anonymous_ai_reservations')
       and not c.relforcerowsecurity),
   'the trusted postgres-owned SECURITY DEFINER helpers are not forced under RLS'
+);
+
+select ok(
+  (select count(*) = 3
+     from pg_class c
+     join pg_namespace n on n.oid = c.relnamespace
+    where n.nspname = 'private'
+      and c.relname in ('anonymous_ai_visitors', 'anonymous_ai_ip_windows', 'anonymous_ai_reservations')
+      and pg_get_userbyid(c.relowner) = 'postgres'),
+  'all anonymous quota state tables remain owned by the trusted postgres role'
 );
 
 select ok(
