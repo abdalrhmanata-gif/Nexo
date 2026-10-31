@@ -20,26 +20,24 @@ const robotsRoute = readFileSync(
 
 test("Netlify branch workflow deploys and verifies a draft preview only", () => {
   assert.match(netlifyWorkflow, /deploy --build --context deploy-preview --json/);
-  assert.doesNotMatch(netlifyWorkflow, /--prod(?:\\s|$)|--prod-if-unlocked/);
+  assert.doesNotMatch(netlifyWorkflow, /--prod(?:\s|$)|--prod-if-unlocked/);
   assert.match(netlifyWorkflow, /id: deploy/);
-  assert.match(netlifyWorkflow, /PREVIEW_URL:\\s*\\$\\{\\{\\s*steps\\.deploy\\.outputs\\.preview_url\\s*\\}\\}/);
+  assert.match(netlifyWorkflow, /PREVIEW_URL:\s*\$\{\{\s*steps\.deploy\.outputs\.preview_url\s*\}\}/);
   assert.doesNotMatch(netlifyWorkflow, /api getSite/);
 });
 
 test("robots route defines public crawl access and excludes app, API and auth paths", () => {
-  assert.match(robotsRoute, /userAgent:\\s*"\\*"/);
-  assert.match(robotsRoute, /allow:\\s*"\\/"/);
-  for (const path of ["/app", "/api/", "/auth/"]) {
-    assert.ok(robotsRoute.includes(path), `robots route must disallow ${path}`);
-  }
+  assert.match(robotsRoute, /userAgent:\s*"\*"/);
+  assert.match(robotsRoute, /allow:\s*"\/"/);
+  assert.match(robotsRoute, /disallow:\s*\[\s*"\/app",\s*"\/api\/",\s*"\/auth\/"\s*\]/);
 });
 
 test("web CI smoke-tests the built robots route over HTTP", () => {
   assert.match(webWorkflow, /name: Smoke-test generated robots route/);
-  assert.match(webWorkflow, /npx next start --hostname 127\\.0\\.0\\.1/);
-  assert.match(webWorkflow, /http:\\/\\/127\\.0\\.0\\.1:3100\\/robots\\.txt/);
+  assert.match(webWorkflow, /npx next start --hostname 127\.0\.0\.1/);
+  assert.match(webWorkflow, /http:\/\/127\.0\.0\.1:3100\/robots\.txt/);
   assert.match(webWorkflow, /HTTP 200/);
   for (const path of ["/app", "/api/", "/auth/"]) {
-    assert.ok(webWorkflow.includes(path), `web CI must assert robots policy for ${path}`);
+    assert.ok(webWorkflow.includes(path), "web CI must assert robots policy for " + path);
   }
 });
