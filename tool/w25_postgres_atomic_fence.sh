@@ -58,13 +58,13 @@ schema_created=0
 tmpdir="$(mktemp -d)"
 cleanup() {
   if (( schema_created == 1 )); then
-    PGOPTIONS="" "${PSQL[@]}" -c "DROP SCHEMA IF EXISTS \\"${schema}\\" CASCADE;" >/dev/null 2>&1 || true
+    PGOPTIONS="" "${PSQL[@]}" -c "DROP SCHEMA IF EXISTS \"${schema}\" CASCADE;" >/dev/null 2>&1 || true
   fi
   rm -rf "${tmpdir}"
 }
 trap cleanup EXIT
 
-"${PSQL[@]}" -c "CREATE SCHEMA \\"${schema}\\";"
+"${PSQL[@]}" -c "CREATE SCHEMA \"${schema}\";"
 schema_created=1
 export PGOPTIONS="-c search_path=${schema},public"
 
