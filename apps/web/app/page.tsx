@@ -46,8 +46,8 @@ export default function HomePage() {
         <Link className="landing-template-link" href="/templates"><LocalizedText en="Browse mission templates" /> <span aria-hidden="true">→</span></Link>
       </div>
       <div className="landing-visual" role="group" aria-labelledby="landing-visual-label"><span id="landing-visual-label" className="visually-hidden"><LocalizedText en="Illustrative view of a governed Mission" /></span>
-        <div className="landing-visual-top"><span className="landing-window-dots"><i/><i/><i/></span><span>MISSION CONTROL</span><span className="landing-preview-tag"><LocalizedText en="Illustrative view" /></span></div>
-        <div className="landing-visual-heading"><span className="landing-mission-symbol" aria-hidden="true">◎</span><div><p><LocalizedText en="ACTIVE MISSION" /></p><strong><LocalizedText en="Validate a new opportunity" /></strong></div><span className="status status-active">Active</span></div>
+        <div className="landing-visual-top"><span className="landing-window-dots"><i/><i/><i/></span><span><LocalizedText en="MISSION CONTROL" /></span><span className="landing-preview-tag"><LocalizedText en="Illustrative view" /></span></div>
+        <div className="landing-visual-heading"><span className="landing-mission-symbol" aria-hidden="true">◎</span><div><p><LocalizedText en="ACTIVE MISSION" /></p><strong><LocalizedText en="Validate a new opportunity" /></strong></div><span className="status status-active"><LocalizedText en="Active" /></span></div>
         <p className="landing-visual-intent"><LocalizedText en="Outcome: decide whether this idea is worth pursuing, using evidence and a small test." /></p>
         <div className="landing-visual-section"><span><LocalizedText en="Next steps" /></span><span><LocalizedText en="2 of 3 ready" /></span></div>
         <div className="landing-mini-step"><span className="landing-step-check">✓</span><div><strong><LocalizedText en="Define the success criteria" /></strong><small><LocalizedText en="Completed · Clear outcome recorded" /></small></div></div>
