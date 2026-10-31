@@ -1,6 +1,7 @@
 "use client";
 
-import { useUiTranslation } from "./localized-text";
+import { useUiLanguage, useUiTranslation } from "./localized-text";
+import { formatUiAbsoluteDate, formatUiRelativeDate } from "../lib/localized-date.mjs";
 
 const PREFIXES = [
   ["Follow up: ", "Follow up:"],
@@ -15,6 +16,7 @@ function capitalizeFirst(value: string) {
 
 export function LocalizedMissionValue({ value }: { value: string }) {
   const t = useUiTranslation();
+  const language = useUiLanguage();
   for (const [prefix, translatedPrefix] of PREFIXES) {
     if (value.startsWith(prefix)) {
       return <>{t(translatedPrefix)} {value.slice(prefix.length)}</>;
@@ -34,9 +36,9 @@ export function LocalizedMissionValue({ value }: { value: string }) {
     return <>{t("This mission is")} {t(currentStatus).toLowerCase()}. {t("It moves to checking the evidence through")} {route.join(", " + t("then") + " ")}.</>;
   }
   const overdue = value.match(/^(The action is Waiting and its follow-up was due) (.+)\.$/);
-  if (overdue) return <>{t(overdue[1])} {overdue[2]}.</>;
+  if (overdue) return <>{t(overdue[1])} {formatUiRelativeDate(overdue[2], language)}.</>;
   const nextFollowUp = value.match(/^(The action is Waiting; its next follow-up is) (.+)\.$/);
-  if (nextFollowUp) return <>{t(nextFollowUp[1])} {nextFollowUp[2]}.</>;
+  if (nextFollowUp) return <>{t(nextFollowUp[1])} {formatUiAbsoluteDate(nextFollowUp[2], language)}.</>;
   const waitingActions = value.match(/^(\d+) waiting action(s?)( is| are) past its follow-up date\.$/);
   if (waitingActions) {
     return <>{waitingActions[1]} {t(waitingActions[2] ? "waiting actions" : "waiting action")} {waitingActions[3] === " are" ? t("are past their follow-up date.") : t("is past its follow-up date.")}</>;
