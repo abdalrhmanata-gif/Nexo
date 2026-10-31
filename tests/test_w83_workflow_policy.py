@@ -36,6 +36,14 @@ class W83WorkflowPolicyTests(unittest.TestCase):
             ROOT
             / ".github/workflows/zavqera-w83-anonymous-ai-rpc-isolated-pgtap.yml"
         ).read_text(encoding="utf-8")
+        cls.w85_migration = (
+            ROOT
+            / "supabase/migrations/20261031193000_w85_anonymous_ai_quota_rls_deny_by_default.sql"
+        ).read_text(encoding="utf-8")
+        cls.w85_test = (
+            ROOT
+            / "supabase/tests/w85_anonymous_ai_quota_rls_deny_by_default.sql"
+        ).read_text(encoding="utf-8")
 
     def test_only_candidate_branch_is_ignored_for_flutter_push(self):
         push = event_section(self.flutter, "push")
@@ -73,6 +81,45 @@ class W83WorkflowPolicyTests(unittest.TestCase):
         self.assertIn("python3 -m unittest tests/test_w83_workflow_policy.py -v", self.w83)
         self.assertIn("supabase test db --local", self.w83)
         self.assertIn("${GITHUB_WORKSPACE}/supabase/tests/w83_anonymous_ai_rpc_public_invoker_wrappers.sql", self.w83)
+
+    def test_w85_rls_migration_is_replayed_and_tested_in_the_disposable_postgres_stack(self):
+        self.assertIn("20261031193000_w85_anonymous_ai_quota_rls_deny_by_default.sql", self.w83)
+        self.assertIn("w85_anonymous_ai_quota_rls_deny_by_default.sql", self.w83)
+        self.assertIn("supabase test db --local", self.w83)
+        self.assertIn("w85_pgtap_assertions_expected", self.w83)
+        self.assertIn("w85_postgrest_after_rls=PASS", self.w83)
+        self.assertIn("W85_PGTAP_OUTPUT.txt", self.w83)
+        self.assertIn("W85_REST_SMOKE.txt", self.w83)
+
+    def test_w85_migration_enables_rls_without_adding_permissive_policies(self):
+        migration = self.w85_migration.lower()
+        for table in (
+            "anonymous_ai_visitors",
+            "anonymous_ai_ip_windows",
+            "anonymous_ai_reservations",
+        ):
+            self.assertIn(f"alter table private.{table} enable row level security", migration)
+            self.assertIn(
+                f"revoke all privileges on table private.{table}",
+                migration,
+            )
+        self.assertNotIn("create policy", migration)
+        self.assertIn("service_role", migration)
+
+    def test_w85_pgtap_plan_matches_assertions_and_checks_rpc_continuity(self):
+        plan = re.search(r"(?im)^\\s*select\\s+plan\\((\\d+)\\)\\s*;", self.w85_test)
+        self.assertIsNotNone(plan)
+        assertion_count = len(
+            re.findall(r"(?im)^\\s*select\\s+(?:ok|is)\\s*\\(", self.w85_test)
+        )
+        self.assertEqual(int(plan.group(1)), assertion_count)
+        self.assertEqual(int(plan.group(1)), 9)
+        self.assertIn("not exists", self.w85_test.lower())
+        self.assertIn("has_table_privilege", self.w85_test)
+        self.assertIn("set local role service_role", self.w85_test)
+        self.assertIn("reserve_anonymous_ai_generation", self.w85_test)
+        self.assertIn("consume_anonymous_ai_generation", self.w85_test)
+        self.assertIn("release_anonymous_ai_generation", self.w85_test)
 
     def test_pgtap_assertion_guard_tracks_the_test_file_plan(self):
         test_sql = (
