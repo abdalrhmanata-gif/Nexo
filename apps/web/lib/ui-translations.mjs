@@ -799,6 +799,10 @@ const rows = [
   ["Outcome is missing.","Resultatet mangler.","النتيجة مفقودة.","Falta el resultado.","Le résultat est manquant.","Das Ergebnis fehlt."],
   ["All actions are completed or cancelled; the mission is ready for evidence review.","Alle handlinger er fullført eller avbrutt; oppdraget er klart for dokumentasjonsgjennomgang.","اكتملت جميع الإجراءات أو أُلغيت؛ والمهمة جاهزة لمراجعة الأدلة.","Todas las acciones están completadas o canceladas; la misión está lista para revisar las pruebas.","Toutes les actions sont terminées ou annulées ; la mission est prête pour l’examen des preuves.","Alle Aktionen sind abgeschlossen oder abgebrochen; die Mission ist bereit zur Belegprüfung."],
 ]; 
+const invalidRowIndex = rows.findIndex((row) => !Array.isArray(row) || row.length !== 6);
+if (invalidRowIndex !== -1) {
+  throw new Error(`Invalid UI translation row at index ${invalidRowIndex}; expected exactly six language columns.`);
+}
 const languages = ["nb","ar","es","fr","de"];
 const dictionaries = Object.fromEntries(languages.map((language) => [language, Object.fromEntries(rows.map((row) => [row[0], row[1 + languages.indexOf(language)]]))]));
 export function translateUiText(language, source) {
