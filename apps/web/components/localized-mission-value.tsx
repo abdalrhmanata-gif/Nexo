@@ -9,6 +9,10 @@ const PREFIXES = [
   ["Resolve waiting: ", "Resolve waiting:"],
 ];
 
+function capitalizeFirst(value: string) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 export function LocalizedMissionValue({ value }: { value: string }) {
   const t = useUiTranslation();
   for (const [prefix, translatedPrefix] of PREFIXES) {
@@ -16,18 +20,18 @@ export function LocalizedMissionValue({ value }: { value: string }) {
       return <>{t(translatedPrefix)} {value.slice(prefix.length)}</>;
     }
   }
-  const terminalReadiness = value.match(/^This mission is (.+), so no further evidence can be recorded\\.$/);
+  const terminalReadiness = value.match(/^This mission is (.+), so no further evidence can be recorded\.$/);
   if (terminalReadiness) {
-    const status = terminalReadiness[1].replace(/\\b\\w/g, (letter) => letter.toUpperCase());
+    const status = capitalizeFirst(terminalReadiness[1]);
     return <>{t("This mission is")} {t(status).toLowerCase()}, {t("so no further evidence can be recorded.")}</>;
   }
-  const routedReadiness = value.match(/^This mission is (.+)\\. It moves to checking the evidence through (.+)\\.$/);
+  const routedReadiness = value.match(/^This mission is (.+)\. It moves to checking the evidence through (.+)\.$/);
   if (routedReadiness) {
-    const currentStatus = routedReadiness[1].replace(/\\b\\w/g, (letter) => letter.toUpperCase());
+    const currentStatus = capitalizeFirst(routedReadiness[1]);
     const route = routedReadiness[2].split(", then ").map((status) =>
-      t(status.replace(/\\b\\w/g, (letter) => letter.toUpperCase())).toLowerCase()
+      t(capitalizeFirst(status)).toLowerCase()
     );
-    return <>{t("This mission is")} {t(currentStatus).toLowerCase()}. {t("It moves to checking the evidence through")} {route.join(`, ${t("then")} `)}.</>;
+    return <>{t("This mission is")} {t(currentStatus).toLowerCase()}. {t("It moves to checking the evidence through")} {route.join(\`, \${t("then")} \`)}.</>;
   }
   const overdue = value.match(/^(The action is Waiting and its follow-up was due) (.+)\.$/);
   if (overdue) return <>{t(overdue[1])} {overdue[2]}.</>;
