@@ -1,22 +1,34 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { AppLanguage } from "./language-switcher";
+import { normalizeAppLanguage, resolveAppLanguagePreference, type AppLanguage } from "../lib/app-language.mjs";
 import { translateUiText } from "../lib/ui-translations.mjs";
+
+function readPreferredUiLanguage(): AppLanguage {
+  let saved: string | null = null;
+  try {
+    saved = window.localStorage.getItem("zavqera-language");
+  } catch {
+    // Continue with the cookie or browser language when storage is unavailable.
+  }
+  const cookieName = "zavqera-language";
+  const cookie = document.cookie
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(cookieName + "="))
+    ?.slice(cookieName.length + 1);
+  const browserLanguages = navigator.languages?.length ? navigator.languages : [navigator.language];
+  return resolveAppLanguagePreference(saved, cookie, browserLanguages);
+}
 
 export function useUiLanguage(): AppLanguage {
   const [language, setLanguage] = useState<AppLanguage>("en");
 
   useEffect(() => {
-    let saved: string | null = null;
-    try { saved = window.localStorage.getItem("zavqera-language"); } catch { /* storage may be blocked */ }
-    const cookie = document.cookie.split("; ").find((part) => part.startsWith("zavqera-language="))?.split("=")[1];
-    const candidate = saved || cookie || navigator.language.toLowerCase().split("-")[0];
-    const supported: AppLanguage[] = ["en", "nb", "ar", "es", "fr", "de"];
-    setLanguage(supported.includes(candidate as AppLanguage) ? candidate as AppLanguage : "en");
+    setLanguage(readPreferredUiLanguage());
     const onLanguageChange = (event: Event) => {
-      const value = (event as CustomEvent<string>).detail;
-      setLanguage(supported.includes(value as AppLanguage) ? value as AppLanguage : "en");
+      const value = normalizeAppLanguage((event as CustomEvent<unknown>).detail);
+      if (value) setLanguage(value);
     };
     window.addEventListener("zavqera-language-change", onLanguageChange);
     return () => window.removeEventListener("zavqera-language-change", onLanguageChange);
