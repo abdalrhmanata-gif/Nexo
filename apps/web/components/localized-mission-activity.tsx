@@ -35,7 +35,8 @@ function localizedDetail(label: string, detail: string, t: (value: string) => st
     if (from && to) return `${t(from)} → ${t(to)}`;
   }
   if (detail === "VERIFIED") return t("Verified");
-  if (detail === "FAILED") return t("Failed");
+  if (detail === "COMPLETED") return t("Complete");
+  if (detail === "FAILED") return t(label === "Mission status transition" ? "Did not succeed" : "Failed");
   return t(detail);
 }
 
