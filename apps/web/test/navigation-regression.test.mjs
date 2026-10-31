@@ -316,22 +316,25 @@ test("new mission form labels, helper text and placeholders use the shared local
 });
 
 
+
 test("shared dictionary keeps Norwegian and Arabic translations in the correct language columns", () => {
   const source = read("lib/ui-translations.mjs");
-  const rows = [...source.matchAll(/^\\s*(\\["(?:\\\\.|[^"\\\\])*"(?:\\s*,\\s*"(?:\\\\.|[^"\\\\])*"){5}\\]),?\\s*$/gm)]
-    .map((match) => JSON.parse(match[1]));
+  const rows = source.split("\n")
+    .filter((line) => line.trim().startsWith('["'))
+    .map((line) => [...line.matchAll(/"(?:\\.|[^"\\])*"/g)].map((match) => JSON.parse(match[0])))
+    .filter((row) => row.length === 6);
   assert.ok(rows.length > 0, "translation rows should be discoverable");
-  const arabicScript = /[\\u0600-\\u06FF]/u;
+  const arabicScript = /[\u0600-\u06FF]/u;
   const translationsByKey = new Map();
 
   for (const [key, norwegian, arabic] of rows) {
-    assert.doesNotMatch(norwegian, arabicScript, `Norwegian translation contains Arabic script: ${key}`);
-    if (!/^https?:\\/\\//i.test(key)) {
-      assert.match(arabic, arabicScript, `Arabic translation is missing Arabic script: ${key}`);
+    assert.doesNotMatch(norwegian, arabicScript, \`Norwegian translation contains Arabic script: \${key}\`);
+    if (!key.startsWith("https://")) {
+      assert.match(arabic, arabicScript, \`Arabic translation is missing Arabic script: \${key}\`);
     }
     const current = [norwegian, arabic];
     const previous = translationsByKey.get(key);
-    if (previous) assert.deepEqual(current, previous, `duplicate translation rows disagree for: ${key}`);
+    if (previous) assert.deepEqual(current, previous, \`duplicate translation rows disagree for: \${key}\`);
     else translationsByKey.set(key, current);
   }
 
