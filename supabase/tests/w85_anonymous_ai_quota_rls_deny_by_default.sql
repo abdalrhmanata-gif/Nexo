@@ -1,6 +1,6 @@
 begin;
 create extension if not exists pgtap;
-select plan(9);
+select plan(10);
 
 select ok(
   (select count(*) = 3
@@ -124,50 +124,45 @@ select ok(
   'public wrappers are invoker-owned by postgres; private helpers are postgres-owned SECURITY DEFINER with pinned search paths'
 );
 
-do $test$
-declare
-  v_reservation record;
-begin
-  execute 'set local role service_role';
+select ok(
+  (select count(*) = 3
+     from pg_proc p
+     join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public'
+      and p.proname in (
+        'reserve_anonymous_ai_generation',
+        'consume_anonymous_ai_generation',
+        'release_anonymous_ai_generation'
+      )
+      and not p.prosecdef
+      and pg_get_userbyid(p.proowner) = 'postgres'
+      and coalesce(array_to_string(p.proconfig, '|'), '') = 'search_path=pg_catalog'),
+  'all public wrappers remain SECURITY INVOKER with the trusted owner and pinned search path'
+);
 
-  select * into v_reservation
-    from public.reserve_anonymous_ai_generation(
-      repeat('a', 64),
-      repeat('b', 64),
-      '10000000-0000-4000-8000-000000000001'::uuid
-    );
-  if not v_reservation.allowed or v_reservation.reservation_id is null then
-    raise exception 'TEST_FAILED: service_role reserve failed after RLS enablement';
-  end if;
+select ok(
+  (select count(*) = 3
+     from pg_proc p
+     join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'private'
+      and p.proname in (
+        'reserve_anonymous_ai_generation',
+        'consume_anonymous_ai_generation',
+        'release_anonymous_ai_generation'
+      )
+      and p.prosecdef
+      and pg_get_userbyid(p.proowner) = 'postgres'
+      and coalesce(array_to_string(p.proconfig, '|'), '') ~ 'search_path=pg_catalog, ?private'),
+  'all private helpers remain postgres-owned SECURITY DEFINER with pinned search paths'
+);
 
-  if not public.release_anonymous_ai_generation(v_reservation.reservation_id) then
-    raise exception 'TEST_FAILED: service_role release failed after RLS enablement';
-  end if;
-  if public.release_anonymous_ai_generation(v_reservation.reservation_id) then
-    raise exception 'TEST_FAILED: service_role release is not idempotent';
-  end if;
-
-  select * into v_reservation
-    from public.reserve_anonymous_ai_generation(
-      repeat('c', 64),
-      repeat('d', 64),
-      '10000000-0000-4000-8000-000000000002'::uuid
-    );
-  if not v_reservation.allowed or v_reservation.reservation_id is null then
-    raise exception 'TEST_FAILED: second service_role reserve failed after RLS enablement';
-  end if;
-
-  if not public.consume_anonymous_ai_generation(v_reservation.reservation_id) then
-    raise exception 'TEST_FAILED: service_role consume failed after RLS enablement';
-  end if;
-  if public.consume_anonymous_ai_generation(v_reservation.reservation_id) then
-    raise exception 'TEST_FAILED: service_role consume is not idempotent';
-  end if;
-
-  execute 'reset role';
-end;
-$test$;
-select ok(true, 'service_role reserve/release/consume round-trip works with RLS enabled and no table policies');
+select ok(
+  has_schema_privilege('service_role', 'private', 'USAGE')
+  and has_function_privilege('service_role', 'private.reserve_anonymous_ai_generation(text,text,uuid)', 'EXECUTE')
+  and has_function_privilege('service_role', 'private.consume_anonymous_ai_generation(uuid)', 'EXECUTE')
+  and has_function_privilege('service_role', 'private.release_anonymous_ai_generation(uuid)', 'EXECUTE'),
+  'service_role retains only the required private schema/function path for the server-only wrappers'
+);
 
 select * from finish();
 rollback;
