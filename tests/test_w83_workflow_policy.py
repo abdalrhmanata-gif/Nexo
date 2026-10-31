@@ -87,6 +87,8 @@ class W83WorkflowPolicyTests(unittest.TestCase):
         self.assertIn("w85_anonymous_ai_quota_rls_deny_by_default.sql", self.w83)
         self.assertIn("supabase test db --local", self.w83)
         self.assertIn("w85_pgtap_assertions_expected", self.w83)
+        self.assertIn("summary_tests=", self.w83)
+        self.assertIn("All tests successful", self.w83)
         self.assertIn("w85_postgrest_after_rls=PASS", self.w83)
         self.assertIn("W85_PGTAP_OUTPUT.txt", self.w83)
         self.assertIn("W85_REST_SMOKE.txt", self.w83)
