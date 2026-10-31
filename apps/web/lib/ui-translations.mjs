@@ -716,7 +716,7 @@ const rows = [
   ["Not started","Ikke startet","لم يبدأ","No iniciado","Non commencé","Nicht begonnen"],
   ["Follow up:","Følg opp:","تابع:","Dar seguimiento:","Suivi :","Nachverfolgen:"],
   ["Continue:","Fortsett:","تابع:","Continuar:","Continuer :","Fortsetzen:"],
-  ["Start:","Start:","ابدأ:","Empezar:","Commencer :","Starten:"],
+  ["Start:","Begynn:","ابدأ:","Empezar:","Commencer :","Starten:"],
   ["Resolve waiting:","Løs ventende:","عالج الانتظار:","Resolver lo pendiente:","Résoudre l’attente :","Wartendes klären:"],
   ["no further changes","ingen flere endringer","لا توجد تغييرات أخرى","no se permiten más cambios","aucune autre modification","keine weiteren Änderungen"],
   ["This mission cannot move to checking the evidence from its current state.","Dette oppdraget kan ikke gå til kontroll av dokumentasjonen fra gjeldende status.","لا يمكن لهذه المهمة الانتقال إلى مرحلة التحقق من الأدلة من حالتها الحالية.","Esta misión no puede pasar a la revisión de pruebas desde su estado actual.","Cette mission ne peut pas passer à la vérification des preuves depuis son état actuel.","Diese Mission kann aus ihrem aktuellen Status nicht zur Belegprüfung wechseln."],
