@@ -352,10 +352,10 @@ jobs:
           set -e
           planned="$(sed -n 's/^1\.\.\([0-9][0-9]*\)$/\1/p' "${log}" | tail -n 1)"
           tap_assertions="$(grep -Ec '^(ok|not ok) [0-9]+' "${log}" || true)"
-          summary_tests="$(grep -oE 'Tests=[0-9]+' "${tap_log}" | tail -n 1 | cut -d= -f2)"
-          failed_subtests="$(grep -oE 'Failed [0-9]+/[0-9]+ subtests' "${tap_log}" | tail -n 1 | cut -d' ' -f2 | cut -d/ -f1)"
+          summary_tests="$(grep -oE 'Tests=[0-9]+' "${log}" | tail -n 1 | cut -d= -f2)"
+          failed_subtests="$(grep -oE 'Failed [0-9]+/[0-9]+ subtests' "${log}" | tail -n 1 | cut -d' ' -f2 | cut -d/ -f1)"
           if [ -z "${failed_subtests}" ]; then
-            failed_subtests="$(grep -oE 'Looks like you failed [0-9]+' "${tap_log}" | tail -n 1 | grep -oE '[0-9]+$')"
+            failed_subtests="$(grep -oE 'Looks like you failed [0-9]+' "${log}" | tail -n 1 | grep -oE '[0-9]+$')"
           fi
           failed_names="$(sed -nE 's/^# Failed test [0-9]+: "(.*)"$/\1/p' "${log}" | paste -sd ';' -)"
           if [ "${tap_assertions}" -gt 0 ]; then
@@ -429,16 +429,15 @@ jobs:
           tap_status="${PIPESTATUS[0]}"
           set -e
           tap_assertions="$(grep -Ec '^(ok|not ok) [0-9]+' "${tap_log}" || true)"
-          summary_tests="$(sed -nE 's/.*Tests=([0-9]+).*/\\1/p' "${tap_log}" | tail -n 1)"
-          failed_subtests="$(sed -nE 's/^Failed ([0-9]+)\\/[0-9]+ subtests.*/\\1/p' "${tap_log}" | tail -n 1)"
+          summary_tests="$(grep -oE 'Tests=[0-9]+' "${tap_log}" | tail -n 1 | cut -d= -f2)"
+          failed_subtests="$(grep -oE 'Failed [0-9]+/[0-9]+ subtests' "${tap_log}" | tail -n 1 | cut -d' ' -f2 | cut -d/ -f1)"
           if [ -z "${failed_subtests}" ]; then
-            failed_subtests="$(sed -nE 's/^Looks like you failed ([0-9]+) tests of [0-9]+.*/\\1/p' "${tap_log}" | tail -n 1)"
+            failed_subtests="$(grep -oE 'Looks like you failed [0-9]+' "${tap_log}" | tail -n 1 | grep -oE '[0-9]+$')"
           fi
-          if [ "${tap_assertions}" -gt 0 ]; then
+                    if [ "${tap_assertions}" -gt 0 ]; then
             reported="${tap_assertions}"
             failed="$(grep -Ec '^not ok [0-9]+' "${tap_log}" || true)"
-          elif [ -n "${summary_tests}" ] && [ "${tap_status}" -eq 0 ] \\
-            && grep -Eq '^(Result: PASS|All tests successful\\.)' "${tap_log}"; then
+          elif [ -n "${summary_tests}" ] && [ "${tap_status}" -eq 0 ] && grep -Eq '^(Result: PASS|All tests successful[.]$)' "${tap_log}"; then
             reported="${summary_tests}"
             failed=0
           elif [ -n "${summary_tests}" ] && [ -n "${failed_subtests}" ]; then
