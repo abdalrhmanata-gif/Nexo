@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import test from "node:test";
 import { normalizeAppLanguage, resolveAppLanguagePreference } from "../lib/app-language.mjs";
-import { translateUiText, UI_TRANSLATIONS } from "../lib/ui-translations.mjs";
+import { translateUiText, UI_TRANSLATIONS, UI_TRANSLATION_KEYS } from "../lib/ui-translations.mjs";
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (path) => readFileSync(join(webRoot, path), "utf8");
