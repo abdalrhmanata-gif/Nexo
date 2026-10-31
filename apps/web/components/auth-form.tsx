@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { safeNextPath } from "../lib/auth/redirect.mjs";
+import { useUiTranslation } from "./localized-text";
 
 const CONFIRMATION_ERRORS: Record<string, string> = {
   "confirmation-link": "That confirmation link is invalid or has expired. Request a new one by signing up again.",
@@ -62,6 +63,7 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
 
 export function SignOutButton() {
   const router = useRouter();
+  const t = useUiTranslation();
   const [loading, setLoading] = useState(false);
 
   async function signOut() {
@@ -73,6 +75,6 @@ export function SignOutButton() {
   }
 
   return <button className="button button-small" onClick={signOut} disabled={loading}>
-    {loading ? "Signing out…" : "Sign out"}
+    {loading ? t("Signing out…") : t("Sign out")}
   </button>;
 }
