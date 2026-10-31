@@ -36,6 +36,8 @@ The workflow runs on relevant pull-request changes, the existing deployment bran
 
 - postgres_major=17
 - schema_isolation=PASS
+- external_database_target=REFUSED
+- schema_cleanup=PASS
 - W25_ATOMIC_FENCE=PASS
 - budget_concurrency=PASS
 - idempotency_uniqueness=PASS
