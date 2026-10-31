@@ -69,6 +69,29 @@ export function isLoopbackUrl(value) {
   return LOOPBACK_HOSTS.has(url.hostname);
 }
 
+/**
+ * Build an origin allowlist for the explicit local app/Supabase ports.
+ * Loopback host aliases are equivalent only on those exact ports; this avoids
+ * mistaking localhost:3210 for external traffic while still blocking another
+ * local service on localhost:3211.
+ */
+export function loopbackOriginAllowlist(...values) {
+  const allowed = new Set();
+  for (const value of values) {
+    let url;
+    try {
+      url = new URL(value);
+    } catch {
+      continue;
+    }
+    if (!isLoopbackUrl(value) || !url.port) continue;
+    for (const host of LOOPBACK_HOSTS) {
+      allowed.add(`${url.protocol}//${host}:${url.port}`);
+    }
+  }
+  return allowed;
+}
+
 export function referencesRemoteSupabase(value) {
   if (typeof value !== "string") return false;
   const lower = value.toLowerCase();
