@@ -13,6 +13,7 @@ import { missionIntelligenceFor } from "../../../../lib/mission-intelligence.mjs
 import { LocalizedText } from "../../../../components/localized-text";
 import { LocalizedMissionNextStep } from "../../../../components/localized-mission-next-step";
 import { LocalizedMissionValue } from "../../../../components/localized-mission-value";
+import { LocalizedFollowUpDate } from "../../../../components/localized-follow-up-date";
 
 export default async function MissionDetailPage({
   params,
@@ -90,7 +91,7 @@ export default async function MissionDetailPage({
                   <span className="action-title">{action.title}</span>
                   <span className={`status status-action-${action.status.toLowerCase()}`}><LocalizedText en={actionStatusLabel(action.status)} /></span>
                   {followUp && <span className={`follow-up${followUp.overdue ? " follow-up-overdue" : ""}`}>
-                    <LocalizedText en={followUp.overdue ? "Follow-up was due" : "Follow up"} /> {followUp.relative} · {followUp.absolute}
+                    <LocalizedText en={followUp.overdue ? "Follow-up was due" : "Follow up"} /> <LocalizedFollowUpDate relative={followUp.relative} absolute={followUp.absolute} />
                   </span>}
                   <small className="action-hint"><LocalizedText en={actionStatusHint(action.status)} /></small>
                 </div>
