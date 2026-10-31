@@ -265,3 +265,50 @@ test("template prefill content follows the selected locale", () => {
     ]) assert.notEqual(translateUiText(locale, phrase), phrase);
   }
 });
+
+test("privacy note uses the actual translation key, not a nested translation expression", () => {
+  const opportunity = read("components/opportunity-intelligence.tsx");
+  assert.match(opportunity, /opportunity-storage-note">\{t\("Privacy and portability:/);
+  assert.doesNotMatch(opportunity, /t\("\{t\(/);
+  const phrase = "Privacy and portability: opportunities and evidence notes are stored only in this browser. Export a backup to move them to another device; the file may contain sensitive business information, so store it securely. Import merges records and skips matching IDs without overwriting existing data. Cloud sync, live discovery, automatic source verification, recurring monitoring, and outcome-based learning are not connected yet.";
+  for (const locale of ["nb", "ar", "es", "fr", "de"]) assert.notEqual(translateUiText(locale, phrase), phrase);
+});
+
+test("mission cards localize deterministic guidance and lifecycle pills", () => {
+  const card = read("components/mission-card.tsx");
+  const shell = read("components/shell.tsx");
+  assert.match(card, /t\(next\.label\)/);
+  assert.match(card, /translateNextStepDetail\(next\.detail, t\)/);
+  assert.match(shell, /LocalizedText en=\{missionStatusLabel\(status\)\}/);
+  for (const locale of ["nb", "ar", "es", "fr", "de"]) {
+    for (const label of ["Follow-up due", "Start next action", "Waiting on you", "Ready to check", "Outcome recorded", "This mission has a verified outcome."]) {
+      assert.notEqual(translateUiText(locale, label), label);
+    }
+  }
+});
+
+test("sign-out and notification accessible labels use the selected locale", () => {
+  const auth = read("components/auth-form.tsx");
+  const bell = read("components/notification-bell.tsx");
+  assert.match(auth, /useUiTranslation/);
+  assert.match(auth, /t\("Sign out"\)/);
+  assert.match(bell, /useUiTranslation/);
+  assert.match(bell, /title=\{t\("Notifications"\)\}/);
+  for (const locale of ["nb", "ar", "es", "fr", "de"]) {
+    for (const label of ["Sign out", "Signing out…", "items need attention"]) assert.notEqual(translateUiText(locale, label), label);
+  }
+});
+
+test("new mission form labels, helper text and placeholders use the shared locale layer", () => {
+  const page = read("app/app/missions/new/page.tsx");
+  const fields = read("components/localized-form-fields.tsx");
+  assert.ok(page.includes("<LocalizedInput"));
+  assert.ok(page.includes("<LocalizedTextarea"));
+  assert.ok(page.includes("<LocalizedText"));
+  assert.ok(fields.includes("placeholder={t(placeholder)}"));
+  for (const locale of ["nb", "ar", "es", "fr", "de"]) {
+    for (const label of ["Mission name", "Intent", "Success criteria", "First steps", "Create mission", "What should this mission help you accomplish?"]) {
+      assert.notEqual(translateUiText(locale, label), label);
+    }
+  }
+});
