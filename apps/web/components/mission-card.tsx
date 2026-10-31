@@ -1,11 +1,22 @@
 import Link from "next/link";
 import type { Mission } from "../lib/view-models";
 import { nextStepFor } from "../lib/mission-content.mjs";
-import { LocalizedText } from "./localized-text";
+import { LocalizedText, useUiTranslation } from "./localized-text";
 import { StatusPill } from "./shell";
+
+function translateNextStepDetail(detail: string, t: (source: string) => string) {
+  const dueMarker = " — due ";
+  const dueIndex = detail.indexOf(dueMarker);
+  if (dueIndex >= 0) return `${detail.slice(0, dueIndex)} — ${t("due")} ${detail.slice(dueIndex + dueMarker.length)}`;
+  const checkBackMarker = " — check back ";
+  const checkBackIndex = detail.indexOf(checkBackMarker);
+  if (checkBackIndex >= 0) return `${detail.slice(0, checkBackIndex)} — ${t("check back")} ${detail.slice(checkBackIndex + checkBackMarker.length)}`;
+  return t(detail);
+}
 
 export function MissionCard({ mission }: { mission: Mission }) {
   const next = nextStepFor(mission);
+  const t = useUiTranslation();
   return (
     <article className="card mission-card">
       <div className="card-heading">
@@ -17,8 +28,8 @@ export function MissionCard({ mission }: { mission: Mission }) {
       </div>
       {mission.intent && <p className="mission-intent">{mission.intent}</p>}
       <p className={`next-step next-step-${next.tone}`}>
-        <span className="next-step-label">{next.label}</span>
-        <span className="next-step-detail">{next.detail}</span>
+        <span className="next-step-label">{t(next.label)}</span>
+        <span className="next-step-detail">{translateNextStepDetail(next.detail, t)}</span>
       </p>
       <div className="progress-row">
         <span>{mission.actionsTotal ? <>{mission.actionsCompleted} <LocalizedText en="of" /> {mission.actionsTotal} <LocalizedText en="actions complete" /></> : <LocalizedText en="No actions yet" />}</span>
