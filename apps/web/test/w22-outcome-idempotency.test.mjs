@@ -21,6 +21,8 @@ test("W22 keeps outcome replay ahead of the VERIFYING-only first-commit guard", 
   const verifyingGuard = migration.indexOf("if v_mission.status <> 'VERIFYING' then");
   const outcomeInsert = migration.indexOf("insert into public.mission_outcomes");
 
+  assert.ok(migration.includes("v_mission.owner_id <> auth.uid()"), "mission replay must be bound to its exact owner");
+  assert.ok(migration.includes("and owner_id = auth.uid()"), "verification replay must be bound to its exact owner");
   assert.ok(missionLock >= 0, "mission must be locked before replay resolution");
   assert.ok(verifiedCheck > missionLock, "the verification must belong to this mission and be VERIFIED");
   assert.ok(outcomeRead > verifiedCheck, "existing outcome lookup must follow verification checks");
