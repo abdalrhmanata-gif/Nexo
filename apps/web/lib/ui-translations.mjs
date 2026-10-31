@@ -806,6 +806,20 @@ const rows = [
   ["This mission is marked complete but still has required work or lacks a completed outcome.","Oppdraget er markert som fullført, men har fortsatt nødvendig arbeid eller mangler et fullført resultat.","تم وضع علامة اكتمال على المهمة، لكن لا يزال هناك عمل مطلوب أو لا توجد نتيجة مكتملة.","La misión está marcada como completada, pero aún tiene trabajo pendiente o carece de un resultado finalizado.","Cette mission est marquée comme terminée, mais il reste du travail requis ou aucun résultat finalisé n’est enregistré.","Diese Mission ist als abgeschlossen markiert, aber es gibt noch erforderliche Arbeit oder kein abgeschlossenes Ergebnis."],
   ["1 action is still open:","1 handling er fortsatt åpen:","يوجد إجراء واحد لا يزال مفتوحًا:","Hay 1 acción pendiente:","1 action est encore en attente :","1 Aktion ist noch offen:"],
   ["actions are still open:","handlinger er fortsatt åpne:","إجراءات لا تزال مفتوحة:","acciones siguen pendientes:","actions sont encore en attente :","Aktionen sind noch offen:"],
+  ["Mission status transition","Endring av oppdragsstatus","تغيير حالة المهمة","Cambio de estado de misión","Changement d’état de la mission","Änderung des Missionsstatus"],
+  ["Mission objective updated","Oppdragsmål oppdatert","تم تحديث هدف المهمة","Objetivo de misión actualizado","Objectif de mission mis à jour","Missionsziel aktualisiert"],
+  ["Action status transition","Endring av handlingsstatus","تغيير حالة الإجراء","Cambio de estado de acción","Changement d’état de l’action","Änderung des Aktionsstatus"],
+  ["Verification recorded","Verifisering registrert","تم تسجيل التحقق","Verificación registrada","Vérification enregistrée","Verifizierung erfasst"],
+  ["Outcome committed","Resultat registrert","تم اعتماد النتيجة","Resultado confirmado","Résultat validé","Ergebnis festgeschrieben"],
+  ["Failed","Mislyktes","فشل","Fallido","Échec","Fehlgeschlagen"],
+  ["Checkpoint verified","Kontrollpunkt verifisert","تم التحقق من نقطة المراجعة","Punto de control verificado","Point de contrôle vérifié","Prüfpunkt verifiziert"],
+  ["Draft synthesis","Utkast til sammenstilling","مسودة الملخص","Borrador de síntesis","Projet de synthèse","Entwurf der Zusammenfassung"],
+  ["Needs user input","Trenger avklaring","يتطلب تدخلك","Requiere tu intervención","Nécessite votre intervention","Benötigt Ihre Rückmeldung"],
+  ["Evidence collected","Dokumentasjon samlet inn","تم جمع الأدلة","Pruebas recopiladas","Preuves recueillies","Belege gesammelt"],
+  ["Research set is within the approved scope.","Research-materialet er innenfor godkjent omfang.","مجموعة البحث ضمن النطاق المعتمد.","El conjunto de investigación está dentro del alcance aprobado.","L’ensemble de recherche respecte le périmètre approuvé.","Der Rechercheumfang liegt innerhalb des genehmigten Rahmens."],
+  ["Three themes were grouped for review.","Tre temaer ble gruppert for gjennomgang.","تم تجميع ثلاثة محاور للمراجعة.","Se agruparon tres temas para su revisión.","Trois thèmes ont été regroupés pour examen.","Drei Themen wurden zur Überprüfung gruppiert."],
+  ["A missing data-retention answer needs a decision.","Et manglende svar om datalagring krever en beslutning.","هناك إجابة ناقصة حول الاحتفاظ بالبيانات تتطلب قرارًا.","Falta una respuesta sobre la conservación de datos y se necesita una decisión.","Une réponse sur la conservation des données manque et nécessite une décision.","Eine fehlende Antwort zur Datenspeicherung erfordert eine Entscheidung."],
+  ["Public documentation has been attached to the review.","Offentlig dokumentasjon er lagt ved gjennomgangen.","تم إرفاق الوثائق العامة بالمراجعة.","Se ha adjuntado documentación pública a la revisión.","Des documents publics ont été joints à l’examen.","Öffentliche Unterlagen wurden der Prüfung beigefügt."],
 ];
 const invalidRowIndex = rows.findIndex((row) => !Array.isArray(row) || row.length !== 6);
 if (invalidRowIndex !== -1) {
