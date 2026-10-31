@@ -375,3 +375,98 @@ test("language selector and localized text share one preference resolver", () =>
   assert.match(localized, /resolveAppLanguagePreference/);
   assert.match(localized, /normalizeAppLanguage/);
 });
+
+
+test("public landing, authentication, and mission detail use the six-language localization layer", () => {
+  const sources = [
+    read("app/page.tsx"),
+    read("app/auth/sign-in/page.tsx"),
+    read("app/auth/sign-up/page.tsx"),
+    read("components/auth-form.tsx"),
+    read("app/app/missions/[id]/page.tsx"),
+    read("components/verification-controls.tsx"),
+    read("components/mission-mutation-controls.tsx"),
+    read("components/action-mutation-controls.tsx"),
+    read("components/add-action-form.tsx"),
+    read("components/delete-mission-form.tsx"),
+    read("components/localized-mission-value.tsx"),
+  ];
+
+  const keys = new Set(sources.flatMap((source) => [
+    ...[...source.matchAll(/<LocalizedText\\s+en="([^"]+)"/g)].map((match) => match[1]),
+    ...[...source.matchAll(/\\bt\\("([^"]+)"\\)/g)].map((match) => match[1]),
+    ...[...source.matchAll(/\\bt\\("([^"]+)"\\)/g)].map((match) => match[1]),
+  ]));
+
+  for (const phrase of [
+    "Make intent explicit",
+    "Define the outcome, success criteria, and boundaries before work begins.",
+    "Know what happens next",
+    "Track each Mission, its actions, blockers, and progress in one place.",
+    "Decide with evidence",
+    "Compare opportunities, record what you know, and expose what is still uncertain.",
+    "Welcome back",
+    "Sign in.",
+    "Get started",
+    "Create your account.",
+    "Email",
+    "Password",
+    "Enter a valid email address.",
+    "Mission detail",
+    "Deterministic guidance",
+    "What should I do next?",
+    "Plan health",
+    "Success criteria",
+    "Recent checkpoints",
+    "At a glance",
+    "Draft",
+    "Planning",
+    "Ready to start",
+    "In progress",
+    "Waiting",
+    "Needs your input",
+    "Checking the evidence",
+    "Complete",
+    "Paused",
+    "Blocked",
+    "Did not succeed",
+    "Cancelled",
+    "Not started",
+    "This work has not begun yet.",
+    "This work is underway now.",
+    "This work is finished.",
+    "Paused until something outside this action unblocks it. This is not complete.",
+    "This work will not be done.",
+    "no further changes",
+    "Follow up:",
+    "Continue:",
+    "Start:",
+    "Resolve waiting:",
+    "This mission cannot move to checking the evidence from its current state.",
+    "Move this mission to checking the evidence before recording verification.",
+    "This mission has a verified outcome.",
+    "Every action is resolved. Move this mission to checking the evidence.",
+    "Every action is resolved. Record the evidence that proves the outcome.",
+  ]) keys.add(phrase);
+
+  for (const language of ["nb", "ar", "es", "fr", "de"]) {
+    for (const key of keys) {
+      assert.notEqual(
+        translateUiText(language, key),
+        key,
+        `missing ${language} translation for public/auth/mission workflow: ${key}`
+      );
+    }
+  }
+
+  assert.match(read("app/page.tsx"), /<LocalizedText en="Mission control for AI-assisted work"/);
+  assert.match(read("app/auth/sign-in/page.tsx"), /<LocalizedText en="Welcome back"/);
+  assert.match(read("app/auth/sign-up/page.tsx"), /<LocalizedText en="Create your account\."\s*\/>/);
+  assert.match(read("components/auth-form.tsx"), /t\("Enter a valid email address\."\)/);
+  assert.match(read("app/app/missions/[id]/page.tsx"), /LocalizedMissionNextStep/);
+  assert.match(read("components/verification-controls.tsx"), /useUiTranslation/);
+  assert.match(read("components/mission-mutation-controls.tsx"), /useUiTranslation/);
+  assert.match(read("components/action-mutation-controls.tsx"), /useUiTranslation/);
+  assert.match(read("components/add-action-form.tsx"), /useUiTranslation/);
+  assert.match(read("components/delete-mission-form.tsx"), /useUiTranslation/);
+});
