@@ -51,6 +51,7 @@ begin
    for update;
 
   if not found
+     or v_mission.owner_id <> auth.uid()
      or not private.can_edit_workspace(v_mission.workspace_id, auth.uid()) then
     raise exception 'MISSION_NOT_FOUND_OR_FORBIDDEN' using errcode = '42501';
   end if;
@@ -60,6 +61,7 @@ begin
     from public.mission_verifications
    where id = p_verification_id
      and mission_id = p_mission_id
+     and owner_id = auth.uid()
    for update;
 
   if not found then
