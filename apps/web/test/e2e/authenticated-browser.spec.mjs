@@ -381,33 +381,91 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await expect(page.getByLabel("Outcome result", { exact: true })).toHaveCount(0);
     });
 
-    await test.step("committing the same verified outcome again is idempotent", async () => {
-      const before = { mission: await readMission(owner.client, missionId), events: (await readRows(owner.client, "mission_events", missionId, "event_type")).length };
+    await test.step("committing the same verified outcome again replays the exact original record", async () => {
+      const beforeMission = await readMission(owner.client, missionId);
+      const beforeOutcomes = await readRows(
+        owner.client,
+        "mission_outcomes",
+        missionId,
+        "id, mission_id, owner_id, verification_id, status, result, success_score, verified, created_at",
+      );
+      const beforeEvents = await readRows(owner.client, "mission_events", missionId, "id, event_type, payload, created_at");
+      expect(beforeOutcomes).toHaveLength(1);
+      const committed = beforeOutcomes[0];
+
+      // Deliberately submit a different but valid payload. Idempotency must
+      // return the already committed result, not overwrite it with retry data.
       const repeat = await page.request.post(`${missionPath()}/outcome`, {
-        data: { verificationId, result: { summary: "repeat" }, successScore: 1, status: "COMPLETED" },
+        data: { verificationId, result: { summary: "retry payload must not replace committed result" }, successScore: 0.25, status: "FAILED" },
       });
       expect(repeat.status()).toBe(200);
-      const outcomes = await readRows(owner.client, "mission_outcomes", missionId, "id");
-      expect(outcomes).toHaveLength(1);
-      expect((await repeat.json()).id).toBe(outcomes[0].id);
-      expect(await readMission(owner.client, missionId)).toEqual(before.mission);
-      expect((await readRows(owner.client, "mission_events", missionId, "event_type")).length).toBe(before.events);
+      expect(await repeat.json()).toEqual({
+        id: committed.id,
+        verificationId: committed.verification_id,
+        status: committed.status,
+        result: committed.result,
+        successScore: committed.success_score,
+        verified: committed.verified,
+        createdAt: committed.created_at,
+      });
+
+      const afterOutcomes = await readRows(
+        owner.client,
+        "mission_outcomes",
+        missionId,
+        "id, mission_id, owner_id, verification_id, status, result, success_score, verified, created_at",
+      );
+      expect(afterOutcomes).toEqual(beforeOutcomes);
+      expect(afterOutcomes).toHaveLength(1);
+      expect(await readMission(owner.client, missionId)).toEqual(beforeMission);
+      expect(await readRows(owner.client, "mission_events", missionId, "id, event_type, payload, created_at")).toEqual(beforeEvents);
     });
 
-    await test.step("another user can neither read nor change the mission", async () => {
+    await test.step("another user can neither read nor mutate the mission or its verified outcome", async () => {
       const before = { mission: await readMission(owner.client, missionId), actions: await readActions(owner.client, missionId) };
+      const { data: missionScope, error: scopeError } = await owner.client
+        .from("missions").select("workspace_id").eq("id", missionId).single();
+      if (scopeError) throw scopeError;
+      const { data: members, error: membersError } = await owner.client
+        .from("workspace_members").select("user_id, role").eq("workspace_id", missionScope.workspace_id);
+      if (membersError) throw membersError;
+      const intruder = await ownerSession(userB);
+      expect(members.some((member) => member.user_id === intruder.userId), "the second synthetic user must not be a workspace member").toBe(false);
+
+      // Exercise the SECURITY DEFINER RPC directly as the second authenticated
+      // user, independent of the Next.js cookie/session adapter.
+      const directOutcomeAttempt = await intruder.client.rpc("commit_verified_mission_outcome", {
+        p_mission_id: missionId,
+        p_verification_id: verificationId,
+        p_result: { summary: "unauthorized direct RPC attempt" },
+        p_success_score: 1,
+        p_status: "COMPLETED",
+      });
+      expect(directOutcomeAttempt.error, "the database must reject a non-member even when calling the RPC directly").toBeTruthy();
+
       await pageB.goto(missionUrl);
       await expect(pageB.getByText("Mission unavailable")).toBeVisible();
       await expect(pageB.getByText(tag)).toHaveCount(0);
+      const outcomeAttempt = await pageB.evaluate(async ({ path, body }) => {
+        const response = await fetch(path, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        return { status: response.status, body: await response.json().catch(() => null) };
+      }, {
+        path: `/api/missions/${missionId}/outcome`,
+        body: { verificationId, result: { summary: "unauthorized route attempt" }, successScore: 1, status: "COMPLETED" },
+      });
+      expect(outcomeAttempt.status, "the signed-in second browser context must be rejected by the outcome route").not.toBe(200);
+
       const attempts = [
         pageB.request.patch(`/api/missions/${missionId}`, { data: { status: "CANCELLED", expectedVersion: before.mission.version } }),
         pageB.request.post(`/api/missions/${missionId}/actions`, { data: { title: "intruder" } }),
         pageB.request.patch(`/api/missions/${missionId}/actions/${actionId[titles.first]}`, { data: { status: "RUNNING", expectedVersion: 1 } }),
         pageB.request.post(`/api/missions/${missionId}/verification`, { data: { status: "VERIFIED", criteria: { s: "x" }, evidence: { s: "x" }, confidence: 1 } }),
-        pageB.request.post(`/api/missions/${missionId}/outcome`, { data: { verificationId, result: { s: "x" }, successScore: 1, status: "COMPLETED" } }),
       ];
       for (const response of await Promise.all(attempts)) expect(response.ok(), response.url()).toBe(false);
-      const intruder = await ownerSession(userB);
       expect(await readMission(intruder.client, missionId)).toBeNull();
       expect(await readRows(intruder.client, "mission_events", missionId)).toHaveLength(0);
       expect(await readMission(owner.client, missionId)).toEqual(before.mission);
