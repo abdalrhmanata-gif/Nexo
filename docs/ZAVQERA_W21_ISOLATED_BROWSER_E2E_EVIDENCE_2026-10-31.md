@@ -35,17 +35,16 @@ The sanitized GitHub Actions evidence artifact is `zavqera-w21-evidence` (artifa
 
 The teardown ledger reported that no Docker container or volume carried the disposable project label. No hosted Supabase Development/Main endpoint, service-role credential, provider credential or external API was used by this run.
 
-## Repeat verification on the evidence-document PR head
+## Repeat verification on subsequent PR heads
 
-After this evidence document was committed, the workflow ran again on PR head `59eff40b93fb2d56c3b8ceaeaaad7db3e4b471d5`:
+After the first successful run, the W21 workflow was run twice more:
 
-- [W21 workflow run 41235694988](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/41235694988) — PASS.
-- Result: **1 passed (2.4m)**; `e2e_exit_status=0`; `cleanup=VERIFIED`.
-- The second teardown again reported two destroyed users and no remaining Docker container or volume with the disposable project label.
-- Sanitized artifact `zavqera-w21-evidence`, ID `13055835867`, digest `sha256:c70308eed5090eb31aa6e789b994bdeac4c35b0850cc237cfdee0594d795c418`.
-- Second evidence record used merge ref `ea6ca6b081822c07443ec74e388ee57131571818` and the same schema SHA-256 recorded above.
+- [Run 41235694988](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/41235694988), PR head `59eff40b93fb2d56c3b8ceaeaaad7db3e4b471d5`, merge ref `ea6ca6b081822c07443ec74e388ee57131571818): **1 passed (2.4m)**; exit status 0; cleanup VERIFIED. Artifact ID `13055835867`, digest `sha256:c70308eed5090eb31aa6e789b994bdeac4c35b0850cc237cfdee0594d795c418`.
+- [Run 41236047608](https://github.com/abdalrhmanata-gif/Nexo/actions/runs/41236047608), PR head `19a7a817e6c70a26d1c3085c443fc50fc856d321), merge ref `179ca610af9701ccb3702b0e057f64a894c3516e`: **1 passed (2.4m)**; exit status 0; cleanup VERIFIED. Artifact ID `13055387271`, digest `sha256:1e26f97fecbd2b08a15b0dc5a87a411ae21ea0fe48c34a223fbf2142e53839d6`.
 
-This repeat confirms that adding the permanent evidence document did not break the isolated browser workflow.
+Both repeat runs again reported two destroyed users and no remaining Docker container or volume with the disposable project label. Both used the same schema fixture SHA-256 and runtime versions recorded above.
+
+These repeats confirm the isolated browser workflow and its cleanup path across multiple updates to the PR.
 
 ## Scope limits
 
