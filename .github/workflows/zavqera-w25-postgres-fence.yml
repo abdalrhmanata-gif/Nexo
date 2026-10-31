@@ -56,7 +56,7 @@ jobs:
         run: |
           set -euo pipefail
           set +e
-          output="$(ZAVQERA_W25_DISPOSABLE=1 ./tool/w25_postgres_atomic_fence.sh 2>&1)"
+          output="$(ZAVQERA_W25_DISPOSABLE=1 bash tool/w25_postgres_atomic_fence.sh 2>&1)"
           status=$?
           set -e
           if [[ "${status}" -eq 0 ]] || ! grep -q "REFUSED:" <<< "${output}"; then
