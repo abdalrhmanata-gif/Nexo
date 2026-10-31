@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - zavqera/alternative-web-deployment
+    paths:
+      - ".github/workflows/zavqera-w25-postgres-fence.yml"
+      - "tool/w25_postgres_atomic_fence.sh"
+  pull_request:
+    paths:
+      - ".github/workflows/zavqera-w25-postgres-fence.yml"
+      - "tool/w25_postgres_atomic_fence.sh"
   workflow_dispatch:
 
 permissions:
@@ -47,6 +54,7 @@ jobs:
         env:
           PGPASSWORD: postgres
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/zavqera_w25
+          ZAVQERA_W25_DISPOSABLE: "1"
         run: |
           set -euo pipefail
           chmod +x tool/w25_postgres_atomic_fence.sh
