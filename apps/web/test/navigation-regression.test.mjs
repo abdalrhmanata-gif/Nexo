@@ -380,6 +380,8 @@ test("language selector and localized text share one preference resolver", () =>
 test("public landing, authentication, and mission detail use the six-language localization layer", () => {
   const sources = [
     read("app/page.tsx"),
+    read("app/app/business/page.tsx"),
+    read("app/app/notifications/page.tsx"),
     read("app/auth/sign-in/page.tsx"),
     read("app/auth/sign-up/page.tsx"),
     read("components/auth-form.tsx"),
@@ -449,17 +451,21 @@ test("public landing, authentication, and mission detail use the six-language lo
     "Every action is resolved. Record the evidence that proves the outcome.",
   ]) keys.add(phrase);
 
+  const naturallySharedWords = { fr: new Set(["Notifications", "Actions"]) };
   for (const language of ["nb", "ar", "es", "fr", "de"]) {
     for (const key of keys) {
+      if (naturallySharedWords[language]?.has(key)) continue;
       assert.notEqual(
         translateUiText(language, key),
         key,
-        `missing ${language} translation for public/auth/mission workflow: ${key}`
+        `missing ${language} translation for public/workspace/auth/mission workflow: ${key}`
       );
     }
   }
 
   assert.match(read("app/page.tsx"), /<LocalizedText en="Mission control for AI-assisted work"/);
+  assert.match(read("app/app/business/page.tsx"), /<LocalizedText en="Business workspace"/);
+  assert.match(read("app/app/notifications/page.tsx"), /<LocalizedText en="Workspace updates"/);
   assert.match(read("app/auth/sign-in/page.tsx"), /<LocalizedText en="Welcome back"/);
   assert.match(read("app/auth/sign-up/page.tsx"), /<LocalizedText en="Create your account\."\s*\/>/);
   assert.match(read("components/auth-form.tsx"), /t\("Enter a valid email address\."\)/);
