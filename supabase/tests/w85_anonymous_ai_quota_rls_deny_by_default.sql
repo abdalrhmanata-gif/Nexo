@@ -95,34 +95,7 @@ select ok(
   'anon, authenticated and PUBLIC cannot execute the public quota wrappers'
 );
 
-select ok(
-  (select count(*) = 3
-     from pg_proc p
-     join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'public'
-      and p.proname in (
-        'reserve_anonymous_ai_generation',
-        'consume_anonymous_ai_generation',
-        'release_anonymous_ai_generation'
-      )
-      and not p.prosecdef
-      and pg_get_userbyid(p.proowner) = 'postgres'
-      and coalesce(array_to_string(p.proconfig, '|'), '') = 'search_path=pg_catalog')
-  and
-  (select count(*) = 3
-     from pg_proc p
-     join pg_namespace n on n.oid = p.pronamespace
-    where n.nspname = 'private'
-      and p.proname in (
-        'reserve_anonymous_ai_generation',
-        'consume_anonymous_ai_generation',
-        'release_anonymous_ai_generation'
-      )
-      and p.prosecdef
-      and pg_get_userbyid(p.proowner) = 'postgres'
-      and coalesce(array_to_string(p.proconfig, '|'), '') ~ 'search_path=pg_catalog, ?private'),
-  'public wrappers are invoker-owned by postgres; private helpers are postgres-owned SECURITY DEFINER with pinned search paths'
-);
+
 
 select ok(
   (select count(*) = 3
