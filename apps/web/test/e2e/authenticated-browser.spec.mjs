@@ -475,8 +475,19 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
     await test.step("history-bearing missions cannot be deleted, so the stack teardown is the cleanup", async () => {
       await page.goto(missionUrl);
       await page.getByRole("button", { name: /^Delete Mission/ }).click();
-      await page.locator(`form[action="/api/missions/${missionId}"] button[type="submit"]`).first().click();
-      await expect(page).toHaveURL(/\/app\?error=mission-provenance$/);
+      await expect(page.locator(`form[action="/api/missions/${missionId}"]`)).toBeVisible();
+
+      // Stop at the first HTTP response so protected-page redirects cannot
+      // hide the delete route's actual verdict from this regression check.
+      const response = await page.request.post(`/api/missions/${missionId}`, {
+        form: { _method: "DELETE" },
+        maxRedirects: 0,
+      });
+      expect(response.status()).toBe(303);
+      const location = response.headers().location;
+      expect(location).toBeTruthy();
+      const destination = new URL(location, runtime.baseURL);
+      expect(destination.pathname + destination.search).toBe("/app?error=mission-provenance");
       expect(await readMission(owner.client, missionId)).not.toBeNull();
     });
 
