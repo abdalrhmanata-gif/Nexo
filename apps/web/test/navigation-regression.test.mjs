@@ -442,6 +442,7 @@ test("public landing, authentication, and mission detail use the six-language lo
     "Paused until something outside this action unblocks it. This is not complete.",
     "This work will not be done.",
     "no further changes",
+    "waiting actions",
     "Follow up:",
     "Continue:",
     "Start:",
