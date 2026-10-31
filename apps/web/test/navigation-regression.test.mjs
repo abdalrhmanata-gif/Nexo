@@ -591,6 +591,8 @@ test("mission activity labels and status transitions use the selected locale", (
   assert.match(page, /<LocalizedMissionDateTime value=\{mission\.updated\}/);
   assert.match(activity, /MISSION_STATUSES/);
   assert.match(activity, /ACTION_STATUSES/);
+  assert.match(activity, /detail === "COMPLETED"/);
+  assert.match(activity, /detail === "VERIFIED"/);
   assert.match(activity, /formatUiDateTime/);
   assert.match(activity, /localisedDetail|localizedDetail/);
 });
