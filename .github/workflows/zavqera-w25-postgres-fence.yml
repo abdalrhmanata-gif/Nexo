@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - zavqera/alternative-web-deployment
+    paths:
+      - ".github/workflows/zavqera-w25-postgres-fence.yml"
+      - "tool/w25_postgres_atomic_fence.sh"
+  pull_request:
+    paths:
+      - ".github/workflows/zavqera-w25-postgres-fence.yml"
+      - "tool/w25_postgres_atomic_fence.sh"
   workflow_dispatch:
 
 permissions:
@@ -43,10 +50,27 @@ jobs:
           done
           exit 1
 
+      - name: Verify destructive-operation guard rejects external targets
+        env:
+          DATABASE_URL: postgresql://postgres:unused@example.invalid:5432/zavqera_w25
+        run: |
+          set -euo pipefail
+          set +e
+          output="$(ZAVQERA_W25_DISPOSABLE=1 bash tool/w25_postgres_atomic_fence.sh 2>&1)"
+          status=$?
+          set -e
+          if [[ "${status}" -eq 0 ]] || ! grep -q "REFUSED:" <<< "${output}"; then
+            echo "::error::W25 did not reject a non-loopback database URL."
+            echo "${output}"
+            exit 1
+          fi
+          echo "external_database_target=REFUSED"
+
       - name: Run two-session atomic fence proof
         env:
           PGPASSWORD: postgres
           DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/zavqera_w25
+          ZAVQERA_W25_DISPOSABLE: "1"
         run: |
           set -euo pipefail
           chmod +x tool/w25_postgres_atomic_fence.sh
