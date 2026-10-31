@@ -2,6 +2,15 @@ name: ZAVQERA W21 Local Launch Gate
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - "codex/mission-action-runtime-seam-test-20261014"
+    paths:
+      - ".github/workflows/zavqera-w21-e2e.yml"
+      - ".github/workflows/zavqera-web-unit.yml"
+      - "apps/web/**"
+      - "supabase/**"
+      - "tool/**"
   pull_request:
     branches:
       - "zavqera/alternative-web-deployment"
@@ -38,6 +47,9 @@ jobs:
       - name: Install web dependencies
         working-directory: apps/web
         run: npm ci
+
+      - name: Verify isolated executor and fake egress gateway network boundary
+        run: bash "$GITHUB_WORKSPACE/tool/mission-executor/egress-isolation-smoke.sh"
 
       - name: Install Chromium
         working-directory: apps/web

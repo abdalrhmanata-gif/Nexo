@@ -13,6 +13,7 @@ const researchProvider = readFileSync(join(root, "lib/ai-research-provider.mjs")
 const executionGuardMigration = readFileSync(join(root, "../../supabase/migrations/20261010125620_w56_agent_execution_duplicate_dispatch_guard.sql"), "utf8");
 const researchCompletionMigration = readFileSync(join(root, "../../supabase/migrations/20261012180000_w79_trusted_research_completion.sql"), "utf8");
 const trustedWorkerRoute = readFileSync(join(root, "app/api/internal/agent-executions/[executionId]/route.ts"), "utf8");
+const trustedWorkerHttp = readFileSync(join(root, "lib/mission-authority/trusted-worker-http.mjs"), "utf8");
 const trustedWorkerOrigin = readFileSync(join(root, "lib/mission-authority/trusted-worker-origin.mjs"), "utf8");
 const envExample = readFileSync(join(root, ".env.example"), "utf8");
 
@@ -133,7 +134,7 @@ test("read-only research completion uses the token-protected internal worker rou
   assert.doesNotMatch(researchRoute, /supabase\.rpc\("complete_agent_execution"/);
   assert.match(researchRoute, /ZAVQERA_EXECUTION_WORKER_TOKEN/);
   assert.match(researchRoute, /operation: "complete_read_only_research"/);
-  assert.match(trustedWorkerRoute, /isTrustedExecutionWorkerRequest/);
+  assert.match(trustedWorkerHttp, /isTrustedExecutionWorkerRequest/);
   assert.match(trustedWorkerRoute, /workerBody\.operation === "complete_read_only_research"/);
   assert.match(trustedWorkerRoute, /p_error_code: typeof workerBody\.errorCode === "string" \? workerBody\.errorCode : null/);
   assert.match(researchRoute, /buildResearchClaimFailureCompletion\(result\.code, requestId\)/);

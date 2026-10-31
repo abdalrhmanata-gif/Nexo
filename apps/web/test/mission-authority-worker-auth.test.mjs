@@ -136,24 +136,27 @@ test("dispatch adapter registry remains fail-closed until a provider is reviewed
   assert.equal(resolveTrustedDispatchAdapter(""), null);
 });
 
-test("privileged worker route uses server-only credentials and the runtime boundary", async () => {
+test("privileged worker route uses server-only credentials and the shared runtime HTTP/JIT gate", async () => {
   const admin = await readFile(join(webRoot, "lib", "supabase", "admin.ts"), "utf8");
   const route = await readFile(join(webRoot, "app", "api", "internal", "agent-executions", "[executionId]", "route.ts"), "utf8");
+  const workerHttp = await readFile(join(webRoot, "lib", "mission-authority", "trusted-worker-http.mjs"), "utf8");
   assert.match(admin, /import ["']server-only["']/);
   assert.match(admin, /SUPABASE_SERVICE_ROLE_KEY/);
   assert.match(route, /ZAVQERA_EXECUTION_WORKER_TOKEN/);
-  assert.match(route, /isTrustedExecutionWorkerRequest/);
+  assert.match(route, /parseTrustedWorkerRequest/);
+  assert.match(workerHttp, /isTrustedExecutionWorkerRequest/);
   assert.match(route, /resolveTrustedDispatchAdapter/);
-  assert.match(route, /runMissionActionWorker/);
-  assert.ok(route.includes("No reviewed provider adapter is registered. No provider call occurred."));
-  assert.ok(route.includes("The registered provider adapter has no reviewed dispatch implementation."));
+  assert.match(route, /createMissionActionWorkerOperationHandler/);
+  assert.match(workerHttp, /runMissionActionWorker\(\{/);
+  assert.ok(workerHttp.includes("No reviewed provider adapter is registered. No provider call occurred."));
+  assert.ok(workerHttp.includes("The registered provider adapter has no reviewed dispatch implementation."));
   assert.match(route, /dispatchThroughJitClaim/);
   assert.match(route, /reconcileThroughTrustedClaim/);
-  assert.match(route, /Only a valid operation and provider audience are accepted/);
-  const operationValidation = route.indexOf('if (bodyKeys.some((key) => key !== "operation" && key !== "audience")');
-  const executionValidation = route.indexOf("if (!UUID_PATTERN.test(executionId))", operationValidation);
-  const boundaryCall = route.indexOf("runMissionActionWorker({", executionValidation);
-  assert.ok(operationValidation >= 0 && executionValidation > operationValidation && boundaryCall > executionValidation);
+  assert.match(workerHttp, /Only a valid operation and provider audience are accepted/);
+  const parseCall = route.indexOf("parseTrustedWorkerRequest(");
+  const researchHandler = route.indexOf('if (workerBody.operation === "preflight_read_only_research")');
+  const operationHandler = route.indexOf("handleMissionActionWorkerOperation({ workerBody, executionId })");
+  assert.ok(parseCall >= 0 && researchHandler > parseCall && operationHandler > researchHandler);
 });
 
 
@@ -195,9 +198,10 @@ test("trusted worker origin rejects attacker request URLs, insecure external tar
   }), null);
 });
 
-test("trusted research completion is a narrow worker operation behind the authenticated route", async () => {
+test("trusted research completion is a narrow worker operation behind the shared authenticated request gate", async () => {
   const route = await readFile(join(webRoot, "app", "api", "internal", "agent-executions", "[executionId]", "route.ts"), "utf8");
-  assert.match(route, /isTrustedExecutionWorkerRequest/);
+  const workerHttp = await readFile(join(webRoot, "lib", "mission-authority", "trusted-worker-http.mjs"), "utf8");
+  assert.match(workerHttp, /isTrustedExecutionWorkerRequest/);
   assert.match(route, /workerBody\.operation === "preflight_read_only_research"/);
   assert.match(route, /isResearchCompletionSchemaProbeError\(probe\.error\)/);
   assert.match(route, /p_execution_id: RESEARCH_COMPLETION_SCHEMA_PROBE_UUID/);
@@ -206,21 +210,41 @@ test("trusted research completion is a narrow worker operation behind the authen
   assert.match(route, /permittedKeys = new Set\(\["operation", "requestedBy", "status", "result", "evidence", "errorCode", "errorMessage"\]\)/);
   assert.match(route, /p_error_code: typeof workerBody\.errorCode === "string" \? workerBody\.errorCode : null/);
   assert.match(route, /!UUID_PATTERN\.test\(workerBody\.requestedBy\)/);
-  assert.match(route, /MAX_INTERNAL_BODY_BYTES/);
+  assert.match(workerHttp, /MAX_INTERNAL_BODY_BYTES/);
   assert.match(route, /p_requested_by: workerBody\.requestedBy/);
   assert.match(route, /completion\.data\.id !== executionId/);
   assert.match(route, /completion\.data\.status !== workerBody\.status/);
 });
 
 
-test("mission-action worker route validates input before invoking the runtime boundary", async () => {
-  const route = await readFile(join(webRoot, "app", "api", "internal", "agent-executions", "[executionId]", "route.ts"), "utf8");
-  const dispatchInputValidation = route.indexOf('if (bodyKeys.some((key) => key !== "operation" && key !== "audience")');
-  const executionValidation = route.indexOf("if (!UUID_PATTERN.test(executionId))", dispatchInputValidation);
-  const boundaryCall = route.indexOf("runMissionActionWorker({", executionValidation);
+test("mission-action HTTP operation validates body and execution binding before the runtime boundary", async () => {
+  const workerHttp = await readFile(join(webRoot, "lib", "mission-authority", "trusted-worker-http.mjs"), "utf8");
+  const dispatchInputValidation = workerHttp.indexOf('if (bodyKeys.some((key) => key !== "operation" && key !== "audience")');
+  const executionValidation = workerHttp.indexOf('if (typeof executionId !== "string" || !UUID_PATTERN.test(executionId))', dispatchInputValidation);
+  const boundaryCall = workerHttp.indexOf("runMissionActionWorker({", executionValidation);
   assert.ok(dispatchInputValidation >= 0, "dispatch/reconciliation input validation must be present");
   assert.ok(executionValidation > dispatchInputValidation, "execution id must be validated after the operation shape");
   assert.ok(boundaryCall > executionValidation, "only validated requests may reach the runtime boundary");
+});
+
+
+test("injectable trusted-worker HTTP/JIT factory is imported only by the protected worker route", async () => {
+  const apiRoot = join(webRoot, "app", "api");
+  const routeFiles = await listApiRouteFiles(apiRoot);
+  const consumers = [];
+
+  for (const routeFile of routeFiles) {
+    const source = await readFile(routeFile, "utf8");
+    if (/from\s+["'][^"']*mission-authority\/trusted-worker-http(?:\.mjs)?["']/.test(source)) {
+      consumers.push(relative(apiRoot, routeFile).replace(/\\/g, "/"));
+    }
+  }
+
+  assert.deepEqual(
+    consumers,
+    ["internal/agent-executions/[executionId]/route.ts"],
+    "only the authenticated internal worker route may instantiate the dependency-injected HTTP/JIT handler",
+  );
 });
 
 
@@ -372,32 +396,70 @@ test("mission-action worker rejects unsupported operations before adapter resolu
 });
 
 
-test("only the trusted internal worker route transitively reaches Mission Action dispatch modules", async () => {
-  const apiRoot = join(webRoot, "app", "api");
-  const routeFiles = await listApiRouteFiles(apiRoot);
+test("only the trusted internal worker route reaches Mission Action dispatch modules from every production entrypoint graph", async () => {
+  const appRoot = join(webRoot, "app");
+  const sourceFiles = await listRuntimeSourceFiles(webRoot);
+  const routeFiles = await listApiRouteFiles(appRoot);
+  const entrypoints = new Set(routeFiles);
+
+  // Next.js server-rendered entrypoints can execute helper code too. Include
+  // pages/layouts/templates and metadata handlers, middleware, instrumentation,
+  // legacy/platform function roots, and every reviewed "use server" module.
+  const appRenderEntrypointPattern = /^app\/(?:.+\/)?(?:page|layout|template|default|loading|error|not-found|global-error|opengraph-image|twitter-image|icon|apple-icon|sitemap|robots|manifest)\.(?:ts|tsx|js|jsx)$/;
+  const infrastructureEntrypointPattern = /^(?:middleware|instrumentation|instrumentation-client)\.(?:ts|tsx|js|jsx)$/;
+  const serverActionPattern = /^\s*["']use server["'];?\s*(?:\/\/.*)?$/m;
+  const backgroundEntrypointPattern = /(^|\/)(?:workers?|jobs?|cron|scheduled|tasks?|queues?)(\/|$)|^(?:functions|netlify\/functions|pages\/api)\//i;
+
+  const backgroundEntrypoints = [];
+  for (const sourceFile of sourceFiles) {
+    const relativePath = relative(webRoot, sourceFile).replace(/\\/g, "/");
+    const source = await readFile(sourceFile, "utf8");
+    if (appRenderEntrypointPattern.test(relativePath)
+        || infrastructureEntrypointPattern.test(relativePath)
+        || serverActionPattern.test(source)
+        || backgroundEntrypointPattern.test(relativePath)) {
+      entrypoints.add(sourceFile);
+    }
+    if (backgroundEntrypointPattern.test(relativePath)) backgroundEntrypoints.push(relativePath);
+  }
+
+  // No scheduled/background/worker/function entrypoint exists in this web app
+  // today. A future one must be inventoried and reviewed explicitly before it
+  // can enter the runtime; test tooling under /tool is intentionally separate.
+  const normalizedEntrypoints = new Set([...entrypoints].map((entrypoint) => relative(webRoot, entrypoint).replace(/\\/g, "/")));
+  assert.ok(normalizedEntrypoints.has("app/page.tsx"), "the root App Router page must be inventoried as a production entrypoint");
+  assert.ok(normalizedEntrypoints.has("app/layout.tsx"), "the root App Router layout must be inventoried as a production entrypoint");
+
+  const reviewedBackgroundEntrypoints = [];
+  assert.deepEqual(
+    backgroundEntrypoints.sort(),
+    reviewedBackgroundEntrypoints,
+    "new worker/job/cron/scheduled/queue/platform-function entrypoints require explicit review and inventory",
+  );
+
   const sensitiveModules = new Set([
     join(webRoot, "lib", "mission-authority", "persistent-dispatch-gateway.mjs"),
     join(webRoot, "lib", "mission-authority", "mission-action-worker-boundary.mjs"),
     join(webRoot, "lib", "mission-authority", "provider-adapter-registry.mjs"),
   ]);
-  const reachableRoutes = [];
+  const reachableEntrypoints = [];
 
-  for (const routeFile of routeFiles) {
-    const chain = await findReachableSensitiveModule(routeFile, sensitiveModules);
+  for (const entrypoint of [...entrypoints].sort()) {
+    const chain = await findReachableSensitiveModule(entrypoint, sensitiveModules);
     if (!chain) continue;
-    reachableRoutes.push({
-      route: relative(apiRoot, routeFile).replace(/\\/g, "/"),
+    reachableEntrypoints.push({
+      entrypoint: relative(webRoot, entrypoint).replace(/\\/g, "/"),
       target: relative(webRoot, chain.at(-1)).replace(/\\/g, "/"),
     });
   }
 
   assert.deepEqual(
-    reachableRoutes,
+    reachableEntrypoints,
     [{
-      route: "internal/agent-executions/[executionId]/route.ts",
+      entrypoint: "app/api/internal/agent-executions/[executionId]/route.ts",
       target: "lib/mission-authority/persistent-dispatch-gateway.mjs",
     }],
-    "no other API route may reach Mission Action dispatch, worker-boundary or trusted-registry modules even through local static imports",
+    "only the trusted worker route may reach Mission Action dispatch, worker-boundary or trusted-registry modules from any statically discovered production entrypoint",
   );
 });
 
@@ -1079,6 +1141,88 @@ test("Mission Action API dependency graphs cannot bypass the trusted external-ef
 });
 
 
+
+async function listRuntimeSourceFiles(directory) {
+  const ignoredDirectories = new Set(["node_modules", ".next", ".git", "test", "tests", "coverage", "dist", "build"]);
+  const entries = await readdir(directory, { withFileTypes: true });
+  const nested = await Promise.all(entries.map(async (entry) => {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) {
+      if (ignoredDirectories.has(entry.name)) return [];
+      return listRuntimeSourceFiles(path);
+    }
+    return entry.isFile() && LOCAL_SOURCE_EXTENSIONS.some((extension) => entry.name.endsWith(extension))
+      ? [path]
+      : [];
+  }));
+  return nested.flat();
+}
+
+test("server-action entrypoints are explicitly inventoried and workspace creation cannot bypass JIT dispatch", async () => {
+  const sourceFiles = await listRuntimeSourceFiles(webRoot);
+  const serverActionEntrypoints = [];
+  for (const sourceFile of sourceFiles) {
+    const source = await readFile(sourceFile, "utf8");
+    if (/^\s*["']use server["'];?\s*(?:\/\/.*)?$/m.test(source)) {
+      serverActionEntrypoints.push(relative(webRoot, sourceFile).replace(/\\/g, "/"));
+    }
+  }
+
+  const reviewedServerActionInventory = new Map([
+    ["app/app/missions/new/page.tsx", {
+      effect: "AUTHENTICATED_MISSION_CREATION_RPC",
+      rationale: "Creates a mission through a user-session Supabase client and the atomic create_mission_with_actions RPC. This is workspace data mutation, not external Mission Action dispatch.",
+    }],
+  ]);
+  assert.deepEqual(
+    serverActionEntrypoints.sort(),
+    [...reviewedServerActionInventory.keys()].sort(),
+    "every new Next.js server action must be classified and reviewed before it can enter the source tree",
+  );
+
+  const missionCreatePagePath = join(webRoot, "app", "app", "missions", "new", "page.tsx");
+  const page = await readFile(missionCreatePagePath, "utf8");
+  const repositoryPath = join(webRoot, "lib", "supabase", "mission-repository.ts");
+  const serverClientPath = join(webRoot, "lib", "supabase", "server.ts");
+  const migrationPath = join(webRoot, "..", "..", "supabase", "migrations", "20261002114358_w26_atomic_mission_creation.sql");
+  const [repository, serverClient, migration] = await Promise.all([
+    readFile(repositoryPath, "utf8"),
+    readFile(serverClientPath, "utf8"),
+    readFile(migrationPath, "utf8"),
+  ]);
+
+  assert.match(page, /async function createMission\(formData: FormData\)/);
+  assert.match(page, /"use server"/);
+  assert.match(page, /createSupabaseMissionRepository\(\)/);
+  assert.match(page, /repository\.createMission!\(/);
+  assert.match(repository, /await supabase\.auth\.getUser\(\)/,
+    "mission creation must derive identity from the authenticated cookie-bound session");
+  assert.match(repository, /const workspaceId = await ownedWorkspace\(supabase, user\.id\)/,
+    "the mission repository must derive the workspace from the authenticated user");
+  assert.match(repository, /supabase\.rpc\("create_mission_with_actions"/,
+    "mission and its initial actions must be created through the atomic RPC");
+  assert.match(serverClient, /createServerClient\(supabaseUrl, supabasePublishableKey/);
+  assert.doesNotMatch(serverClient, /SUPABASE_SERVICE_ROLE_KEY/,
+    "the workspace mission-create action must not use the privileged service-role client");
+  assert.match(migration, /v_user_id uuid := auth\.uid\(\)/);
+  assert.match(migration, /where w\.id = p_workspace_id\s+and w\.owner_id = v_user_id/,
+    "the RPC must bind the submitted workspace to the authenticated owner");
+  assert.match(migration, /revoke all on function public\.create_mission_with_actions[\s\S]*?from public, anon/i);
+  assert.match(migration, /grant execute on function public\.create_mission_with_actions[\s\S]*?to authenticated/i);
+
+  const reachable = await collectReachableLocalSourceModules(missionCreatePagePath);
+  const dispatchOnlyModules = new Set([
+    join(webRoot, "lib", "mission-authority", "persistent-dispatch-gateway.mjs"),
+    join(webRoot, "lib", "mission-authority", "mission-action-worker-boundary.mjs"),
+    join(webRoot, "lib", "mission-authority", "provider-adapter-registry.mjs"),
+  ]);
+  assert.deepEqual(
+    [...reachable].filter((modulePath) => dispatchOnlyModules.has(modulePath)).map((modulePath) => relative(webRoot, modulePath).replace(/\\/g, "/")),
+    [],
+    "workspace mission creation is not a Mission Action dispatch path and may not import the JIT dispatcher/provider registry",
+  );
+});
+
 test("every non-Mission outbound API route is explicitly classified in the outbound-effect inventory", async () => {
   const apiRoot = join(webRoot, "app", "api");
   const routeFiles = await listApiRouteFiles(apiRoot);
@@ -1183,4 +1327,55 @@ test("every non-Mission outbound API route is explicitly classified in the outbo
     "every directly detectable outbound effect in a non-Mission Action API graph must match an evidence-backed inventory entry; inventory entries for shared-helper/callback effects require an explicit effect classification and rationale, but this source scan is not runtime mediation proof",
   );
   assert.deepEqual(violations, []);
+});
+
+
+test("non-API auth route handlers and middleware are explicitly inventoried as separate identity-provider effects", async () => {
+  const appRoot = join(webRoot, "app");
+  const allRouteFiles = await listApiRouteFiles(appRoot);
+  const nonApiRoutes = allRouteFiles
+    .filter((routeFile) => !relative(appRoot, routeFile).replace(/\\/g, "/").startsWith("api/"))
+    .map((routeFile) => relative(appRoot, routeFile).replace(/\\/g, "/"))
+    .sort();
+
+  const reviewedIdentityRouteInventory = new Map([
+    ["auth/callback/route.ts", "SUPABASE_AUTH_CODE_EXCHANGE_OR_OTP_VERIFICATION"],
+    ["auth/confirm/route.ts", "SUPABASE_AUTH_OTP_VERIFICATION"],
+  ]);
+  assert.deepEqual(
+    nonApiRoutes,
+    [...reviewedIdentityRouteInventory.keys()].sort(),
+    "new non-API Next.js route handlers must be explicitly inventoried before they can introduce an unreviewed runtime entrypoint",
+  );
+
+  const callback = await readFile(join(appRoot, "auth", "callback", "route.ts"), "utf8");
+  const confirm = await readFile(join(appRoot, "auth", "confirm", "route.ts"), "utf8");
+  const middleware = await readFile(join(webRoot, "middleware.ts"), "utf8");
+
+  assert.ok(callback.includes("supabase.auth.exchangeCodeForSession(code)"),
+    "the callback's PKCE exchange is an external identity-provider effect");
+  assert.ok(callback.includes("supabase.auth.verifyOtp("),
+    "the callback's token-hash path is an external identity-provider effect");
+  assert.ok(confirm.includes("supabase.auth.verifyOtp("),
+    "the confirmation route's OTP verification is an external identity-provider effect");
+
+  assert.ok(middleware.includes("export async function middleware("));
+  assert.ok(middleware.includes("supabase.auth.getUser()"),
+    "middleware refreshes/verifies identity through Supabase Auth and is a runtime egress entrypoint");
+  assert.ok(middleware.includes('"/app/:path*"'));
+  assert.ok(middleware.includes('"/auth/:path*"'),
+    "the reviewed middleware scope must remain explicit");
+  assert.equal(middleware.includes("mission-authority/"), false,
+    "identity middleware must not become a Mission Action dispatch path");
+
+  // These are separate identity/session workflows, not Mission Action JIT
+  // dispatch. Their Supabase SDK transport is external and must not be counted
+  // as proof that universal outbound mediation has been established.
+  assert.deepEqual(
+    [...reviewedIdentityRouteInventory.entries()],
+    [
+      ["auth/callback/route.ts", "SUPABASE_AUTH_CODE_EXCHANGE_OR_OTP_VERIFICATION"],
+      ["auth/confirm/route.ts", "SUPABASE_AUTH_OTP_VERIFICATION"],
+    ],
+  );
 });
