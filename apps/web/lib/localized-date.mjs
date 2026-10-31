@@ -22,8 +22,8 @@ export function formatUiRelativeDate(value, language) {
   else if (relative === "today") days = 0;
   else if (relative === "tomorrow") days = 1;
   else {
-    const ago = relative.match(/^(\\d+) days? ago$/);
-    const future = relative.match(/^in (\\d+) days?$/);
+    const ago = relative.match(/^(\d+) days? ago$/);
+    const future = relative.match(/^in (\d+) days?$/);
     if (ago) days = -Number(ago[1]);
     else if (future) days = Number(future[1]);
     else return value;
