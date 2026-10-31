@@ -113,6 +113,11 @@ class W83WorkflowPolicyTests(unittest.TestCase):
         self.assertIn("W85_PGTAP_OUTPUT.txt", self.w83)
         self.assertIn("W85_REST_SMOKE.txt", self.w83)
         self.assertNotIn("sed -nE 's/.*Tests=", w85_step)
+        self.assertEqual(self.w83.count("- name: Run W83 pgTAP"), 1)
+        self.assertEqual(self.w83.count("- name: Verify W85 deny-by-default"), 1)
+        self.assertEqual(self.w83.count("- name: Stop and prove disposable resource cleanup"), 1)
+        self.assertEqual(self.w83.count("- name: Redact disposable local credentials"), 1)
+        self.assertEqual(self.w83.count("- name: Upload W83 isolated verification artifacts"), 1)
 
     def test_w85_migration_enables_rls_without_adding_permissive_policies(self):
         migration = self.w85_migration.lower()
