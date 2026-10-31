@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import test from "node:test";
+import { normalizeAppLanguage, resolveAppLanguagePreference } from "../lib/app-language.mjs";
 import { translateUiText, UI_TRANSLATIONS } from "../lib/ui-translations.mjs";
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -55,11 +56,13 @@ test("workspace search filters the visible missions and preserves status filters
   assert.match(page, /encodeURIComponent\(query\)/);
 });
 
-test("language control supports English, Norwegian, Arabic, and right-to-left direction", () => {
+test("language control uses the shared six-language list and Arabic right-to-left direction", () => {
   const language = read("components/language-switcher.tsx");
-  assert.match(language, /"en", "nb", "ar"/);
+  const preference = read("lib/app-language.mjs");
+  assert.match(language, /APP_LANGUAGES/);
   assert.match(language, /document\.documentElement\.dir = language === "ar" \? "rtl" : "ltr"/);
   assert.match(language, /localStorage\.setItem/);
+  assert.match(preference, /\["en", "nb", "ar", "es", "fr", "de"\]/);
 });
 
 test("notification badge is scoped to workspace routes and pauses in hidden tabs", () => {
@@ -341,4 +344,32 @@ test("shared dictionary keeps Norwegian and Arabic translations in the correct l
 
   assert.equal(translateUiText("nb", "Find the opportunity. Prove it. Turn it into action."), "Finn muligheten. Bevis den. Gjør den om til handling.");
   assert.equal(translateUiText("ar", "Find the opportunity. Prove it. Turn it into action."), "اكتشف الفرصة. أثبت جدواها. حوّلها إلى عمل.");
+});
+
+
+test("Norwegian browser locale aliases normalize to the supported Bokmål locale", () => {
+  assert.equal(normalizeAppLanguage("no"), "nb");
+  assert.equal(normalizeAppLanguage("no-NO"), "nb");
+  assert.equal(normalizeAppLanguage("no_NO"), "nb");
+  assert.equal(normalizeAppLanguage("nb-NO"), "nb");
+  assert.equal(normalizeAppLanguage("ar-SA"), "ar");
+  assert.equal(normalizeAppLanguage("fr-FR"), "fr");
+  assert.equal(normalizeAppLanguage("not-a-locale"), null);
+  assert.equal(normalizeAppLanguage(null), null);
+});
+
+test("invalid stored language does not hide a valid cookie or browser preference", () => {
+  assert.equal(resolveAppLanguagePreference("unsupported", "ar", ["no-NO"]), "ar");
+  assert.equal(resolveAppLanguagePreference("unsupported", "also-unsupported", ["no-NO", "en-US"]), "nb");
+  assert.equal(resolveAppLanguagePreference("fr-FR", "ar", ["no-NO"]), "fr");
+  assert.equal(resolveAppLanguagePreference(null, null, ["xx-XX", "de-DE"]), "de");
+  assert.equal(resolveAppLanguagePreference(null, null, []), "en");
+});
+
+test("language selector and localized text share one preference resolver", () => {
+  const selector = read("components/language-switcher.tsx");
+  const localized = read("components/localized-text.tsx");
+  assert.match(selector, /resolveAppLanguagePreference/);
+  assert.match(localized, /resolveAppLanguagePreference/);
+  assert.match(localized, /normalizeAppLanguage/);
 });
