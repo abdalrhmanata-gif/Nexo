@@ -104,6 +104,7 @@ class W83WorkflowPolicyTests(unittest.TestCase):
         self.assertIn("w85_postgrest_after_rls=PASS", self.w83)
         self.assertIn("W85_PGTAP_OUTPUT.txt", self.w83)
         self.assertIn("W85_REST_SMOKE.txt", self.w83)
+        self.assertNotIn("sed -nE 's/.*Tests=", w85_step)
 
     def test_w85_migration_enables_rls_without_adding_permissive_policies(self):
         migration = self.w85_migration.lower()
@@ -154,8 +155,6 @@ class W83WorkflowPolicyTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-, w85_step)
-        self.assertNotIn("sed -nE 's/.*Tests=", w85_step)
 
     def test_w85_rls_migration_is_replayed_and_tested_in_the_disposable_postgres_stack(self):
         self.assertIn("20261031193000_w85_anonymous_ai_quota_rls_deny_by_default.sql", self.w83)
