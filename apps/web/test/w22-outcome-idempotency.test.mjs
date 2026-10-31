@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
 
-const repositoryRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+const repositoryRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 const migration = readFileSync(
   join(repositoryRoot, "supabase", "migrations", "20261031210000_w22_idempotent_verified_outcome_replay.sql"),
   "utf8",
