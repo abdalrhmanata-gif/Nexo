@@ -116,7 +116,7 @@ export default async function MissionDetailPage({
             : <div className="readiness" role="status">
               <p><LocalizedMissionValue value={readiness.reason} /></p>
               {readiness.unresolved.length > 0 && <p className="action-hint">
-                {readiness.unresolved.length === 1 ? "1 action is" : `${readiness.unresolved.length} actions are`} still open: {readiness.unresolved.map((action) => action.title).join(", ")}.
+                {readiness.unresolved.length === 1 ? <LocalizedText en="1 action is still open:" /> : <>{readiness.unresolved.length} <LocalizedText en="actions are still open:" /></>} {readiness.unresolved.map((action) => action.title).join(", ")}.
               </p>}
               {readiness.nextStatus && <p className="action-hint"><LocalizedText en="Use “Edit this mission” above to move it to" /> <LocalizedText en={missionStatusLabel(readiness.nextStatus)} />.</p>}
             </div>}
