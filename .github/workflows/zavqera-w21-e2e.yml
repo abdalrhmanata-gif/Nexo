@@ -132,7 +132,7 @@ jobs:
           # Disable errexit only around the test command so its exit code is
           # always captured and persisted before any later validation runs.
           set +e
-          npm run test:e2e -- --grep "authenticated Opportunity Intelligence backup flow" > "${log}" 2>&1
+          npm run test:e2e > "${log}" 2>&1
           status=$?
           set -e
 
