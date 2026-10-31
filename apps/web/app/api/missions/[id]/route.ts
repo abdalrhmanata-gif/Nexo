@@ -22,15 +22,16 @@ function errorResponse(error: unknown) {
 }
 
 function isProvenanceDeleteError(error: unknown) {
-  // A mission can be protected by more than the mission_events foreign key.
-  // For example, a verification may still be referenced by its committed
-  // outcome. Any FK violation while deleting a mission means linked history
-  // or dependent data is preserving the record; never translate it into a
-  // generic delete failure.
-  return typeof error === "object"
-    && error !== null
-    && "code" in error
-    && error.code === "23503";
+  if (typeof error !== "object" || error === null) return false;
+  const code = "code" in error ? error.code : undefined;
+  const message = "message" in error && typeof error.message === "string" ? error.message : "";
+
+  // Mission deletion may be blocked by FK RESTRICT (23503), by the action
+  // history trigger (P0001), or by the append-only history trigger (42501).
+  // All are intentional provenance guards, not generic delete failures.
+  return code === "23503"
+    || (code === "P0001" && message === "ACTION_DELETE_FORBIDDEN_HISTORY")
+    || (code === "42501" && message === "Mission history is append-only");
 }
 
 export async function DELETE(
