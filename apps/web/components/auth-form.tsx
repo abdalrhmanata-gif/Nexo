@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { safeNextPath } from "../lib/auth/redirect.mjs";
+import { useUiTranslation } from "./localized-text";
 
 const CONFIRMATION_ERRORS: Record<string, string> = {
   "confirmation-link": "That confirmation link is invalid or has expired. Request a new one by signing up again.",
@@ -13,6 +14,7 @@ const CONFIRMATION_ERRORS: Record<string, string> = {
 export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const t = useUiTranslation();
   const confirmationError = CONFIRMATION_ERRORS[searchParams.get("error") ?? ""] ?? "";
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -25,8 +27,8 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
     const form = new FormData(event.currentTarget);
     const email = String(form.get("email") ?? "").trim();
     const password = String(form.get("password") ?? "");
-    if (!email || !email.includes("@")) return setError("Enter a valid email address.");
-    if (password.length < 8) return setError("Password must be at least 8 characters.");
+    if (!email || !email.includes("@")) return setError(t("Enter a valid email address."));
+    if (password.length < 8) return setError(t("Password must be at least 8 characters."));
     setLoading(true);
     const { createSupabaseBrowserClient } = await import("../lib/supabase/browser");
     const supabase = createSupabaseBrowserClient();
@@ -41,9 +43,9 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         },
       });
     setLoading(false);
-    if (result.error) return setError(result.error.message);
+    if (result.error) return setError(t(result.error.message));
     if (mode === "sign-up" && !result.data.session) {
-      setMessage("Check your email to confirm your account, then sign in.");
+      setMessage(t("Check your email to confirm your account, then sign in."));
       return;
     }
     router.push(nextPath);
@@ -51,17 +53,18 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
   }
 
   return <form className="form-grid" onSubmit={submit} noValidate>
-    <div className="field"><label htmlFor="email">Email</label><input id="email" name="email" type="email" autoComplete="email" required /></div>
-    <div className="field"><label htmlFor="password">Password</label><input id="password" name="password" type="password" autoComplete={mode === "sign-in" ? "current-password" : "new-password"} required /><small>Use at least 8 characters.</small></div>
-    {(error || confirmationError) && <div className="field-error" role="alert">{error || confirmationError}</div>}
+    <div className="field"><label htmlFor="email">{t("Email")}</label><input id="email" name="email" type="email" autoComplete="email" required /></div>
+    <div className="field"><label htmlFor="password">{t("Password")}</label><input id="password" name="password" type="password" autoComplete={mode === "sign-in" ? "current-password" : "new-password"} required /><small>{t("Use at least 8 characters.")}</small></div>
+    {(error || confirmationError) && <div className="field-error" role="alert">{t(error || confirmationError)}</div>}
     {message && <div className="success-state" role="status">{message}</div>}
-    <button className="button" type="submit" disabled={loading}>{loading ? "Working…" : mode === "sign-in" ? "Sign in" : "Create account"}</button>
+    <button className="button" type="submit" disabled={loading}>{loading ? t("Working…") : mode === "sign-in" ? t("Sign in") : t("Create account")}</button>
   </form>;
 }
 
 
 export function SignOutButton() {
   const router = useRouter();
+  const t = useUiTranslation();
   const [loading, setLoading] = useState(false);
 
   async function signOut() {
@@ -73,6 +76,6 @@ export function SignOutButton() {
   }
 
   return <button className="button button-small" onClick={signOut} disabled={loading}>
-    {loading ? "Signing out…" : "Sign out"}
+    {loading ? t("Signing out…") : t("Sign out")}
   </button>;
 }

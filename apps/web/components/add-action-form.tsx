@@ -2,9 +2,11 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useUiTranslation } from "./localized-text";
 
 export function AddActionForm({ missionId }: { missionId: string }) {
   const router = useRouter();
+  const t = useUiTranslation();
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -13,7 +15,7 @@ export function AddActionForm({ missionId }: { missionId: string }) {
     event.preventDefault();
     const trimmed = title.trim();
     if (!trimmed) {
-      setMessage("Describe the work this action covers.");
+      setMessage(t("Describe the work this action covers."));
       return;
     }
     setBusy(true);
@@ -26,14 +28,14 @@ export function AddActionForm({ missionId }: { missionId: string }) {
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        setMessage(payload.error ?? "That action could not be added.");
+        setMessage(payload.error ?? t("That action could not be added."));
         return;
       }
       setTitle("");
-      setMessage("Action added.");
+      setMessage(t("Action added."));
       router.refresh();
     } catch {
-      setMessage("The action could not be saved. Check your connection and try again.");
+      setMessage(t("The action could not be saved. Check your connection and try again."));
     } finally {
       setBusy(false);
     }
@@ -41,18 +43,18 @@ export function AddActionForm({ missionId }: { missionId: string }) {
 
   return <form onSubmit={submit} className="add-action">
     <div className="action-control">
-      <label className="visually-hidden" htmlFor="new-action">Add an action</label>
+      <label className="visually-hidden" htmlFor="new-action">{t("Add an action")}</label>
       <input
         id="new-action"
         name="title"
         value={title}
         disabled={busy}
-        placeholder="What needs to happen next?"
+        placeholder={t("What needs to happen next?")}
         onChange={(event) => setTitle(event.target.value)}
       />
-      <button className="button button-small" type="submit" disabled={busy}>{busy ? "Adding…" : "Add action"}</button>
+      <button className="button button-small" type="submit" disabled={busy}>{busy ? t("Adding…") : t("Add action")}</button>
     </div>
-    <p className="action-hint">Plans change. Add a step whenever you discover one.</p>
+    <p className="action-hint">{t("Plans change. Add a step whenever you discover one.")}</p>
     {message && <p className="field-error" role="alert">{message}</p>}
   </form>;
 }

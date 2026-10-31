@@ -3,9 +3,11 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { MissionVerification } from "../lib/view-models";
+import { useUiTranslation } from "./localized-text";
 
 export function VerificationControls({ missionId, verification }: { missionId: string; verification?: MissionVerification }) {
   const router = useRouter();
+  const t = useUiTranslation();
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -27,13 +29,13 @@ export function VerificationControls({ missionId, verification }: { missionId: s
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        setMessage(payload.error ?? "Verification failed.");
+        setMessage(payload.error ?? t("Verification failed."));
         return;
       }
-      setMessage("Verification recorded. Refreshing mission state…");
+      setMessage(t("Verification recorded. Refreshing mission state…"));
       router.refresh();
     } catch {
-      setMessage("Verification could not be saved. Check your connection and try again.");
+      setMessage(t("Verification could not be saved. Check your connection and try again."));
     } finally {
       setBusy(false);
     }
@@ -52,18 +54,18 @@ export function VerificationControls({ missionId, verification }: { missionId: s
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        setMessage(payload.error ?? "Outcome could not be committed.");
+        setMessage(payload.error ?? t("Outcome could not be committed."));
         return;
       }
-      setMessage("Verified outcome committed.");
+      setMessage(t("Verified outcome committed."));
       router.refresh();
     } catch {
-      setMessage("Outcome could not be committed. Check your connection and try again.");
+      setMessage(t("Outcome could not be committed. Check your connection and try again."));
     } finally {
       setBusy(false);
     }
   }
 
-  if (verification?.status === "VERIFIED") return <div className="form-grid"><form onSubmit={commit}><div className="field"><label htmlFor="result">Outcome result</label><textarea id="result" name="result" required /></div><div className="field"><label htmlFor="score">Success score</label><input id="score" name="score" type="number" min="0" max="1" step="0.01" defaultValue="1" /></div><button className="button" type="submit" disabled={busy}>Commit verified outcome</button></form>{message && <div className="field-error" role="alert">{message}</div>}</div>;
-  return <div className="form-grid"><form onSubmit={verify}><div className="field"><label htmlFor="criteria">Verification criteria</label><textarea id="criteria" name="criteria" required /></div><div className="field"><label htmlFor="evidence">Evidence summary</label><textarea id="evidence" name="evidence" required /></div><div className="field"><label htmlFor="confidence">Confidence</label><input id="confidence" name="confidence" type="number" min="0" max="1" step="0.01" defaultValue="1" /></div><button className="button" type="submit" disabled={busy}>Record verification</button></form>{message && <div className="field-error" role="alert">{message}</div>}</div>;
+  if (verification?.status === "VERIFIED") return <div className="form-grid"><form onSubmit={commit}><div className="field"><label htmlFor="result">{t("Outcome result")}</label><textarea id="result" name="result" required /></div><div className="field"><label htmlFor="score">{t("Success score")}</label><input id="score" name="score" type="number" min="0" max="1" step="0.01" defaultValue="1" /></div><button className="button" type="submit" disabled={busy}>{t("Commit verified outcome")}</button></form>{message && <div className="field-error" role="alert">{message}</div>}</div>;
+  return <div className="form-grid"><form onSubmit={verify}><div className="field"><label htmlFor="criteria">{t("Verification criteria")}</label><textarea id="criteria" name="criteria" required /></div><div className="field"><label htmlFor="evidence">{t("Evidence summary")}</label><textarea id="evidence" name="evidence" required /></div><div className="field"><label htmlFor="confidence">{t("Confidence")}</label><input id="confidence" name="confidence" type="number" min="0" max="1" step="0.01" defaultValue="1" /></div><button className="button" type="submit" disabled={busy}>{t("Record verification")}</button></form>{message && <div className="field-error" role="alert">{message}</div>}</div>;
 }

@@ -9,6 +9,7 @@ import {
   isTerminalMissionStatus,
   missionStatusLabel,
 } from "../lib/mission-content.mjs";
+import { useUiTranslation } from "./localized-text";
 
 export function MissionMutationControls({
   missionId,
@@ -26,6 +27,7 @@ export function MissionMutationControls({
   version: number;
 }) {
   const router = useRouter();
+  const t = useUiTranslation();
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -39,19 +41,19 @@ export function MissionMutationControls({
         body: JSON.stringify(body),
       });
       if (response.status === 409) {
-        setMessage("This mission changed elsewhere. Showing the latest saved state.");
+        setMessage(t("This mission changed elsewhere. Showing the latest saved state."));
         router.refresh();
         return;
       }
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        setMessage(payload.error ?? "Mission update was not accepted.");
+        setMessage(payload.error ?? t("Mission update was not accepted."));
         return;
       }
-      setMessage("Mission saved.");
+      setMessage(t("Mission saved."));
       router.refresh();
     } catch {
-      setMessage("The mission could not be saved. Check your connection and try again.");
+      setMessage(t("The mission could not be saved. Check your connection and try again."));
     } finally {
       setBusy(false);
     }
@@ -70,7 +72,7 @@ export function MissionMutationControls({
       .map((line) => line.trim())
       .filter(Boolean);
     if (!nextName || !nextIntent) {
-      setMessage("A mission needs both a name and an intent.");
+      setMessage(t("A mission needs both a name and an intent."));
       return;
     }
     await send({
@@ -89,27 +91,27 @@ export function MissionMutationControls({
 
   return <div className="form-grid">
     <form onSubmit={saveDetails}>
-      <div className="field"><label htmlFor="mission-name">Mission name</label><input id="mission-name" name="name" defaultValue={name} required /></div>
-      <div className="field"><label htmlFor="mission-intent">Intent</label><textarea id="mission-intent" name="intent" defaultValue={intent} required /></div>
+      <div className="field"><label htmlFor="mission-name">{t("Mission name")}</label><input id="mission-name" name="name" defaultValue={name} required /></div>
+      <div className="field"><label htmlFor="mission-intent">{t("Intent")}</label><textarea id="mission-intent" name="intent" defaultValue={intent} required /></div>
       <div className="field">
-        <label htmlFor="mission-criteria">Success criteria</label>
+        <label htmlFor="mission-criteria">{t("Success criteria")}</label>
         <textarea id="mission-criteria" name="criteria" defaultValue={criteria.join("\n")} />
-        <small>One per line. These describe what good looks like, not the work itself.</small>
+        <small>{t("One per line. These describe what good looks like, not the work itself.")}</small>
       </div>
-      <button className="button button-small" type="submit" disabled={busy}>Save mission</button>
+      <button className="button button-small" type="submit" disabled={busy}>{t("Save mission")}</button>
     </form>
 
     {isTerminalMissionStatus(status)
-      ? <p className="action-final">{missionStatusLabel(status)} — this mission is closed.</p>
+      ? <p className="action-final">{t(missionStatusLabel(status))} — {t("Mission is closed")}.</p>
       : <form key={status} onSubmit={transition}>
         <div className="field">
-          <label htmlFor="status">Mission state</label>
+          <label htmlFor="status">{t("Mission state")}</label>
           <select id="status" name="status" defaultValue={nextStates[0]} disabled={busy}>
-            {nextStates.map((item) => <option key={item} value={item}>{missionStatusLabel(item)}</option>)}
+            {nextStates.map((item) => <option key={item} value={item}>{t(missionStatusLabel(item))}</option>)}
           </select>
-          <small>Currently {missionStatusLabel(status).toLowerCase()}. Only states this mission can legally move to are listed.</small>
+          <small>{t("Currently")} {t(missionStatusLabel(status)).toLowerCase()}. {t("Only states this mission can legally move to are listed.")}</small>
         </div>
-        <button className="button button-small" type="submit" disabled={busy}>Move mission</button>
+        <button className="button button-small" type="submit" disabled={busy}>{t("Move mission")}</button>
       </form>}
     {message && <div className="field-error" role="alert">{message}</div>}
   </div>;
