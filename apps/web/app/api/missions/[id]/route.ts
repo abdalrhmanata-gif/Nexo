@@ -22,13 +22,15 @@ function errorResponse(error: unknown) {
 }
 
 function isProvenanceDeleteError(error: unknown) {
+  // A mission can be protected by more than the mission_events foreign key.
+  // For example, a verification may still be referenced by its committed
+  // outcome. Any FK violation while deleting a mission means linked history
+  // or dependent data is preserving the record; never translate it into a
+  // generic delete failure.
   return typeof error === "object"
     && error !== null
     && "code" in error
-    && error.code === "23503"
-    && "message" in error
-    && typeof error.message === "string"
-    && error.message.includes("mission_events");
+    && error.code === "23503";
 }
 
 export async function DELETE(
