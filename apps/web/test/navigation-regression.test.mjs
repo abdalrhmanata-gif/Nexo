@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 import test from "node:test";
 import { normalizeAppLanguage, resolveAppLanguagePreference } from "../lib/app-language.mjs";
 import { translateUiText, UI_TRANSLATIONS, UI_TRANSLATION_KEYS } from "../lib/ui-translations.mjs";
+import { formatUiAbsoluteDate, formatUiRelativeDate } from "../lib/localized-date.mjs";
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (path) => readFileSync(join(webRoot, path), "utf8");
@@ -503,4 +504,49 @@ test("public landing, authentication, and mission detail use the six-language lo
   assert.match(read("components/action-mutation-controls.tsx"), /useUiTranslation/);
   assert.match(read("components/add-action-form.tsx"), /useUiTranslation/);
   assert.match(read("components/delete-mission-form.tsx"), /useUiTranslation/);
+});
+
+
+test("mission follow-up relative dates follow the selected language", () => {
+  const cases = [
+    ["yesterday", "nb", "nb-NO", -1],
+    ["today", "ar", "ar", 0],
+    ["tomorrow", "es", "es-ES", 1],
+    ["3 days ago", "fr", "fr-FR", -3],
+    ["in 5 days", "de", "de-DE", 5],
+  ];
+  for (const [value, language, locale, amount] of cases) {
+    const expected = new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(amount, "day");
+    assert.equal(formatUiRelativeDate(value, language), expected);
+    assert.notEqual(formatUiRelativeDate(value, language), value);
+  }
+  assert.equal(formatUiRelativeDate("next month", "nb"), "next month");
+});
+
+test("mission follow-up absolute dates follow the selected language", () => {
+  const value = "Oct 31, 2026";
+  const date = new Date(value);
+  for (const [language, locale] of [["nb", "nb-NO"], ["ar", "ar"], ["es", "es-ES"], ["fr", "fr-FR"], ["de", "de-DE"]]) {
+    const expected = new Intl.DateTimeFormat(locale, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }).format(date);
+    assert.equal(formatUiAbsoluteDate(value, language), expected);
+    assert.notEqual(formatUiAbsoluteDate(value, language), value);
+  }
+  assert.equal(formatUiAbsoluteDate("not a date", "nb"), "not a date");
+});
+
+test("mission detail and guidance use locale-aware follow-up date formatting", () => {
+  const detail = read("app/app/missions/[id]/page.tsx");
+  const followUp = read("components/localized-follow-up-date.tsx");
+  const nextStep = read("components/localized-mission-next-step.tsx");
+  const guidance = read("components/localized-mission-value.tsx");
+  assert.match(detail, /<LocalizedFollowUpDate relative=\{followUp\.relative\} absolute=\{followUp\.absolute\} \/>/);
+  assert.match(followUp, /formatUiRelativeDate/);
+  assert.match(followUp, /formatUiAbsoluteDate/);
+  assert.match(nextStep, /formatUiRelativeDate/);
+  assert.match(guidance, /formatUiRelativeDate/);
+  assert.match(guidance, /formatUiAbsoluteDate/);
 });
