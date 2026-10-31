@@ -113,14 +113,16 @@ function formWith(page, field) {
   return page.locator("form").filter({ has: field });
 }
 
-/** Submits the form owning `field` and waits for the server's verdict. */
+/** Submits an enhanced client form and waits for its server response.
+ * These controls use fetch() plus router.refresh(); they do not trigger a
+ * document-level "load" event. Callers assert persisted state or the refreshed
+ * UI after the response instead of waiting for a navigation that never occurs.
+ */
 async function submit(page, field, { method, path, expectStatus }) {
   const response = page.waitForResponse((r) => r.request().method() === method && new URL(r.url()).pathname === path);
-  const reload = expectStatus < 300 ? page.waitForEvent("load") : null;
   await formWith(page, field).locator('button[type="submit"]').click();
   const settled = await response;
   expect(settled.status(), `${method} ${path}`).toBe(expectStatus);
-  if (reload) await reload;
   return settled;
 }
 
