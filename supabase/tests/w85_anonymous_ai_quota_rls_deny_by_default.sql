@@ -74,7 +74,12 @@ select ok(
        and (
          has_function_privilege('anon', p.oid, 'EXECUTE')
          or has_function_privilege('authenticated', p.oid, 'EXECUTE')
-         or has_function_privilege('public', p.oid, 'EXECUTE')
+         or exists (
+           select 1
+             from aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) acl
+            where acl.grantee = 0
+              and acl.privilege_type = 'EXECUTE'
+         )
        )
   ),
   'anon, authenticated and PUBLIC cannot execute the public quota wrappers'
