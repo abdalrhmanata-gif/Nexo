@@ -714,7 +714,16 @@ const rows = [
   ["Commit verified outcome","Registrer verifisert resultat","اعتمد النتيجة التي تم التحقق منها","Confirmar resultado verificado","Valider le résultat vérifié","Verifiziertes Ergebnis festschreiben"],
   ["Verification criteria","Verifiseringskriterier","معايير التحقق","Criterios de verificación","Critères de vérification","Überprüfungskriterien"],
   ["Evidence summary","Sammendrag av dokumentasjon","ملخص الأدلة","Resumen de pruebas","Résumé des preuves","Zusammenfassung der Belege"],
-]; 
+  ["Not started","Ikke startet","لم يبدأ","No iniciado","Non commencé","Nicht begonnen"],
+  ["Follow up:","Følg opp:","تابع:","Dar seguimiento:","Suivi :","Nachverfolgen:"],
+  ["Continue:","Fortsett:","تابع:","Continuar:","Continuer :","Fortsetzen:"],
+  ["Start:","Start:","ابدأ:","Empezar:","Commencer :","Starten:"],
+  ["Resolve waiting:","Løs ventende:","عالج الانتظار:","Resolver lo pendiente:","Résoudre l’attente :","Wartendes klären:"],
+  ["no further changes","ingen flere endringer","لا توجد تغييرات أخرى","no se permiten más cambios","aucune autre modification","keine weiteren Änderungen"],
+  ["This mission cannot move to checking the evidence from its current state.","Dette oppdraget kan ikke gå til kontroll av dokumentasjonen fra gjeldende status.","لا يمكن لهذه المهمة الانتقال إلى مرحلة التحقق من الأدلة من حالتها الحالية.","Esta misión no puede pasar a la revisión de pruebas desde su estado actual.","Cette mission ne peut pas passer à la vérification des preuves depuis son état actuel.","Diese Mission kann aus ihrem aktuellen Status nicht zur Belegprüfung wechseln."],
+  ["Move this mission to checking the evidence before recording verification.","Flytt oppdraget til kontroll av dokumentasjonen før du registrerer verifisering.","انقل هذه المهمة إلى مرحلة التحقق من الأدلة قبل تسجيل التحقق.","Pasa esta misión a la revisión de pruebas antes de registrar la verificación.","Faites passer cette mission à la vérification des preuves avant d’enregistrer la validation.","Wechseln Sie mit dieser Mission zur Belegprüfung, bevor Sie eine Verifizierung erfassen."],
+  ["Actions","Handlinger","الإجراءات","Acciones","Actions","Aktionen"]
+];
 const languages = ["nb","ar","es","fr","de"];
 const dictionaries = Object.fromEntries(languages.map((language) => [language, Object.fromEntries(rows.map((row) => [row[0], row[1 + languages.indexOf(language)]]))]));
 export function translateUiText(language, source) {
