@@ -45,7 +45,7 @@ export default async function MissionDetailPage({
             <LocalizedMissionNextStep label={next.label} detail={next.detail} />
           </p>
           <div className="progress-row">
-            <span>{mission.actionsTotal ? <>{mission.actionsCompleted} <LocalizedText en="of" /> {mission.actionsTotal} <LocalizedText en="actions complete" /></> : <LocalizedText en="No actions yet" />}</span>
+            <span>{mission.actionsTotal ? <>{mission.actionsCompleted} / {mission.actionsTotal} <LocalizedText en="actions complete" /></> : <LocalizedText en="No actions yet" />}</span>
             <strong>{mission.progress}%</strong>
           </div>
           <div className="progress"><span style={{ width: `${mission.progress}%` }} /></div>
