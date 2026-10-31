@@ -22,7 +22,7 @@ export function LocalizedMissionValue({ value }: { value: string }) {
   if (nextFollowUp) return <>{t(nextFollowUp[1])} {nextFollowUp[2]}.</>;
   const waitingActions = value.match(/^(\d+) waiting action(s?)( is| are) past its follow-up date\.$/);
   if (waitingActions) {
-    return <>{waitingActions[1]} {t("waiting action")} {waitingActions[3] === " are" ? t("are past their follow-up date.") : t("is past its follow-up date.")}</>;
+    return <>{waitingActions[1]} {t(waitingActions[2] ? "waiting actions" : "waiting action")} {waitingActions[3] === " are" ? t("are past their follow-up date.") : t("is past its follow-up date.")}</>;
   }
   return <>{t(value)}</>;
 }
