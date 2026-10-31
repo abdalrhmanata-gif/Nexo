@@ -277,8 +277,10 @@ test("privacy note uses the actual translation key, not a nested translation exp
 test("mission cards localize deterministic guidance and lifecycle pills", () => {
   const card = read("components/mission-card.tsx");
   const shell = read("components/shell.tsx");
-  assert.match(card, /t\(next\.label\)/);
-  assert.match(card, /translateNextStepDetail\(next\.detail, t\)/);
+  assert.ok(card.includes("LocalizedMissionNextStep"));
+  const nextStep = read("components/localized-mission-next-step.tsx");
+  assert.match(nextStep, /t\(label\)/);
+  assert.match(nextStep, /t\(detail\)/);
   assert.match(shell, /LocalizedText en=\{missionStatusLabel\(status\)\}/);
   for (const locale of ["nb", "ar", "es", "fr", "de"]) {
     for (const label of ["Follow-up due", "Start next action", "Waiting on you", "Ready to check", "Outcome recorded", "This mission has a verified outcome."]) {
