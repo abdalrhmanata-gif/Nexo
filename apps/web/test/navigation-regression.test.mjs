@@ -317,6 +317,7 @@ test("new mission form labels, helper text and placeholders use the shared local
 
 
 
+
 test("shared dictionary keeps Norwegian and Arabic translations in the correct language columns", () => {
   const source = read("lib/ui-translations.mjs");
   const rows = source.split("\n")
@@ -328,13 +329,13 @@ test("shared dictionary keeps Norwegian and Arabic translations in the correct l
   const translationsByKey = new Map();
 
   for (const [key, norwegian, arabic] of rows) {
-    assert.doesNotMatch(norwegian, arabicScript, \`Norwegian translation contains Arabic script: \${key}\`);
+    assert.doesNotMatch(norwegian, arabicScript, "Norwegian translation contains Arabic script: " + key);
     if (!key.startsWith("https://")) {
-      assert.match(arabic, arabicScript, \`Arabic translation is missing Arabic script: \${key}\`);
+      assert.match(arabic, arabicScript, "Arabic translation is missing Arabic script: " + key);
     }
     const current = [norwegian, arabic];
     const previous = translationsByKey.get(key);
-    if (previous) assert.deepEqual(current, previous, \`duplicate translation rows disagree for: \${key}\`);
+    if (previous) assert.deepEqual(current, previous, "duplicate translation rows disagree for: " + key);
     else translationsByKey.set(key, current);
   }
 
