@@ -9,6 +9,11 @@ on:
       - "apps/web/**"
       - ".github/workflows/zavqera-w21-e2e.yml"
       - "supabase/test-snapshots/**"
+  pull_request:
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/zavqera-w21-e2e.yml"
+      - "supabase/test-snapshots/**"
 
 permissions:
   contents: read
@@ -32,7 +37,7 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v3
         with:
-          version: latest
+          version: 2.119.0
 
       - name: Install web dependencies
         working-directory: apps/web
