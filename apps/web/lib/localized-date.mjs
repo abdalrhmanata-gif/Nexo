@@ -47,11 +47,11 @@ export function formatUiAbsoluteDate(value, language) {
 export function formatUiDateTime(value, language) {
   if (typeof value !== "string" || !value.trim()) return "";
   const relative = value.trim();
-  const minutesAgo = relative.match(/^(\\d+)\\s*(?:min|mins|minutes?)\\s+ago$/i);
+  const minutesAgo = relative.match(/^(\d+)\s*(?:min|mins|minutes?)\s+ago$/i);
   if (minutesAgo) {
     return new Intl.RelativeTimeFormat(localeFor(language), { numeric: "auto" }).format(-Number(minutesAgo[1]), "minute");
   }
-  const hoursAgo = relative.match(/^(\\d+)\\s*(?:hr|hrs|hours?)\\s+ago$/i);
+  const hoursAgo = relative.match(/^(\d+)\s*(?:hr|hrs|hours?)\s+ago$/i);
   if (hoursAgo) {
     return new Intl.RelativeTimeFormat(localeFor(language), { numeric: "auto" }).format(-Number(hoursAgo[1]), "hour");
   }
