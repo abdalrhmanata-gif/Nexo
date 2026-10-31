@@ -506,7 +506,7 @@ const rows = [
   ["Map the current steps and bottlenecks","Kartlegg dagens trinn og flaskehalser","ارسم خطوات العمل الحالية ونقاط الاختناق","Describe los pasos actuales y los cuellos de botella","Cartographiez les étapes actuelles et les goulots d’étranglement","Erfassen Sie die aktuellen Schritte und Engpässe"],
   ["Choose a small reversible change","Velg en liten endring som kan reverseres","اختر تغييرًا صغيرًا قابلًا للتراجع","Elige un pequeño cambio reversible","Choisissez un petit changement réversible","Wählen Sie eine kleine, umkehrbare Änderung"],
   ["Review results and decide whether to keep it","Gjennomgå resultatene og avgjør om endringen skal beholdes","راجع النتائج وقرر ما إذا كنت ستُبقي التغيير","Revisa los resultados y decide si mantienes el cambio","Examinez les résultats et décidez de conserver ou non le changement","Prüfen Sie die Ergebnisse und entscheiden Sie, ob Sie die Änderung beibehalten"]
-];
+,
   ["Draft","Utkast","مسودة","Borrador","Brouillon","Entwurf"],
   ["Planning","Planlegging","قيد التخطيط","Planificación","Planification","Planung"],
   ["Ready to start","Klar til å starte","جاهز للبدء","Listo para empezar","Prêt à démarrer","Bereit zum Start"],
@@ -559,6 +559,7 @@ const rows = [
   ["One step per line","Ett steg per linje","خطوة واحدة في كل سطر","Un paso por línea","Une étape par ligne","Ein Schritt pro Zeile"],
   ["The work you already know about, in the order you would do it. You can add more at any time. Leave empty to start from your success criteria.","Arbeidet du allerede kjenner til, i den rekkefølgen du vil utføre det. Du kan legge til mer når som helst. La feltet stå tomt for å starte fra suksesskriteriene.","العمل الذي تعرفه بالفعل بالترتيب الذي ستنفذه به. يمكنك إضافة المزيد في أي وقت. اترك الحقل فارغًا للبدء من معايير النجاح.","El trabajo que ya conoces, en el orden en que lo harías. Puedes añadir más en cualquier momento. Déjalo vacío para empezar por los criterios de éxito.","Le travail que vous connaissez déjà, dans l’ordre prévu. Vous pouvez en ajouter à tout moment. Laissez vide pour commencer par les critères de réussite.","Die bereits bekannten Aufgaben in der vorgesehenen Reihenfolge. Sie können jederzeit weitere hinzufügen. Lassen Sie das Feld leer, um mit den Erfolgskriterien zu beginnen."],
   ["Add a name, an intent of at least 12 characters, and success criteria.","Legg til et navn, en hensikt på minst 12 tegn og suksesskriterier.","أدخل اسمًا وهدفًا لا يقل عن 12 حرفًا ومعايير النجاح.","Añade un nombre, una intención de al menos 12 caracteres y criterios de éxito.","Ajoutez un nom, une intention d’au moins 12 caractères et des critères de réussite.","Geben Sie einen Namen, eine Absicht mit mindestens 12 Zeichen und Erfolgskriterien ein."]
+];
 const languages = ["nb","ar","es","fr","de"];
 const dictionaries = Object.fromEntries(languages.map((language) => [language, Object.fromEntries(rows.map((row) => [row[0], row[1 + languages.indexOf(language)]]))]));
 export function translateUiText(language, source) {
