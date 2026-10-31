@@ -773,7 +773,8 @@ const rows = [
   ["Open task","Åpne oppgave","افتح المهمة","Abrir tarea","Ouvrir la tâche","Aufgabe öffnen"],
   ["No follow-up tasks are overdue or due in the next 7 days.","Ingen oppfølgingsoppgaver er forfalt eller forfaller de neste 7 dagene.","لا توجد متابعات متأخرة أو مستحقة خلال الأيام السبعة القادمة.","No hay seguimientos vencidos ni tareas que venzan en los próximos 7 días.","Aucun suivi n’est en retard ou prévu dans les 7 prochains jours.","Es gibt keine überfälligen oder in den nächsten 7 Tagen fälligen Nachverfolgungen."],
   ["Back to workspace","Tilbake til arbeidsområdet","العودة إلى مساحة العمل","Volver al espacio de trabajo","Retour à l’espace de travail","Zurück zum Arbeitsbereich"],
-]; 
+  ["waiting actions","ventende handlinger","إجراءات بانتظار المعالجة","acciones en espera","actions en attente","wartende Aktionen"],
+];
 const languages = ["nb","ar","es","fr","de"];
 const dictionaries = Object.fromEntries(languages.map((language) => [language, Object.fromEntries(rows.map((row) => [row[0], row[1 + languages.indexOf(language)]]))]));
 export function translateUiText(language, source) {
