@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { createClient } from "@supabase/supabase-js";
 import { expect, test } from "@playwright/test";
-import { createFixtureLedger, isLoopbackUrl, readLedgerFile, writeLedgerFile } from "./harness.mjs";
+import { createFixtureLedger, isLoopbackUrl, loopbackOriginAllowlist, readLedgerFile, writeLedgerFile } from "./harness.mjs";
 
 // Runs only after global-setup.mjs has reset a disposable local stack and
 // started the app against it. All fixture data lives in that stack and is
@@ -100,7 +100,7 @@ async function readRows(client, table, missionId, columns = "id") {
 }
 
 function guardNetwork(context, blocked) {
-  const allowed = new Set([new URL(runtime.baseURL).origin, new URL(runtime.supabaseUrl).origin]);
+  const allowed = loopbackOriginAllowlist(runtime.baseURL, runtime.supabaseUrl);
   return context.route("**/*", (route) => {
     const url = route.request().url();
     if (url.startsWith("data:") || url.startsWith("blob:") || allowed.has(new URL(url).origin)) return route.continue();
@@ -113,14 +113,16 @@ function formWith(page, field) {
   return page.locator("form").filter({ has: field });
 }
 
-/** Submits the form owning `field` and waits for the server's verdict. */
+/** Submits an enhanced client form and waits for its server response.
+ * These controls use fetch() plus router.refresh(); they do not trigger a
+ * document-level "load" event. Callers assert persisted state or the refreshed
+ * UI after the response instead of waiting for a navigation that never occurs.
+ */
 async function submit(page, field, { method, path, expectStatus }) {
   const response = page.waitForResponse((r) => r.request().method() === method && new URL(r.url()).pathname === path);
-  const reload = expectStatus < 300 ? page.waitForEvent("load") : null;
   await formWith(page, field).locator('button[type="submit"]').click();
   const settled = await response;
   expect(settled.status(), `${method} ${path}`).toBe(expectStatus);
-  if (reload) await reload;
   return settled;
 }
 
@@ -200,9 +202,23 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       expect((await readMission(owner.client, missionId)).status).toBe(to);
     };
     const moveAction = async (title, to, extra) => {
-      await statusOf(title).selectOption(to);
+      const status = statusOf(title);
+      const form = status.locator("xpath=ancestor::form");
+      const beforeVersion = Number(await form.getAttribute("data-action-version"));
+      expect(Number.isSafeInteger(beforeVersion), "Action control must expose its confirmed version.").toBe(true);
+
+      await status.selectOption(to);
       await extra?.();
-      await submit(page, statusOf(title), { method: "PATCH", path: actionPath(title), expectStatus: 200 });
+      await submit(page, status, { method: "PATCH", path: actionPath(title), expectStatus: 200 });
+
+      // Wait for the client to consume the authoritative RPC response and
+      // commit the new expectedVersion before issuing another transition.
+      await expect.poll(async () => Number(await form.getAttribute("data-action-version"))).toBe(beforeVersion + 1);
+      await expect(status).toHaveValue(to);
+      await expect(form.locator('button[type="submit"]')).toBeEnabled();
+
+      const persisted = (await readActions(owner.client, missionId)).find((action) => action.id === actionId[title]);
+      expect(persisted).toMatchObject({ status: to, version: beforeVersion + 1 });
     };
 
     await test.step("sign up through the app and bind the session to the disposable stack", async () => {
@@ -318,7 +334,7 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       expect(direct.error?.message).toBe("VERIFIED_OUTCOME_REQUIRED");
       await page.getByLabel("Mission state", { exact: true }).selectOption("COMPLETED");
       await submit(page, page.getByLabel("Mission state", { exact: true }), { method: "PATCH", path: missionPath(), expectStatus: 422 });
-      await expect(page.getByRole("alert")).toContainText("Commit a passing verified outcome");
+      await expect(page.getByText("Commit a passing verified outcome", { exact: false }).first()).toBeVisible();
       expect(await readMission(owner.client, missionId)).toEqual(before);
       await page.getByLabel("Verification criteria", { exact: true }).fill("Each step was observed in persisted state.");
       await page.getByLabel("Evidence summary", { exact: true }).fill("Authoritative reads after every reload.");
@@ -365,33 +381,91 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await expect(page.getByLabel("Outcome result", { exact: true })).toHaveCount(0);
     });
 
-    await test.step("committing the same verified outcome again is idempotent", async () => {
-      const before = { mission: await readMission(owner.client, missionId), events: (await readRows(owner.client, "mission_events", missionId, "event_type")).length };
+    await test.step("committing the same verified outcome again replays the exact original record", async () => {
+      const beforeMission = await readMission(owner.client, missionId);
+      const beforeOutcomes = await readRows(
+        owner.client,
+        "mission_outcomes",
+        missionId,
+        "id, mission_id, owner_id, verification_id, status, result, success_score, verified, created_at",
+      );
+      const beforeEvents = await readRows(owner.client, "mission_events", missionId, "id, event_type, payload, created_at");
+      expect(beforeOutcomes).toHaveLength(1);
+      const committed = beforeOutcomes[0];
+
+      // Deliberately submit a different but valid payload. Idempotency must
+      // return the already committed result, not overwrite it with retry data.
       const repeat = await page.request.post(`${missionPath()}/outcome`, {
-        data: { verificationId, result: { summary: "repeat" }, successScore: 1, status: "COMPLETED" },
+        data: { verificationId, result: { summary: "retry payload must not replace committed result" }, successScore: 0.25, status: "FAILED" },
       });
       expect(repeat.status()).toBe(200);
-      const outcomes = await readRows(owner.client, "mission_outcomes", missionId, "id");
-      expect(outcomes).toHaveLength(1);
-      expect((await repeat.json()).id).toBe(outcomes[0].id);
-      expect(await readMission(owner.client, missionId)).toEqual(before.mission);
-      expect((await readRows(owner.client, "mission_events", missionId, "event_type")).length).toBe(before.events);
+      expect(await repeat.json()).toEqual({
+        id: committed.id,
+        verificationId: committed.verification_id,
+        status: committed.status,
+        result: committed.result,
+        successScore: committed.success_score,
+        verified: committed.verified,
+        createdAt: committed.created_at,
+      });
+
+      const afterOutcomes = await readRows(
+        owner.client,
+        "mission_outcomes",
+        missionId,
+        "id, mission_id, owner_id, verification_id, status, result, success_score, verified, created_at",
+      );
+      expect(afterOutcomes).toEqual(beforeOutcomes);
+      expect(afterOutcomes).toHaveLength(1);
+      expect(await readMission(owner.client, missionId)).toEqual(beforeMission);
+      expect(await readRows(owner.client, "mission_events", missionId, "id, event_type, payload, created_at")).toEqual(beforeEvents);
     });
 
-    await test.step("another user can neither read nor change the mission", async () => {
+    await test.step("another user can neither read nor mutate the mission or its verified outcome", async () => {
       const before = { mission: await readMission(owner.client, missionId), actions: await readActions(owner.client, missionId) };
+      const { data: missionScope, error: scopeError } = await owner.client
+        .from("missions").select("workspace_id").eq("id", missionId).single();
+      if (scopeError) throw scopeError;
+      const { data: members, error: membersError } = await owner.client
+        .from("workspace_members").select("user_id, role").eq("workspace_id", missionScope.workspace_id);
+      if (membersError) throw membersError;
+      const intruder = await ownerSession(userB);
+      expect(members.some((member) => member.user_id === intruder.userId), "the second synthetic user must not be a workspace member").toBe(false);
+
+      // Exercise the SECURITY DEFINER RPC directly as the second authenticated
+      // user, independent of the Next.js cookie/session adapter.
+      const directOutcomeAttempt = await intruder.client.rpc("commit_verified_mission_outcome", {
+        p_mission_id: missionId,
+        p_verification_id: verificationId,
+        p_result: { summary: "unauthorized direct RPC attempt" },
+        p_success_score: 1,
+        p_status: "COMPLETED",
+      });
+      expect(directOutcomeAttempt.error, "the database must reject a non-member even when calling the RPC directly").toBeTruthy();
+
       await pageB.goto(missionUrl);
       await expect(pageB.getByText("Mission unavailable")).toBeVisible();
       await expect(pageB.getByText(tag)).toHaveCount(0);
+      const outcomeAttempt = await pageB.evaluate(async ({ path, body }) => {
+        const response = await fetch(path, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        return { status: response.status, body: await response.json().catch(() => null) };
+      }, {
+        path: `/api/missions/${missionId}/outcome`,
+        body: { verificationId, result: { summary: "unauthorized route attempt" }, successScore: 1, status: "COMPLETED" },
+      });
+      expect(outcomeAttempt.status, "the signed-in second browser context must be rejected by the outcome route").not.toBe(200);
+
       const attempts = [
         pageB.request.patch(`/api/missions/${missionId}`, { data: { status: "CANCELLED", expectedVersion: before.mission.version } }),
         pageB.request.post(`/api/missions/${missionId}/actions`, { data: { title: "intruder" } }),
         pageB.request.patch(`/api/missions/${missionId}/actions/${actionId[titles.first]}`, { data: { status: "RUNNING", expectedVersion: 1 } }),
         pageB.request.post(`/api/missions/${missionId}/verification`, { data: { status: "VERIFIED", criteria: { s: "x" }, evidence: { s: "x" }, confidence: 1 } }),
-        pageB.request.post(`/api/missions/${missionId}/outcome`, { data: { verificationId, result: { s: "x" }, successScore: 1, status: "COMPLETED" } }),
       ];
       for (const response of await Promise.all(attempts)) expect(response.ok(), response.url()).toBe(false);
-      const intruder = await ownerSession(userB);
       expect(await readMission(intruder.client, missionId)).toBeNull();
       expect(await readRows(intruder.client, "mission_events", missionId)).toHaveLength(0);
       expect(await readMission(owner.client, missionId)).toEqual(before.mission);
@@ -401,8 +475,19 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
     await test.step("history-bearing missions cannot be deleted, so the stack teardown is the cleanup", async () => {
       await page.goto(missionUrl);
       await page.getByRole("button", { name: /^Delete Mission/ }).click();
-      await page.locator(`form[action="/api/missions/${missionId}"] button[type="submit"]`).first().click();
-      await expect(page).toHaveURL(/\/app\?error=mission-provenance$/);
+      await expect(page.locator(`form[action="/api/missions/${missionId}"]`)).toBeVisible();
+
+      // Stop at the first HTTP response so protected-page redirects cannot
+      // hide the delete route's actual verdict from this regression check.
+      const response = await page.request.post(`/api/missions/${missionId}`, {
+        form: { _method: "DELETE" },
+        maxRedirects: 0,
+      });
+      expect(response.status()).toBe(303);
+      const location = response.headers().location;
+      expect(location).toBeTruthy();
+      const destination = new URL(location, runtime.baseURL);
+      expect(destination.pathname + destination.search).toBe("/app?error=mission-provenance");
       expect(await readMission(owner.client, missionId)).not.toBeNull();
     });
 

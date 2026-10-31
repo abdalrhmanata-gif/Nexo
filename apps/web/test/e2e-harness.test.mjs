@@ -19,6 +19,7 @@ import {
   createFixtureLedger,
   destroyStack,
   isLoopbackUrl,
+  loopbackOriginAllowlist,
   runPreflight,
   runWithGuaranteedCleanup,
   startFreshStack,
@@ -36,7 +37,7 @@ function anonJwt(role = "anon") {
   return `${encode({ alg: "HS256" })}.${encode({ role })}.signature`;
 }
 
-function makeWorkdir({ projectId = PROJECT_ID, marker = projectId, config = true, linked = false, migrations = ["20261001000000_development_schema.sql"] } = {}) {
+function makeWorkdir({ projectId = PROJECT_ID, marker = projectId, config = true, linked = false, migrations = ["20261001000000_development_schema.sql", "20261031210000_w22_idempotent_verified_outcome_replay.sql"] } = {}) {
   const dir = mkdtempSync(path.join(os.tmpdir(), "zavqera-e2e-unit-"));
   mkdirSync(path.join(dir, "supabase"), { recursive: true });
   if (config) writeFileSync(path.join(dir, "supabase", "config.toml"), `project_id = "${projectId}"\n\n[api]\nport = 54321\n`);
@@ -91,6 +92,26 @@ test("loopback allowlist accepts only plain local http origins", () => {
   ]) assert.equal(isLoopbackUrl(bad), false, bad);
 });
 
+test("browser allowlist accepts loopback aliases only on the two approved local ports", () => {
+  const allowed = loopbackOriginAllowlist("http://127.0.0.1:3210", "http://127.0.0.1:54321");
+  for (const origin of [
+    "http://127.0.0.1:3210",
+    "http://localhost:3210",
+    "http://[::1]:3210",
+    "http://127.0.0.1:54321",
+    "http://localhost:54321",
+    "http://[::1]:54321",
+  ]) assert.equal(allowed.has(origin), true, origin);
+
+  for (const origin of [
+    "http://localhost:3211",
+    "http://127.0.0.1:54322",
+    "https://localhost:3210",
+    "http://example.com:3210",
+    "http://localhost",
+  ]) assert.equal(allowed.has(origin), false, origin);
+});
+
 test("static preconditions refuse each missing or unsafe precondition", (t) => {
   const workdir = makeWorkdir();
   t.after(() => rmSync(workdir, { recursive: true, force: true }));
@@ -127,8 +148,10 @@ test("static preconditions refuse workdirs that are not explicitly disposable", 
     "marker mismatch": makeWorkdir({ marker: "zavqera-e2e-other" }),
     linked: makeWorkdir({ linked: true }),
     "no schema dump": makeWorkdir({ migrations: [] }),
+    "snapshot only": makeWorkdir({ migrations: ["20261001000000_development_schema.sql"] }),
     "repository migrations": makeWorkdir({ migrations: ["20260921175955_w4_core_tables_and_indexes.sql"] }),
-    "dump plus repository migrations": makeWorkdir({ migrations: ["20261001000000_development_schema.sql", "20261001081755_w20_cancelled_action_completion_semantics.sql"] }),
+    "dump plus unapproved migration": makeWorkdir({ migrations: ["20261001000000_development_schema.sql", "20261001081755_w20_cancelled_action_completion_semantics.sql"] }),
+    "dump plus extra migration": makeWorkdir({ migrations: ["20261001000000_development_schema.sql", "20261031210000_w22_idempotent_verified_outcome_replay.sql", "20261001081755_w20_cancelled_action_completion_semantics.sql"] }),
   };
   t.after(() => Object.values(dirs).forEach((dir) => rmSync(dir, { recursive: true, force: true })));
   for (const [name, dir] of Object.entries(dirs)) {

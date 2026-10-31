@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { MissionLifecycleStatus } from "../lib/view-models";
 import {
@@ -26,14 +26,24 @@ export function MissionMutationControls({
   version: number;
 }) {
   const router = useRouter();
+  const [missionStatus, setMissionStatus] = useState<MissionLifecycleStatus>(status);
+  const [missionVersion, setMissionVersion] = useState(version);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    // Keep the client version monotonic: a delayed refresh cannot roll it back
+    // behind a mutation response already accepted by the server.
+    if (version < missionVersion) return;
+    setMissionVersion(version);
+    setMissionStatus(status);
+  }, [version, status, missionVersion]);
 
   async function send(body: Record<string, unknown>) {
     setBusy(true);
     setMessage("");
     try {
-      const response = await fetch(`/api/missions/${missionId}`, {
+      const response = await fetch("/api/missions/" + missionId, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -48,6 +58,21 @@ export function MissionMutationControls({
         setMessage(payload.error ?? "Mission update was not accepted.");
         return;
       }
+
+      const payload = await response.json().catch(() => null) as { mission?: { version?: number; lifecycleStatus?: MissionLifecycleStatus } } | null;
+      const savedMission = payload?.mission;
+      if (!savedMission
+        || typeof savedMission.version !== "number"
+        || !Number.isSafeInteger(savedMission.version)
+        || savedMission.version <= missionVersion
+        || !savedMission.lifecycleStatus) {
+        setMessage("Mission saved, but its new version could not be confirmed. Refresh before changing it again.");
+        router.refresh();
+        return;
+      }
+
+      setMissionVersion(savedMission.version);
+      setMissionStatus(savedMission.lifecycleStatus);
       setMessage("Mission saved.");
       router.refresh();
     } catch {
@@ -75,17 +100,17 @@ export function MissionMutationControls({
     }
     await send({
       objective: composeMissionObjective({ name: nextName, intent: nextIntent, criteria: nextCriteria }),
-      expectedVersion: version,
+      expectedVersion: missionVersion,
     });
   }
 
   async function transition(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    await send({ status: String(form.get("status") ?? ""), expectedVersion: version });
+    await send({ status: String(form.get("status") ?? ""), expectedVersion: missionVersion });
   }
 
-  const nextStates = allowedNextMissionStatuses(status);
+  const nextStates = allowedNextMissionStatuses(missionStatus);
 
   return <div className="form-grid">
     <form onSubmit={saveDetails}>
@@ -99,15 +124,15 @@ export function MissionMutationControls({
       <button className="button button-small" type="submit" disabled={busy}>Save mission</button>
     </form>
 
-    {isTerminalMissionStatus(status)
-      ? <p className="action-final">{missionStatusLabel(status)} — this mission is closed.</p>
-      : <form key={status} onSubmit={transition}>
+    {isTerminalMissionStatus(missionStatus)
+      ? <p className="action-final">{missionStatusLabel(missionStatus)} — this mission is closed.</p>
+      : <form key={missionStatus} onSubmit={transition}>
         <div className="field">
           <label htmlFor="status">Mission state</label>
           <select id="status" name="status" defaultValue={nextStates[0]} disabled={busy}>
             {nextStates.map((item) => <option key={item} value={item}>{missionStatusLabel(item)}</option>)}
           </select>
-          <small>Currently {missionStatusLabel(status).toLowerCase()}. Only states this mission can legally move to are listed.</small>
+          <small>Currently {missionStatusLabel(missionStatus).toLowerCase()}. Only states this mission can legally move to are listed.</small>
         </div>
         <button className="button button-small" type="submit" disabled={busy}>Move mission</button>
       </form>}

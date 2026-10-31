@@ -21,7 +21,7 @@ from apps/web). A `.cmd` shim alone does not satisfy the shell-free runner.
 1. Create a directory **outside this repository**, for example `C:\zavqera-e2e`, and run `supabase init --workdir C:\zavqera-e2e`. Never run `supabase link` in it.
 2. In `C:\zavqera-e2e\supabase\config.toml`, set `project_id = "zavqera-e2e-local"` (it must match `zavqera-e2e-<lowercase suffix>`) and keep `[auth.email] enable_confirmations = false`, so sign-up returns a session. If you change `[api] port`, nothing else needs to change.
 3. Create `C:\zavqera-e2e\ZAVQERA_E2E_DISPOSABLE` containing only `zavqera-e2e-local`. This file is the explicit consent that every container and volume labelled with that project id may be destroyed.
-4. Give the stack the current Development schema. Do **not** copy or replay the repository migrations: Development's migration history differs from this repository and its W5 history tables were never committed here, so a replay would build a different database. The harness refuses unless `supabase\migrations` contains exactly one file named `<14-digit timestamp>_development_schema.sql`. The schema must come from Development. The project owner runs this read-only dump (it reads the schema only; never commit the file or paste the connection string anywhere):
+4. Give the stack the current Development schema. Do **not** replay the repository migration history: Development's migration history differs from this repository and its W5 history tables were never committed here, so replaying all migrations would build a different database. The harness accepts exactly two files in `supabase\migrations`: one `<14-digit timestamp>_development_schema.sql` dump and the single explicitly allowlisted forward fix `20261031210000_w22_idempotent_verified_outcome_replay.sql`. Every other migration is refused. The schema must come from Development. The project owner runs this read-only dump (it reads the schema only; never commit the file or paste the connection string anywhere):
 
    ```powershell
    supabase db dump --db-url "<Development connection string>" --schema public,private -f C:\zavqera-e2e\supabase\migrations\20000101000000_development_schema.sql
@@ -33,6 +33,18 @@ from apps/web). A `.cmd` shim alone does not satisfy the shell-free runner.
    Re-dump after W21 migration `20261001091146`; the snapshot must include
    `VERIFIED_OUTCOME_REQUIRED`, policy `missions_initial_state`, and trigger
    `mission_actions_completion_insert_guard`.
+
+   Copy the W22 migration from the repository into the same temporary workdir:
+ 
+   ```powershell
+   Copy-Item .\supabase\migrations\20261031210000_w22_idempotent_verified_outcome_replay.sql C:\zavqera-e2e\supabase\migrations\
+   ```
+
+   W22 changes only the private outcome-commit function: a retry for an already
+   committed verification returns the existing outcome before the first-commit
+   lifecycle guard. It does not alter tables, rows, grants or RLS. The W21 GitHub
+   workflow applies this migration only to its disposable local PostgreSQL 17
+   stack; it never connects to hosted Development or Main.
 
    The managed `auth` schema is intentionally excluded from this dump. Append
    the current Development application hook below to the same snapshot file
