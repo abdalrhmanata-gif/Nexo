@@ -157,7 +157,7 @@ begin
   execute 'reset role';
 end;
 $test$;
-select pass('service_role reserve/release/consume round-trip works with RLS enabled and no table policies');
+select ok(true, 'service_role reserve/release/consume round-trip works with RLS enabled and no table policies');
 
 select * from finish();
 rollback;
