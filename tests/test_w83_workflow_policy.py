@@ -107,10 +107,10 @@ class W83WorkflowPolicyTests(unittest.TestCase):
         self.assertIn("service_role", migration)
 
     def test_w85_pgtap_plan_matches_assertions_and_checks_rpc_continuity(self):
-        plan = re.search(r"(?im)^\\s*select\\s+plan\\((\\d+)\\)\\s*;", self.w85_test)
+        plan = re.search(r"(?im)^\s*select\s+plan\((\d+)\)\s*;", self.w85_test)
         self.assertIsNotNone(plan)
         assertion_count = len(
-            re.findall(r"(?im)^\\s*select\\s+(?:ok|is)\\s*\\(", self.w85_test)
+            re.findall(r"(?im)^\s*select\s+(?:ok|is)\s*\(", self.w85_test)
         )
         self.assertEqual(int(plan.group(1)), assertion_count)
         self.assertEqual(int(plan.group(1)), 9)
