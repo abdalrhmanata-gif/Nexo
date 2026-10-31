@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import test from "node:test";
 import { normalizeAppLanguage, resolveAppLanguagePreference } from "../lib/app-language.mjs";
 import { translateUiText, UI_TRANSLATIONS, UI_TRANSLATION_KEYS } from "../lib/ui-translations.mjs";
-import { formatUiAbsoluteDate, formatUiRelativeDate } from "../lib/localized-date.mjs";
+import { formatUiAbsoluteDate, formatUiDateTime, formatUiRelativeDate } from "../lib/localized-date.mjs";
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (path) => readFileSync(join(webRoot, path), "utf8");
@@ -460,6 +460,20 @@ test("public landing, authentication, and mission detail use the six-language lo
     "The mission is ready for evidence review.",
     "Mission history event",
     "1 action is still open:",
+    "Mission status transition",
+    "Mission objective updated",
+    "Action status transition",
+    "Verification recorded",
+    "Outcome committed",
+    "Failed",
+    "Checkpoint verified",
+    "Draft synthesis",
+    "Needs user input",
+    "Evidence collected",
+    "Research set is within the approved scope.",
+    "Three themes were grouped for review.",
+    "A missing data-retention answer needs a decision.",
+    "Public documentation has been attached to the review.",
     "actions are still open:",
     "Mission event",
     "This action is already in progress.",
@@ -551,4 +565,32 @@ test("mission detail and guidance use locale-aware follow-up date formatting", (
   assert.match(nextStep, /formatUiRelativeDate/);
   assert.match(guidance, /formatUiRelativeDate/);
   assert.match(guidance, /formatUiAbsoluteDate/);
+});
+
+
+test("mission activity timestamps follow the selected language", () => {
+  const cases = [
+    ["8 min ago", "nb", "nb-NO", -8, "minute"],
+    ["1 hr ago", "ar", "ar", -1, "hour"],
+  ];
+  for (const [value, language, locale, amount, unit] of cases) {
+    const expected = new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(amount, unit);
+    assert.equal(formatUiDateTime(value, language), expected);
+  }
+  const value = "Oct 31, 2026, 6:35:00 PM";
+  const date = new Date(value);
+  const expected = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" }).format(date);
+  assert.equal(formatUiDateTime(value, "fr"), expected);
+  assert.equal(formatUiDateTime("unknown date", "nb"), "unknown date");
+});
+
+test("mission activity labels and status transitions use the selected locale", () => {
+  const page = read("app/app/missions/[id]/page.tsx");
+  const activity = read("components/localized-mission-activity.tsx");
+  assert.match(page, /<LocalizedMissionActivity/);
+  assert.match(page, /<LocalizedMissionDateTime value=\{mission\.updated\}/);
+  assert.match(activity, /MISSION_STATUSES/);
+  assert.match(activity, /ACTION_STATUSES/);
+  assert.match(activity, /formatUiDateTime/);
+  assert.match(activity, /localisedDetail|localizedDetail/);
 });
