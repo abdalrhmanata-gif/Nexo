@@ -4,6 +4,7 @@ import { LanguageSwitcher } from "./language-switcher";
 import { LocalizedText } from "./localized-text";
 import { NavLink, WorkspaceNavLink } from "./nav-link";
 import { NotificationBell } from "./notification-bell";
+import { missionStatusLabel } from "../lib/mission-content.mjs";
 
 function NavIcon({ name }: { name: "search" | "plus" | "business" | "templates" | "pricing" | "workspace" | "opportunities" }) {
   const common = { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true as const };
@@ -47,6 +48,10 @@ export function Shell({ children }: { children: React.ReactNode }) {
 }
 
 export function StatusPill({ status }: { status: string }) {
-  const label = status === "WAITING" ? <LocalizedText en="Needs input" nb="Trenger avklaring" ar="يتطلب تدخلك" /> : status === "ACTIVE" ? <LocalizedText en="Active" nb="Aktiv" ar="نشطة" /> : status === "COMPLETED" ? <LocalizedText en="Completed" nb="Fullført" ar="مكتملة" /> : status;
+  const label = status === "ACTIVE"
+    ? <LocalizedText en="Active" nb="Aktiv" ar="نشطة" />
+    : status === "WAITING" || status === "NEEDS_USER"
+      ? <LocalizedText en="Needs your input" nb="Trenger avklaring" ar="يتطلب تدخلك" />
+      : <LocalizedText en={missionStatusLabel(status)} />;
   return <span className={`status status-${status.toLowerCase()}`}>{label}</span>;
 }
