@@ -89,6 +89,7 @@ class W83WorkflowPolicyTests(unittest.TestCase):
         w83_step = self.w83[w83_start:w85_start]
         w85_step = self.w83[w85_start:cleanup_start]
         self.assertIn('Tests=[0-9]+', w83_step)
+        self.assertIn('if [ -z "${planned}" ]; then planned="${summary_tests}"; fi', w83_step)
         self.assertIn('"${log}"', w83_step)
         self.assertNotIn('"${tap_log}"', w83_step)
         self.assertNotIn('"${logVar}"', w83_step)
