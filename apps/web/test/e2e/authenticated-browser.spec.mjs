@@ -202,9 +202,23 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       expect((await readMission(owner.client, missionId)).status).toBe(to);
     };
     const moveAction = async (title, to, extra) => {
-      await statusOf(title).selectOption(to);
+      const status = statusOf(title);
+      const form = status.locator("xpath=ancestor::form");
+      const beforeVersion = Number(await form.getAttribute("data-action-version"));
+      expect(Number.isSafeInteger(beforeVersion), "Action control must expose its confirmed version.").toBe(true);
+
+      await status.selectOption(to);
       await extra?.();
-      await submit(page, statusOf(title), { method: "PATCH", path: actionPath(title), expectStatus: 200 });
+      await submit(page, status, { method: "PATCH", path: actionPath(title), expectStatus: 200 });
+
+      // Wait for the client to consume the authoritative RPC response and
+      // commit the new expectedVersion before issuing another transition.
+      await expect.poll(async () => Number(await form.getAttribute("data-action-version"))).toBe(beforeVersion + 1);
+      await expect(status).toHaveValue(to);
+      await expect(form.locator('button[type="submit"]')).toBeEnabled();
+
+      const persisted = (await readActions(owner.client, missionId)).find((action) => action.id === actionId[title]);
+      expect(persisted).toMatchObject({ status: to, version: beforeVersion + 1 });
     };
 
     await test.step("sign up through the app and bind the session to the disposable stack", async () => {
