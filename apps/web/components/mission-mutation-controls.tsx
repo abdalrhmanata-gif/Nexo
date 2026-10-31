@@ -62,8 +62,9 @@ export function MissionMutationControls({
       const payload = await response.json().catch(() => null) as { mission?: { version?: number; lifecycleStatus?: MissionLifecycleStatus } } | null;
       const savedMission = payload?.mission;
       if (!savedMission
+        || typeof savedMission.version !== "number"
         || !Number.isSafeInteger(savedMission.version)
-        || (savedMission.version ?? 0) <= missionVersion
+        || savedMission.version <= missionVersion
         || !savedMission.lifecycleStatus) {
         setMessage("Mission saved, but its new version could not be confirmed. Refresh before changing it again.");
         router.refresh();
