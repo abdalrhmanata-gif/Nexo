@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-export type AppLanguage = "en" | "nb" | "ar" | "es" | "fr" | "de";
+import { APP_LANGUAGES, normalizeAppLanguage, resolveAppLanguagePreference, type AppLanguage } from "../lib/app-language.mjs";
 
 const STORAGE_KEY = "zavqera-language";
 const COOKIE_KEY = "zavqera-language";
-const SUPPORTED_LANGUAGES: AppLanguage[] = ["en", "nb", "ar", "es", "fr", "de"];
 const LABELS: Record<AppLanguage, { language: string; english: string; norwegian: string; arabic: string; spanish: string; french: string; german: string }> = {
   en: { language: "Language", english: "English", norwegian: "Norsk", arabic: "العربية", spanish: "Español", french: "Français", german: "Deutsch" },
   nb: { language: "Språk", english: "English", norwegian: "Norsk", arabic: "العربية", spanish: "Español", french: "Français", german: "Deutsch" },
@@ -16,29 +14,20 @@ const LABELS: Record<AppLanguage, { language: string; english: string; norwegian
   de: { language: "Sprache", english: "English", norwegian: "Norsk", arabic: "العربية", spanish: "Español", french: "Français", german: "Deutsch" },
 };
 
-function validLanguage(value: string | undefined): value is AppLanguage {
-  return Boolean(value && SUPPORTED_LANGUAGES.includes(value as AppLanguage));
-}
-
-function detectLanguage(): AppLanguage {
-  if (typeof navigator === "undefined") return "en";
-  for (const candidate of navigator.languages ?? [navigator.language]) {
-    const code = candidate.toLowerCase().split("-")[0];
-    if (validLanguage(code)) return code;
-  }
-  return "en";
-}
-
 function readPreference(): AppLanguage {
+  let saved: string | null = null;
   try {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (validLanguage(saved ?? undefined)) return saved as AppLanguage;
+    saved = window.localStorage.getItem(STORAGE_KEY);
   } catch {
     // Continue with the cookie or browser language when storage is unavailable.
   }
-  const cookie = document.cookie.split("; ").find((part) => part.startsWith(COOKIE_KEY + "="))?.split("=")[1];
-  if (validLanguage(cookie)) return cookie;
-  return detectLanguage();
+  const cookie = document.cookie
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(COOKIE_KEY + "="))
+    ?.slice(COOKIE_KEY.length + 1);
+  const browserLanguages = navigator.languages?.length ? navigator.languages : [navigator.language];
+  return resolveAppLanguagePreference(saved, cookie, browserLanguages);
 }
 
 function applyLanguage(language: AppLanguage) {
@@ -56,16 +45,17 @@ export function LanguageSwitcher() {
   }, []);
 
   function changeLanguage(value: string) {
-    if (!validLanguage(value)) return;
-    setLanguage(value);
-    applyLanguage(value);
+    const normalized = normalizeAppLanguage(value);
+    if (!normalized) return;
+    setLanguage(normalized);
+    applyLanguage(normalized);
     try {
-      window.localStorage.setItem(STORAGE_KEY, value);
+      window.localStorage.setItem(STORAGE_KEY, normalized);
     } catch {
       // Cookie still preserves the selection.
     }
-    document.cookie = `${COOKIE_KEY}=${value}; Path=/; Max-Age=31536000; SameSite=Lax; Secure`;
-    window.dispatchEvent(new CustomEvent("zavqera-language-change", { detail: value }));
+    document.cookie = `${COOKIE_KEY}=${normalized}; Path=/; Max-Age=31536000; SameSite=Lax; Secure`;
+    window.dispatchEvent(new CustomEvent("zavqera-language-change", { detail: normalized }));
   }
 
   const labels = LABELS[language];
@@ -73,12 +63,11 @@ export function LanguageSwitcher() {
     <label className="language-switcher">
       <span className="visually-hidden">{labels.language}</span>
       <select aria-label={labels.language} value={language} onChange={(event) => changeLanguage(event.target.value)}>
-        <option value="en">{labels.english}</option>
-        <option value="nb">{labels.norwegian}</option>
-        <option value="ar">{labels.arabic}</option>
-        <option value="es">{labels.spanish}</option>
-        <option value="fr">{labels.french}</option>
-        <option value="de">{labels.german}</option>
+        {APP_LANGUAGES.map((value) => (
+          <option key={value} value={value}>
+            {labels[({ en: "english", nb: "norwegian", ar: "arabic", es: "spanish", fr: "french", de: "german" } as const)[value]]}
+          </option>
+        ))}
       </select>
     </label>
   );
