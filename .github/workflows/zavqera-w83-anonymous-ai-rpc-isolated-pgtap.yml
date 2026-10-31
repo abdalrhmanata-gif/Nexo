@@ -434,7 +434,7 @@ jobs:
           if [ -z "${failed_subtests}" ]; then
             failed_subtests="$(grep -oE 'Looks like you failed [0-9]+' "${tap_log}" | tail -n 1 | grep -oE '[0-9]+$')"
           fi
-                    if [ "${tap_assertions}" -gt 0 ]; then
+          if [ "${tap_assertions}" -gt 0 ]; then
             reported="${tap_assertions}"
             failed="$(grep -Ec '^not ok [0-9]+' "${tap_log}" || true)"
           elif [ -n "${summary_tests}" ] && [ "${tap_status}" -eq 0 ] && grep -Eq '^(Result: PASS|All tests successful[.]$)' "${tap_log}"; then
