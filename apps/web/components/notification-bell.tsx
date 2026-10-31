@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LocalizedText } from "./localized-text";
+import { LocalizedText, useUiTranslation } from "./localized-text";
 
 export function NotificationBell() {
   const pathname = usePathname();
+  const t = useUiTranslation();
   const isWorkspaceRoute = pathname === "/app" || pathname.startsWith("/app/");
   const [count, setCount] = useState<number | null>(null);
 
@@ -45,7 +46,7 @@ export function NotificationBell() {
 
   if (!isWorkspaceRoute) return null;
 
-  return <Link href="/app/notifications" className="notification-bell" aria-label={count === null ? "Notifications" : "Notifications, " + count + " items need attention"} title="Notifications">
+  return <Link href="/app/notifications" className="notification-bell" aria-label={count === null ? t("Notifications") : `${t("Notifications")}, ${count} ${t("items need attention")}`} title={t("Notifications")}>
     <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
       <path d="M10 21h4" />

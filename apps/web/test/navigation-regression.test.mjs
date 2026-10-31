@@ -3,6 +3,9 @@ import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import test from "node:test";
+import { normalizeAppLanguage, resolveAppLanguagePreference } from "../lib/app-language.mjs";
+import { translateUiText, UI_TRANSLATIONS, UI_TRANSLATION_KEYS } from "../lib/ui-translations.mjs";
+import { formatUiAbsoluteDate, formatUiDateTime, formatUiRelativeDate } from "../lib/localized-date.mjs";
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (path) => readFileSync(join(webRoot, path), "utf8");
@@ -54,11 +57,13 @@ test("workspace search filters the visible missions and preserves status filters
   assert.match(page, /encodeURIComponent\(query\)/);
 });
 
-test("language control supports English, Norwegian, Arabic, and right-to-left direction", () => {
+test("language control uses the shared six-language list and Arabic right-to-left direction", () => {
   const language = read("components/language-switcher.tsx");
-  assert.match(language, /"en", "nb", "ar"/);
+  const preference = read("lib/app-language.mjs");
+  assert.match(language, /APP_LANGUAGES/);
   assert.match(language, /document\.documentElement\.dir = language === "ar" \? "rtl" : "ltr"/);
   assert.match(language, /localStorage\.setItem/);
+  assert.match(preference, /\["en", "nb", "ar", "es", "fr", "de"\]/);
 });
 
 test("notification badge is scoped to workspace routes and pauses in hidden tabs", () => {
@@ -158,4 +163,436 @@ test("templates prefill the normal review-before-create mission flow", () => {
     assert.match(missionForm, new RegExp(`params\\.${field}`));
   }
   assert.match(templates, /Nothing is created until you review/);
+});
+
+test("primary product surfaces have translations in every supported language", () => {
+  const required = [
+    "What needs your attention",
+    "Launch a small project",
+    "Make an evidence-based decision",
+    "Find the opportunity. Prove it. Turn it into action.",
+    "Find the next move worth making.",
+    "Opportunity radar",
+    "Keep your opportunity data portable",
+    "Evidence ledger",
+    "Generate AI brief",
+    "Proposed launch pricing, not active offers. Paid billing and usage enforcement are not enabled; AI Opportunity Brief access is restricted to an approved preview tester.",
+  ];
+  for (const language of ["nb", "ar", "es", "fr", "de"]) {
+    for (const label of required) {
+      assert.notEqual(translateUiText(language, label), label, `missing ${language} translation for: ${label}`);
+      assert.ok(translateUiText(language, label).trim().length > 0);
+    }
+  }
+  assert.ok(Object.keys(UI_TRANSLATIONS.ar).length >= required.length);
+});
+
+test("template cards no longer force English text as Norwegian or Arabic translations", () => {
+  const templates = read("app/templates/page.tsx");
+  assert.doesNotMatch(templates, /nb=\{template\.(?:title|description)\}|ar=\{template\.(?:title|description)\}/);
+  assert.doesNotMatch(templates, /nb=\{criterion\}|ar=\{criterion\}/);
+  for (const label of ["Launch a small project", "Make an evidence-based decision", "Improve a weekly workflow"]) {
+    assert.ok(templates.includes(label));
+    for (const language of ["nb", "ar", "es", "fr", "de"]) assert.notEqual(translateUiText(language, label), label);
+  }
+});
+
+test("Workspace and Opportunity Intelligence UI use the shared language layer", () => {
+  const workspace = read("app/app/page.tsx");
+  const opportunity = read("components/opportunity-intelligence.tsx");
+  const evidence = read("components/opportunity-evidence-panel.tsx");
+  const analyst = read("components/opportunity-analysis-panel.tsx");
+  assert.ok(workspace.includes("<LocalizedText"));
+  assert.ok(opportunity.includes("useUiTranslation"));
+  assert.ok(evidence.includes("useUiTranslation"));
+  assert.ok(analyst.includes("useUiTranslation"));
+  for (const file of [opportunity, evidence, analyst]) assert.ok(file.includes('from "./localized-text"'));
+});
+
+test("Arabic uses right-to-left direction while all six languages remain selectable", () => {
+  const language = read("components/language-switcher.tsx");
+  const languageModule = read("lib/app-language.mjs");
+  assert.match(language, /APP_LANGUAGES/);
+  assert.match(languageModule, /\["en", "nb", "ar", "es", "fr", "de"\]/);
+  assert.match(language, /document\.documentElement\.dir = language === "ar" \? "rtl" : "ltr"/);
+});
+
+test("all literal Opportunity Intelligence translations exist in every non-English locale", () => {
+  const components = [
+    read("components/opportunity-intelligence.tsx"),
+    read("components/opportunity-evidence-panel.tsx"),
+    read("components/opportunity-analysis-panel.tsx"),
+  ];
+  const keys = new Set(components.flatMap((source) =>
+    [...source.matchAll(/\bt\("([^"]+)"\)/g)].map((match) => match[1]).filter((key) => !/^https?:\/\//i.test(key))
+  ));
+  const naturallySharedWords = {
+    nb: new Set(["For:"]),
+    fr: new Set(["Effort"]),
+    de: new Set(["optional"]),
+  };
+  for (const language of ["nb", "ar", "es", "fr", "de"]) {
+    for (const key of keys) {
+      assert.notEqual(translateUiText(language, key), undefined, `missing ${language} key: ${key}`);
+      if (!naturallySharedWords[language]?.has(key)) {
+        assert.notEqual(translateUiText(language, key), key, `missing ${language} translation: ${key}`);
+      }
+    }
+  }
+});
+
+test("Opportunity Intelligence hook and all long-form informational copy use the translator", () => {
+  const opportunity = read("components/opportunity-intelligence.tsx");
+  assert.match(opportunity, /export function OpportunityIntelligence\(\) \{\s+const t = useUiTranslation\(\);/);
+  assert.doesNotMatch(opportunity, /<p className="opportunity-storage-note">Privacy and portability:/);
+  assert.doesNotMatch(opportunity, /<p><strong>\{t\("Priority ="\)\}<\/strong> 25% strategic fit/);
+});
+
+test("template prefill content follows the selected locale", () => {
+  const templates = read("app/templates/page.tsx");
+  assert.match(templates, /function templateHref\(template: typeof templates\[number\], t: \(source: string\) => string\)/);
+  assert.match(templates, /intent: t\(template\.intent\)/);
+  assert.match(templates, /criteria: template\.criteria\.map\(t\)/);
+  assert.match(templates, /actions: template\.actions\.map\(t\)/);
+  for (const locale of ["nb", "ar", "es", "fr", "de"]) {
+    for (const phrase of [
+      "Prepare and validate a small project launch while keeping cost, timing, and risk visible.",
+      "Compare realistic options using trustworthy evidence and make a decision with assumptions and uncertainties clearly stated.",
+      "Improve one recurring workflow without disrupting critical operations, and confirm whether the change helped.",
+      "Describe the target user and problem",
+      "Collect evidence for demand",
+      "Draft milestones, costs, and risks",
+      "Define the decision and constraints",
+      "Collect primary or authoritative sources",
+      "Compare options and record open questions",
+      "Map the current steps and bottlenecks",
+      "Choose a small reversible change",
+      "Review results and decide whether to keep it"
+    ]) assert.notEqual(translateUiText(locale, phrase), phrase);
+  }
+});
+
+test("privacy note uses the actual translation key, not a nested translation expression", () => {
+  const opportunity = read("components/opportunity-intelligence.tsx");
+  assert.match(opportunity, /opportunity-storage-note">\{t\("Privacy and portability:/);
+  assert.doesNotMatch(opportunity, /t\("\{t\(/);
+  const phrase = "Privacy and portability: opportunities and evidence notes are stored only in this browser. Export a backup to move them to another device; the file may contain sensitive business information, so store it securely. Import merges records and skips matching IDs without overwriting existing data. Cloud sync, live discovery, automatic source verification, recurring monitoring, and outcome-based learning are not connected yet.";
+  for (const locale of ["nb", "ar", "es", "fr", "de"]) assert.notEqual(translateUiText(locale, phrase), phrase);
+});
+
+test("mission cards localize deterministic guidance and lifecycle pills", () => {
+  const card = read("components/mission-card.tsx");
+  const shell = read("components/shell.tsx");
+  assert.ok(card.includes("LocalizedMissionNextStep"));
+  const nextStep = read("components/localized-mission-next-step.tsx");
+  assert.match(nextStep, /t\(label\)/);
+  assert.match(nextStep, /t\(detail\)/);
+  assert.match(shell, /LocalizedText en=\{missionStatusLabel\(status\)\}/);
+  for (const locale of ["nb", "ar", "es", "fr", "de"]) {
+    for (const label of ["Follow-up due", "Start next action", "Waiting on you", "Ready to check", "Outcome recorded", "This mission has a verified outcome."]) {
+      assert.notEqual(translateUiText(locale, label), label);
+    }
+  }
+});
+
+test("sign-out and notification accessible labels use the selected locale", () => {
+  const auth = read("components/auth-form.tsx");
+  const bell = read("components/notification-bell.tsx");
+  assert.match(auth, /useUiTranslation/);
+  assert.match(auth, /t\("Sign out"\)/);
+  assert.match(bell, /useUiTranslation/);
+  assert.match(bell, /title=\{t\("Notifications"\)\}/);
+  for (const locale of ["nb", "ar", "es", "fr", "de"]) {
+    for (const label of ["Sign out", "Signing out…", "items need attention"]) assert.notEqual(translateUiText(locale, label), label);
+  }
+});
+
+test("new mission form labels, helper text and placeholders use the shared locale layer", () => {
+  const page = read("app/app/missions/new/page.tsx");
+  const fields = read("components/localized-form-fields.tsx");
+  assert.ok(page.includes("<LocalizedInput"));
+  assert.ok(page.includes("<LocalizedTextarea"));
+  assert.ok(page.includes("<LocalizedText"));
+  assert.ok(fields.includes("placeholder={t(placeholder)}"));
+  for (const locale of ["nb", "ar", "es", "fr", "de"]) {
+    for (const label of ["Mission name", "Intent", "Success criteria", "First steps", "Create mission", "What should this mission help you accomplish?"]) {
+      assert.notEqual(translateUiText(locale, label), label);
+    }
+  }
+});
+
+
+
+
+test("shared dictionary keeps Norwegian and Arabic translations in the correct language columns", () => {
+  const source = read("lib/ui-translations.mjs");
+  const rows = source.split("\n")
+    .filter((line) => line.trim().startsWith('["'))
+    .map((line) => [...line.matchAll(/"(?:\\.|[^"\\])*"/g)].map((match) => JSON.parse(match[0])))
+    .filter((row) => row.length === 6);
+  assert.ok(rows.length > 0, "translation rows should be discoverable");
+  assert.doesNotMatch(source, /^\s*,\s*$/m, "translation row array must not contain empty slots");
+  assert.doesNotMatch(source, /\](?!,)\s*\n\s*\[/, "translation rows must be separated by commas");
+  assert.equal(rows.length, UI_TRANSLATION_KEYS.length, "every translation key must have a complete six-column row");
+  const arabicScript = /[\u0600-\u06FF]/u;
+  const translationsByKey = new Map();
+
+  for (const [key, norwegian, arabic] of rows) {
+    assert.doesNotMatch(norwegian, arabicScript, "Norwegian translation contains Arabic script: " + key);
+    if (!key.startsWith("https://")) {
+      assert.match(arabic, arabicScript, "Arabic translation is missing Arabic script: " + key);
+    }
+    const current = [norwegian, arabic];
+    const previous = translationsByKey.get(key);
+    if (previous) assert.deepEqual(current, previous, "duplicate translation rows disagree for: " + key);
+    else translationsByKey.set(key, current);
+  }
+
+  assert.equal(translateUiText("nb", "Find the opportunity. Prove it. Turn it into action."), "Finn muligheten. Bevis den. Gjør den om til handling.");
+  assert.equal(translateUiText("ar", "Find the opportunity. Prove it. Turn it into action."), "اكتشف الفرصة. أثبت جدواها. حوّلها إلى عمل.");
+});
+
+
+test("Norwegian browser locale aliases normalize to the supported Bokmål locale", () => {
+  assert.equal(normalizeAppLanguage("no"), "nb");
+  assert.equal(normalizeAppLanguage("no-NO"), "nb");
+  assert.equal(normalizeAppLanguage("no_NO"), "nb");
+  assert.equal(normalizeAppLanguage("nb-NO"), "nb");
+  assert.equal(normalizeAppLanguage("ar-SA"), "ar");
+  assert.equal(normalizeAppLanguage("fr-FR"), "fr");
+  assert.equal(normalizeAppLanguage("not-a-locale"), null);
+  assert.equal(normalizeAppLanguage(null), null);
+});
+
+test("invalid stored language does not hide a valid cookie or browser preference", () => {
+  assert.equal(resolveAppLanguagePreference("unsupported", "ar", ["no-NO"]), "ar");
+  assert.equal(resolveAppLanguagePreference("unsupported", "also-unsupported", ["no-NO", "en-US"]), "nb");
+  assert.equal(resolveAppLanguagePreference("fr-FR", "ar", ["no-NO"]), "fr");
+  assert.equal(resolveAppLanguagePreference(null, null, ["xx-XX", "de-DE"]), "de");
+  assert.equal(resolveAppLanguagePreference(null, null, []), "en");
+});
+
+test("language selector and localized text share one preference resolver", () => {
+  const selector = read("components/language-switcher.tsx");
+  const localized = read("components/localized-text.tsx");
+  assert.match(selector, /resolveAppLanguagePreference/);
+  assert.match(localized, /resolveAppLanguagePreference/);
+  assert.match(localized, /normalizeAppLanguage/);
+});
+
+
+test("public landing, authentication, and mission detail use the six-language localization layer", () => {
+  const sources = [
+    read("app/page.tsx"),
+    read("app/app/business/page.tsx"),
+    read("app/app/notifications/page.tsx"),
+    read("app/auth/sign-in/page.tsx"),
+    read("app/auth/sign-up/page.tsx"),
+    read("components/auth-form.tsx"),
+    read("app/app/missions/[id]/page.tsx"),
+    read("components/verification-controls.tsx"),
+    read("components/mission-mutation-controls.tsx"),
+    read("components/action-mutation-controls.tsx"),
+    read("components/add-action-form.tsx"),
+    read("components/delete-mission-form.tsx"),
+    read("components/localized-mission-value.tsx"),
+  ];
+
+  const keys = new Set(sources.flatMap((source) => [
+    ...[...source.matchAll(/<LocalizedText\\s+en="([^"]+)"/g)].map((match) => match[1]),
+    ...[...source.matchAll(/\\bt\\("([^"]+)"\\)/g)].map((match) => match[1]),
+    ...[...source.matchAll(/\\bt\\("([^"]+)"\\)/g)].map((match) => match[1]),
+  ]));
+
+  for (const phrase of [
+    "Make intent explicit",
+    "Define the outcome, success criteria, and boundaries before work begins.",
+    "Know what happens next",
+    "Track each Mission, its actions, blockers, and progress in one place.",
+    "Decide with evidence",
+    "Compare opportunities, record what you know, and expose what is still uncertain.",
+    "Welcome back",
+    "Sign in.",
+    "Get started",
+    "Create your account.",
+    "Email",
+    "Password",
+    "Enter a valid email address.",
+    "Mission detail",
+    "Deterministic guidance",
+    "What should I do next?",
+    "Plan health",
+    "Success criteria",
+    "Recent checkpoints",
+    "At a glance",
+    "Draft",
+    "Planning",
+    "Ready to start",
+    "In progress",
+    "Waiting",
+    "Needs your input",
+    "Checking the evidence",
+    "Complete",
+    "Paused",
+    "Blocked",
+    "Did not succeed",
+    "Cancelled",
+    "Not started",
+    "This work has not begun yet.",
+    "This work is underway now.",
+    "This work is finished.",
+    "Paused until something outside this action unblocks it. This is not complete.",
+    "This work will not be done.",
+    "no further changes",
+    "waiting actions",
+    "Follow up:",
+    "Continue:",
+    "Start:",
+    "Resolve waiting:",
+    "This mission cannot move to checking the evidence from its current state.",
+    "Move this mission to checking the evidence before recording verification.",
+    "This mission has a verified outcome.",
+    "This mission is marked complete but still has required work or lacks a completed outcome.",
+    "No actions have been added to this mission.",
+    "All remaining actions are waiting.",
+    "The mission is checking evidence but no passing verification is recorded.",
+    "Verification exists but no outcome is recorded.",
+    "The mission is ready for evidence review.",
+    "Mission history event",
+    "1 action is still open:",
+    "Mission status transition",
+    "Mission objective updated",
+    "Action status transition",
+    "Verification recorded",
+    "Outcome committed",
+    "Failed",
+    "Checkpoint verified",
+    "Draft synthesis",
+    "Needs user input",
+    "Evidence collected",
+    "Research set is within the approved scope.",
+    "Three themes were grouped for review.",
+    "A missing data-retention answer needs a decision.",
+    "Public documentation has been attached to the review.",
+    "actions are still open:",
+    "Mission event",
+    "This action is already in progress.",
+    "This is the first not-started action in the persisted order.",
+    "An overdue follow-up is unresolved.",
+    "The action is Waiting and no follow-up date is recorded.",
+    "A waiting action remains unresolved.",
+    "This mission has no persisted work yet.",
+    "No actions define the work required.",
+    "All required actions are resolved and the mission is checking evidence.",
+    "A passing verification has not been recorded.",
+    "Verification is recorded, but the mission has no outcome yet.",
+    "Outcome is missing.",
+    "All actions are completed or cancelled; the mission is ready for evidence review.",
+    "This mission is",
+    "so no further evidence can be recorded.",
+    "It moves to checking the evidence through",
+    "then",
+    "Every action is resolved. Move this mission to checking the evidence.",
+    "Every action is resolved. Record the evidence that proves the outcome.",
+  ]) keys.add(phrase);
+
+  const naturallySharedWords = { fr: new Set(["Notifications", "Actions"]) };
+  for (const language of ["nb", "ar", "es", "fr", "de"]) {
+    for (const key of keys) {
+      if (naturallySharedWords[language]?.has(key)) continue;
+      assert.notEqual(
+        translateUiText(language, key),
+        key,
+        `missing ${language} translation for public/workspace/auth/mission workflow: ${key}`
+      );
+    }
+  }
+
+  assert.match(read("app/page.tsx"), /<LocalizedText en="Mission control for AI-assisted work"/);
+  assert.match(read("app/app/business/page.tsx"), /<LocalizedText en="Business workspace"/);
+  assert.match(read("app/app/notifications/page.tsx"), /<LocalizedText en="Workspace updates"/);
+  assert.match(read("app/auth/sign-in/page.tsx"), /<LocalizedText en="Welcome back"/);
+  assert.match(read("app/auth/sign-up/page.tsx"), /<LocalizedText en="Create your account\."\s*\/>/);
+  assert.match(read("components/auth-form.tsx"), /t\("Enter a valid email address\."\)/);
+  assert.match(read("app/app/missions/[id]/page.tsx"), /LocalizedMissionNextStep/);
+  assert.match(read("components/verification-controls.tsx"), /useUiTranslation/);
+  assert.match(read("components/mission-mutation-controls.tsx"), /useUiTranslation/);
+  assert.match(read("components/action-mutation-controls.tsx"), /useUiTranslation/);
+  assert.match(read("components/add-action-form.tsx"), /useUiTranslation/);
+  assert.match(read("components/delete-mission-form.tsx"), /useUiTranslation/);
+});
+
+
+test("mission follow-up relative dates follow the selected language", () => {
+  const cases = [
+    ["yesterday", "nb", "nb-NO", -1],
+    ["today", "ar", "ar", 0],
+    ["tomorrow", "es", "es-ES", 1],
+    ["3 days ago", "fr", "fr-FR", -3],
+    ["in 5 days", "de", "de-DE", 5],
+  ];
+  for (const [value, language, locale, amount] of cases) {
+    const expected = new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(amount, "day");
+    assert.equal(formatUiRelativeDate(value, language), expected);
+    assert.notEqual(formatUiRelativeDate(value, language), value);
+  }
+  assert.equal(formatUiRelativeDate("next month", "nb"), "next month");
+});
+
+test("mission follow-up absolute dates follow the selected language", () => {
+  const value = "Oct 31, 2026";
+  const date = new Date(value);
+  for (const [language, locale] of [["nb", "nb-NO"], ["ar", "ar"], ["es", "es-ES"], ["fr", "fr-FR"], ["de", "de-DE"]]) {
+    const expected = new Intl.DateTimeFormat(locale, {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }).format(date);
+    assert.equal(formatUiAbsoluteDate(value, language), expected);
+    assert.notEqual(formatUiAbsoluteDate(value, language), value);
+  }
+  assert.equal(formatUiAbsoluteDate("not a date", "nb"), "not a date");
+});
+
+test("mission detail and guidance use locale-aware follow-up date formatting", () => {
+  const detail = read("app/app/missions/[id]/page.tsx");
+  const followUp = read("components/localized-follow-up-date.tsx");
+  const nextStep = read("components/localized-mission-next-step.tsx");
+  const guidance = read("components/localized-mission-value.tsx");
+  assert.match(detail, /<LocalizedFollowUpDate relative=\{followUp\.relative\} absolute=\{followUp\.absolute\} \/>/);
+  assert.match(followUp, /formatUiRelativeDate/);
+  assert.match(followUp, /formatUiAbsoluteDate/);
+  assert.match(nextStep, /formatUiRelativeDate/);
+  assert.match(guidance, /formatUiRelativeDate/);
+  assert.match(guidance, /formatUiAbsoluteDate/);
+});
+
+
+test("mission activity timestamps follow the selected language", () => {
+  const cases = [
+    ["8 min ago", "nb", "nb-NO", -8, "minute"],
+    ["1 hr ago", "ar", "ar", -1, "hour"],
+  ];
+  for (const [value, language, locale, amount, unit] of cases) {
+    const expected = new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(amount, unit);
+    assert.equal(formatUiDateTime(value, language), expected);
+  }
+  const value = "Oct 31, 2026, 6:35:00 PM";
+  const date = new Date(value);
+  const expected = new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" }).format(date);
+  assert.equal(formatUiDateTime(value, "fr"), expected);
+  assert.equal(formatUiDateTime("unknown date", "nb"), "unknown date");
+});
+
+test("mission activity labels and status transitions use the selected locale", () => {
+  const page = read("app/app/missions/[id]/page.tsx");
+  const activity = read("components/localized-mission-activity.tsx");
+  assert.match(page, /<LocalizedMissionActivity/);
+  assert.match(page, /<LocalizedMissionDateTime value=\{mission\.updated\}/);
+  assert.match(activity, /MISSION_STATUSES/);
+  assert.match(activity, /ACTION_STATUSES/);
+  assert.match(activity, /detail === "COMPLETED"/);
+  assert.match(activity, /detail === "VERIFIED"/);
+  assert.match(activity, /formatUiDateTime/);
+  assert.match(activity, /localisedDetail|localizedDetail/);
 });

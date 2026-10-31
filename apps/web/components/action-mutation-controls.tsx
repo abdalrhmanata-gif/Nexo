@@ -10,9 +10,11 @@ import {
   isTerminalActionStatus,
   supportsFollowUp,
 } from "../lib/mission-content.mjs";
+import { useUiTranslation } from "./localized-text";
 
 export function ActionMutationControls({ missionId, action }: { missionId: string; action: MissionAction }) {
   const router = useRouter();
+  const t = useUiTranslation();
   const [status, setStatus] = useState<ActionStatus>(action.status);
   const [followUp, setFollowUp] = useState(followUpInputValue(action.followUpAt));
   const [busy, setBusy] = useState(false);
@@ -24,7 +26,7 @@ export function ActionMutationControls({ missionId, action }: { missionId: strin
   }, [action.id, action.status, action.followUpAt, action.version]);
 
   if (isTerminalActionStatus(action.status)) {
-    return <p className="action-final">{actionStatusLabel(action.status)} — no further changes.</p>;
+    return <p className="action-final">{t(actionStatusLabel(action.status))} — {t("no further changes")}.</p>;
   }
 
   const options: ActionStatus[] = [action.status, ...allowedNextStatuses(action.status)];
@@ -46,19 +48,19 @@ export function ActionMutationControls({ missionId, action }: { missionId: strin
         }),
       });
       if (response.status === 409) {
-        setMessage("This action changed elsewhere. Showing the latest saved state.");
+        setMessage(t("This action changed elsewhere. Showing the latest saved state."));
         router.refresh();
         return;
       }
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        setMessage(payload.error ?? "Action update was not accepted.");
+        setMessage(payload.error ?? t("Action update was not accepted."));
         return;
       }
-      setMessage("Action saved.");
+      setMessage(t("Action saved."));
       router.refresh();
     } catch {
-      setMessage("The action could not be saved. Check your connection and try again.");
+      setMessage(t("The action could not be saved. Check your connection and try again."));
     } finally {
       setBusy(false);
     }
@@ -74,7 +76,7 @@ export function ActionMutationControls({ missionId, action }: { missionId: strin
         disabled={busy}
         onChange={(event) => setStatus(event.target.value as ActionStatus)}
       >
-        {options.map((value) => <option key={value} value={value}>{actionStatusLabel(value)}</option>)}
+        {options.map((value) => <option key={value} value={value}>{t(actionStatusLabel(value))}</option>)}
       </select>
       {wantsFollowUp && <>
         <label className="visually-hidden" htmlFor={`follow-up-${action.id}`}>Follow up on {action.title}</label>
@@ -87,10 +89,10 @@ export function ActionMutationControls({ missionId, action }: { missionId: strin
           onChange={(event) => setFollowUp(event.target.value)}
         />
       </>}
-      <button className="button button-small" type="submit" disabled={busy}>{busy ? "Saving…" : "Save"}</button>
+      <button className="button button-small" type="submit" disabled={busy}>{busy ? t("Saving…") : t("Save")}</button>
     </div>
-    {wantsFollowUp && <p className="action-hint">Optional: the date you intend to check back. Leave empty for no reminder.</p>}
-    {losesFollowUp && <p className="action-hint">Saving this will remove the follow-up date, because it only applies while Waiting.</p>}
+    {wantsFollowUp && <p className="action-hint">{t("Optional: the date you intend to check back. Leave empty for no reminder.")}</p>}
+    {losesFollowUp && <p className="action-hint">{t("Saving this will remove the follow-up date, because it only applies while Waiting.")}</p>}
     {message && <p className="field-error" role="alert">{message}</p>}
   </form>;
 }
