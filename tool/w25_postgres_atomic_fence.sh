@@ -57,10 +57,18 @@ fi
 schema_created=0
 tmpdir="$(mktemp -d)"
 cleanup() {
+  local exit_status=$?
+  trap - EXIT
   if (( schema_created == 1 )); then
-    PGOPTIONS="" "${PSQL[@]}" -c "DROP SCHEMA IF EXISTS \"${schema}\" CASCADE;" >/dev/null 2>&1 || true
+    if PGOPTIONS="" "${PSQL[@]}" -c "DROP SCHEMA IF EXISTS \"${schema}\" CASCADE;" >/dev/null 2>&1; then
+      echo "schema_cleanup=PASS"
+    else
+      echo "::error::Could not remove the generated W25 test schema."
+      exit_status=1
+    fi
   fi
   rm -rf "${tmpdir}"
+  exit "${exit_status}"
 }
 trap cleanup EXIT
 
