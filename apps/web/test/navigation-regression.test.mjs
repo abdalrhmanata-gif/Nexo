@@ -331,6 +331,7 @@ test("shared dictionary keeps Norwegian and Arabic translations in the correct l
     .filter((row) => row.length === 6);
   assert.ok(rows.length > 0, "translation rows should be discoverable");
   assert.doesNotMatch(source, /^\s*,\s*$/m, "translation row array must not contain empty slots");
+  assert.doesNotMatch(source, /\](?!,)\s*\n\s*\[/, "translation rows must be separated by commas");
   assert.equal(rows.length, UI_TRANSLATION_KEYS.length, "every translation key must have a complete six-column row");
   const arabicScript = /[\u0600-\u06FF]/u;
   const translationsByKey = new Map();
