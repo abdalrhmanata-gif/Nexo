@@ -2,7 +2,7 @@ import { randomBytes } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { createClient } from "@supabase/supabase-js";
 import { expect, test } from "@playwright/test";
-import { createFixtureLedger, isLoopbackUrl, readLedgerFile, writeLedgerFile } from "./harness.mjs";
+import { createFixtureLedger, isLoopbackUrl, loopbackOriginAllowlist, readLedgerFile, writeLedgerFile } from "./harness.mjs";
 
 // Runs only after global-setup.mjs has reset a disposable local stack and
 // started the app against it. All fixture data lives in that stack and is
@@ -100,7 +100,7 @@ async function readRows(client, table, missionId, columns = "id") {
 }
 
 function guardNetwork(context, blocked) {
-  const allowed = new Set([new URL(runtime.baseURL).origin, new URL(runtime.supabaseUrl).origin]);
+  const allowed = loopbackOriginAllowlist(runtime.baseURL, runtime.supabaseUrl);
   return context.route("**/*", (route) => {
     const url = route.request().url();
     if (url.startsWith("data:") || url.startsWith("blob:") || allowed.has(new URL(url).origin)) return route.continue();
