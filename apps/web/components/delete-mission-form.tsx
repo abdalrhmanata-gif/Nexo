@@ -18,7 +18,7 @@ export function DeleteMissionForm({ missionId, missionName }: { missionId: strin
 
   return <form className="danger-zone" action={`/api/missions/${missionId}`} method="post">
     <p className="eyebrow">Danger zone</p>
-    <p className="danger-copy">{t("Deleting this Mission permanently removes it and its actions from your workspace. This cannot be undone.")}</p>
+    <p className="danger-copy">{t("Deleting")} {missionName ? `“${missionName}”` : t("this Mission")} {t("permanently removes it and its actions from your workspace. This cannot be undone.")}</p>
     <input type="hidden" name="_method" value="DELETE" />
     <div className="action-control">
       <button className="button button-danger" type="submit">{t("Yes, delete permanently")}</button>
