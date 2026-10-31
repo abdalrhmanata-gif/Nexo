@@ -459,6 +459,8 @@ test("public landing, authentication, and mission detail use the six-language lo
     "Verification exists but no outcome is recorded.",
     "The mission is ready for evidence review.",
     "Mission history event",
+    "1 action is still open:",
+    "actions are still open:",
     "Mission event",
     "This action is already in progress.",
     "This is the first not-started action in the persisted order.",
