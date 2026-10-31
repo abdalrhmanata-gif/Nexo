@@ -113,7 +113,7 @@ class W83WorkflowPolicyTests(unittest.TestCase):
             re.findall(r"(?im)^\s*select\s+(?:ok|is)\s*\(", self.w85_test)
         )
         self.assertEqual(int(plan.group(1)), assertion_count)
-        self.assertEqual(int(plan.group(1)), 9)
+        self.assertEqual(int(plan.group(1)), 10)
         self.assertIn("not exists", self.w85_test.lower())
         self.assertIn("has_table_privilege", self.w85_test)
         self.assertIn("set local role service_role", self.w85_test)
