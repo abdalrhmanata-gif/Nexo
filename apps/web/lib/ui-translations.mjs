@@ -798,7 +798,12 @@ const rows = [
   ["Verification is recorded, but the mission has no outcome yet.","Verifisering er registrert, men oppdraget har ikke noe resultat ennå.","تم تسجيل التحقق، لكن المهمة لا تملك نتيجة بعد.","La verificación está registrada, pero la misión aún no tiene un resultado.","La vérification est enregistrée, mais la mission n’a pas encore de résultat.","Die Verifizierung ist erfasst, aber die Mission hat noch kein Ergebnis."],
   ["Outcome is missing.","Resultatet mangler.","النتيجة مفقودة.","Falta el resultado.","Le résultat est manquant.","Das Ergebnis fehlt."],
   ["All actions are completed or cancelled; the mission is ready for evidence review.","Alle handlinger er fullført eller avbrutt; oppdraget er klart for dokumentasjonsgjennomgang.","اكتملت جميع الإجراءات أو أُلغيت؛ والمهمة جاهزة لمراجعة الأدلة.","Todas las acciones están completadas o canceladas; la misión está lista para revisar las pruebas.","Toutes les actions sont terminées ou annulées ; la mission est prête pour l’examen des preuves.","Alle Aktionen sind abgeschlossen oder abgebrochen; die Mission ist bereit zur Belegprüfung."],
-]; 
+  ["This work has not begun yet.","Dette arbeidet har ikke startet ennå.","لم يبدأ هذا العمل بعد.","Este trabajo aún no ha comenzado.","Ce travail n’a pas encore commencé.","Diese Arbeit hat noch nicht begonnen."],
+  ["This work is underway now.","Dette arbeidet pågår nå.","هذا العمل جارٍ الآن.","Este trabajo está en curso.","Ce travail est en cours.","Diese Arbeit läuft derzeit."],
+  ["This work is finished.","Dette arbeidet er fullført.","اكتمل هذا العمل.","Este trabajo ha terminado.","Ce travail est terminé.","Diese Arbeit ist abgeschlossen."],
+  ["Paused until something outside this action unblocks it. This is not complete.","Satt på pause til noe utenfor denne handlingen løser blokkeringen. Dette er ikke fullført.","متوقف حتى تتم إزالة العائق من خارج هذا الإجراء. هذا لا يعني اكتماله.","En pausa hasta que algo externo desbloquee esta acción. No está completada.","En pause jusqu’à ce qu’un élément extérieur débloque cette action. Elle n’est pas terminée.","Pausiert, bis etwas außerhalb dieser Aktion die Blockade löst. Sie ist nicht abgeschlossen."],
+  ["This work will not be done.","Dette arbeidet blir ikke utført.","لن يتم تنفيذ هذا العمل.","Este trabajo no se realizará.","Ce travail ne sera pas effectué.","Diese Arbeit wird nicht ausgeführt."],
+];
 const invalidRowIndex = rows.findIndex((row) => !Array.isArray(row) || row.length !== 6);
 if (invalidRowIndex !== -1) {
   throw new Error(`Invalid UI translation row at index ${invalidRowIndex}; expected exactly six language columns.`);
