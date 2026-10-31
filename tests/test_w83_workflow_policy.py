@@ -116,10 +116,12 @@ class W83WorkflowPolicyTests(unittest.TestCase):
         self.assertEqual(int(plan.group(1)), 10)
         self.assertIn("not exists", self.w85_test.lower())
         self.assertIn("has_table_privilege", self.w85_test)
-        self.assertIn("set local role service_role", self.w85_test)
-        self.assertIn("reserve_anonymous_ai_generation", self.w85_test)
-        self.assertIn("consume_anonymous_ai_generation", self.w85_test)
-        self.assertIn("release_anonymous_ai_generation", self.w85_test)
+        self.assertIn("has_schema_privilege('service_role', 'private', 'USAGE')", self.w85_test)
+        self.assertIn("has_function_privilege('service_role'", self.w85_test)
+        self.assertIn("call_rpc reserve_anonymous_ai_generation", self.w83)
+        self.assertIn("call_rpc release_anonymous_ai_generation", self.w83)
+        self.assertIn("call_rpc consume_anonymous_ai_generation", self.w83)
+        self.assertIn("w85_postgrest_after_rls=PASS", self.w83)
 
     def test_pgtap_assertion_guard_tracks_the_test_file_plan(self):
         test_sql = (
