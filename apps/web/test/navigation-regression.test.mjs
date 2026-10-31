@@ -210,7 +210,9 @@ test("Workspace and Opportunity Intelligence UI use the shared language layer", 
 
 test("Arabic uses right-to-left direction while all six languages remain selectable", () => {
   const language = read("components/language-switcher.tsx");
-  for (const locale of ['"en"', '"nb"', '"ar"', '"es"', '"fr"', '"de"']) assert.ok(language.includes(locale));
+  const languageModule = read("lib/app-language.mjs");
+  assert.match(language, /APP_LANGUAGES/);
+  assert.match(languageModule, /\["en", "nb", "ar", "es", "fr", "de"\]/);
   assert.match(language, /document\.documentElement\.dir = language === "ar" \? "rtl" : "ltr"/);
 });
 
