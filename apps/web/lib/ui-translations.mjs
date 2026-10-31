@@ -506,7 +506,6 @@ const rows = [
   ["Map the current steps and bottlenecks","Kartlegg dagens trinn og flaskehalser","ارسم خطوات العمل الحالية ونقاط الاختناق","Describe los pasos actuales y los cuellos de botella","Cartographiez les étapes actuelles et les goulots d’étranglement","Erfassen Sie die aktuellen Schritte und Engpässe"],
   ["Choose a small reversible change","Velg en liten endring som kan reverseres","اختر تغييرًا صغيرًا قابلًا للتراجع","Elige un pequeño cambio reversible","Choisissez un petit changement réversible","Wählen Sie eine kleine, umkehrbare Änderung"],
   ["Review results and decide whether to keep it","Gjennomgå resultatene og avgjør om endringen skal beholdes","راجع النتائج وقرر ما إذا كنت ستُبقي التغيير","Revisa los resultados y decide si mantienes el cambio","Examinez les résultats et décidez de conserver ou non le changement","Prüfen Sie die Ergebnisse und entscheiden Sie, ob Sie die Änderung beibehalten"]
-,
   ["Draft","Utkast","مسودة","Borrador","Brouillon","Entwurf"],
   ["Planning","Planlegging","قيد التخطيط","Planificación","Planification","Planung"],
   ["Ready to start","Klar til å starte","جاهز للبدء","Listo para empezar","Prêt à démarrer","Bereit zum Start"],
