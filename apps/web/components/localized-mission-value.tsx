@@ -31,7 +31,7 @@ export function LocalizedMissionValue({ value }: { value: string }) {
     const route = routedReadiness[2].split(", then ").map((status) =>
       t(capitalizeFirst(status)).toLowerCase()
     );
-    return <>{t("This mission is")} {t(currentStatus).toLowerCase()}. {t("It moves to checking the evidence through")} {route.join(\`, \${t("then")} \`)}.</>;
+    return <>{t("This mission is")} {t(currentStatus).toLowerCase()}. {t("It moves to checking the evidence through")} {route.join(", " + t("then") + " ")}.</>;
   }
   const overdue = value.match(/^(The action is Waiting and its follow-up was due) (.+)\.$/);
   if (overdue) return <>{t(overdue[1])} {overdue[2]}.</>;
