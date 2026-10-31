@@ -41,3 +41,9 @@ test("web CI smoke-tests the built robots route over HTTP", () => {
     assert.ok(webWorkflow.includes(path), "web CI must assert robots policy for " + path);
   }
 });
+
+test("web CI smoke-tests the actual Netlify deploy preview robots route", () => {
+  assert.match(webWorkflow, /name: Smoke-test Netlify deploy preview robots route/);
+  assert.match(webWorkflow, /PREVIEW_URL: https:\/\/deploy-preview-\$\{\{\s*github\.event\.pull_request\.number\s*\}\}--unique-kringle-3ce321\.netlify\.app/);
+  assert.match(webWorkflow, /Netlify preview \/robots\.txt returned HTTP 200/);
+});
