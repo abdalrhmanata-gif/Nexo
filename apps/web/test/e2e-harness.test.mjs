@@ -36,7 +36,7 @@ function anonJwt(role = "anon") {
   return `${encode({ alg: "HS256" })}.${encode({ role })}.signature`;
 }
 
-function makeWorkdir({ projectId = PROJECT_ID, marker = projectId, config = true, linked = false, migrations = ["20261001000000_development_schema.sql"] } = {}) {
+function makeWorkdir({ projectId = PROJECT_ID, marker = projectId, config = true, linked = false, migrations = ["20261001000000_development_schema.sql", "20261031210000_w22_idempotent_verified_outcome_replay.sql"] } = {}) {
   const dir = mkdtempSync(path.join(os.tmpdir(), "zavqera-e2e-unit-"));
   mkdirSync(path.join(dir, "supabase"), { recursive: true });
   if (config) writeFileSync(path.join(dir, "supabase", "config.toml"), `project_id = "${projectId}"\n\n[api]\nport = 54321\n`);
@@ -127,8 +127,10 @@ test("static preconditions refuse workdirs that are not explicitly disposable", 
     "marker mismatch": makeWorkdir({ marker: "zavqera-e2e-other" }),
     linked: makeWorkdir({ linked: true }),
     "no schema dump": makeWorkdir({ migrations: [] }),
+    "snapshot only": makeWorkdir({ migrations: ["20261001000000_development_schema.sql"] }),
     "repository migrations": makeWorkdir({ migrations: ["20260921175955_w4_core_tables_and_indexes.sql"] }),
-    "dump plus repository migrations": makeWorkdir({ migrations: ["20261001000000_development_schema.sql", "20261001081755_w20_cancelled_action_completion_semantics.sql"] }),
+    "dump plus unapproved migration": makeWorkdir({ migrations: ["20261001000000_development_schema.sql", "20261001081755_w20_cancelled_action_completion_semantics.sql"] }),
+    "dump plus extra migration": makeWorkdir({ migrations: ["20261001000000_development_schema.sql", "20261031210000_w22_idempotent_verified_outcome_replay.sql", "20261001081755_w20_cancelled_action_completion_semantics.sql"] }),
   };
   t.after(() => Object.values(dirs).forEach((dir) => rmSync(dir, { recursive: true, force: true })));
   for (const [name, dir] of Object.entries(dirs)) {
