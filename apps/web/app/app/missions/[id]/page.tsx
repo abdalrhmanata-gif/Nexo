@@ -14,6 +14,7 @@ import { LocalizedText } from "../../../../components/localized-text";
 import { LocalizedMissionNextStep } from "../../../../components/localized-mission-next-step";
 import { LocalizedMissionValue } from "../../../../components/localized-mission-value";
 import { LocalizedFollowUpDate } from "../../../../components/localized-follow-up-date";
+import { LocalizedMissionActivity, LocalizedMissionDateTime } from "../../../../components/localized-mission-activity";
 
 export default async function MissionDetailPage({
   params,
@@ -134,7 +135,7 @@ export default async function MissionDetailPage({
           <p className="eyebrow"><LocalizedText en="Activity" /></p>
           <h2><LocalizedText en="Recent checkpoints" /></h2>
           {mission.activity.length
-            ? <div className="timeline">{mission.activity.map((item, index) => <div className="timeline-item" key={`${item.label}-${item.time}-${index}`}><strong>{item.label}</strong><span>{item.detail} · {item.time}</span></div>)}</div>
+            ? <div className="timeline">{mission.activity.map((item, index) => <LocalizedMissionActivity key={`${item.label}-${item.time}-${index}`} label={item.label} detail={item.detail} time={item.time} />)}</div>
             : <p className="detail-intent"><LocalizedText en="No history has been recorded for this mission yet." /></p>}
         </section>
       </div>
@@ -146,7 +147,7 @@ export default async function MissionDetailPage({
           <li><strong><LocalizedText en="Mission state" /></strong><br /><LocalizedText en={missionStatusLabel(mission.lifecycleStatus)} /></li>
           <li><strong><LocalizedText en="Actions" /></strong><br />{mission.actionsCompleted} <LocalizedText en="complete of" /> {mission.actionsTotal}</li>
           <li><strong><LocalizedText en="Verified" /></strong><br /><LocalizedText en={verification?.status === "VERIFIED" ? "Yes" : "Not yet"} /></li>
-          <li><strong><LocalizedText en="Last updated" /></strong><br />{mission.updated}</li>
+          <li><strong><LocalizedText en="Last updated" /></strong><br /><LocalizedMissionDateTime value={mission.updated} /></li>
           <li><strong><LocalizedText en="Owner" /></strong><br />{mission.owner}</li>
         </ul>
         <DeleteMissionForm missionId={mission.id} missionName={mission.name} />
