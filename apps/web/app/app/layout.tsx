@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { getAuthenticatedUser } from "../../lib/supabase/server";
 
+export const dynamic = "force-dynamic";
+
 export default async function ProtectedAppLayout({ children }: { children: ReactNode }) {
   const user = await getAuthenticatedUser();
   if (!user) redirect("/auth/sign-in?next=%2Fapp");
