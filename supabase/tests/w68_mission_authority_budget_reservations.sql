@@ -1,12 +1,25 @@
 -- W68: actual persistent authority-budget accounting on the execution ledger.
 begin;
 create extension if not exists pgtap;
-select plan(23);
+select plan(25);
 
 select ok(to_regclass('public.mission_authority_budgets') is not null,
   'persistent authority budget table exists');
 select ok(to_regclass('public.mission_authority_budget_reservations') is not null,
   'execution-linked budget reservation table exists');
+
+select ok(exists (
+  select 1 from pg_indexes
+   where schemaname = 'public'
+     and tablename = 'mission_authority_budgets'
+     and indexname = 'mission_authority_budgets_agent_id_idx'
+), 'agent_id foreign key has a covering index');
+select ok(exists (
+  select 1 from pg_indexes
+   where schemaname = 'public'
+     and tablename = 'mission_authority_budgets'
+     and indexname = 'mission_authority_budgets_created_by_idx'
+), 'created_by foreign key has a covering index');
 select ok(exists (
   select 1 from pg_indexes
    where schemaname = 'public'
