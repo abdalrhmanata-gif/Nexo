@@ -874,6 +874,14 @@ const rows = [
   ["Write an intent between 12 and 3,000 characters.","Skriv en hensikt på 12–3 000 tegn.","اكتب هدفًا يتراوح بين 12 و3000 حرف.","Escribe una intención de entre 12 y 3.000 caracteres.","Rédigez une intention de 12 à 3 000 caractères.","Beschreiben Sie die Absicht mit 12 bis 3.000 Zeichen."],
   ["Add at least one success criterion, within 2,000 characters.","Legg til minst ett suksesskriterium, innenfor 2 000 tegn.","أضف معيار نجاح واحدًا على الأقل، ضمن 2000 حرف.","Añade al menos un criterio de éxito, hasta 2.000 caracteres.","Ajoutez au moins un critère de réussite, dans la limite de 2 000 caractères.","Fügen Sie mindestens ein Erfolgskriterium hinzu, maximal 2.000 Zeichen."],
   ["Keep first steps within 2,000 characters.","Hold de første stegene innenfor 2 000 tegn.","اجعل الخطوات الأولى ضمن 2000 حرف.","Mantén los primeros pasos dentro de 2.000 caracteres.","Limitez les premières étapes à 2 000 caractères.","Halten Sie die ersten Schritte innerhalb von 2.000 Zeichen."],
+  ["Execution workspace","Arbeidsområde for gjennomføring","مساحة تنفيذ المهمة","Espacio de ejecución","Espace d’exécution","Ausführungsbereich"],
+  ["Jump to","Gå til","انتقل إلى","Ir a","Accéder à","Springen zu"],
+  ["Mission sections","Mission-seksjoner","أقسام المهمة","Secciones de la misión","Sections de la mission","Missionsbereiche"],
+  ["Go to next step","Gå til neste steg","انتقل إلى الخطوة التالية","Ir al siguiente paso","Passer à l’étape suivante","Zum nächsten Schritt"],
+  ["Actions recorded","Registrerte handlinger","الإجراءات المسجلة","Acciones registradas","Actions enregistrées","Erfasste Aktionen"],
+  ["Action overview","Oversikt over handlinger","نظرة عامة على الإجراءات","Resumen de acciones","Vue d’ensemble des actions","Aktionsübersicht"],
+  ["No actions are recorded yet.","Ingen handlinger er registrert ennå.","لم يتم تسجيل أي إجراءات بعد.","Aún no hay acciones registradas.","Aucune action n’a encore été enregistrée.","Es wurden noch keine Aktionen erfasst."],
+  ["Add the first concrete step needed to move this Mission forward.","Legg til det første konkrete steget som trengs for å flytte denne Missionen videre.","أضف أول خطوة عملية لازمة لدفع المهمة إلى الأمام.","Añade el primer paso concreto necesario para avanzar en esta misión.","Ajoutez la première étape concrète nécessaire pour faire avancer cette mission.","Fügen Sie den ersten konkreten Schritt hinzu, der diese Mission voranbringt."],
 ];
 const invalidRowIndex = rows.findIndex((row) => !Array.isArray(row) || row.length !== 6);
 if (invalidRowIndex !== -1) {

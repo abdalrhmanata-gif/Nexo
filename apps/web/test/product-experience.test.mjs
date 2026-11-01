@@ -328,3 +328,34 @@ test("Mission creation UI uses accessible native limits and server-side draft va
   assert.match(page, /mission-form-section/);
   assert.doesNotMatch(page, /noValidate/);
 });
+
+
+test("mission detail provides direct navigation to persisted execution sections", () => {
+  const page = read("app/app/missions/[id]/page.tsx");
+  assert.match(page, /aria-labelledby="mission-section-nav-label"/);
+  for (const target of ["mission-actions", "mission-verification", "mission-activity", "mission-outcome"]) {
+    assert.ok(page.includes(\`id="\${target}"\`), \`missing \${target} section anchor\`);
+  }
+  assert.match(page, /href={nextActionHref}/);
+  assert.match(page, /intelligence\.nextAction\.actionId/);
+});
+
+test("execution overview counts only saved action states and highlights the deterministic next action", () => {
+  const page = read("app/app/missions/[id]/page.tsx");
+  for (const status of ["PENDING", "RUNNING", "BLOCKED", "COMPLETED", "CANCELLED"]) {
+    assert.match(page, new RegExp(\`status === "\${status}"\`));
+  }
+  assert.match(page, /id={\`action-\${action\.id}\`}/);
+  assert.match(page, /action\.id === intelligence\.nextAction\.actionId/);
+  assert.match(page, /mission-action-item-next/);
+  assert.match(page, /ActionMutationControls missionId={mission\.id} action={action}/);
+});
+
+test("execution workspace keeps existing verification and action APIs as the only mutation paths", () => {
+  const page = read("app/app/missions/[id]/page.tsx");
+  assert.match(page, /AddActionForm missionId={mission\.id}/);
+  assert.match(page, /VerificationControls missionId={mission\.id}/);
+  assert.match(page, /MissionMutationControls missionId={mission\.id}/);
+  assert.match(page, /ActionMutationControls missionId={mission\.id} action={action}/);
+  assert.doesNotMatch(page, /fetch\\(|\\.rpc\\(|createSupabaseClient/);
+});
