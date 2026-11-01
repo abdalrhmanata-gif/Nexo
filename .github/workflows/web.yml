@@ -55,7 +55,7 @@ jobs:
           server_log="${RUNNER_TEMP}/zavqera-anonymous-ai-route-smoke.log"
           response_file="${RUNNER_TEMP}/zavqera-anonymous-ai-route-smoke.json"
 
-          npm run start -- --hostname 127.0.0.1 --port "${port}" >"${server_log}" 2>&1 &
+          ./node_modules/.bin/next start --hostname 127.0.0.1 --port "${port}" >"${server_log}" 2>&1 &
           server_pid=$!
           cleanup() {
             kill "${server_pid}" 2>/dev/null || true
