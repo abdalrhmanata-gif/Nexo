@@ -7,6 +7,9 @@ import { getServerDbHeaders } from "../lib/anonymous-ai-rpc-headers.mjs";
 const routePath = fileURLToPath(
   new URL("../app/api/ai/plan/anonymous/route.ts", import.meta.url),
 );
+const webWorkflowPath = fileURLToPath(
+  new URL("../../../.github/workflows/web.yml", import.meta.url),
+);
 const netlifyWorkflowPath = fileURLToPath(
   new URL("../../../.github/workflows/web-deploy-netlify.yml", import.meta.url),
 );
@@ -18,11 +21,12 @@ const helperPath = fileURLToPath(
   new URL("../lib/anonymous-ai-usage.ts", import.meta.url),
 );
 
-const [migration, helper, route, netlifyWorkflow] = await Promise.all([
+const [migration, helper, route, netlifyWorkflow, webWorkflow] = await Promise.all([
   readFile(migrationPath, "utf8"),
   readFile(helperPath, "utf8"),
   readFile(routePath, "utf8"),
   readFile(netlifyWorkflowPath, "utf8"),
+  readFile(webWorkflowPath, "utf8"),
 ]);
 const normalizedMigration = migration.replace(/\r\n/g, "\n");
 
@@ -123,4 +127,12 @@ test("Netlify previews target the current PR and smoke-test anonymous routing wi
     (netlifyWorkflow.match(/provider_and_database_calls=0/g) ?? []).length,
     2,
   );
+});
+
+test("Web CI audits full and production dependency trees and blocks high or critical findings", () => {
+  assert.match(webWorkflow, /npm audit --json/);
+  assert.match(webWorkflow, /npm audit --omit=dev --json/);
+  assert.match(webWorkflow, /const critical = counts\\.critical \\?\\? 0;/);
+  assert.match(webWorkflow, /const high = counts\\.high \\?\\? 0;/);
+  assert.match(webWorkflow, /if \\(critical > 0 \\|\\| high > 0\\) process\\.exit\\(1\\);/);
 });
