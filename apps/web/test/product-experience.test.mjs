@@ -358,7 +358,9 @@ test("execution workspace keeps existing verification and action APIs as the onl
   assert.match(page, /VerificationControls missionId={mission\.id}/);
   assert.match(page, /MissionMutationControls missionId={mission\.id}/);
   assert.match(page, /ActionMutationControls missionId={mission\.id} action={action}/);
-  assert.doesNotMatch(page, /fetch\\(|\\.rpc\\(|createSupabaseClient/);
+  assert.equal(page.includes("fetch("), false);
+  assert.equal(page.includes(".rpc("), false);
+  assert.equal(page.includes("createSupabaseClient"), false);
 });
 
 test("Mission execution navigation and status overview are translated in all supported languages", () => {
