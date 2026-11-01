@@ -130,18 +130,23 @@ async function waitForWorkspace(page) {
   const onPageError = (error) => pageErrors.push(error.message);
   page.on("pageerror", onPageError);
   try {
-    // Select the destination itself; its accessible name includes supporting copy.
-    await page.locator('a.workspace-quick-action[href="/app/opportunities"]').waitFor({ state: "visible" });
+    // A fresh account now renders first-Mission onboarding instead of the
+    // legacy quick-action grid. Accept either documented authenticated state.
+    const workspaceReady = page.locator([
+      '[aria-labelledby="workspace-onboarding-heading"]',
+      'a.workspace-quick-action[href="/app/opportunities"]',
+    ].join(", "));
+    await expect(workspaceReady.first()).toBeVisible();
   } catch (error) {
     const body = await page.locator("body").innerText().catch(() => "<body unavailable>");
     throw new Error(
       [
-        "The authenticated workspace did not render its Opportunity Intelligence shortcut.",
+        "The authenticated workspace did not render onboarding or its Opportunity Intelligence shortcut.",
         "URL: " + page.url(),
         "Body: " + body.slice(0, 1600),
         "Page errors: " + (pageErrors.join(" | ") || "none"),
         "Original failure: " + (error instanceof Error ? error.message : String(error)),
-      ].join("\n"),
+      ].join("\\n"),
     );
   } finally {
     page.off("pageerror", onPageError);
