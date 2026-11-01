@@ -15,8 +15,13 @@ test("Netlify workflow permits draft previews but never production deploys", () 
     "workflow must declare pull_request exactly once");
   assert.match(workflow, /pull_request:\s*\n\s+types: \[opened, synchronize, reopened\]/,
     "PR updates must continue to trigger preview verification");
-  assert.match(workflow, /branches:\s*\n\s+- "zavqera\/alternative-web-deployment"\s*\n\s+- "zavqera\/ai-planner-integration"/,
-    "PR preview checks must target both the alternative and active integration branches");
+  assert.match(workflow, /pull_request:\s*\n\s+types: \[opened, synchronize, reopened\]\s*\n\s+branches:\s*\n\s+- "zavqera\/alternative-web-deployment"/,
+    "automatic Netlify PR verification remains limited to the branch with an existing PR-preview path");
+  assert.doesNotMatch(
+    workflow.slice(workflow.indexOf("  pull_request:"), workflow.indexOf("\n\npermissions:")),
+    /zavqera\/ai-planner-integration/,
+    "integration PRs use the controlled push-preview path, not an assumed auto-created PR hostname",
+  );
   const deployStart = workflow.indexOf("\n  deploy:\n");
   const previewStart = workflow.indexOf("\n  verify-preview:", deployStart + 1);
   assert.notEqual(deployStart, -1, "deployment job must exist");
@@ -27,8 +32,11 @@ test("Netlify workflow permits draft previews but never production deploys", () 
   assert.match(condition, /github\.event_name\s*!=\s*'pull_request'/);
   assert.match(condition, /github\.ref\s*==\s*'refs\/heads\/zavqera\/integrate-origin-main-clean'/);
   assert.match(condition, /github\.ref\s*==\s*'refs\/heads\/zavqera\/alternative-web-deployment'/);
-  assert.equal((condition.match(/github\.ref\s*==/g) ?? []).length, 2,
-    "only the two explicitly approved branches may create a draft deploy");
+  assert.match(condition, /github\.ref\s*==\s*'refs\/heads\/codex\/anonymous-ai-rpc-public-invoker-wrapper-20261019'/);
+  assert.equal((condition.match(/github\.ref\s*==/g) ?? []).length, 3,
+    "only the two release branches and the explicitly reviewed PR #40 branch may create a draft deploy");
+  assert.match(workflow, /push:\s*\n\s+branches:[\s\S]*?- "codex\/anonymous-ai-rpc-public-invoker-wrapper-20261019"/,
+    "the reviewed candidate branch must trigger its own draft preview deployment");
 
   assert.match(deployJob, /deploy --build --context deploy-preview/);
   assert.doesNotMatch(workflow, /\bdeploy\b[^\n]*--prod|deploy[^\n]*--prod/i,
