@@ -116,7 +116,7 @@ test("Netlify previews target the current PR and smoke-test anonymous routing wi
   );
   assert.equal((netlifyWorkflow.match(/--data '\{\}'/g) ?? []).length, 2);
   assert.equal(
-    (netlifyWorkflow.match(/test "\$\{anonymous_status\}" = "400"/g) ?? []).length,
+    (netlifyWorkflow.match(/if \[ "\$\{anonymous_status\}" != "400" \]; then/g) ?? []).length,
     2,
   );
   assert.equal(
