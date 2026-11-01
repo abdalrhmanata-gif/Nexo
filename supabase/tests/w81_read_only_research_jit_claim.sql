@@ -147,6 +147,12 @@ begin
   end;
   insert into w81_behavior_results values ('changed_authority_denied', v_caught);
 
+  -- Restore the shared fixture agent after the authority-mutation case. Later
+  -- completion-denial cases must exercise a genuinely read-only agent.
+  update public.workspace_agents
+     set authority = '{"mode":"read_only","external_side_effects":false,"requires_approval":false}'::jsonb
+   where id = v_agent;
+
   insert into public.agent_executions(workspace_id, mission_id, agent_id, requested_by,
     idempotency_key, status, authority_snapshot, request)
   values (v_workspace, v_mission, v_agent, v_owner,
