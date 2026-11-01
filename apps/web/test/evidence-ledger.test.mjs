@@ -120,7 +120,7 @@ test("Mission evidence payload normalises reviewed sources and keeps source refe
 });
 
 test("Mission evidence payload enforces source count, duplicate URLs and content bounds", () => {
-  const item = { id: "evidence-0001", title: "Source", observation: "Observed fact.", referenceUrl: "https://example.com/source", sourceType: "research", stance: "challenges", publishedAt: "" };
+  const item = { id: "evidence-0001", title: "Source", observation: "Observed fact.", referenceUrl: "https://example.com/source", sourceType: "publication", stance: "challenges", publishedAt: "" };
   const base = { summary: "A sufficiently long evidence summary.", items: [item] };
   assert.equal(validateMissionEvidencePayload(base).valid, true);
   assert.equal(validateMissionEvidencePayload({ ...base, items: [] }).valid, false);

@@ -394,7 +394,7 @@ test("mission verification records bounded structured evidence through the exist
   assert.match(form, /evidenceItems\.length >= 8/);
   assert.ok(form.includes('"/api/missions/" + missionId + "/verification"'));
   assert.match(record, /isHttpSourceUrl\(referenceUrl\)/);
-  assert.match(record, /independently verify/i);
+  assert.match(record, /not independently verified/i);
 });
 
 test("human outcome decisions are persisted through the existing outcome boundary with consistent status", () => {
