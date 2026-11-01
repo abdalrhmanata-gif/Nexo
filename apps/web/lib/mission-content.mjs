@@ -35,12 +35,13 @@ export function parseMissionObjective(objective) {
  * the reviewed form values rather than untrimmed input.
  */
 export function validateMissionDraft(input = {}) {
+  const source = input && typeof input === "object" ? input : {};
   const text = (value) => typeof value === "string" ? value.trim() : "";
   const values = {
-    name: text(input.name),
-    intent: text(input.intent),
-    criteria: text(input.criteria),
-    actions: text(input.actions),
+    name: text(source.name),
+    intent: text(source.intent),
+    criteria: text(source.criteria),
+    actions: text(source.actions),
   };
   const errors = {
     name: !values.name || values.name.length > 100 || /[\r\n]/.test(values.name),

@@ -313,6 +313,7 @@ test("Mission draft validation rejects missing, oversized and structurally unsaf
   assert.equal(validateMissionDraft({ name: "Good", intent: "A valid intent with enough detail", criteria: "C".repeat(2001) }).errors.criteria, true);
   assert.equal(validateMissionDraft({ name: "Good", intent: "A valid intent with enough detail", criteria: "done", actions: "A".repeat(2001) }).errors.actions, true);
   assert.equal(validateMissionDraft({ name: 42, intent: null, criteria: [], actions: {} }).valid, false);
+  assert.equal(validateMissionDraft(null).valid, false);
 });
 
 test("Mission creation UI uses accessible native limits and server-side draft validation before writes", () => {
