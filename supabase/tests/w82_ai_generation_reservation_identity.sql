@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap;
 create temporary table w82_test_results(name text primary key, passed boolean not null) on commit drop;
 grant all on w82_test_results to authenticated;
-select plan(15);
+select plan(16);
 do $test$
 declare
   u uuid := gen_random_uuid();
@@ -88,9 +88,26 @@ begin
   insert into w82_test_results values ('owner_consumes_once', consumed and not public.consume_ai_generation(r.reservation_id));
 
   insert into w82_test_results values (
-    'legacy_unbound_reservation_not_reused',
+    'bound_reservation_not_reused',
     (select not allowed and reservation_id is null
        from public.reserve_ai_generation('w82-planner-request-0001','planner',repeat('a',64))));
+
+  -- Simulate a reservation created before W82 added generation_kind/request_hash.
+  -- The follow-up migration must reject the legacy NULL identity, never reopen it.
+  execute 'reset role';
+  update public.ai_usage_reservations
+     set generation_kind = null, request_hash = null
+   where id = r.reservation_id;
+  execute 'set local role authenticated';
+  perform set_config('request.jwt.claim.sub', u::text, true);
+  perform set_config('request.jwt.claims', jsonb_build_object('sub',u,'role','authenticated')::text, true);
+  begin
+    perform * from public.reserve_ai_generation(
+      'w82-planner-request-0001', 'planner', repeat('a',64));
+    insert into w82_test_results values ('legacy_null_identity_rejected', false);
+  exception when sqlstate '22023' then
+    insert into w82_test_results values ('legacy_null_identity_rejected', true);
+  end;
 
   select * into r3 from public.reserve_ai_generation('w82-expired-request-0001','planner',repeat('c',64));
   execute 'reset role';
@@ -121,7 +138,8 @@ select ok((select passed from w82_test_results where name='changed_input_replay_
 select ok((select passed from w82_test_results where name='legacy_reservation_bypass_removed'), 'unbound legacy RPCs are removed; private helper requires identity and input binding');
 select ok((select passed from w82_test_results where name='cross_user_settlement_denied'), 'reservation cannot be settled by another user');
 select ok((select passed from w82_test_results where name='owner_consumes_once'), 'owner settles exactly once');
-select ok((select passed from w82_test_results where name='legacy_unbound_reservation_not_reused'), 'legacy unbound key cannot authorize a repeat');
+select ok((select passed from w82_test_results where name='bound_reservation_not_reused'), 'an already-bound request cannot authorize a repeat');
+select ok((select passed from w82_test_results where name='legacy_null_identity_rejected'), 'a pre-W82 reservation with NULL identity fields cannot authorize a repeat');
 select ok((select passed from w82_test_results where name='expired_attempt_not_redispatched'), 'expired/ambiguous request key cannot authorize another provider attempt');
 select ok((select passed from w82_test_results where name='expired_attempt_is_unknown'), 'expired reservation is retained as unknown');
 select ok((select passed from w82_test_results where name='ambiguous_attempt_keeps_charge'), 'ambiguous provider outcome retains its quota charge');
