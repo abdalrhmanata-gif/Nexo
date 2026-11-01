@@ -12,6 +12,7 @@ on:
     branches:
       - "zavqera/integrate-origin-main-clean"
       - "zavqera/alternative-web-deployment"
+      - "codex/anonymous-ai-rpc-public-invoker-wrapper-20261019"
     paths:
       - "apps/web/**"
       - "netlify.toml"
@@ -20,7 +21,6 @@ on:
     types: [opened, synchronize, reopened]
     branches:
       - "zavqera/alternative-web-deployment"
-      - "zavqera/ai-planner-integration"
     paths:
       - "apps/web/**"
       - "netlify.toml"
@@ -35,13 +35,15 @@ concurrency:
 
 jobs:
   deploy:
-    # workflow_dispatch can target any branch. Keep deployment limited to the two
-    # approved release branches and never deploy from a pull_request event.
+    # workflow_dispatch can target any branch. Deploy only draft previews from
+    # the two release-candidate branches or this explicitly reviewed PR #40 branch.
+    # Never deploy from a pull_request event.
     if: >-
       github.event_name != 'pull_request' &&
       (
         github.ref == 'refs/heads/zavqera/integrate-origin-main-clean' ||
-        github.ref == 'refs/heads/zavqera/alternative-web-deployment'
+        github.ref == 'refs/heads/zavqera/alternative-web-deployment' ||
+        github.ref == 'refs/heads/codex/anonymous-ai-rpc-public-invoker-wrapper-20261019'
       )
     runs-on: ubuntu-latest
     timeout-minutes: 25
