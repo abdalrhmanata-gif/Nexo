@@ -334,7 +334,7 @@ test("mission detail provides direct navigation to persisted execution sections"
   const page = read("app/app/missions/[id]/page.tsx");
   assert.match(page, /aria-labelledby="mission-section-nav-label"/);
   for (const target of ["mission-actions", "mission-verification", "mission-activity", "mission-outcome"]) {
-    assert.ok(page.includes(\`id="\${target}"\`), \`missing \${target} section anchor\`);
+    assert.ok(page.includes('id="' + target + '"'), "missing " + target + " section anchor");
   }
   assert.match(page, /href={nextActionHref}/);
   assert.match(page, /intelligence\.nextAction\.actionId/);
@@ -343,9 +343,9 @@ test("mission detail provides direct navigation to persisted execution sections"
 test("execution overview counts only saved action states and highlights the deterministic next action", () => {
   const page = read("app/app/missions/[id]/page.tsx");
   for (const status of ["PENDING", "RUNNING", "BLOCKED", "COMPLETED", "CANCELLED"]) {
-    assert.match(page, new RegExp(\`status === "\${status}"\`));
+    assert.match(page, new RegExp('status === "' + status + '" '));
   }
-  assert.match(page, /id={\`action-\${action\.id}\`}/);
+  assert.ok(page.includes('id={`action-${action.id}`}'));
   assert.match(page, /action\.id === intelligence\.nextAction\.actionId/);
   assert.match(page, /mission-action-item-next/);
   assert.match(page, /ActionMutationControls missionId={mission\.id} action={action}/);
