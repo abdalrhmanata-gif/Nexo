@@ -135,6 +135,24 @@ jobs:
             *) echo "::error::/app did not redirect anonymously to /auth/sign-in. The deployment may have fallen back to the local mock repository."; exit 1 ;;
           esac
 
+          anonymous_status="$(curl -sS -o /tmp/anonymous-ai-smoke.json -w '%{http_code}' \
+            -X POST "${PREVIEW_URL}/api/ai/plan/anonymous" \
+            -H 'content-type: application/json' \
+            --data '{}')"
+          if [ "${anonymous_status}" != "400" ]; then
+            cat /tmp/anonymous-ai-smoke.json
+            echo "::error::Anonymous AI route smoke expected HTTP 400 for an empty goal; got ${anonymous_status}."
+            exit 1
+          fi
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          response = json.loads(Path("/tmp/anonymous-ai-smoke.json").read_text(encoding="utf-8"))
+          assert response == {"error": "Enter a goal between 1 and 900 characters."}, response
+          PY
+          echo "anonymous_ai_route_preview_smoke=PASS"
+          echo "provider_and_database_calls=0"
+
 
   verify-preview:
     if: github.event_name == 'pull_request'
@@ -144,7 +162,7 @@ jobs:
       - name: Wait for Netlify Deploy Preview
         run: |
           set -euo pipefail
-          url="https://deploy-preview-29--unique-kringle-3ce321.netlify.app"
+          url="https://deploy-preview-${{ github.event.pull_request.number }}--unique-kringle-3ce321.netlify.app"
           for i in $(seq 1 36); do
             code="$(curl -sS -o /tmp/root.html -w '%{http_code}' "$url/")" || code="000"
             echo "attempt=$i http=$code"
@@ -156,7 +174,7 @@ jobs:
       - name: Verify preview routes
         run: |
           set -euo pipefail
-          url="https://deploy-preview-29--unique-kringle-3ce321.netlify.app"
+          url="https://deploy-preview-${{ github.event.pull_request.number }}--unique-kringle-3ce321.netlify.app"
           root="$(curl -sS -o /dev/null -w '%{http_code}' "$url/")"
           signin="$(curl -sS -o /dev/null -w '%{http_code}' "$url/auth/sign-in")"
           app="$(curl -sS -o /dev/null -w '%{http_code}' -L "$url/app")"
@@ -164,6 +182,24 @@ jobs:
           test "$root" = "200"
           test "$signin" = "200"
           test "$app" = "200"
+
+          anonymous_status="$(curl -sS -o /tmp/anonymous-ai-preview-smoke.json -w '%{http_code}' \
+            -X POST "${url}/api/ai/plan/anonymous" \
+            -H 'content-type: application/json' \
+            --data '{}')"
+          if [ "${anonymous_status}" != "400" ]; then
+            cat /tmp/anonymous-ai-preview-smoke.json
+            echo "::error::Anonymous AI preview smoke expected HTTP 400 for an empty goal; got ${anonymous_status}."
+            exit 1
+          fi
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          response = json.loads(Path("/tmp/anonymous-ai-preview-smoke.json").read_text(encoding="utf-8"))
+          assert response == {"error": "Enter a goal between 1 and 900 characters."}, response
+          PY
+          echo "anonymous_ai_route_preview_smoke=PASS"
+          echo "provider_and_database_calls=0"
 
       - name: Verify real OpenAI mission planning
         # Real provider calls require an explicit same-repository PR opt-in.
@@ -173,7 +209,7 @@ jobs:
           contains(github.event.pull_request.body, '[live-openai-planning]')
         run: |
           set -euo pipefail
-          url="https://deploy-preview-29--unique-kringle-3ce321.netlify.app/api/ai/plan/anonymous"
+          url="https://deploy-preview-${{ github.event.pull_request.number }}--unique-kringle-3ce321.netlify.app/api/ai/plan/anonymous"
           body="$(curl -sS -c /tmp/zavqera-cookie.txt -b /tmp/zavqera-cookie.txt \
             -H 'content-type: application/json' \
             --data '{"goal":"Plan a simple launch checklist for a small software product"}' \
@@ -240,7 +276,7 @@ jobs:
         timeout-minutes: 8
         working-directory: apps/web
         env:
-          PREVIEW_URL: https://deploy-preview-29--unique-kringle-3ce321.netlify.app
+          PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--unique-kringle-3ce321.netlify.app
           SUPABASE_URL: https://mrwmmbytcymqgwvcoywd.supabase.co
           SUPABASE_DEV_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_DEV_SERVICE_ROLE_KEY }}
           SUPABASE_DEV_TEST_EMAIL: ${{ secrets.SUPABASE_DEV_TEST_EMAIL }}
