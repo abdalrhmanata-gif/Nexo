@@ -164,7 +164,7 @@ jobs:
             exit 1
           fi
 
-          grep -Eiq '^User-Agent:[[:space:]]*\\*[[:space:]]*$' "$robots_file"
+          grep -Eiq '^User-Agent:[[:space:]]*[*][[:space:]]*$' "$robots_file"
           grep -Eiq '^Allow:[[:space:]]*/[[:space:]]*$' "$robots_file"
           grep -Eiq '^Disallow:[[:space:]]*/app([[:space:]]|$)' "$robots_file"
           grep -Eiq '^Disallow:[[:space:]]*/api/' "$robots_file"
