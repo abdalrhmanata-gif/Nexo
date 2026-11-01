@@ -380,3 +380,65 @@ test("Mission execution navigation and status overview are translated in all sup
     }
   }
 });
+
+
+test("mission verification records bounded structured evidence through the existing authenticated route", () => {
+  const route = read("app/api/missions/[id]/verification/route.ts");
+  const form = read("components/verification-controls.tsx");
+  const record = read("components/mission-evidence-record.tsx");
+  assert.match(route, /validateMissionEvidencePayload\(body\.evidence\)/);
+  assert.match(route, /createSupabaseMissionRepository\(\)/);
+  assert.match(route, /repository\.recordVerification/);
+  assert.match(form, /MISSION_EVIDENCE_SOURCE_TYPES/);
+  assert.match(form, /MISSION_EVIDENCE_STANCES/);
+  assert.match(form, /evidenceItems\.length >= 8/);
+  assert.match(form, /\/api\/missions\/\$\{missionId\}\/verification/);
+  assert.match(record, /isHttpSourceUrl\(referenceUrl\)/);
+  assert.match(record, /independently verify/i);
+});
+
+test("human outcome decisions are persisted through the existing outcome boundary with consistent status", () => {
+  const route = read("app/api/missions/[id]/outcome/route.ts");
+  const form = read("components/verification-controls.tsx");
+  const page = read("app/app/missions/[id]/page.tsx");
+  assert.match(route, /validateMissionOutcomeDecision\(body\.result, body\.status\)/);
+  assert.match(route, /repository\.commitOutcome/);
+  assert.match(form, /decision === "PROCEED" \? "COMPLETED" : "FAILED"/);
+  assert.match(form, /decision: decision/);
+  assert.match(page, /outcome\.result\.decision/);
+  assert.match(page, /outcome\.result\.rationale/);
+  assert.match(page, /not a delegated AI approval/);
+});
+
+test("mission evidence and human decision interface copy is translated in all supported languages", () => {
+  const keys = ["Evidence & decision record","Reviewed evidence","Human decision","Choose the outcome","The evidence has passed verification. Record what you decide should happen next and why.","Outcome summary","Describe the result that was actually reached, not an intended future result.","Outcome decision","Proceed — record a successful outcome","Stop — record an unsuccessful outcome","Decision rationale","Explain the evidence and reasoning behind this human decision.","This records a human outcome decision. It does not approve an AI agent, grant authority, or authorise an external action.","Human outcome decision recorded. Refreshing mission state…","Record human decision","Evidence review","Record what you checked","Keep the criteria, source observations and their relationship to the expected outcome together.","Describe the criteria you checked in 12 to 2,000 characters.","State the specific success criteria you checked.","Summarise what the collected evidence shows. Keep facts separate from your interpretation.","Evidence items","Add between 1 and 8 distinct observations. References are optional for internal records.","Evidence item","Evidence title","What did you observe?","Official source","Research or publication","Internal document","Measurement","Customer feedback","Conversation or interview","Effect on the outcome","Supports","Challenges","Context only","Reference URL","Published or observed date","Remove evidence item","Add another evidence item","These records document your review. Zavqera does not independently verify the source, and this review does not grant AI authority or approve an external action.","Record evidence and verification","Evidence references must use a public HTTP or HTTPS URL.","Record between 1 and 8 complete evidence items. Each needs a title and an observation.","Add an evidence summary between 12 and 2,000 characters.","Evidence summary","Outcome summary","Add an outcome summary of up to 2,000 characters.","Explain the decision in 12 to 1,200 characters.","Success score must be between 0 and 1.","Recorded human decision","Proceed","Stop","Decision rationale","Recorded","Criteria checked","Published or observed","Open reference","This is a recorded human outcome decision, not a delegated AI approval or permission to perform an external action.","These entries are user-reviewed records. Zavqera has not independently verified the referenced material."];
+  const extraKeys = [
+    "Remove evidence item", "Add another evidence item", "Verification criteria",
+    "Evidence summary", "Confidence", "Evidence references must use a public HTTP or HTTPS URL.",
+    "Record between 1 and 8 complete evidence items. Each needs a title and an observation.",
+    "Add an evidence summary between 12 and 2,000 characters.",
+    "Outcome summary", "Add an outcome summary of up to 2,000 characters.",
+    "Explain the decision in 12 to 1,200 characters.", "Success score must be between 0 and 1.",
+    "Evidence & decision record", "Reviewed evidence", "Human decision", "Choose the outcome",
+    "The evidence has passed verification. Record what you decide should happen next and why.",
+    "Proceed — record a successful outcome", "Stop — record an unsuccessful outcome",
+    "Decision rationale", "This records a human outcome decision. It does not approve an AI agent, grant authority, or authorise an external action.",
+    "Record human decision", "Evidence review", "Record what you checked",
+    "Keep the criteria, source observations and their relationship to the expected outcome together.",
+    "Describe the criteria you checked in 12 to 2,000 characters.",
+    "State the specific success criteria you checked.",
+    "Summarise what the collected evidence shows. Keep facts separate from your interpretation.",
+    "Evidence items", "Add between 1 and 8 distinct observations. References are optional for internal records.",
+    "Evidence item", "Evidence title", "What did you observe?", "Official source", "Research or publication",
+    "Internal document", "Measurement", "Customer feedback", "Conversation or interview", "Effect on the outcome",
+    "Supports", "Challenges", "Context only", "Reference URL", "Published or observed date",
+    "These records document your review. Zavqera does not independently verify the source, and this review does not grant AI authority or approve an external action.",
+    "Record evidence and verification", "These entries are user-reviewed records. Zavqera has not independently verified the referenced material.",
+    "Criteria checked", "Open reference", "This is a recorded human outcome decision, not a delegated AI approval or permission to perform an external action."
+  ];
+  for (const language of ["nb", "ar", "es", "fr", "de"]) {
+    for (const key of [...keys, ...extraKeys]) {
+      assert.notEqual(translateUiText(language, key), key, "missing " + language + " translation for: " + key);
+    }
+  }
+});

@@ -1495,3 +1495,58 @@ main, .site-shell { min-width:0; max-width:100%; }
 @media (prefers-reduced-motion:reduce) {
   .mission-section-nav a { transition:none; }
 }
+
+
+/* Evidence and human outcome records — existing mission_verifications / mission_outcomes contracts. */
+.mission-evidence-workspace,.mission-decision-workspace { gap:15px; }
+.mission-verification-form,.mission-decision-form { display:grid; gap:15px; }
+.mission-review-section-heading { display:grid; gap:5px; }
+.mission-review-section-heading .eyebrow { margin:0; color:#0b8178; font-size:9px; }
+.mission-review-section-heading h3 { margin:0; color:#173650; font-size:20px; letter-spacing:-.03em; }
+.mission-review-section-heading > p:last-child { margin:0; color:#6d8192; font-size:12px; line-height:1.65; }
+.mission-evidence-entry-list { display:grid; gap:11px; }
+.mission-evidence-list-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.mission-evidence-list-heading strong { display:block; color:#24445c; font-size:12px; }
+.mission-evidence-list-heading p { margin:4px 0 0; color:#73889a; font-size:10px; line-height:1.55; }
+.mission-evidence-list-heading > span { flex:none; padding:5px 8px; border-radius:999px; color:#08786f; background:#e2f5f0; font-size:10px; font-weight:800; }
+.mission-evidence-entry { display:grid; gap:11px; min-width:0; margin:0; padding:14px; border:1px solid #dce7ec; border-radius:11px; background:#fbfdfe; }
+.mission-evidence-entry legend { padding:0 6px; color:#45647a; font-size:10px; font-weight:800; }
+.mission-evidence-entry .field { min-width:0; }
+.mission-evidence-entry .field input,.mission-evidence-entry .field textarea,.mission-evidence-entry .field select { width:100%; min-width:0; }
+.mission-evidence-entry .field textarea { min-height:82px; }
+.mission-evidence-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+.mission-evidence-remove { justify-self:start; border:0; padding:4px 0; color:#9c4636; background:transparent; font:inherit; font-size:10px; font-weight:750; cursor:pointer; }
+.mission-authority-caveat { margin:0; padding:11px 13px; border-left:3px solid #0b8f86; border-radius:0 8px 8px 0; color:#58747e !important; background:#f0f8f7; font-size:10px !important; line-height:1.6 !important; }
+.mission-evidence-record { display:grid; gap:12px; margin:17px 0; padding:15px; border:1px solid #dce9e7; border-radius:12px; background:linear-gradient(145deg,#f5fbf9,#fff 70%); }
+.mission-evidence-record-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.mission-evidence-record-heading .eyebrow { margin:0 0 4px; color:#0b8178; font-size:9px; }
+.mission-evidence-record-heading strong { color:#203f57; font-size:13px; }
+.mission-verification-state { flex:none; padding:5px 8px; border-radius:999px; color:#08786f; background:#dff4ee; font-size:9px; font-weight:800; }
+.mission-verification-state-failed { color:#9a452d; background:#fff0e9; }
+.mission-evidence-record-block { display:grid; gap:5px; }
+.mission-evidence-record-block > span,.mission-decision-record > span { color:#708799; font-size:9px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; }
+.mission-evidence-record-block p { margin:0; color:#37566c; font-size:12px; line-height:1.65; white-space:pre-wrap; overflow-wrap:anywhere; }
+.mission-evidence-record-items { display:grid; gap:8px; }
+.mission-evidence-record-item { padding:11px; border:1px solid #e1e9ed; border-radius:9px; background:#fff; }
+.mission-evidence-record-item-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:9px; }
+.mission-evidence-record-item-heading strong { min-width:0; color:#1f3e56; font-size:11px; overflow-wrap:anywhere; }
+.mission-evidence-stance { flex:none; padding:3px 7px; border-radius:999px; color:#08786f; background:#e2f5f0; font-size:8px; font-weight:800; }
+.mission-evidence-stance-challenges { color:#9a5422; background:#fff1df; }
+.mission-evidence-stance-context { color:#596f84; background:#eef2f6; }
+.mission-evidence-record-item > p { margin:7px 0; color:#536f83; font-size:11px; line-height:1.6; white-space:pre-wrap; overflow-wrap:anywhere; }
+.mission-evidence-record-meta { display:flex; flex-wrap:wrap; gap:8px 13px; color:#7a8e9d; font-size:9px; }
+.mission-evidence-record-meta a { color:#087b73; font-weight:750; text-decoration:none; }
+.mission-evidence-record-meta a:hover { text-decoration:underline; }
+.mission-evidence-record-caveat { margin:0; color:#708698 !important; font-size:9px !important; line-height:1.6 !important; }
+.mission-evidence-record > small { color:#8a9aa6; font-size:9px; }
+.mission-outcome-record { display:grid; gap:11px; }
+.mission-decision-record { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px; border:1px solid #dce9e7; border-radius:8px; background:#f4faf8; }
+.mission-decision-record strong { color:#0a7d73; font-size:12px; }
+@media (max-width:700px) {
+  .mission-evidence-entry { padding:11px; }
+  .mission-evidence-grid { grid-template-columns:minmax(0,1fr); gap:9px; }
+  .mission-evidence-record { padding:12px; }
+  .mission-evidence-record-heading { align-items:flex-start; }
+  .mission-evidence-record-item-heading { flex-direction:column; }
+  .mission-evidence-record-meta { flex-direction:column; gap:5px; }
+}
