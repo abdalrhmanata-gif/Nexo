@@ -316,5 +316,5 @@ test("Playwright discovers the full-loop spec without starting anything", { skip
   assert.match(result.stdout, /authenticated-browser\.spec\.mjs/);
   assert.match(result.stdout, /disposable full loop/);
   assert.match(result.stdout, /authenticated Opportunity Intelligence backup flow/);
-  assert.match(result.stdout, /Total: 2 tests/);
+  assert.match(result.stdout, /Total: 3 tests/);
 });
