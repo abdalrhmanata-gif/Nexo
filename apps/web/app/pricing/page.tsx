@@ -50,12 +50,18 @@ export default function PricingPage() {
       <h1><LocalizedText en="Find the opportunity. Prove it. Turn it into action." /></h1>
       <p><LocalizedText en="One monthly plan should take you from an early idea to evidence, a clear decision, and a governed Mission." /></p>
       <p className="pricing-status"><LocalizedText en="Proposed launch pricing, not active offers. Paid billing and usage enforcement are not enabled; AI Opportunity Brief access is restricted to an approved preview tester." /></p>
+      <p className="pricing-availability-note"><LocalizedText en="Start with the free workspace today. Plus and Pro are design proposals, not plans you can purchase yet." /></p>
     </section>
     <section className="pricing" aria-labelledby="pricing-heading">
       <h2 id="pricing-heading" className="visually-hidden"><LocalizedText en="Proposed monthly plans" /></h2>
       <div className="pricing-grid">
         {plans.map((plan) => <article key={plan.name} className={`pricing-card ${plan.className}`}>
-          <p className="pricing-name"><LocalizedText en={plan.name} /></p>
+          <div className="pricing-card-heading">
+            <p className="pricing-name"><LocalizedText en={plan.name} /></p>
+            <span className={`pricing-state ${plan.cta ? "pricing-state-live" : "pricing-state-planned"}`}>
+              <LocalizedText en={plan.cta ? "Available now" : "Planned for launch"} />
+            </span>
+          </div>
           <div className="pricing-price"><strong>{plan.price}</strong><span><LocalizedText en="per month (proposed)" /></span></div>
           <p className="pricing-allowance">
             <strong>{plan.reports}</strong> <LocalizedText en="AI Opportunity Briefs per month (planned)" />

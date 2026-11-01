@@ -39,7 +39,7 @@ export default function HomePage() {
         <h1><LocalizedText en="From intent to action." /> <span><LocalizedText en="With control at every step." /></span></h1>
         <p className="landing-lede"><LocalizedText en="Turn goals into structured Missions, keep every next step visible, and make decisions with the evidence you actually have." /></p>
         <div className="landing-hero-actions">
-          <Link className="button" href="/app"><LocalizedText en="Open workspace" /> <span aria-hidden="true">→</span></Link>
+          <Link className="button" href="/auth/sign-up"><LocalizedText en="Start free" /> <span aria-hidden="true">→</span></Link>
           <Link className="button button-quiet" href="/app/opportunities"><LocalizedText en="Explore Opportunity Intelligence" /></Link>
         </div>
         <div className="landing-trust-line"><span aria-hidden="true">✓</span> <LocalizedText en="Review before action. Clear boundaries. No false certainty." /></div>
@@ -73,6 +73,30 @@ export default function HomePage() {
       </article>)}</div>
     </section>
 
+    <section className="landing-product-value" aria-labelledby="landing-product-value-heading">
+      <div className="landing-product-value-copy">
+        <p className="eyebrow"><LocalizedText en="What you can use today" /></p>
+        <h2 id="landing-product-value-heading"><LocalizedText en="A Mission makes your AI work reviewable." /></h2>
+        <p><LocalizedText en="Set an outcome, track next steps, and keep the evidence behind each decision in one place." /></p>
+        <Link className="button button-quiet" href="/pricing"><LocalizedText en="Explore proposed plans" /> <span aria-hidden="true">→</span></Link>
+      </div>
+      <div className="landing-product-value-list">
+        <article>
+          <span className="landing-product-value-number">01</span>
+          <div><strong><LocalizedText en="A clear starting point" /></strong><p><LocalizedText en="Define what success means before work begins." /></p></div>
+        </article>
+        <article>
+          <span className="landing-product-value-number">02</span>
+          <div><strong><LocalizedText en="A visible path" /></strong><p><LocalizedText en="Track actions, blockers and the next decision in one workspace." /></p></div>
+        </article>
+        <article>
+          <span className="landing-product-value-number">03</span>
+          <div><strong><LocalizedText en="A decision you can explain" /></strong><p><LocalizedText en="Keep supporting evidence and open questions together." /></p></div>
+        </article>
+      </div>
+      <p className="landing-product-value-note"><LocalizedText en="Opportunity scoring and evidence notes are stored in this browser. Cloud sync and live research are not connected yet. AI Opportunity Briefs are restricted to approved preview testers; paid billing is not enabled." /></p>
+    </section>
+
     <section className="landing-how">
       <div><p className="eyebrow"><LocalizedText en="How it works" /></p><h2><LocalizedText en="Progress you can explain." /></h2><p><LocalizedText en="Every Mission starts with an intended outcome and remains reviewable as the work changes." /></p></div>
       <div className="landing-how-steps">
@@ -82,6 +106,6 @@ export default function HomePage() {
       </div>
     </section>
 
-    <section className="landing-final-cta"><div><p className="eyebrow"><LocalizedText en="Start with one Mission" /></p><h2><LocalizedText en="Make the next step clearer." /></h2><p><LocalizedText en="Begin with the workflow you have today. Keep control of what happens next." /></p></div><div className="landing-final-actions"><Link className="button" href="/app"><LocalizedText en="Open workspace" /> <span aria-hidden="true">→</span></Link><Link className="landing-pricing-link" href="/pricing"><LocalizedText en="View proposed plans" /></Link></div></section>
+    <section className="landing-final-cta"><div><p className="eyebrow"><LocalizedText en="Start with one Mission" /></p><h2><LocalizedText en="Make the next step clearer." /></h2><p><LocalizedText en="Begin with the workflow you have today. Keep control of what happens next." /></p></div><div className="landing-final-actions"><Link className="button" href="/auth/sign-up"><LocalizedText en="Start free" /> <span aria-hidden="true">→</span></Link><Link className="landing-pricing-link" href="/pricing"><LocalizedText en="View proposed plans" /></Link></div></section>
   </div>;
 }
