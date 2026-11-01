@@ -13,6 +13,7 @@ import {
   parseMissionObjective,
   routeToVerifying,
   verificationReadiness,
+  validateMissionDraft,
 } from "../lib/mission-content.mjs";
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -277,4 +278,52 @@ test("success criteria and first steps are separate fields", () => {
   assert.doesNotMatch(source, /becomes both a success criterion and an action/);
   // Omitting the steps must keep the pre-W19 behaviour of seeding from criteria.
   assert.match(source, /steps \? toLines\(steps\) : toLines\(criteria\)/);
+});
+
+
+test("Mission draft validation normalises reviewed values and accepts the documented limits", () => {
+  const draft = validateMissionDraft({
+    name: "  Plan the launch  ",
+    intent: "  Deliver a small, testable launch.  ",
+    criteria: "  Ten users interviewed  \n  Budget approved  ",
+    actions: "  Identify the first users  \n  Draft interview questions  ",
+  });
+  assert.equal(draft.valid, true);
+  assert.deepEqual(draft.errors, { name: false, intent: false, criteria: false, actions: false });
+  assert.equal(draft.values.name, "Plan the launch");
+  assert.equal(draft.values.intent, "Deliver a small, testable launch.");
+  assert.equal(draft.values.criteria, "Ten users interviewed  \n  Budget approved");
+  assert.equal(validateMissionDraft({
+    name: "N".repeat(100),
+    intent: "I".repeat(3000),
+    criteria: "C".repeat(2000),
+    actions: "A".repeat(2000),
+  }).valid, true);
+});
+
+test("Mission draft validation rejects missing, oversized and structurally unsafe fields", () => {
+  assert.deepEqual(validateMissionDraft({}).errors, {
+    name: true, intent: true, criteria: true, actions: false,
+  });
+  assert.equal(validateMissionDraft({ name: "two\nlines", intent: "a valid intent with enough text", criteria: "one" }).errors.name, true);
+  assert.equal(validateMissionDraft({ name: "N".repeat(101), intent: "a valid intent with enough text", criteria: "one" }).errors.name, true);
+  assert.equal(validateMissionDraft({ name: "Good", intent: "Too short", criteria: "one" }).errors.intent, true);
+  assert.equal(validateMissionDraft({ name: "Good", intent: "I".repeat(3001), criteria: "one" }).errors.intent, true);
+  assert.equal(validateMissionDraft({ name: "Good", intent: "A valid intent with enough detail", criteria: "  \n  " }).errors.criteria, true);
+  assert.equal(validateMissionDraft({ name: "Good", intent: "A valid intent with enough detail", criteria: "C".repeat(2001) }).errors.criteria, true);
+  assert.equal(validateMissionDraft({ name: "Good", intent: "A valid intent with enough detail", criteria: "done", actions: "A".repeat(2001) }).errors.actions, true);
+  assert.equal(validateMissionDraft({ name: 42, intent: null, criteria: [], actions: {} }).valid, false);
+});
+
+test("Mission creation UI uses accessible native limits and server-side draft validation before writes", () => {
+  const page = read("app/app/missions/new/page.tsx");
+  assert.match(page, /validateMissionDraft\(/);
+  assert.ok(page.indexOf("validateMissionDraft(") < page.indexOf("createSupabaseMissionRepository()"));
+  assert.match(page, /minLength=\{12\}/);
+  assert.match(page, /maxLength=\{100\}/);
+  assert.match(page, /maxLength=\{3000\}/);
+  assert.match(page, /maxLength=\{2000\}/);
+  assert.match(page, /aria-invalid=\{field === "intent"\}/);
+  assert.match(page, /mission-form-section/);
+  assert.doesNotMatch(page, /noValidate/);
 });
