@@ -33,7 +33,7 @@ async function createMission(formData: FormData) {
   const { name, intent, criteria, actions: steps } = draft.values;
   const toLines = (value: string) => value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
   const successCriteria = toLines(criteria);
-  const actions = steps ? toLines(steps) : successCriteria;
+  const actions = steps ? toLines(steps) : toLines(criteria);
   const repository = await createSupabaseMissionRepository();
   const mission = await repository.createMission!({
     objective: composeMissionObjective({ name, intent, criteria: successCriteria }),

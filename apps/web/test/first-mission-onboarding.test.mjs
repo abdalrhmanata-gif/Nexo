@@ -40,5 +40,5 @@ test("first-run onboarding remains review-before-create and makes no automatic m
   assert.match(page, /Nothing is created until you review and submit the Mission form/);
   const create = read("app/app/missions/new/page.tsx");
   assert.match(create, /const mission = await repository\.createMission/);
-  assert.match(create, /redirect\(\`\/app\/missions\/\$\{mission\.id\}\`\)/);
+  assert.match(create, /redirect\("\/app\/missions\/" \+ mission\.id\)/);
 });
