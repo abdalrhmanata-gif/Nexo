@@ -113,14 +113,26 @@ function formWith(page, field) {
   return page.locator("form").filter({ has: field });
 }
 
-/** Submits the form owning `field` and waits for the server's verdict. */
+/** Submits a client form, waits for the API verdict and (on success) the App Router refresh. */
 async function submit(page, field, { method, path, expectStatus }) {
+  const pagePath = new URL(page.url()).pathname;
   const response = page.waitForResponse((r) => r.request().method() === method && new URL(r.url()).pathname === path);
-  const reload = expectStatus < 300 ? page.waitForEvent("load") : null;
+  // These forms use fetch() followed by router.refresh(). That refresh is an
+  // RSC request, not a document "load" event; waiting for "load" hangs until
+  // the whole Playwright test times out even though the mutation has succeeded.
+  const refresh = expectStatus < 300
+    ? page.waitForResponse((r) => {
+        const request = r.request();
+        const url = new URL(r.url());
+        return request.method() === "GET"
+          && url.pathname === pagePath
+          && request.headers()["rsc"] === "1";
+      })
+    : null;
   await formWith(page, field).locator('button[type="submit"]').click();
   const settled = await response;
   expect(settled.status(), `${method} ${path}`).toBe(expectStatus);
-  if (reload) await reload;
+  if (refresh) await refresh;
   return settled;
 }
 
