@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap;
 create temporary table w82_test_results(name text primary key, passed boolean not null) on commit drop;
 grant all on w82_test_results to authenticated;
-select plan(11);
+select plan(13);
 do $test$
 declare
   u uuid := gen_random_uuid();
@@ -23,6 +23,20 @@ begin
   select * into r from public.reserve_ai_generation(
     'w82-planner-request-0001', 'planner', repeat('a',64));
   insert into w82_test_results values ('first_reserved', r.allowed and r.reservation_id is not null);
+
+  begin
+    perform * from public.reserve_ai_generation('w82-null-kind-request-0001', null, repeat('d',64));
+    insert into w82_test_results values ('null_generation_kind_rejected', false);
+  exception when sqlstate '22023' then
+    insert into w82_test_results values ('null_generation_kind_rejected', true);
+  end;
+
+  begin
+    perform * from public.reserve_ai_generation('w82-null-hash-request-0001', 'planner', null);
+    insert into w82_test_results values ('null_request_hash_rejected', false);
+  exception when sqlstate '22023' then
+    insert into w82_test_results values ('null_request_hash_rejected', true);
+  end;
 
   select * into r2 from public.reserve_ai_generation(
     'w82-planner-request-0001', 'planner', repeat('a',64));
@@ -83,6 +97,8 @@ begin
 end;
 $test$;
 select ok((select passed from w82_test_results where name='first_reserved'), 'first generation reservation is bound and issued');
+select ok((select passed from w82_test_results where name='null_generation_kind_rejected'), 'NULL generation kind is rejected');
+select ok((select passed from w82_test_results where name='null_request_hash_rejected'), 'NULL request hash is rejected');
 select ok((select passed from w82_test_results where name='duplicate_denied'), 'same request cannot start a second provider attempt');
 select ok((select passed from w82_test_results where name='cross_route_replay_denied'), 'same id cannot replay across planner/research');
 select ok((select passed from w82_test_results where name='changed_input_replay_denied'), 'same id cannot replay with changed input');
