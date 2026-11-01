@@ -5,8 +5,10 @@ on:
   push:
     branches:
       - "zavqera/pricing-opportunity-clarity-20261028"
+      - "codex/zavqera-premium-mission-control-design-20261101"
     paths:
       - "apps/web/**"
+      - "apps/web/test/e2e/**"
       - ".github/workflows/zavqera-w21-e2e.yml"
       - "supabase/test-snapshots/**"
 
@@ -127,7 +129,7 @@ jobs:
           # Disable errexit only around the test command so its exit code is
           # always captured and persisted before any later validation runs.
           set +e
-          npm run test:e2e -- --grep "authenticated Opportunity Intelligence backup flow" > "${log}" 2>&1
+          npm run test:e2e -- --grep "authenticated mission evidence and human decision are persisted" > "${log}" 2>&1
           status=$?
           set -e
 
