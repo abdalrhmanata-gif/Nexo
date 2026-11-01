@@ -19,7 +19,7 @@ function newEvidenceDraft(): EvidenceDraft {
   return {
     id: typeof crypto !== "undefined" && "randomUUID" in crypto
       ? crypto.randomUUID()
-      : \`evidence-\${Date.now()}-\${Math.random().toString(36).slice(2, 10)}\`,
+      : "evidence-" + Date.now() + "-" + Math.random().toString(36).slice(2, 10),
     title: "",
     observation: "",
     referenceUrl: "",
@@ -105,7 +105,7 @@ export function VerificationControls({ missionId, verification }: { missionId: s
     }
 
     try {
-      const response = await fetch(\`/api/missions/\${missionId}/verification\`, {
+      const response = await fetch("/api/missions/" + missionId + "/verification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -154,7 +154,7 @@ export function VerificationControls({ missionId, verification }: { missionId: s
 
     try {
       const status = decision === "PROCEED" ? "COMPLETED" : "FAILED";
-      const response = await fetch(\`/api/missions/\${missionId}/outcome\`, {
+      const response = await fetch("/api/missions/" + missionId + "/outcome", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -239,33 +239,33 @@ export function VerificationControls({ missionId, verification }: { missionId: s
           <fieldset className="mission-evidence-entry" key={item.id}>
             <legend>{t("Evidence item")} {index + 1}</legend>
             <div className="field">
-              <label htmlFor={\`evidence-title-\${item.id}\`}>{t("Evidence title")}</label>
-              <input id={\`evidence-title-\${item.id}\`} maxLength={180} value={item.title} onChange={(event) => updateEvidenceItem(item.id, { title: event.target.value })} required />
+              <label htmlFor={"evidence-title-" + item.id}>{t("Evidence title")}</label>
+              <input id={"evidence-title-" + item.id} maxLength={180} value={item.title} onChange={(event) => updateEvidenceItem(item.id, { title: event.target.value })} required />
             </div>
             <div className="field">
-              <label htmlFor={\`evidence-observation-\${item.id}\`}>{t("What did you observe?")}</label>
-              <textarea id={\`evidence-observation-\${item.id}\`} maxLength={1200} value={item.observation} onChange={(event) => updateEvidenceItem(item.id, { observation: event.target.value })} required />
+              <label htmlFor={"evidence-observation-" + item.id}>{t("What did you observe?")}</label>
+              <textarea id={"evidence-observation-" + item.id} maxLength={1200} value={item.observation} onChange={(event) => updateEvidenceItem(item.id, { observation: event.target.value })} required />
             </div>
             <div className="mission-evidence-grid">
               <div className="field">
-                <label htmlFor={\`evidence-source-type-\${item.id}\`}>{t("Source type")}</label>
-                <select id={\`evidence-source-type-\${item.id}\`} value={item.sourceType} onChange={(event) => updateEvidenceItem(item.id, { sourceType: event.target.value as MissionEvidenceSourceType })}>
+                <label htmlFor={"evidence-source-type-" + item.id}>{t("Source type")}</label>
+                <select id={"evidence-source-type-" + item.id} value={item.sourceType} onChange={(event) => updateEvidenceItem(item.id, { sourceType: event.target.value as MissionEvidenceSourceType })}>
                   {MISSION_EVIDENCE_SOURCE_TYPES.map((type) => <option key={type} value={type}>{t(SOURCE_LABELS[type])}</option>)}
                 </select>
               </div>
               <div className="field">
-                <label htmlFor={\`evidence-stance-\${item.id}\`}>{t("Effect on the outcome")}</label>
-                <select id={\`evidence-stance-\${item.id}\`} value={item.stance} onChange={(event) => updateEvidenceItem(item.id, { stance: event.target.value as MissionEvidenceStance })}>
+                <label htmlFor={"evidence-stance-" + item.id}>{t("Effect on the outcome")}</label>
+                <select id={"evidence-stance-" + item.id} value={item.stance} onChange={(event) => updateEvidenceItem(item.id, { stance: event.target.value as MissionEvidenceStance })}>
                   {MISSION_EVIDENCE_STANCES.map((stance) => <option key={stance} value={stance}>{t(STANCE_LABELS[stance])}</option>)}
                 </select>
               </div>
               <div className="field">
-                <label htmlFor={\`evidence-reference-\${item.id}\`}>{t("Reference URL")} <span className="field-optional">{t("optional")}</span></label>
-                <input id={\`evidence-reference-\${item.id}\`} type="url" inputMode="url" maxLength={500} value={item.referenceUrl} onChange={(event) => updateEvidenceItem(item.id, { referenceUrl: event.target.value })} placeholder="https://…" />
+                <label htmlFor={"evidence-reference-" + item.id}>{t("Reference URL")} <span className="field-optional">{t("optional")}</span></label>
+                <input id={"evidence-reference-" + item.id} type="url" inputMode="url" maxLength={500} value={item.referenceUrl} onChange={(event) => updateEvidenceItem(item.id, { referenceUrl: event.target.value })} placeholder="https://…" />
               </div>
               <div className="field">
-                <label htmlFor={\`evidence-date-\${item.id}\`}>{t("Published or observed date")} <span className="field-optional">{t("optional")}</span></label>
-                <input id={\`evidence-date-\${item.id}\`} type="date" value={item.publishedAt} onChange={(event) => updateEvidenceItem(item.id, { publishedAt: event.target.value })} />
+                <label htmlFor={"evidence-date-" + item.id}>{t("Published or observed date")} <span className="field-optional">{t("optional")}</span></label>
+                <input id={"evidence-date-" + item.id} type="date" value={item.publishedAt} onChange={(event) => updateEvidenceItem(item.id, { publishedAt: event.target.value })} />
               </div>
             </div>
             {evidenceItems.length > 1 && <button className="mission-evidence-remove" type="button" onClick={() => removeEvidenceItem(item.id)}>{t("Remove evidence item")}</button>}

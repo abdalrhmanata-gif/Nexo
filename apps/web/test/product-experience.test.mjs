@@ -392,7 +392,7 @@ test("mission verification records bounded structured evidence through the exist
   assert.match(form, /MISSION_EVIDENCE_SOURCE_TYPES/);
   assert.match(form, /MISSION_EVIDENCE_STANCES/);
   assert.match(form, /evidenceItems\.length >= 8/);
-  assert.match(form, /\/api\/missions\/\$\{missionId\}\/verification/);
+  assert.ok(form.includes('"/api/missions/" + missionId + "/verification"'));
   assert.match(record, /isHttpSourceUrl\(referenceUrl\)/);
   assert.match(record, /independently verify/i);
 });
@@ -404,7 +404,7 @@ test("human outcome decisions are persisted through the existing outcome boundar
   assert.match(route, /validateMissionOutcomeDecision\(body\.result, body\.status\)/);
   assert.match(route, /repository\.commitOutcome/);
   assert.match(form, /decision === "PROCEED" \? "COMPLETED" : "FAILED"/);
-  assert.match(form, /decision: decision/);
+  assert.match(form, /result: \{ summary: checkedSummary, decision, rationale: checkedRationale \}/);
   assert.match(page, /outcome\.result\.decision/);
   assert.match(page, /outcome\.result\.rationale/);
   assert.match(page, /not a delegated AI approval/);

@@ -32,7 +32,7 @@ export function MissionEvidenceRecord({ verification }: { verification: MissionV
   return <section className="mission-evidence-record" aria-label="Recorded verification evidence">
     <div className="mission-evidence-record-heading">
       <div><p className="eyebrow"><LocalizedText en="Evidence & decision record" /></p><strong><LocalizedText en="Reviewed evidence" /></strong></div>
-      <span className={\`mission-verification-state mission-verification-state-\${verification.status.toLowerCase()}\`}><LocalizedText en={verification.status === "VERIFIED" ? "Verified" : "Failed verification"} /></span>
+      <span className={"mission-verification-state mission-verification-state-" + verification.status.toLowerCase()}><LocalizedText en={verification.status === "VERIFIED" ? "Verified" : "Failed verification"} /></span>
     </div>
     {criteria && <div className="mission-evidence-record-block"><span><LocalizedText en="Criteria checked" /></span><p>{criteria}</p></div>}
     {summary && <div className="mission-evidence-record-block"><span><LocalizedText en="Evidence summary" /></span><p>{summary}</p></div>}
@@ -45,7 +45,7 @@ export function MissionEvidenceRecord({ verification }: { verification: MissionV
         return <article className="mission-evidence-record-item" key={item.id as string}>
           <div className="mission-evidence-record-item-heading">
             <strong>{item.title as string}</strong>
-            <span className={\`mission-evidence-stance mission-evidence-stance-\${stance}\`}><LocalizedText en={STANCE_LABELS[stance]} /></span>
+            <span className={"mission-evidence-stance mission-evidence-stance-" + stance}><LocalizedText en={STANCE_LABELS[stance]} /></span>
           </div>
           <p>{item.observation as string}</p>
           <div className="mission-evidence-record-meta">
