@@ -130,9 +130,9 @@ test("Netlify previews target the current PR and smoke-test anonymous routing wi
 });
 
 test("Web CI audits full and production dependency trees and blocks high or critical findings", () => {
-  assert.match(webWorkflow, /npm audit --json/);
-  assert.match(webWorkflow, /npm audit --omit=dev --json/);
-  assert.match(webWorkflow, /const critical = counts\\.critical \\?\\? 0;/);
-  assert.match(webWorkflow, /const high = counts\\.high \\?\\? 0;/);
-  assert.match(webWorkflow, /if \\(critical > 0 \\|\\| high > 0\\) process\\.exit\\(1\\);/);
+  assert.ok(webWorkflow.includes("npm audit --json"));
+  assert.ok(webWorkflow.includes("npm audit --omit=dev --json"));
+  assert.ok(webWorkflow.includes("const critical = counts.critical ?? 0;"));
+  assert.ok(webWorkflow.includes("const high = counts.high ?? 0;"));
+  assert.ok(webWorkflow.includes("if (critical > 0 || high > 0) process.exit(1);"));
 });
