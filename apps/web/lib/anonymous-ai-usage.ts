@@ -48,7 +48,8 @@ export async function consumeAnonymousAiGeneration(reservationId: string) {
 }
 
 export async function releaseAnonymousAiGeneration(reservationId: string) {
-  await callRpc<boolean>("release_anonymous_ai_generation", {
+  const data = await callRpc<boolean>("release_anonymous_ai_generation", {
     p_reservation_id: reservationId,
   });
+  if (data !== true) throw new Error("ANONYMOUS_AI_GUARD_UNAVAILABLE");
 }
