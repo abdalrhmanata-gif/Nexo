@@ -7,6 +7,9 @@ import { getServerDbHeaders } from "../lib/anonymous-ai-rpc-headers.mjs";
 const routePath = fileURLToPath(
   new URL("../app/api/ai/plan/anonymous/route.ts", import.meta.url),
 );
+const netlifyWorkflowPath = fileURLToPath(
+  new URL("../../../.github/workflows/web-deploy-netlify.yml", import.meta.url),
+);
 
 const migrationPath = fileURLToPath(
   new URL("../../../supabase/migrations/20261019193000_w83_anonymous_ai_rpc_public_invoker_wrappers.sql", import.meta.url),
@@ -15,10 +18,11 @@ const helperPath = fileURLToPath(
   new URL("../lib/anonymous-ai-usage.ts", import.meta.url),
 );
 
-const [migration, helper, route] = await Promise.all([
+const [migration, helper, route, netlifyWorkflow] = await Promise.all([
   readFile(migrationPath, "utf8"),
   readFile(helperPath, "utf8"),
   readFile(routePath, "utf8"),
+  readFile(netlifyWorkflowPath, "utf8"),
 ]);
 const normalizedMigration = migration.replace(/\r\n/g, "\n");
 
@@ -97,5 +101,26 @@ test("anonymous quota release is confirmed and failed settlement is logged witho
   assert.doesNotMatch(
     route,
     /console\.error\([^)]*(?:visitorToken|reservationId|apiKey|salt)/i,
+  );
+});
+
+test("Netlify previews target the current PR and smoke-test anonymous routing without providers", () => {
+  assert.doesNotMatch(netlifyWorkflow, /deploy-preview-29/);
+  assert.match(
+    netlifyWorkflow,
+    /deploy-preview-\$\{\{ github\.event\.pull_request\.number \}\}/,
+  );
+  assert.equal(
+    (netlifyWorkflow.match(/anonymous_ai_route_preview_smoke=PASS/g) ?? []).length,
+    2,
+  );
+  assert.equal((netlifyWorkflow.match(/--data '\{\}'/g) ?? []).length, 2);
+  assert.equal(
+    (netlifyWorkflow.match(/test "\$\{anonymous_status\}" = "400"/g) ?? []).length,
+    2,
+  );
+  assert.equal(
+    (netlifyWorkflow.match(/provider_and_database_calls=0/g) ?? []).length,
+    2,
   );
 });
