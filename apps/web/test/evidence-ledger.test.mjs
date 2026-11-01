@@ -7,6 +7,8 @@ import {
   isOpportunityEvidenceItem,
   normaliseEvidenceUrl,
   summariseEvidence,
+  validateMissionEvidencePayload,
+  validateMissionOutcomeDecision,
 } from "../lib/evidence-ledger.mjs";
 
 test("only public HTTP and HTTPS URLs are accepted as source references", () => {
@@ -90,4 +92,62 @@ test("persisted evidence records must have bounded metadata and a safe source UR
 test("public search queries are bounded before they leave the browser", () => {
   const result = buildPublicSearchUrls({ title: "x".repeat(500) });
   assert.equal(result.query.length, 360);
+});
+
+
+test("Mission evidence payload normalises reviewed sources and keeps source references safe", () => {
+  const input = {
+    summary: "The recorded sources support this decision.",
+    items: [{
+      id: "evidence-0001",
+      title: "Official release note",
+      observation: "The official note confirms the feature was released.",
+      referenceUrl: "https://www.example.com/release?utm_source=test",
+      sourceType: "official",
+      stance: "supports",
+      publishedAt: "2026-10-25",
+    }],
+  };
+  const result = validateMissionEvidencePayload(input);
+  assert.equal(result.valid, true);
+  assert.equal(result.value.independentVerification, false);
+  assert.equal(result.value.recordType, "USER_REVIEWED_EVIDENCE");
+  assert.equal(result.value.items[0].referenceUrl, "https://www.example.com/release?utm_source=test");
+  assert.equal(validateMissionEvidencePayload({ ...input, items: [{ ...input.items[0], referenceUrl: "javascript:alert(1)" }] }).valid, false);
+  assert.equal(validateMissionEvidencePayload({ ...input, items: [{ ...input.items[0], publishedAt: "2026-02-30" }] }).valid, false);
+  assert.equal(validateMissionEvidencePayload({ ...input, items: [{ ...input.items[0], stance: "verified" }] }).valid, false);
+  assert.equal(validateMissionEvidencePayload({ ...input, items: [{ ...input.items[0], title: " " }] }).valid, false);
+});
+
+test("Mission evidence payload enforces source count, duplicate URLs and content bounds", () => {
+  const item = { id: "evidence-0001", title: "Source", observation: "Observed fact.", referenceUrl: "https://example.com/source", sourceType: "research", stance: "challenges", publishedAt: "" };
+  const base = { summary: "A sufficiently long evidence summary.", items: [item] };
+  assert.equal(validateMissionEvidencePayload(base).valid, true);
+  assert.equal(validateMissionEvidencePayload({ ...base, items: [] }).valid, false);
+  assert.equal(validateMissionEvidencePayload({ ...base, items: Array.from({ length: 9 }, (_, i) => ({ ...item, id: "evidence-" + String(i).padStart(4, "0"), referenceUrl: "" })) }).valid, false);
+  assert.equal(validateMissionEvidencePayload({ ...base, items: [item, { ...item, id: "evidence-0002", referenceUrl: "https://www.example.com/source?utm_campaign=duplicate" }] }).valid, false);
+  assert.equal(validateMissionEvidencePayload({ summary: "short", items: [item] }).valid, false);
+  assert.equal(validateMissionEvidencePayload({ ...base, items: [{ ...item, observation: "x".repeat(1201) }] }).valid, false);
+});
+
+test("human outcome decisions map consistently to the existing completed and failed statuses", () => {
+  const proceed = validateMissionOutcomeDecision({
+    summary: "The intended outcome was reached.",
+    decision: "PROCEED",
+    rationale: "The reviewed evidence satisfies the success criteria.",
+  });
+  assert.equal(proceed.valid, true);
+  assert.equal(proceed.status, "COMPLETED");
+  assert.equal(proceed.value.decisionType, "HUMAN_OUTCOME_DECISION");
+
+  const stop = validateMissionOutcomeDecision({
+    summary: "The target outcome was not reached.",
+    decision: "STOP",
+    rationale: "The evidence does not support continuing this mission.",
+  });
+  assert.equal(stop.valid, true);
+  assert.equal(stop.status, "FAILED");
+  assert.equal(validateMissionOutcomeDecision({ summary: "Done", decision: "PROCEED", rationale: "Too short" }).valid, false);
+  assert.equal(validateMissionOutcomeDecision({ summary: "Done", decision: "STOP", rationale: "The evidence does not support this.", }, "COMPLETED").valid, false);
+  assert.equal(validateMissionOutcomeDecision(null).valid, false);
 });

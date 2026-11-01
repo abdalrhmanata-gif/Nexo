@@ -25,3 +25,37 @@ export declare function buildPublicSearchUrls(input: { title?: string; target?: 
   query: string; webUrl: string; newsUrl: string;
 };
 export declare function isOpportunityEvidenceItem(value: unknown): value is OpportunityEvidenceItem;
+
+
+export type MissionEvidenceStance = "supports" | "challenges" | "context";
+export type MissionEvidenceSourceType =
+  | "official" | "publication" | "internal_document" | "measurement" | "customer" | "conversation" | "other";
+export type MissionEvidenceItem = {
+  id: string;
+  title: string;
+  observation: string;
+  referenceUrl: string;
+  sourceType: MissionEvidenceSourceType;
+  stance: MissionEvidenceStance;
+  publishedAt: string;
+};
+export type MissionEvidencePayload = {
+  summary: string;
+  items: MissionEvidenceItem[];
+  recordType: "USER_REVIEWED_EVIDENCE";
+  independentVerification: false;
+};
+export declare const MISSION_EVIDENCE_STANCES: readonly MissionEvidenceStance[];
+export declare const MISSION_EVIDENCE_SOURCE_TYPES: readonly MissionEvidenceSourceType[];
+export declare function validateMissionEvidencePayload(input: unknown):
+  | { valid: true; value: MissionEvidencePayload }
+  | { valid: false; error: string };
+export type MissionOutcomeDecision = {
+  summary: string;
+  decision: "PROCEED" | "STOP";
+  rationale: string;
+  decisionType: "HUMAN_OUTCOME_DECISION";
+};
+export declare function validateMissionOutcomeDecision(input: unknown, requestedStatus?: "COMPLETED" | "FAILED"):
+  | { valid: true; status: "COMPLETED" | "FAILED"; value: MissionOutcomeDecision }
+  | { valid: false; error: string };
