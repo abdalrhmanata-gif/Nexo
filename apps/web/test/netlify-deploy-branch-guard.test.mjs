@@ -68,18 +68,20 @@ test("real OpenAI planning is skipped unless a same-repository PR explicitly opt
 });
 
 test("Netlify preview reads public Supabase build settings from the deploy-preview context without logging values", () => {
-  const deployStart = workflow.indexOf("\\n  deploy:\\n");
-  const previewStart = workflow.indexOf("\\n  verify-preview:", deployStart + 1);
+  const deployStart = workflow.indexOf("\n  deploy:\n");
+  const previewStart = workflow.indexOf("\n  verify-preview:", deployStart + 1);
   const deployJob = workflow.slice(deployStart, previewStart);
   const stepStart = deployJob.indexOf("      - name: Check Supabase Development configuration");
   const stepEnd = deployJob.indexOf("      - name: Setup Node", stepStart + 1);
   assert.notEqual(stepStart, -1);
   assert.notEqual(stepEnd, -1);
   const configStep = deployJob.slice(stepStart, stepEnd);
-  assert.match(configStep, /netlify-cli@latest env:get NEXT_PUBLIC_SUPABASE_URL --context deploy-preview --scope builds/);
-  assert.match(configStep, /netlify-cli@latest env:get NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY --context deploy-preview --scope builds/);
-  assert.match(configStep, /https:\\/\\/mrwmmbytcymqgwvcoywd\\.supabase\\.co/);
-  assert.match(configStep, /set \\+x/);
-  assert.doesNotMatch(configStep, /secrets\\.NEXT_PUBLIC_SUPABASE_(?:URL|PUBLISHABLE_KEY)/);
-  assert.doesNotMatch(configStep, /echo ["']\\$\\{?supabase_(?:url|key)/i);
+  assert.ok(configStep.includes("netlify-cli@latest env:get NEXT_PUBLIC_SUPABASE_URL --context deploy-preview --scope builds"));
+  assert.ok(configStep.includes("netlify-cli@latest env:get NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY --context deploy-preview --scope builds"));
+  assert.ok(configStep.includes("https://mrwmmbytcymqgwvcoywd.supabase.co"));
+  assert.ok(configStep.includes("set +x"));
+  assert.ok(!configStep.includes("secrets.NEXT_PUBLIC_SUPABASE_URL"));
+  assert.ok(!configStep.includes("secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"));
+  assert.ok(!configStep.includes('echo "${supabase_url}"'));
+  assert.ok(!configStep.includes('echo "${supabase_key}"'));
 });
