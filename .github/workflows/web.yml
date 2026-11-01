@@ -35,6 +35,46 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Audit Web dependencies (full and production trees)
+        shell: bash
+        run: |
+          set -euo pipefail
+          for mode in full production; do
+            report="${RUNNER_TEMP}/npm-audit-${mode}.json"
+            if [ "${mode}" = "production" ]; then
+              npm audit --omit=dev --json > "${report}" || audit_status=$?
+            else
+              npm audit --json > "${report}" || audit_status=$?
+            fi
+            audit_status="${audit_status:-0}"
+            node - "${report}" "${mode}" "${audit_status}" <<'NODE'
+          const fs = require("node:fs");
+          const [path, mode, status] = process.argv.slice(2);
+          let report;
+          try {
+            report = JSON.parse(fs.readFileSync(path, "utf8"));
+          } catch {
+            throw new Error(`npm audit did not return valid JSON for ${mode} dependencies (exit ${status})`);
+          }
+          if (report.error) {
+            throw new Error(`npm audit registry error for ${mode} dependencies: ${report.error.summary || report.error.code || "unknown"}`);
+          }
+          const counts = report.metadata?.vulnerabilities ?? {};
+          const critical = counts.critical ?? 0;
+          const high = counts.high ?? 0;
+          const moderate = counts.moderate ?? 0;
+          const low = counts.low ?? 0;
+          console.log(`npm_audit_${mode}: critical=${critical} high=${high} moderate=${moderate} low=${low}`);
+          for (const [name, item] of Object.entries(report.vulnerabilities ?? {})) {
+            if (item.severity === "critical" || item.severity === "high") {
+              console.log(`blocking_package=${name} severity=${item.severity} direct=${item.isDirect} fixAvailable=${JSON.stringify(item.fixAvailable ?? false)}`);
+            }
+          }
+          if (critical > 0 || high > 0) process.exit(1);
+          NODE
+            unset audit_status
+          done
+
       - name: Static authorization boundary tests
         run: npm test
 
