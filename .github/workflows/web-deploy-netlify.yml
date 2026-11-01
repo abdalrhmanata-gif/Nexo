@@ -67,17 +67,24 @@ jobs:
       - name: Check Supabase Development configuration
         if: steps.creds.outputs.ready == 'true'
         env:
-          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: 53e470f1-30da-497e-85f6-16179db4c985
         run: |
-          if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_KEY}" ]; then
-            echo "::error::NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY must be set, otherwise /app silently falls back to the local mock repository."
+          set -euo pipefail
+          set +x
+          # Resolve the public Supabase build settings from Netlify's deploy-preview
+          # context. Keep returned values in shell memory; never print or persist them.
+          supabase_url="$(npx --yes netlify-cli@latest env:get NEXT_PUBLIC_SUPABASE_URL --context deploy-preview --scope builds --site "${NETLIFY_SITE_ID}" --auth "${NETLIFY_AUTH_TOKEN}")"
+          supabase_key="$(npx --yes netlify-cli@latest env:get NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY --context deploy-preview --scope builds --site "${NETLIFY_SITE_ID}" --auth "${NETLIFY_AUTH_TOKEN}")"
+          if [ -z "${supabase_url}" ] || [ -z "${supabase_key}" ]; then
+            echo "::error::Supabase URL and publishable key must exist in the Netlify deploy-preview build context."
             exit 1
           fi
-          case "${SUPABASE_URL}" in
-            https://mrwmmbytcymqgwvcoywd.supabase.co*) echo "Supabase URL targets ZAVQERA Development." ;;
-            *) echo "::error::NEXT_PUBLIC_SUPABASE_URL does not target ZAVQERA Development (mrwmmbytcymqgwvcoywd)."; exit 1 ;;
+          case "${supabase_url}" in
+            https://mrwmmbytcymqgwvcoywd.supabase.co) echo "Supabase URL targets ZAVQERA Development." ;;
+            *) echo "::error::Netlify deploy-preview Supabase URL does not target ZAVQERA Development (mrwmmbytcymqgwvcoywd)."; exit 1 ;;
           esac
+          echo "Supabase deploy-preview build configuration is present; key values were not logged."
 
       - name: Setup Node
         if: steps.creds.outputs.ready == 'true'
