@@ -92,38 +92,3 @@ jobs:
           grep -Eiq '^Disallow:[[:space:]]*/auth/' "$robots_file"
           echo "PASS: local /robots.txt returned HTTP 200 with the expected crawl rules."
           cat "$robots_file"
-
-      - name: Smoke-test Netlify deploy preview robots route
-        if: github.event_name == 'pull_request'
-        shell: bash
-        env:
-          PREVIEW_URL: https://deploy-preview-${{ github.event.pull_request.number }}--unique-kringle-3ce321.netlify.app
-        run: |
-          set -euo pipefail
-          robots_file="$(mktemp)"
-          cleanup() { rm -f "$robots_file"; }
-          trap cleanup EXIT
-
-          status="000"
-          for attempt in $(seq 1 36); do
-            status="$(curl --silent --output "$robots_file" --write-out '%{http_code}' --connect-timeout 5 --max-time 10 "$PREVIEW_URL/robots.txt" || true)"
-            if [ "$status" = "200" ]; then
-              break
-            fi
-            echo "Preview /robots.txt attempt $attempt/36 returned $status; retrying."
-            sleep 5
-          done
-
-          if [ "$status" != "200" ]; then
-            echo "::error::Netlify preview /robots.txt did not return HTTP 200 (last status $status)."
-            cat "$robots_file"
-            exit 1
-          fi
-
-          grep -Eiq '^User-Agent:[[:space:]]*\*[[:space:]]*$' "$robots_file"
-          grep -Eiq '^Allow:[[:space:]]*/[[:space:]]*$' "$robots_file"
-          grep -Eiq '^Disallow:[[:space:]]*/app([[:space:]]|$)' "$robots_file"
-          grep -Eiq '^Disallow:[[:space:]]*/api/' "$robots_file"
-          grep -Eiq '^Disallow:[[:space:]]*/auth/' "$robots_file"
-          echo "PASS: Netlify preview /robots.txt returned HTTP 200 with the expected crawl rules."
-          cat "$robots_file"

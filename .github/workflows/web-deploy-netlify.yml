@@ -138,6 +138,40 @@ jobs:
             *) echo "::error::Anonymous /app access did not redirect to /auth/sign-in. The protected layout must fail closed."; exit 1 ;;
           esac
 
+      - name: Verify robots.txt on the actual Netlify CLI preview
+        if: steps.creds.outputs.ready == 'true'
+        env:
+          PREVIEW_URL: ${{ steps.deploy.outputs.preview_url }}
+        run: |
+          set -euo pipefail
+          robots_file="$(mktemp)"
+          cleanup() { rm -f "$robots_file"; }
+          trap cleanup EXIT
+
+          status="000"
+          for attempt in $(seq 1 12); do
+            status="$(curl --silent --output "$robots_file" --write-out '%{http_code}' --connect-timeout 5 --max-time 10 "${PREVIEW_URL}/robots.txt" || true)"
+            if [ "$status" = "200" ]; then
+              break
+            fi
+            echo "CLI preview /robots.txt attempt $attempt/12 returned $status; retrying."
+            sleep 5
+          done
+
+          if [ "$status" != "200" ]; then
+            echo "::error::Netlify CLI preview /robots.txt did not return HTTP 200 (last status $status)."
+            cat "$robots_file"
+            exit 1
+          fi
+
+          grep -Eiq '^User-Agent:[[:space:]]*\\*[[:space:]]*$' "$robots_file"
+          grep -Eiq '^Allow:[[:space:]]*/[[:space:]]*$' "$robots_file"
+          grep -Eiq '^Disallow:[[:space:]]*/app([[:space:]]|$)' "$robots_file"
+          grep -Eiq '^Disallow:[[:space:]]*/api/' "$robots_file"
+          grep -Eiq '^Disallow:[[:space:]]*/auth/' "$robots_file"
+          echo "PASS: actual Netlify CLI preview /robots.txt returned HTTP 200 with the expected crawl rules."
+          cat "$robots_file"
+
       - name: Run Lighthouse mobile and desktop audits
         if: steps.creds.outputs.ready == 'true'
         env:
