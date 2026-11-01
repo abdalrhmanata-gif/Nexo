@@ -129,7 +129,13 @@ export async function POST(request: Request) {
     const code = error instanceof Error ? error.message : "UNKNOWN";
 
     if (code === "RATE_LIMITED" || code === "UPSTREAM_REJECTED") {
-      await releaseAnonymousAiGeneration(reservationId).catch(() => undefined);
+      try {
+        await releaseAnonymousAiGeneration(reservationId);
+      } catch {
+        // Keep the reservation held unless release is positively confirmed.
+        // Log only a fixed diagnostic; never include visitor or provider data.
+        console.error("ANONYMOUS_AI_RESERVATION_RELEASE_NOT_CONFIRMED");
+      }
       return errorResponse(
         code === "RATE_LIMITED"
           ? "AI usage is temporarily limited. Please try again later."
