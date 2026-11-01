@@ -115,10 +115,24 @@ jobs:
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: 53e470f1-30da-497e-85f6-16179db4c985
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
         run: |
           set -euo pipefail
+          set +x
+          # Re-resolve Development's public build settings in this same process.
+          # Do not depend on GitHub secrets or values inherited from another step.
+          supabase_url="$(npx --yes netlify-cli@latest env:get NEXT_PUBLIC_SUPABASE_URL --context deploy-preview --scope builds --site "${NETLIFY_SITE_ID}" --auth "${NETLIFY_AUTH_TOKEN}")"
+          supabase_key="$(npx --yes netlify-cli@latest env:get NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY --context deploy-preview --scope builds --site "${NETLIFY_SITE_ID}" --auth "${NETLIFY_AUTH_TOKEN}")"
+          if [ -z "${supabase_url}" ] || [ -z "${supabase_key}" ]; then
+            echo "::error::Supabase URL and publishable key are required in Netlify's deploy-preview build context."
+            exit 1
+          fi
+          case "${supabase_url}" in
+            https://mrwmmbytcymqgwvcoywd.supabase.co) ;;
+            *) echo "::error::Netlify deploy-preview build is not configured for ZAVQERA Development."; exit 1 ;;
+          esac
+          export NEXT_PUBLIC_SUPABASE_URL="${supabase_url}"
+          export NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="${supabase_key}"
+          unset supabase_url supabase_key
           response="$(npx --yes netlify-cli@latest deploy --build --context deploy-preview --json)"
           preview_url="$(printf '%s' "$response" | node -e 'let input = ""; process.stdin.on("data", chunk => input += chunk); process.stdin.on("end", () => { const deploy = JSON.parse(input); const url = deploy.deploy_ssl_url || deploy.deploy_url || deploy.url; if (!url) { console.error("Netlify CLI response did not include a deploy preview URL."); process.exit(1); } console.log(url); });')"
           echo "preview_url=${preview_url}" >> "$GITHUB_OUTPUT"
