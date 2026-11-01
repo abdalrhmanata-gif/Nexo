@@ -33,16 +33,19 @@ export default async function WorkspacePage({
   const visibleMissions = selectedMissions.filter((mission) => !normalizedQuery || [
     mission.name, mission.intent, ...mission.criteria, ...mission.actions.map((action) => action.title),
   ].some((value) => value.toLocaleLowerCase().includes(normalizedQuery)));
+  const isFirstMission = missions.length === 0 && !query && !selectedStatus;
 
   return <div className="container workspace-page">
     {errorMessage && <div className="field-error" role="alert"><LocalizedText en={errorMessage} /></div>}
     <div className="section-heading">
       <div>
         <p className="eyebrow"><LocalizedText en="Workspace" /></p>
-        <h1><LocalizedText en="What needs your attention" /></h1>
-        <p><LocalizedText en="Every mission below is a stated outcome and the work required to reach it." /></p>
+        <h1>{isFirstMission ? <LocalizedText en="Give your first goal a clear path." /> : <LocalizedText en="What needs your attention" />}</h1>
+        <p>{isFirstMission
+          ? <LocalizedText en="Start with one outcome. Add the first steps, then review progress as the work changes." />
+          : <LocalizedText en="Every mission below is a stated outcome and the work required to reach it." />}</p>
       </div>
-      <Link className="button" href="/app/missions/new"><LocalizedText en="New mission" /></Link>
+      <Link className="button" href="/app/missions/new"><LocalizedText en={isFirstMission ? "Create your first mission" : "New mission"} /></Link>
     </div>
 
     {missions.length > 0 && <section className="attention-panel" aria-labelledby="attention-heading">
@@ -62,6 +65,36 @@ export default async function WorkspacePage({
       {(waiting[0] ?? unstarted[0]) && <Link className="button button-quiet" href={`/app/missions/${(waiting[0] ?? unstarted[0]).id}`}><LocalizedText en="Open mission" /></Link>}
     </section>}
 
+    {isFirstMission ? (
+      <section className="workspace-onboarding" aria-labelledby="workspace-onboarding-heading">
+        <div className="workspace-onboarding-copy">
+          <p className="eyebrow"><LocalizedText en="Your first Mission" /></p>
+          <h2 id="workspace-onboarding-heading"><LocalizedText en="Turn one goal into a clear plan." /></h2>
+          <p><LocalizedText en="Start with a real outcome. Add the first steps you know, then keep decisions and evidence visible as work moves." /></p>
+          <div className="workspace-onboarding-actions">
+            <Link className="button" href="/app/missions/new"><LocalizedText en="Create your first mission" /> <span aria-hidden="true">→</span></Link>
+            <Link className="button button-quiet" href="/templates"><LocalizedText en="Start from a template" /></Link>
+          </div>
+          <p className="workspace-onboarding-note"><LocalizedText en="Nothing is created until you review and submit the Mission form. Your workspace is private to you." /></p>
+        </div>
+        <div className="workspace-onboarding-steps">
+          <p className="workspace-onboarding-steps-title"><LocalizedText en="Your first Mission, in three steps" /></p>
+          <article>
+            <span>01</span>
+            <div><strong><LocalizedText en="Define the outcome" /></strong><p><LocalizedText en="Be clear about what you want to achieve." /></p></div>
+          </article>
+          <article>
+            <span>02</span>
+            <div><strong><LocalizedText en="Choose the first steps" /></strong><p><LocalizedText en="Add only the work you know about today." /></p></div>
+          </article>
+          <article>
+            <span>03</span>
+            <div><strong><LocalizedText en="Review as you go" /></strong><p><LocalizedText en="Keep progress, evidence and decisions visible." /></p></div>
+          </article>
+        </div>
+      </section>
+    ) : (
+      <>
     <section className="workspace-quick-actions" aria-label="Quick actions">
       <Link className="workspace-quick-action" href="/app/missions/new">
         <span className="workspace-quick-icon quick-icon-create" aria-hidden="true">＋</span>
@@ -123,5 +156,7 @@ export default async function WorkspacePage({
         <p>{query ? <LocalizedText en="Try a different search term or clear the search to see your missions." /> : <LocalizedText en="A mission records an outcome you intend to reach and the work required to reach it. Create your first one to begin." />}</p>
         <Link className="button" href={query ? "/app#mission-search" : "/app/missions/new"}><LocalizedText en={query ? "Clear search" : "Create mission"} /></Link>
       </div>}
+      </>
+    )}
   </div>;
 }
