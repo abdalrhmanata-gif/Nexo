@@ -582,7 +582,7 @@ test("authenticated Opportunity Intelligence backup flow exports, imports, and r
 
 test("authenticated mission evidence and human decision are persisted", async ({ browser }) => {
   assertRuntime();
-  const tag = \`E2E evidence \${runtime.runId}\`;
+  const tag = `E2E evidence ${runtime.runId}`;
   const ledger = createFixtureLedger({ runId: runtime.runId, onChange: (json) => writeLedgerFile(runtime.ledgerPath, json) });
   const blocked = [];
   const user = freshUser("mission-evidence");
@@ -599,13 +599,13 @@ test("authenticated mission evidence and human decision are persisted", async ({
     await page.getByLabel("Mission name", { exact: true }).fill(tag);
     await page.getByLabel("Intent", { exact: true }).fill("Verify the complete evidence and human decision workflow using an authenticated disposable account.");
     await page.getByLabel("Success criteria", { exact: true }).fill("The reviewed source, human decision and rationale are persisted and visible.");
-    await page.getByLabel(/^First steps/).fill(\`\${tag} complete the implementation step\`);
+    await page.getByLabel(/^First steps/).fill(`${tag} complete the implementation step`);
     await formWith(page, page.getByLabel("Mission name", { exact: true })).locator('button[type="submit"]').click();
-    await expect(page).toHaveURL(/\\/app\\/missions\\/[0-9a-f-]{36}$/i);
+    await expect(page).toHaveURL(/\/app\/missions\/[0-9a-f-]{36}$/i);
 
     const missionUrl = page.url();
     const missionId = missionUrl.split("/").pop();
-    const missionPath = \`/api/missions/\${missionId}\`;
+    const missionPath = `/api/missions/${missionId}`;
     ledger.record("mission", missionId);
 
     const actions = await readActions(owner.client, missionId);
@@ -619,12 +619,12 @@ test("authenticated mission evidence and human decision are persisted", async ({
       await submit(page, state, { method: "PATCH", path: missionPath, expectStatus: 200 });
       expect((await readMission(owner.client, missionId)).status).toBe(to);
     };
-    const actionStatus = page.getByLabel(\`Status for \${action.title}\`, { exact: true });
+    const actionStatus = page.getByLabel(`Status for ${action.title}`, { exact: true });
     const moveAction = async (to) => {
       await actionStatus.selectOption(to);
       await submit(page, actionStatus, {
         method: "PATCH",
-        path: \`\${missionPath}/actions/\${action.id}\`,
+        path: `${missionPath}/actions/${action.id}`,
         expectStatus: 200,
       });
       expect((await readActions(owner.client, missionId))[0].status).toBe(to);
@@ -639,10 +639,11 @@ test("authenticated mission evidence and human decision are persisted", async ({
       expect((await readActions(owner.client, missionId))[0].status).toBe("COMPLETED");
     });
 
-    const sourceTitle = \`\${tag} official source\`;
+    const sourceTitle = `${tag} official source`;
     const sourceObservation = "The official record confirms the stated success criterion was reached.";
     const sourceUrl = "https://example.test/zavqera-evidence-record";
     const observedDate = "2026-11-01";
+    let verificationId;
 
     await test.step("record structured evidence from an authenticated browser session", async () => {
       await moveMission("VERIFYING");
@@ -658,7 +659,7 @@ test("authenticated mission evidence and human decision are persisted", async ({
 
       await submit(page, page.getByLabel("Verification criteria", { exact: true }), {
         method: "POST",
-        path: \`\${missionPath}/verification\`,
+        path: `${missionPath}/verification`,
         expectStatus: 201,
       });
 
@@ -681,7 +682,8 @@ test("authenticated mission evidence and human decision are persisted", async ({
           publishedAt: observedDate,
         }),
       ]);
-      ledger.record("verification", verifications[0].id);
+      verificationId = verifications[0].id;
+      ledger.record("verification", verificationId);
 
       await expect(page.getByText(sourceTitle, { exact: true })).toBeVisible();
       await expect(page.getByText(sourceObservation, { exact: true })).toBeVisible();
@@ -699,7 +701,7 @@ test("authenticated mission evidence and human decision are persisted", async ({
 
       await submit(page, page.getByLabel("Outcome summary", { exact: true }), {
         method: "POST",
-        path: \`\${missionPath}/outcome\`,
+        path: `${missionPath}/outcome`,
         expectStatus: 200,
       });
 
@@ -707,7 +709,7 @@ test("authenticated mission evidence and human decision are persisted", async ({
       expect(outcomes).toHaveLength(1);
       expect(outcomes[0]).toMatchObject({
         status: "COMPLETED",
-        verification_id: verificationsId(owner.client, missionId),
+        verification_id: verificationId,
       });
       expect(outcomes[0].result).toMatchObject({
         summary: outcomeSummary,
