@@ -3,6 +3,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import test from "node:test";
+import { translateUiText } from "../lib/ui-translations.mjs";
 import {
   allowedNextMissionStatuses,
   composeMissionObjective,
@@ -343,7 +344,7 @@ test("mission detail provides direct navigation to persisted execution sections"
 test("execution overview counts only saved action states and highlights the deterministic next action", () => {
   const page = read("app/app/missions/[id]/page.tsx");
   for (const status of ["PENDING", "RUNNING", "BLOCKED", "COMPLETED", "CANCELLED"]) {
-    assert.match(page, new RegExp('status === "' + status + '" '));
+    assert.match(page, new RegExp('status === "' + status + '"'));
   }
   assert.ok(page.includes('id={`action-${action.id}`}'));
   assert.match(page, /action\.id === intelligence\.nextAction\.actionId/);
@@ -358,4 +359,22 @@ test("execution workspace keeps existing verification and action APIs as the onl
   assert.match(page, /MissionMutationControls missionId={mission\.id}/);
   assert.match(page, /ActionMutationControls missionId={mission\.id} action={action}/);
   assert.doesNotMatch(page, /fetch\\(|\\.rpc\\(|createSupabaseClient/);
+});
+
+test("Mission execution navigation and status overview are translated in all supported languages", () => {
+  const keys = [
+    "Execution workspace",
+    "Jump to",
+    "Mission sections",
+    "Go to next step",
+    "Actions recorded",
+    "Action overview",
+    "No actions are recorded yet.",
+    "Add the first concrete step needed to move this Mission forward.",
+  ];
+  for (const language of ["nb", "ar", "es", "fr", "de"]) {
+    for (const key of keys) {
+      assert.notEqual(translateUiText(language, key), key, "missing " + language + " translation for: " + key);
+    }
+  }
 });

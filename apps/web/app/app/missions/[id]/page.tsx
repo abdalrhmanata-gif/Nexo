@@ -110,7 +110,8 @@ export default async function MissionDetailPage({
             <span className="mission-action-total">{mission.actions.length} <LocalizedText en="Actions recorded" /></span>
           </div>
 
-          <div className="mission-action-overview" aria-label="Action overview">
+          <div className="mission-action-overview" aria-labelledby="mission-action-overview-label">
+            <span className="visually-hidden" id="mission-action-overview-label"><LocalizedText en="Action overview" /></span>
             {[
               { key: "pending", label: "Not started", count: actionCounts.pending },
               { key: "running", label: "In progress", count: actionCounts.running },
