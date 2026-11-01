@@ -6,6 +6,7 @@ import { createSupabaseMissionRepository } from "../../../../lib/supabase/missio
 import { actionStatusHint, actionStatusLabel, formatFollowUp, missionStatusLabel, nextStepFor, verificationReadiness } from "../../../../lib/mission-content.mjs";
 import { StatusPill } from "../../../../components/shell";
 import { VerificationControls } from "../../../../components/verification-controls";
+import { MissionEvidenceRecord } from "../../../../components/mission-evidence-record";
 import { MissionMutationControls } from "../../../../components/mission-mutation-controls";
 import { ActionMutationControls } from "../../../../components/action-mutation-controls";
 import { AddActionForm } from "../../../../components/add-action-form";
@@ -160,6 +161,7 @@ export default async function MissionDetailPage({
           <p className="eyebrow"><LocalizedText en="Verification" /></p>
           <h2><LocalizedText en={verification ? "Verification" : "Record what you checked"} /></h2>
           <p><LocalizedText en="A mission is only verified once evidence has been recorded through the authenticated server boundary. Work being reported as finished is not the same as ZAVQERA considering it verified." /></p>
+          {verification && <MissionEvidenceRecord verification={verification} />}
           {readiness.ready
             ? (verification
               ? <>{!outcome && <VerificationControls missionId={mission.id} verification={verification} />}</>
@@ -177,7 +179,18 @@ export default async function MissionDetailPage({
           <p className="eyebrow"><LocalizedText en="Outcome" /></p>
           <h2><LocalizedText en={outcome ? "Outcome" : "No outcome yet"} /></h2>
           {outcome
-            ? <p><LocalizedText en={outcome.status === "COMPLETED" ? "This mission reached its stated outcome." : "This mission closed without reaching its stated outcome."} /> <LocalizedText en="Recorded confidence" /> {Math.round(outcome.successScore * 100)}%.</p>
+            ? <div className="mission-outcome-record">
+                <p><LocalizedText en={outcome.status === "COMPLETED" ? "This mission reached its stated outcome." : "This mission closed without reaching its stated outcome."} /> <LocalizedText en="Recorded confidence" /> {Math.round(outcome.successScore * 100)}%.</p>
+                {typeof outcome.result.summary === "string" && <div className="mission-evidence-record-block"><span><LocalizedText en="Outcome summary" /></span><p>{outcome.result.summary}</p></div>}
+                {outcome.result.decision === "PROCEED" || outcome.result.decision === "STOP"
+                  ? <div className="mission-decision-record">
+                      <span><LocalizedText en="Recorded human decision" /></span>
+                      <strong><LocalizedText en={outcome.result.decision === "PROCEED" ? "Proceed" : "Stop"} /></strong>
+                    </div>
+                  : null}
+                {typeof outcome.result.rationale === "string" && <div className="mission-evidence-record-block"><span><LocalizedText en="Decision rationale" /></span><p>{outcome.result.rationale}</p></div>}
+                {outcome.result.decisionType === "HUMAN_OUTCOME_DECISION" && <p className="mission-evidence-record-caveat"><LocalizedText en="This is a recorded human outcome decision, not a delegated AI approval or permission to perform an external action." /></p>}
+              </div>
             : <p className="detail-intent"><LocalizedText en="An outcome can only be committed after a verification is recorded." /></p>}
         </section>
 
