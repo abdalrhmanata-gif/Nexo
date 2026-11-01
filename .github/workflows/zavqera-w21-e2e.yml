@@ -6,6 +6,7 @@ on:
     branches:
       - "codex/mission-action-runtime-seam-test-20261014"
       - "zavqera/ai-planner-integration"
+      - "codex/w82-null-binding-validation-20261101"
     paths:
       - ".github/workflows/zavqera-w21-e2e.yml"
       - ".github/workflows/zavqera-web-unit.yml"
