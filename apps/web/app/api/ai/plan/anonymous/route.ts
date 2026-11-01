@@ -2,7 +2,7 @@ import { createHash, createHmac } from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getRequestClientIp } from "../../../../../lib/request-client-ip.mjs";
-import { DEFAULT_AI_MODEL, requestMissionPlan } from "../../../../../lib/ai-planner";
+import { requestMissionPlan } from "../../../../../lib/ai-planner";
 import { buildMockMissionPlan } from "../../../../../lib/ai-mock-provider";
 import {
   consumeAnonymousAiGeneration,
@@ -78,8 +78,29 @@ export async function POST(request: Request) {
   const isProductionRuntime = process.env.NODE_ENV === "production";
   const providerMode = configuredProviderMode === "mock" && !isProductionRuntime ? "mock" : "openai";
   const apiKey = process.env.OPENAI_API_KEY;
+  const model = process.env.OPENAI_MODEL?.trim();
   if (providerMode !== "mock" && !apiKey) {
     return errorResponse("AI planning is not configured yet.", 503, visitorToken, shouldSetCookie);
+  }
+  if (providerMode !== "mock" && !model) {
+    return withVisitorCookie(
+      NextResponse.json(
+        { error: "AI planning model is not configured yet.", code: "ai_model_not_configured" },
+        { status: 503 },
+      ),
+      visitorToken,
+      shouldSetCookie,
+    );
+  }
+  if (providerMode !== "mock" && model && model.length > 128) {
+    return withVisitorCookie(
+      NextResponse.json(
+        { error: "AI planning model configuration is invalid.", code: "ai_model_invalid" },
+        { status: 503 },
+      ),
+      visitorToken,
+      shouldSetCookie,
+    );
   }
 
   const visitorHash = hashVisitor(visitorToken);
@@ -107,7 +128,7 @@ export async function POST(request: Request) {
       ? buildMockMissionPlan(goal.trim())
       : await requestMissionPlan(goal.trim(), {
         apiKey: apiKey as string,
-        model: process.env.OPENAI_MODEL || DEFAULT_AI_MODEL,
+        model: model as string,
         requestId,
       });
 
@@ -128,8 +149,14 @@ export async function POST(request: Request) {
   } catch (error) {
     const code = error instanceof Error ? error.message : "UNKNOWN";
 
-    if (code === "RATE_LIMITED" || code === "UPSTREAM_REJECTED") {
-      await releaseAnonymousAiGeneration(reservationId).catch(() => undefined);
+    if (["RATE_LIMITED", "UPSTREAM_REJECTED", "INVALID_PROVIDER_REQUEST"].includes(code)) {
+      try {
+        await releaseAnonymousAiGeneration(reservationId);
+      } catch {
+        // Keep the reservation held unless release is positively confirmed.
+        // Log only a fixed diagnostic; never include visitor or provider data.
+        console.error("ANONYMOUS_AI_RESERVATION_RELEASE_NOT_CONFIRMED");
+      }
       return errorResponse(
         code === "RATE_LIMITED"
           ? "AI usage is temporarily limited. Please try again later."

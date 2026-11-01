@@ -43,3 +43,13 @@ test("mission plan contract is outcome-driven and rejects generic template-only 
   assert.match(source, /successCriteria\.length < 1/);
   assert.match(source, /successCriteria\.length > 4/);
 });
+
+
+test("provider requires a nonblank bounded explicit model and has no fallback", () => {
+  assert.doesNotMatch(source, /DEFAULT_AI_MODEL/);
+  assert.match(source, /model:\s*string;/);
+  assert.match(source, /const modelName = typeof model === "string" \? model\.trim\(\) : ""/);
+  assert.match(source, /AI_MODEL_NOT_CONFIGURED/);
+  assert.match(source, /AI_MODEL_INVALID/);
+  assert.match(source, /model:\s*modelName/);
+});

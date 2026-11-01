@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const route = readFileSync(path.join(root, "app/api/ai/plan/route.ts"), "utf8");
+const anonymousRoute = readFileSync(path.join(root, "app/api/ai/plan/anonymous/route.ts"), "utf8");
+const diagnostics = readFileSync(path.join(root, "app/api/ai/diagnostics/route.ts"), "utf8");
 const service = readFileSync(path.join(root, "lib/ai-generation-service.mjs"), "utf8");
 const usage = readFileSync(path.join(root, "lib/ai-usage.ts"), "utf8");
 const planner = readFileSync(path.join(root, "lib/ai-planner.ts"), "utf8");
@@ -97,4 +99,34 @@ test("mission boundaries are sent to AI drafting and persisted with the saved mi
   assert.match(newMission, /Boundaries and permissions:/);
   assert.match(newMission, /intent: persistedIntent/);
   assert.match(route, /length > 2400/);
+});
+
+
+test("authenticated, anonymous and diagnostic routes require an explicit bounded model", () => {
+  for (const [name, source] of [
+    ["authenticated planner", route],
+    ["anonymous planner", anonymousRoute],
+  ]) {
+    assert.ok(source.includes("const model = process.env.OPENAI_MODEL?.trim();"), name);
+    assert.ok(source.includes('if (providerMode !== "mock" && !model)'), name);
+    assert.ok(source.includes('code: "ai_model_not_configured"'), name);
+    assert.ok(source.includes('code: "ai_model_invalid"'), name);
+    assert.equal(source.includes("DEFAULT_AI_MODEL"), false, name);
+    assert.equal(/process\.env\.OPENAI_MODEL\s*\|\|/.test(source), false, name);
+    assert.ok(
+      source.indexOf('if (providerMode !== "mock" && !model)') <
+        source.indexOf(name === "authenticated planner" ? "runAiGeneration({" : "await reserveAnonymousAiGeneration("),
+      `${name} must reject invalid configuration before reserving quota`,
+    );
+  }
+
+  assert.ok(diagnostics.includes("const model = process.env.OPENAI_MODEL?.trim();"));
+  assert.ok(diagnostics.includes('diagnosis: "OPENAI_MODEL_NOT_CONFIGURED"'));
+  assert.ok(diagnostics.includes('diagnosis: "OPENAI_MODEL_INVALID"'));
+  assert.equal(diagnostics.includes("DEFAULT_AI_MODEL"), false);
+  assert.equal(/process\.env\.OPENAI_MODEL\s*\|\|/.test(diagnostics), false);
+  assert.ok(
+    diagnostics.indexOf("if (!model)") < diagnostics.indexOf("const response = await fetch("),
+    "diagnostics must not contact OpenAI without a configured model",
+  );
 });

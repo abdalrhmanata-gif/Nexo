@@ -1,3 +1,5 @@
+import "server-only";
+import { getServerDbHeaders } from "./anonymous-ai-rpc-headers.mjs";
 import { supabaseUrl } from "./supabase/config";
 
 function getServerDbKey() {
@@ -10,10 +12,7 @@ async function callRpc<T>(name: string, body: Record<string, unknown>) {
   const key = getServerDbKey();
   const response = await fetch(`${supabaseUrl}/rest/v1/rpc/${name}`, {
     method: "POST",
-    headers: {
-      apikey: key,
-      "Content-Type": "application/json",
-    },
+    headers: getServerDbHeaders(key),
     body: JSON.stringify(body),
     cache: "no-store",
     redirect: "error",
@@ -49,7 +48,8 @@ export async function consumeAnonymousAiGeneration(reservationId: string) {
 }
 
 export async function releaseAnonymousAiGeneration(reservationId: string) {
-  await callRpc<boolean>("release_anonymous_ai_generation", {
+  const data = await callRpc<boolean>("release_anonymous_ai_generation", {
     p_reservation_id: reservationId,
   });
+  if (data !== true) throw new Error("ANONYMOUS_AI_GUARD_UNAVAILABLE");
 }

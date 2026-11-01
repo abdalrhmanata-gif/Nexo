@@ -2,7 +2,8 @@ name: ZAVQERA Flutter CI
 
 on:
   push:
-    branches: ["**"]
+    branches-ignore:
+      - codex/anonymous-ai-rpc-public-invoker-wrapper-20261019
   pull_request:
 
 permissions:
