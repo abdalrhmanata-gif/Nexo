@@ -129,6 +129,33 @@ test("Netlify previews target the current PR and smoke-test anonymous routing wi
   );
 });
 
+test("Netlify draft build explicitly exports validated Development values from Netlify", () => {
+  const deployStart = netlifyWorkflow.indexOf("- name: Deploy Netlify draft preview");
+  const verifyStart = netlifyWorkflow.indexOf("- name: Verify public routes", deployStart);
+  assert.notEqual(deployStart, -1, "missing Netlify draft deploy step");
+  assert.notEqual(verifyStart, -1, "missing Netlify route verification step");
+  const deployStep = netlifyWorkflow.slice(deployStart, verifyStart);
+
+  assert.match(
+    deployStep,
+    /env:get NEXT_PUBLIC_SUPABASE_URL --context deploy-preview --scope builds/,
+  );
+  assert.match(
+    deployStep,
+    /env:get NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY --context deploy-preview --scope builds/,
+  );
+  assert.match(deployStep, /https:\/\/mrwmmbytcymqgwvcoywd\.supabase\.co/);
+  assert.match(deployStep, /export NEXT_PUBLIC_SUPABASE_URL="\$\{supabase_url\}"/);
+  assert.match(deployStep, /export NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY="\$\{supabase_key\}"/);
+  assert.match(deployStep, /netlify-cli@latest deploy --build --context deploy-preview/);
+  assert.doesNotMatch(
+    deployStep,
+    /secrets\.NEXT_PUBLIC_SUPABASE_(?:URL|PUBLISHABLE_KEY)/,
+    "the build must not consume unset GitHub copies of Netlify-owned values",
+  );
+  assert.match(deployStep, /set \+x/, "resolved public configuration must not be shell-traced");
+});
+
 test("Web CI audits full and production dependency trees and blocks high or critical findings", () => {
   assert.ok(webWorkflow.includes("npm audit --json"));
   assert.ok(webWorkflow.includes("npm audit --omit=dev --json"));
