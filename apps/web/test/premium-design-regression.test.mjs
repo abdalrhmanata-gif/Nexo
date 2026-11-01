@@ -62,7 +62,7 @@ test("pricing distinguishes available free access from proposed paid plans", () 
 });
 
 test("the Netlify workflow grants only the dedicated design branch a draft preview path", () => {
-  const workflow = read(".github/workflows/web-deploy-netlify.yml");
+  const workflow = read("../../.github/workflows/web-deploy-netlify.yml");
   assert.match(workflow, /codex\/zavqera-premium-mission-control-design-20261101/);
   assert.match(workflow, /deploy --build --context deploy-preview/);
   assert.doesNotMatch(workflow, /--prod(?:uction)?\b/);
