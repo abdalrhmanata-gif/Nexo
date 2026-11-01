@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAuthenticatedUser } from "../../../../lib/supabase/server";
-import { DEFAULT_AI_MODEL, requestMissionPlan } from "../../../../lib/ai-planner";
+import { requestMissionPlan } from "../../../../lib/ai-planner";
 import { buildMockMissionPlan } from "../../../../lib/ai-mock-provider";
 import {
   AI_GENERATION_OUTCOMES,
@@ -27,8 +27,21 @@ export async function POST(request: Request) {
   const isProductionRuntime = process.env.NODE_ENV === "production";
   const providerMode = configuredProviderMode === "mock" && !isProductionRuntime ? "mock" : "openai";
   const apiKey = process.env.OPENAI_API_KEY;
+  const model = process.env.OPENAI_MODEL?.trim();
   if (providerMode !== "mock" && !apiKey) {
     return NextResponse.json({ error: "AI planning is not configured yet." }, { status: 503 });
+  }
+  if (providerMode !== "mock" && !model) {
+    return NextResponse.json(
+      { error: "AI planning model is not configured yet.", code: "ai_model_not_configured" },
+      { status: 503 },
+    );
+  }
+  if (providerMode !== "mock" && model && model.length > 128) {
+    return NextResponse.json(
+      { error: "AI planning model configuration is invalid.", code: "ai_model_invalid" },
+      { status: 503 },
+    );
   }
 
   let body: unknown;
@@ -58,7 +71,7 @@ export async function POST(request: Request) {
         ? Promise.resolve(buildMockMissionPlan(goal.trim()))
         : requestMissionPlan(goal.trim(), {
           apiKey: apiKey as string,
-          model: process.env.OPENAI_MODEL || DEFAULT_AI_MODEL,
+          model: model as string,
           requestId,
         }),
       consume: consumeAiGeneration,
