@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap;
 create temporary table w82_test_results(name text primary key, passed boolean not null) on commit drop;
 grant all on w82_test_results to authenticated;
-select plan(13);
+select plan(15);
 do $test$
 declare
   u uuid := gen_random_uuid();
@@ -36,6 +36,20 @@ begin
     insert into w82_test_results values ('null_request_hash_rejected', false);
   exception when sqlstate '22023' then
     insert into w82_test_results values ('null_request_hash_rejected', true);
+  end;
+
+  begin
+    perform * from public.reserve_ai_generation('w82-short-hash-request-0001', 'planner', repeat('e',63));
+    insert into w82_test_results values ('short_request_hash_rejected', false);
+  exception when sqlstate '22023' then
+    insert into w82_test_results values ('short_request_hash_rejected', true);
+  end;
+
+  begin
+    perform * from public.reserve_ai_generation('w82-nonhex-hash-request-0001', 'planner', repeat('G',64));
+    insert into w82_test_results values ('nonhex_request_hash_rejected', false);
+  exception when sqlstate '22023' then
+    insert into w82_test_results values ('nonhex_request_hash_rejected', true);
   end;
 
   select * into r2 from public.reserve_ai_generation(
@@ -99,6 +113,8 @@ $test$;
 select ok((select passed from w82_test_results where name='first_reserved'), 'first generation reservation is bound and issued');
 select ok((select passed from w82_test_results where name='null_generation_kind_rejected'), 'NULL generation kind is rejected');
 select ok((select passed from w82_test_results where name='null_request_hash_rejected'), 'NULL request hash is rejected');
+select ok((select passed from w82_test_results where name='short_request_hash_rejected'), 'request hash shorter than 64 characters is rejected');
+select ok((select passed from w82_test_results where name='nonhex_request_hash_rejected'), 'request hash containing non-hex characters is rejected');
 select ok((select passed from w82_test_results where name='duplicate_denied'), 'same request cannot start a second provider attempt');
 select ok((select passed from w82_test_results where name='cross_route_replay_denied'), 'same id cannot replay across planner/research');
 select ok((select passed from w82_test_results where name='changed_input_replay_denied'), 'same id cannot replay with changed input');
