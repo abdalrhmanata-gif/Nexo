@@ -4,6 +4,10 @@ import test from "node:test";
 import { fileURLToPath } from "node:url";
 import { getServerDbHeaders } from "../lib/anonymous-ai-rpc-headers.mjs";
 
+const routePath = fileURLToPath(
+  new URL("../app/api/ai/plan/anonymous/route.ts", import.meta.url),
+);
+
 const migrationPath = fileURLToPath(
   new URL("../../../supabase/migrations/20261019193000_w83_anonymous_ai_rpc_public_invoker_wrappers.sql", import.meta.url),
 );
@@ -11,9 +15,10 @@ const helperPath = fileURLToPath(
   new URL("../lib/anonymous-ai-usage.ts", import.meta.url),
 );
 
-const [migration, helper] = await Promise.all([
+const [migration, helper, route] = await Promise.all([
   readFile(migrationPath, "utf8"),
   readFile(helperPath, "utf8"),
+  readFile(routePath, "utf8"),
 ]);
 const normalizedMigration = migration.replace(/\r\n/g, "\n");
 
@@ -75,4 +80,22 @@ test("only service_role receives EXECUTE on the public wrappers", () => {
       `missing service_role grant for ${signature}`,
     );
   }
+});
+
+test("anonymous quota release is confirmed and failed settlement is logged without sensitive data", () => {
+  const releaseStart = helper.indexOf("export async function releaseAnonymousAiGeneration(");
+  assert.notEqual(releaseStart, -1);
+  const releaseBlock = helper.slice(releaseStart);
+  assert.match(
+    releaseBlock,
+    /if \(data !== true\) throw new Error\("ANONYMOUS_AI_GUARD_UNAVAILABLE"\);/,
+  );
+  assert.match(
+    route,
+    /try \{\s*await releaseAnonymousAiGeneration\(reservationId\);\s*\} catch \{\s*\/\/ Keep the reservation held unless release is positively confirmed\.\s*\/\/ Log only a fixed diagnostic; never include visitor or provider data\.\s*console\.error\("ANONYMOUS_AI_RESERVATION_RELEASE_NOT_CONFIRMED"\);\s*\}/,
+  );
+  assert.doesNotMatch(
+    route,
+    /console\.error\([^)]*(?:visitorToken|reservationId|apiKey|salt)/i,
+  );
 });
