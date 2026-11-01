@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import test from "node:test";
 import { translateUiText } from "../lib/ui-translations.mjs";
 
-const root = dirname(fileURLToPath(import.meta.url));
+const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (path) => readFileSync(join(root, path), "utf8");
 
 test("Design A keeps a responsive Mission Control hero without horizontal clipping", () => {
