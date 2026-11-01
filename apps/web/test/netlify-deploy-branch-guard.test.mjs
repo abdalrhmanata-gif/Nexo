@@ -15,8 +15,8 @@ test("Netlify workflow permits draft previews but never production deploys", () 
     "workflow must declare pull_request exactly once");
   assert.match(workflow, /pull_request:\s*\n\s+types: \[opened, synchronize, reopened\]/,
     "PR updates must continue to trigger preview verification");
-  assert.match(workflow, /branches:\s*\n\s+- "zavqera\/alternative-web-deployment"/,
-    "PR preview checks must target the intended deployment branch");
+  assert.match(workflow, /branches:\s*\n\s+- "zavqera\/alternative-web-deployment"\s*\n\s+- "zavqera\/ai-planner-integration"/,
+    "PR preview checks must target both the alternative and active integration branches");
   const deployStart = workflow.indexOf("\n  deploy:\n");
   const previewStart = workflow.indexOf("\n  verify-preview:", deployStart + 1);
   assert.notEqual(deployStart, -1, "deployment job must exist");
