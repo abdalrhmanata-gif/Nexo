@@ -20,6 +20,7 @@ on:
     types: [opened, synchronize, reopened]
     branches:
       - "zavqera/alternative-web-deployment"
+      - "zavqera/ai-planner-integration"
     paths:
       - "apps/web/**"
       - "netlify.toml"
