@@ -21,7 +21,7 @@ test("first-run onboarding does not replace search or existing-mission workflows
   const page = read("app/app/page.tsx");
   assert.match(page, /isFirstMission \? \([\s\S]*workspace-onboarding[\s\S]*\) : \([\s\S]*workspace-quick-actions/);
   assert.match(page, /mission-search/);
-  assert.match(page, /missions\.map\(\(mission\) => <MissionCard/);
+  assert.match(page, /visibleMissions\.map\(\(mission\) => <MissionCard/);
   assert.match(page, /selectedStatus/);
   assert.match(page, /normalizedQuery/);
 });
