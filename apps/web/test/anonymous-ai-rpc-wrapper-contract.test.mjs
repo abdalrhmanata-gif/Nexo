@@ -163,3 +163,17 @@ test("Web CI audits full and production dependency trees and blocks high or crit
   assert.ok(webWorkflow.includes("const high = counts.high ?? 0;"));
   assert.ok(webWorkflow.includes("if (critical > 0 || high > 0) process.exit(1);"));
 });
+
+
+test("anonymous quota is released for definite provider request rejection", () => {
+  assert.match(
+    route,
+    /\["RATE_LIMITED", "UPSTREAM_REJECTED", "INVALID_PROVIDER_REQUEST"\]\.includes\(code\)/,
+  );
+  const plannerPath = fileURLToPath(
+    new URL("../lib/ai-planner.ts", import.meta.url),
+  );
+  return readFile(plannerPath, "utf8").then((planner) => {
+    assert.match(planner, /if \(response\.status === 400\) throw new Error\("INVALID_PROVIDER_REQUEST"\)/);
+  });
+});

@@ -149,7 +149,7 @@ export async function POST(request: Request) {
   } catch (error) {
     const code = error instanceof Error ? error.message : "UNKNOWN";
 
-    if (code === "RATE_LIMITED" || code === "UPSTREAM_REJECTED") {
+    if (["RATE_LIMITED", "UPSTREAM_REJECTED", "INVALID_PROVIDER_REQUEST"].includes(code)) {
       try {
         await releaseAnonymousAiGeneration(reservationId);
       } catch {
