@@ -58,11 +58,8 @@ begin
     raise exception 'AUTH_REQUIRED' using errcode = '42501';
   end if;
   if char_length(btrim(coalesce(p_request_id, ''))) not between 16 and 200
-     or p_generation_kind is null
      or p_generation_kind not in ('planner', 'research')
-     or p_request_hash is null
-     or char_length(p_request_hash) <> 64
-     or p_request_hash ~ '[^0-9a-f]' then
+     or p_request_hash !~ '^[0-9a-f]{64}$' then
     raise exception 'INVALID_GENERATION_REQUEST' using errcode = '22023';
   end if;
 
