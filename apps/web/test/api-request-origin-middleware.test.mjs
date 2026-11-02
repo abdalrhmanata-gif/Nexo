@@ -20,5 +20,6 @@ test("Next middleware applies the origin boundary to API routes before any confi
 });
 
 test("internal worker exclusion is documented at the API middleware boundary", () => {
-  assert.match(middleware, /internal worker route authenticates\s+server-to-server requests independently/);
+  assert.match(middleware, /internal worker route authenticates/);
+  assert.match(middleware, /server-to-server requests independently/);
 });
