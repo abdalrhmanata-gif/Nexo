@@ -19,7 +19,13 @@ user_id="$(python3 -c 'import uuid; print(uuid.uuid4())')"
 request_id="w82-cross-month-race-$(python3 -c 'import secrets; print(secrets.token_hex(8))')"
 request_hash="$(python3 -c 'import hashlib; print(hashlib.sha256(b"W82 cross-month race").hexdigest())')"
 tmp_dir="$(mktemp -d)"
-trap 'rm -rf "$tmp_dir"; psql "$db_url" -X -q -v ON_ERROR_STOP=1 -c "delete from auth.users where id = \'$user_id\'::uuid;" >/dev/null 2>&1 || true' EXIT
+cleanup() {
+  rm -rf "$tmp_dir"
+  psql "$db_url" -X -q -v ON_ERROR_STOP=1 >/dev/null 2>&1 <<SQL || true
+delete from auth.users where id = '$user_id'::uuid;
+SQL
+}
+trap cleanup EXIT
 
 # These two independent PostgreSQL sessions deliberately use different month
 # partitions but the same global (user_id, request_id) identity.
