@@ -276,6 +276,11 @@ jobs:
             supabase test db supabase/tests/w70_durable_unknown_outcome_reconciliation.sql
           )
 
+      - name: Run W82 cross-month global reservation identity race
+        run: |
+          set -euo pipefail
+          bash "$GITHUB_WORKSPACE/tool/w82_cross_month_reservation_identity_race.sh"
+
       - name: Run actual-ledger concurrent idempotency proof
         run: |
           set -euo pipefail
