@@ -80,7 +80,7 @@ select ok((select p.prosecdef and pg_get_userbyid(p.proowner)='postgres'
   'private invitation lookup helper remains postgres-owned SECURITY DEFINER with pinned search_path');
 
 select is((
-  select coalesce(array_agg(case when a.grantee=0 then 'PUBLIC' else grantee.rolname end
+  select coalesce(array_agg((case when a.grantee=0 then 'PUBLIC' else grantee.rolname end)::text
                             order by case when a.grantee=0 then 'PUBLIC' else grantee.rolname end)
                    filter(where a.privilege_type='EXECUTE' and a.grantee<>p.proowner),array[]::text[])
     from pg_proc p cross join lateral aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a
@@ -89,7 +89,7 @@ select is((
 ), array['anon','authenticated']::text[], 'public invitation lookup EXECUTE grants are exact');
 
 select is((
-  select coalesce(array_agg(case when a.grantee=0 then 'PUBLIC' else grantee.rolname end
+  select coalesce(array_agg((case when a.grantee=0 then 'PUBLIC' else grantee.rolname end)::text
                             order by case when a.grantee=0 then 'PUBLIC' else grantee.rolname end)
                    filter(where a.privilege_type='EXECUTE' and a.grantee<>p.proowner),array[]::text[])
     from pg_proc p cross join lateral aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a
