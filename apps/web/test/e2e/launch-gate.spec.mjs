@@ -19,6 +19,24 @@ function assertRuntime() {
   }
 }
 
+test("cross-origin cookie API mutations are rejected before the handler while same-origin requests pass the boundary", async ({ request }) => {
+  assertRuntime();
+  const endpoint = `${runtime.baseURL}/api/business/invitations`;
+
+  const crossOrigin = await request.post(endpoint, {
+    headers: { origin: "https://attacker.example" },
+    data: { email: "qa@example.test", role: "member" },
+  });
+  expect(crossOrigin.status()).toBe(403);
+  expect(await crossOrigin.json()).toEqual({ error: "Untrusted request origin." });
+
+  const sameOrigin = await request.post(endpoint, {
+    headers: { origin: new URL(runtime.baseURL).origin },
+    data: {},
+  });
+  expect(sameOrigin.status()).not.toBe(403);
+});
+
 function freshUser(label) {
   return {
     email: `zavqera-gate-${runtime.runId}-${label}@example.test`,
