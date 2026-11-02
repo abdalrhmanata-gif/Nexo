@@ -2,7 +2,25 @@ begin;
 create extension if not exists pgtap;
 create temporary table w82_test_results(name text primary key, passed boolean not null) on commit drop;
 grant all on w82_test_results to authenticated;
-select plan(16);
+select plan(17);
+-- Force an unrelated unique_violation from the reservation INSERT path.
+-- The function must propagate it when no matching idempotency row exists.
+create function public.w82_test_raise_unrelated_unique_violation()
+returns trigger
+language plpgsql
+set search_path = pg_catalog, public
+as $trigger$
+begin
+  if new.request_id = 'w82-unrelated-unique-violation-0001' then
+    raise unique_violation using message = 'W82 unrelated unique violation probe';
+  end if;
+  return new;
+end;
+$trigger$;
+create trigger w82_test_unrelated_unique_violation
+before insert on public.ai_usage_reservations
+for each row execute function public.w82_test_raise_unrelated_unique_violation();
+
 do $test$
 declare
   u uuid := gen_random_uuid();
@@ -23,6 +41,17 @@ begin
   select * into r from public.reserve_ai_generation(
     'w82-planner-request-0001', 'planner', repeat('a',64));
   insert into w82_test_results values ('first_reserved', r.allowed and r.reservation_id is not null);
+
+  begin
+    perform * from public.reserve_ai_generation(
+      'w82-unrelated-unique-violation-0001', 'planner', repeat('f',64));
+    insert into w82_test_results values ('unrelated_unique_violation_propagated', false);
+  exception when unique_violation then
+    insert into w82_test_results values (
+      'unrelated_unique_violation_propagated',
+      not exists (select 1 from public.ai_usage_reservations
+                   where user_id=u and request_id='w82-unrelated-unique-violation-0001'));
+  end;
 
   begin
     perform * from public.reserve_ai_generation('w82-null-kind-request-0001', null, repeat('d',64));
@@ -128,6 +157,7 @@ begin
 end;
 $test$;
 select ok((select passed from w82_test_results where name='first_reserved'), 'first generation reservation is bound and issued');
+select ok((select passed from w82_test_results where name='unrelated_unique_violation_propagated'), 'unrelated unique violations are rethrown when no matching reservation exists');
 select ok((select passed from w82_test_results where name='null_generation_kind_rejected'), 'NULL generation kind is rejected');
 select ok((select passed from w82_test_results where name='null_request_hash_rejected'), 'NULL request hash is rejected');
 select ok((select passed from w82_test_results where name='short_request_hash_rejected'), 'request hash shorter than 64 characters is rejected');
