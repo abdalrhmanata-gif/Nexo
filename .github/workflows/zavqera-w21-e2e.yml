@@ -17,6 +17,7 @@ on:
     branches:
       - "zavqera/alternative-web-deployment"
       - "zavqera/ai-planner-integration"
+      - "codex/w82-null-binding-validation-20261101"
     types: [opened, synchronize, reopened]
 
 concurrency:
