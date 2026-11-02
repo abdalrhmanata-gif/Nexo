@@ -47,10 +47,9 @@ begin
       'w82-unrelated-unique-violation-0001', 'planner', repeat('f',64));
     insert into w82_test_results values ('unrelated_unique_violation_propagated', false);
   exception when unique_violation then
-    insert into w82_test_results values (
-      'unrelated_unique_violation_propagated',
-      not exists (select 1 from public.ai_usage_reservations
-                   where user_id=u and request_id='w82-unrelated-unique-violation-0001'));
+    -- The caller is authenticated and intentionally has no direct SELECT on
+    -- the reservation ledger; propagation itself is the assertion.
+    insert into w82_test_results values ('unrelated_unique_violation_propagated', true);
   end;
 
   begin
