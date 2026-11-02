@@ -43,8 +43,10 @@ select ok(
   has_table_privilege('authenticated','public.workspace_members','SELECT')
   and not has_table_privilege('authenticated','public.workspace_members','INSERT')
   and not has_table_privilege('authenticated','public.workspace_members','UPDATE')
-  and not has_table_privilege('authenticated','public.workspace_members','DELETE'),
-  'authenticated workspace membership writes are RPC-only while reads remain available'
+  and not has_table_privilege('authenticated','public.workspace_members','DELETE')
+  and not has_any_column_privilege('authenticated','public.workspace_members','INSERT')
+  and not has_any_column_privilege('authenticated','public.workspace_members','UPDATE'),
+  'authenticated workspace membership writes are RPC-only with no table or column DML grants while reads remain available'
 );
 
 select ok(
