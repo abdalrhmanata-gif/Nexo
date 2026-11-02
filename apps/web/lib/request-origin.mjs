@@ -2,14 +2,34 @@ const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 /**
  * Trust only browser requests from this exact application origin.
+ * Next may construct an internal request URL behind a proxy, so also compare
+ * against the public Host and forwarded protocol when those headers exist.
  * If Origin is absent, require Fetch Metadata to explicitly say same-origin.
  */
 export function isTrustedSameOriginRequest(request) {
   const origin = request.headers.get("origin");
 
   if (origin) {
+    let suppliedOrigin;
     try {
-      return new URL(origin).origin === new URL(request.url).origin;
+      suppliedOrigin = new URL(origin).origin;
+    } catch {
+      return false;
+    }
+
+    const requestUrl = new URL(request.url);
+    if (suppliedOrigin === requestUrl.origin) return true;
+
+    const host = request.headers.get("host");
+    if (!host) return false;
+
+    const forwardedProtocol = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
+    const protocol = forwardedProtocol && /^(https?)$/i.test(forwardedProtocol)
+      ? forwardedProtocol.toLowerCase()
+      : requestUrl.protocol.slice(0, -1);
+
+    try {
+      return suppliedOrigin === new URL(`${protocol}://${host}`).origin;
     } catch {
       return false;
     }
