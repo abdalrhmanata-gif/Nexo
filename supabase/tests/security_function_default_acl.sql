@@ -19,7 +19,7 @@ returns boolean
 language sql
 security definer
 set search_path = pg_catalog
-as $ select true $;
+as $body$ select true $body$;
 
 select ok(
   not has_function_privilege('anon','public.zavqera_default_function_acl_probe()','EXECUTE'),
