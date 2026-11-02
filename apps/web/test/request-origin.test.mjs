@@ -23,6 +23,29 @@ test("rejects an Origin from another origin even when Fetch Metadata says same-s
   assert.equal(isTrustedSameOriginRequest(request), false);
 });
 
+test("accepts the public Host origin when Next exposes an internal proxy URL", () => {
+  const request = new Request("http://next-internal:3210/api/auth/password-policy", {
+    method: "POST",
+    headers: {
+      origin: "http://127.0.0.1:3210",
+      host: "127.0.0.1:3210",
+    },
+  });
+  assert.equal(isTrustedSameOriginRequest(request), true);
+});
+
+test("uses the forwarded public protocol when comparing the Host origin", () => {
+  const request = new Request("http://next-internal:3210/api/auth/password-policy", {
+    method: "POST",
+    headers: {
+      origin: "https://zavqera.example",
+      host: "zavqera.example",
+      "x-forwarded-proto": "https",
+    },
+  });
+  assert.equal(isTrustedSameOriginRequest(request), true);
+});
+
 test("rejects opaque or malformed Origin values", () => {
   const request = new Request(endpoint, {
     method: "POST",
