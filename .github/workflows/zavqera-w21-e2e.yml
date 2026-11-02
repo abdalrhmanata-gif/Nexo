@@ -9,6 +9,7 @@ on:
       - "codex/security-acl-invitation-followup-20261102"
       - "codex/workspace-member-dml-rpc-boundary-20261102"
       - "codex/postgres-function-default-acl-hardening-20261102"
+      - "codex/postgres-default-acl-cross-schema-test-20261102"
     paths:
       - ".github/workflows/zavqera-w21-e2e.yml"
       - ".github/workflows/zavqera-web-unit.yml"
@@ -21,6 +22,7 @@ on:
       - "zavqera/ai-planner-integration"
       - "codex/security-acl-invitation-followup-20261102"
       - "codex/workspace-member-dml-rpc-boundary-20261102"
+      - "codex/postgres-function-default-acl-hardening-20261102"
     types: [opened, synchronize, reopened]
 
 concurrency:
