@@ -10,6 +10,7 @@ on:
       - "codex/workspace-member-dml-rpc-boundary-20261102"
       - "codex/postgres-function-default-acl-hardening-20261102"
       - "codex/w82-unrelated-unique-violation-followup-20261102"
+      - "codex/invitation-hash-and-w82-race-fix-20261102"
     paths:
       - ".github/workflows/zavqera-w21-e2e.yml"
       - ".github/workflows/zavqera-web-unit.yml"
@@ -22,6 +23,7 @@ on:
       - "zavqera/ai-planner-integration"
       - "codex/security-acl-invitation-followup-20261102"
       - "codex/workspace-member-dml-rpc-boundary-20261102"
+      - "codex/w82-unrelated-unique-violation-followup-20261102"
     types: [opened, synchronize, reopened]
 
 concurrency:
@@ -125,6 +127,7 @@ jobs:
           cp "$GITHUB_WORKSPACE/supabase/tests/w29_ai_usage_quota_smoke.sql" "$workdir/supabase/tests/w29_ai_usage_quota_smoke.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w36_ai_plan_smoke.sql" "$workdir/supabase/tests/w36_ai_plan_smoke.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w44_workspace_invitations.sql" "$workdir/supabase/tests/w44_workspace_invitations.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/w44_invitation_token_hash_integrity.sql" "$workdir/supabase/tests/w44_invitation_token_hash_integrity.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/security_acl_invitation_followup.sql" "$workdir/supabase/tests/security_acl_invitation_followup.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/security_function_default_acl.sql" "$workdir/supabase/tests/security_function_default_acl.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w45_workspace_member_management.sql" "$workdir/supabase/tests/w45_workspace_member_management.sql"
@@ -246,6 +249,7 @@ jobs:
             supabase test db supabase/tests/w36_ai_plan_smoke.sql
             supabase test db supabase/tests/w82_ai_generation_reservation_identity.sql
             supabase test db supabase/tests/w44_workspace_invitations.sql
+            supabase test db supabase/tests/w44_invitation_token_hash_integrity.sql
             supabase test db supabase/tests/security_acl_invitation_followup.sql
             supabase test db supabase/tests/security_function_default_acl.sql
             supabase test db supabase/tests/w45_workspace_member_management.sql
@@ -271,6 +275,11 @@ jobs:
             supabase test db supabase/tests/w69_agent_execution_dispatch_claim.sql
             supabase test db supabase/tests/w70_durable_unknown_outcome_reconciliation.sql
           )
+
+      - name: Run W82 cross-month global reservation identity race
+        run: |
+          set -euo pipefail
+          bash "$GITHUB_WORKSPACE/tool/w82_cross_month_reservation_identity_race.sh"
 
       - name: Run actual-ledger concurrent idempotency proof
         run: |
