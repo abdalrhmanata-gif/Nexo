@@ -6,7 +6,6 @@ on:
     branches:
       - "codex/mission-action-runtime-seam-test-20261014"
       - "zavqera/ai-planner-integration"
-      - "codex/security-acl-invitation-followup-20261102"
     paths:
       - ".github/workflows/zavqera-w21-e2e.yml"
       - ".github/workflows/zavqera-web-unit.yml"

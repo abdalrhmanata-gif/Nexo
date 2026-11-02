@@ -1,4 +1,7 @@
 -- W30 launch-gate pgTAP assertions.
+-- Sole narrow exception: public.get_workspace_invitation(text), separately verified
+-- for postgres ownership, pinned search_path, exact grants and token-only anon access
+-- by security_acl_invitation_followup.sql.
 -- Run inside a transaction against disposable/Development PostgreSQL and roll back.
 begin;
 create extension if not exists pgtap;
@@ -36,6 +39,7 @@ select ok(not exists(
 select ok(not exists(
   select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
   where n.nspname='public' and p.prosecdef
+    and p.oid <> 'public.get_workspace_invitation(text)'::regprocedure
     and has_function_privilege('anon',p.oid,'EXECUTE')
 ), 'no SECURITY DEFINER function is executable by anon');
 
@@ -47,6 +51,7 @@ select ok(not exists(
       where d.classid='pg_proc'::regclass and d.objid=p.oid and d.deptype='e'
     )
     and p.prosrc not like '%auth.uid()%'
+    and p.oid <> 'public.get_workspace_invitation(text)'::regprocedure
     and p.proname not in (
       'guard_mission_action_insert','handle_new_user_profile',
       'prevent_mission_action_delete_with_history','prevent_action_delete_with_history',
@@ -71,6 +76,7 @@ select ok(
 select ok(not exists(
   select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace
   where n.nspname='public' and p.prosecdef
+    and p.oid <> 'public.get_workspace_invitation(text)'::regprocedure
     and has_function_privilege('authenticated', p.oid, 'EXECUTE')
 ), 'no public SECURITY DEFINER function is executable by authenticated');
 
