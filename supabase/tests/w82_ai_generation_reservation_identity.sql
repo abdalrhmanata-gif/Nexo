@@ -2,7 +2,7 @@ begin;
 create extension if not exists pgtap;
 create temporary table w82_test_results(name text primary key, passed boolean not null) on commit drop;
 grant all on w82_test_results to authenticated;
-select plan(17);
+select plan(18);
 -- Force an unrelated unique_violation from the reservation INSERT path.
 -- The function must propagate it when no matching idempotency row exists.
 create function public.w82_test_raise_unrelated_unique_violation()
@@ -155,6 +155,11 @@ begin
   insert into w82_test_results values ('ambiguous_attempt_keeps_charge', used_count = 2);
 end;
 $test$;
+select ok(
+  position('on conflict (user_id, request_id) do nothing' in lower(pg_get_functiondef('private.reserve_ai_generation(text,text,text)'::regprocedure))) > 0
+  and position('exception when unique_violation' in lower(pg_get_functiondef('private.reserve_ai_generation(text,text,text)'::regprocedure))) = 0,
+  'global reservation identity is resolved by a targeted atomic conflict path, not a broad unique-violation handler'
+);
 select ok((select passed from w82_test_results where name='first_reserved'), 'first generation reservation is bound and issued');
 select ok((select passed from w82_test_results where name='unrelated_unique_violation_propagated'), 'unrelated unique violations are rethrown when no matching reservation exists');
 select ok((select passed from w82_test_results where name='null_generation_kind_rejected'), 'NULL generation kind is rejected');
