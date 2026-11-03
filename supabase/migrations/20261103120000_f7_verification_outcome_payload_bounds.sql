@@ -58,6 +58,7 @@ revoke all on function private.mission_jsonb_within_bounds(jsonb, integer, integ
 create or replace function private.enforce_mission_verification_outcome_payload_bounds()
 returns trigger
 language plpgsql
+security definer
 set search_path = pg_catalog, public, private
 as $$
 begin
