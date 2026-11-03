@@ -32,13 +32,15 @@ select ok(
 
 select ok(
   not (select prosecdef from pg_proc where oid = 'public.create_workspace_invitation(uuid,text,text,text,timestamptz)'::regprocedure)
-  and not (select prosecdef from pg_proc where oid = 'public.get_workspace_invitation(text)'::regprocedure)
+  and (select prosecdef from pg_proc where oid = 'public.get_workspace_invitation(text)'::regprocedure)
   and not (select prosecdef from pg_proc where oid = 'public.accept_workspace_invitation(text)'::regprocedure)
   and not (select prosecdef from pg_proc where oid = 'public.revoke_workspace_invitation(uuid)'::regprocedure)
+  and has_function_privilege('anon', 'public.get_workspace_invitation(text)', 'EXECUTE')
+  and has_function_privilege('authenticated', 'public.get_workspace_invitation(text)', 'EXECUTE')
   and has_function_privilege('authenticated', 'private.create_workspace_invitation(uuid,text,text,text,timestamptz)', 'EXECUTE')
   and not has_function_privilege('anon', 'private.create_workspace_invitation(uuid,text,text,text,timestamptz)', 'EXECUTE')
-  and has_function_privilege('authenticated', 'private.get_workspace_invitation(text)', 'EXECUTE')
-  and has_function_privilege('anon', 'private.get_workspace_invitation(text)', 'EXECUTE')
+  and not has_function_privilege('authenticated', 'private.get_workspace_invitation(text)', 'EXECUTE')
+  and not has_function_privilege('anon', 'private.get_workspace_invitation(text)', 'EXECUTE')
   and has_function_privilege('authenticated', 'private.accept_workspace_invitation(text)', 'EXECUTE')
   and not has_function_privilege('anon', 'private.accept_workspace_invitation(text)', 'EXECUTE')
   and has_function_privilege('authenticated', 'private.revoke_workspace_invitation(uuid)', 'EXECUTE')
@@ -47,7 +49,7 @@ select ok(
          from pg_proc p join pg_namespace n on n.oid=p.pronamespace
         where n.nspname='private'
           and p.proname in ('create_workspace_invitation','get_workspace_invitation','accept_workspace_invitation','revoke_workspace_invitation')),
-  'invitation wrappers stay SECURITY INVOKER and private helper grants match each wrapper role with pinned SECURITY DEFINER implementations');
+  'invitation lookup alone crosses the private-schema boundary through a pinned definer wrapper; mutation wrappers remain invoker with authenticated-only helpers');
 
 create temporary table w44_cross_workspace_results (
   create_denied boolean not null,
