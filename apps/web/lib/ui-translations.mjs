@@ -10,6 +10,7 @@ const rows = [
   ["Opportunity Intelligence","Mulighetsanalyse","تحليل الفرص","Inteligencia de oportunidades","Analyse des opportunités","Chancenanalyse"],
   ["Notifications","Varsler","الإشعارات","Notificaciones","Notifications","Benachrichtigungen"],
   ["Sign out","Logg ut","تسجيل الخروج","Cerrar sesión","Se déconnecter","Abmelden"],
+  ["Sign in","Logg inn","تسجيل الدخول","Iniciar sesión","Se connecter","Anmelden"],
   ["A calm control plane for bounded AI work.","Et oversiktlig kontrollsenter for avgrenset KI-arbeid.","مركز تحكم واضح لإدارة مهام الذكاء الاصطناعي ضمن حدود محددة.","Un espacio claro para gestionar tareas de IA con límites definidos.","Un espace clair pour gérer des tâches d’IA dans un cadre défini.","Ein klarer Leitstand für KI-Aufgaben mit festen Grenzen."],
   ["Active","Aktiv","نشطة","Activas","Actives","Aktiv"],
   ["Completed","Fullført","مكتملة","Completadas","Terminées","Abgeschlossen"],

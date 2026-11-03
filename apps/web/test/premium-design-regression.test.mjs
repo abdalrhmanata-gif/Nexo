@@ -43,6 +43,7 @@ test("every new Design A message has complete six-language copy", () => {
     "A decision you can explain",
     "Keep supporting evidence and open questions together.",
     "Opportunity scoring and evidence notes are stored in this browser. Cloud sync and live research are not connected yet. AI Opportunity Briefs are restricted to approved preview testers; paid billing is not enabled.",
+    "Sign in",
     "Available now",
     "Start with the free workspace today. Plus and Pro are design proposals, not plans you can purchase yet."
   ];
