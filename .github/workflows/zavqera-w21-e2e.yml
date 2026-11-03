@@ -8,6 +8,7 @@ on:
       - "zavqera/ai-planner-integration"
       - "codex/security-acl-invitation-followup-20261102"
       - "codex/workspace-member-dml-rpc-boundary-20261102"
+      - "codex/postgres-function-default-acl-hardening-20261102"
     paths:
       - ".github/workflows/zavqera-w21-e2e.yml"
       - ".github/workflows/zavqera-web-unit.yml"
@@ -19,6 +20,8 @@ on:
       - "zavqera/alternative-web-deployment"
       - "zavqera/ai-planner-integration"
       - "codex/security-acl-invitation-followup-20261102"
+      - "codex/workspace-member-dml-rpc-boundary-20261102"
+      - "codex/postgres-function-default-acl-hardening-20261102"
     types: [opened, synchronize, reopened]
 
 concurrency:
@@ -123,6 +126,7 @@ jobs:
           cp "$GITHUB_WORKSPACE/supabase/tests/w36_ai_plan_smoke.sql" "$workdir/supabase/tests/w36_ai_plan_smoke.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w44_workspace_invitations.sql" "$workdir/supabase/tests/w44_workspace_invitations.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/security_acl_invitation_followup.sql" "$workdir/supabase/tests/security_acl_invitation_followup.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/security_function_default_acl.sql" "$workdir/supabase/tests/security_function_default_acl.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w45_workspace_member_management.sql" "$workdir/supabase/tests/w45_workspace_member_management.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w46_workspace_activity.sql" "$workdir/supabase/tests/w46_workspace_activity.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w47_workspace_bootstrap.sql" "$workdir/supabase/tests/w47_workspace_bootstrap.sql"
@@ -243,6 +247,7 @@ jobs:
             supabase test db supabase/tests/w82_ai_generation_reservation_identity.sql
             supabase test db supabase/tests/w44_workspace_invitations.sql
             supabase test db supabase/tests/security_acl_invitation_followup.sql
+            supabase test db supabase/tests/security_function_default_acl.sql
             supabase test db supabase/tests/w45_workspace_member_management.sql
             supabase test db supabase/tests/pr29_workspace_member_mutation_authorization.sql
             supabase test db supabase/tests/w46_workspace_activity.sql
