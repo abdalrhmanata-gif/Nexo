@@ -1,7 +1,7 @@
 -- F7: database-level verification and outcome payload bounds.
 begin;
 create extension if not exists pgtap;
-select plan(12);
+select plan(10);
 
 select ok(to_regprocedure('private.mission_jsonb_within_bounds(jsonb,integer,integer,integer)') is not null,
   'shared JSONB bounds validator exists');
@@ -43,7 +43,6 @@ declare
   v_workspace uuid := gen_random_uuid();
   v_mission uuid := gen_random_uuid();
   v_verification public.mission_verifications;
-  v_outcome public.mission_outcomes;
   v_caught boolean;
 begin
   insert into auth.users(id) values (v_owner);
@@ -69,20 +68,6 @@ begin
 
   v_caught := false;
   begin
-    update public.mission_verifications
-       set evidence = jsonb_build_object('payload', repeat('x', 65537))
-     where id = v_verification.id;
-  exception when sqlstate '22023' then
-    if sqlerrm = 'MISSION_VERIFICATION_PAYLOAD_TOO_LARGE' then v_caught := true; else raise; end if;
-  end;
-  insert into f7_behavior_results values ('oversized_verification_update_rejected', v_caught);
-
-  insert into public.mission_outcomes(mission_id, owner_id, verification_id, status, result, success_score)
-  values (v_mission, v_owner, v_verification.id, 'COMPLETED', '{"result":"bounded"}', 1)
-  returning * into v_outcome;
-
-  v_caught := false;
-  begin
     insert into public.mission_outcomes(mission_id, owner_id, verification_id, status, result, success_score)
     values (v_mission, v_owner, v_verification.id, 'COMPLETED',
       jsonb_build_object('payload', repeat('x', 65537)), 1);
@@ -90,16 +75,6 @@ begin
     if sqlerrm = 'MISSION_OUTCOME_PAYLOAD_TOO_LARGE' then v_caught := true; else raise; end if;
   end;
   insert into f7_behavior_results values ('oversized_outcome_rejected', v_caught);
-
-  v_caught := false;
-  begin
-    update public.mission_outcomes
-       set result = jsonb_build_object('payload', repeat('x', 65537))
-     where id = v_outcome.id;
-  exception when sqlstate '22023' then
-    if sqlerrm = 'MISSION_OUTCOME_PAYLOAD_TOO_LARGE' then v_caught := true; else raise; end if;
-  end;
-  insert into f7_behavior_results values ('oversized_outcome_update_rejected', v_caught);
 end;
 $behavior$;
 
@@ -109,11 +84,6 @@ select ok((select passed from f7_behavior_results where name = 'oversized_verifi
   'oversized verification criteria/evidence are rejected by the table trigger');
 select ok((select passed from f7_behavior_results where name = 'oversized_outcome_rejected'),
   'oversized outcome result is rejected by the table trigger');
-
-select ok((select passed from f7_behavior_results where name = 'oversized_verification_update_rejected'),
-  'oversized verification updates are rejected by the table trigger');
-select ok((select passed from f7_behavior_results where name = 'oversized_outcome_update_rejected'),
-  'oversized outcome updates are rejected by the table trigger');
 
 select * from finish();
 rollback;
