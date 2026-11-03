@@ -1,7 +1,7 @@
 -- Runtime authorization regressions for the W45/W46 member mutation helpers.
 begin;
 create extension if not exists pgtap;
-select plan(13);
+select plan(14);
 
 create temporary table pr29_member_authz_results(name text primary key, passed boolean not null) on commit drop;
 
@@ -140,6 +140,18 @@ begin
   exception when sqlstate '42501' then v_denied:=sqlerrm='OWNER_PROTECTED'; end;
   perform set_config('role','postgres',true);
   insert into pr29_member_authz_results values('admin cannot remove workspace owner',v_denied and exists(select 1 from public.workspace_members where workspace_id=v_workspace and user_id=v_owner));
+
+  perform set_config('request.jwt.claim.sub',v_owner::text,true);
+  perform set_config('request.jwt.claims',jsonb_build_object('sub',v_owner,'role','authenticated')::text,true);
+  perform set_config('role','authenticated',true);
+  v_denied:=false;
+  begin
+    perform public.remove_workspace_member((select id from public.workspace_members where workspace_id=v_workspace and user_id=v_owner));
+  exception when sqlstate '42501' then
+    v_denied:=sqlerrm='LAST_OWNER_PROTECTED';
+  end;
+  perform set_config('role','postgres',true);
+  insert into pr29_member_authz_results values('sole workspace owner cannot remove self',v_denied and exists(select 1 from public.workspace_members where workspace_id=v_workspace and user_id=v_owner));
 end;
 $test$;
 

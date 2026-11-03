@@ -1,7 +1,7 @@
 -- Regression gate for the post-W86 ACL and invitation lookup correction.
 begin;
 create extension if not exists pgtap;
-select plan(16);
+select plan(18);
 
 select is((
   with tables(relname) as (values
@@ -29,7 +29,7 @@ select is((
 
 select is((
   with expected(relname, privilege_name, allowed) as (values
-    ('workspace_members','SELECT',true),('workspace_members','INSERT',true),('workspace_members','UPDATE',true),('workspace_members','DELETE',true),
+    ('workspace_members','SELECT',true),('workspace_members','INSERT',false),('workspace_members','UPDATE',false),('workspace_members','DELETE',false),
     ('workspace_agents','SELECT',true),('workspace_agents','INSERT',true),('workspace_agents','UPDATE',true),('workspace_agents','DELETE',true),
     ('mission_approvals','SELECT',true),('mission_approvals','INSERT',true),('mission_approvals','UPDATE',true),('mission_approvals','DELETE',true),
     ('workspace_invitations','SELECT',true),('workspace_invitations','INSERT',true),('workspace_invitations','UPDATE',true),('workspace_invitations','DELETE',false),
@@ -38,6 +38,24 @@ select is((
   select count(*)::integer from expected
    where has_table_privilege('authenticated',format('public.%I',relname),privilege_name) is distinct from allowed
 ), 0, 'authenticated DML grants match reviewed per-table contracts');
+
+select ok(
+  has_table_privilege('authenticated','public.workspace_members','SELECT')
+  and not has_table_privilege('authenticated','public.workspace_members','INSERT')
+  and not has_table_privilege('authenticated','public.workspace_members','UPDATE')
+  and not has_table_privilege('authenticated','public.workspace_members','DELETE')
+  and not has_any_column_privilege('authenticated','public.workspace_members','INSERT')
+  and not has_any_column_privilege('authenticated','public.workspace_members','UPDATE'),
+  'authenticated workspace membership writes are RPC-only with no table or column DML grants while reads remain available'
+);
+
+select ok(
+  has_function_privilege('authenticated','public.update_workspace_member_role(uuid,text)','EXECUTE')
+  and has_function_privilege('authenticated','public.remove_workspace_member(uuid)','EXECUTE')
+  and not has_function_privilege('anon','public.update_workspace_member_role(uuid,text)','EXECUTE')
+  and not has_function_privilege('anon','public.remove_workspace_member(uuid)','EXECUTE'),
+  'guarded workspace member mutation RPCs remain available only to authenticated callers'
+);
 
 select is((
   with tables(relname) as (values
