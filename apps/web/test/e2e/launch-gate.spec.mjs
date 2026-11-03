@@ -19,6 +19,34 @@ function assertRuntime() {
   }
 }
 
+test("cross-origin cookie API mutations are rejected before the handler while same-origin requests pass the boundary", async ({ request }) => {
+  assertRuntime();
+  const endpoint = `${runtime.baseURL}/api/business/invitations`;
+
+  const crossOrigin = await request.post(endpoint, {
+    headers: { origin: "https://attacker.example" },
+    data: { email: "qa@example.test", role: "member" },
+  });
+  expect(crossOrigin.status()).toBe(403);
+  expect(await crossOrigin.json()).toEqual({ error: "Untrusted request origin." });
+
+  const sameOrigin = await request.post(endpoint, {
+    headers: { origin: new URL(runtime.baseURL).origin },
+    data: {},
+  });
+  expect(sameOrigin.status()).not.toBe(403);
+});
+
+function sameOriginApiOptions(options = {}) {
+  return {
+    ...options,
+    headers: {
+      origin: new URL(runtime.baseURL).origin,
+      ...(options.headers ?? {}),
+    },
+  };
+}
+
 function freshUser(label) {
   return {
     email: `zavqera-gate-${runtime.runId}-${label}@example.test`,
@@ -310,16 +338,16 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
       await expect(pageA.getByLabel(/^First steps/)).not.toHaveValue("");
 
       const requestId = `gate-${runtime.runId}-abcdefghijkl`;
-      const first = await pageA.request.post("/api/ai/plan", {
+      const first = await pageA.request.post("/api/ai/plan", sameOriginApiOptions({
         headers: { "x-request-id": requestId },
         data: { goal: "Create one reversible next step for this test." },
         timeout: 20_000,
-      });
-      const second = await pageA.request.post("/api/ai/plan", {
+      }));
+      const second = await pageA.request.post("/api/ai/plan", sameOriginApiOptions({
         headers: { "x-request-id": requestId },
         data: { goal: "Create one reversible next step for this test." },
         timeout: 20_000,
-      });
+      }));
       expect(first.status()).toBe(200);
       expect(second.status()).toBe(409);
       expect(await second.text()).toContain("already handled");
@@ -412,10 +440,10 @@ test("ZAVQERA launch gate: auth, password reset, AI quota, isolation and Mission
       const userBClient = await ownerSession(userB);
       expect(await readMission(userBClient.client, missionId)).toBeNull();
 
-      const forbidden = await pageB.request.patch(`/api/missions/${missionId}`, {
+      const forbidden = await pageB.request.patch(`/api/missions/${missionId}`, sameOriginApiOptions({
         data: { status: "CANCELLED", expectedVersion: 1 },
         timeout: 20_000,
-      });
+      }));
       expect(forbidden.ok()).toBe(false);
     });
   } finally {

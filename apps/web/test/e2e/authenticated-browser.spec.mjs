@@ -22,6 +22,16 @@ function assertRuntime() {
   }
 }
 
+function sameOriginApiOptions(options = {}) {
+  return {
+    ...options,
+    headers: {
+      origin: new URL(runtime.baseURL).origin,
+      ...(options.headers ?? {}),
+    },
+  };
+}
+
 function freshUser(label) {
   // Generated per run and never logged. They exist only in the disposable stack.
   return {
@@ -229,17 +239,17 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await expect(page.getByLabel(/^First steps/)).not.toHaveValue("");
 
       const requestId = `w21-ai-idempotency-${runtime.runId}-abcdef`;
-      const first = await page.request.post("/api/ai/plan", {
+      const first = await page.request.post("/api/ai/plan", sameOriginApiOptions({
         headers: { "x-request-id": requestId },
         data: { goal: "Create one reversible next step for the same test mission." },
         timeout: 20_000,
-      });
+      }));
       expect(first.status()).toBe(200);
-      const second = await page.request.post("/api/ai/plan", {
+      const second = await page.request.post("/api/ai/plan", sameOriginApiOptions({
         headers: { "x-request-id": requestId },
         data: { goal: "Create one reversible next step for the same test mission." },
         timeout: 20_000,
-      });
+      }));
       expect(second.status()).toBe(409);
       expect(await second.text()).toContain("already handled");
 
@@ -349,7 +359,7 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
 
     await test.step("a stale mission version is rejected", async () => {
       const before = await readMission(owner.client, missionId);
-      const stale = await page.request.patch(missionPath(), { data: { status: "PAUSED", expectedVersion: 1 } });
+      const stale = await page.request.patch(missionPath(), sameOriginApiOptions({ data: { status: "PAUSED", expectedVersion: 1 } }));
       expect(stale.status()).toBe(409);
       expect(await readMission(owner.client, missionId)).toEqual(before);
     });
@@ -385,16 +395,16 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await moveAction(titles.added, "COMPLETED");
       for (const title of [titles.first, titles.second, titles.added]) await expect(statusOf(title)).toHaveCount(0);
       const completed = (await readActions(owner.client, missionId)).find((action) => action.id === actionId[titles.first]);
-      const reopen = await page.request.patch(actionPath(titles.first), { data: { status: "RUNNING", expectedVersion: completed.version } });
+      const reopen = await page.request.patch(actionPath(titles.first), sameOriginApiOptions({ data: { status: "RUNNING", expectedVersion: completed.version } }));
       expect(reopen.status(), "a completed action cannot be reopened").toBe(422);
       expect((await readActions(owner.client, missionId)).find((action) => action.id === completed.id)).toEqual(completed);
     });
 
     let verificationId;
     await test.step("verification is refused before checking, then recorded", async () => {
-      const early = await page.request.post(`${missionPath()}/verification`, {
+      const early = await page.request.post(`${missionPath()}/verification`, sameOriginApiOptions({
         data: { status: "VERIFIED", criteria: { summary: "early" }, evidence: { summary: "early" }, confidence: 1 },
-      });
+      }));
       expect(early.status()).toBe(422);
       expect(await readRows(owner.client, "mission_verifications", missionId)).toHaveLength(0);
 
@@ -428,7 +438,7 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       // Completion must go through a verified outcome. A direct lifecycle move
       // to COMPLETED with pending work and no outcome is a release blocker.
       const verifying = await readMission(owner.client, missionId);
-      const bypass = await page.request.patch(missionPath(), { data: { status: "COMPLETED", expectedVersion: verifying.version } });
+      const bypass = await page.request.patch(missionPath(), sameOriginApiOptions({ data: { status: "COMPLETED", expectedVersion: verifying.version } }));
       expect(bypass.ok(), "direct VERIFYING -> COMPLETED must be refused without a verified outcome").toBe(false);
       expect(await readMission(owner.client, missionId)).toEqual(verifying);
       await page.getByLabel("Outcome result", { exact: true }).fill("Blocked by late pending work.");
@@ -444,7 +454,7 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       expect(outcomes[0]).toMatchObject({ status: "COMPLETED", verification_id: verificationId });
       ledger.record("outcome", outcomes[0].id);
       expect((await readMission(owner.client, missionId)).status).toBe("COMPLETED");
-      const lateInsert = await page.request.post(`${missionPath()}/actions`, { data: { title: "Must not reopen completed work" } });
+      const lateInsert = await page.request.post(`${missionPath()}/actions`, sameOriginApiOptions({ data: { title: "Must not reopen completed work" } }));
       expect(lateInsert.status()).toBe(422);
       expect(await readActions(owner.client, missionId)).toHaveLength(4);
       const cancelled = (await readActions(owner.client, missionId)).filter((action) => action.status === "CANCELLED");
@@ -455,9 +465,9 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
 
     await test.step("committing the same verified outcome again is idempotent", async () => {
       const before = { mission: await readMission(owner.client, missionId), events: (await readRows(owner.client, "mission_events", missionId, "event_type")).length };
-      const repeat = await page.request.post(`${missionPath()}/outcome`, {
+      const repeat = await page.request.post(`${missionPath()}/outcome`, sameOriginApiOptions({
         data: { verificationId, result: { summary: "repeat" }, successScore: 1, status: "COMPLETED" },
-      });
+      }));
       expect(repeat.status()).toBe(200);
       const outcomes = await readRows(owner.client, "mission_outcomes", missionId, "id");
       expect(outcomes).toHaveLength(1);
@@ -472,11 +482,11 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await expect(pageB.getByText("Mission unavailable")).toBeVisible();
       await expect(pageB.getByText(tag)).toHaveCount(0);
       const attempts = [
-        pageB.request.patch(`/api/missions/${missionId}`, { data: { status: "CANCELLED", expectedVersion: before.mission.version } }),
-        pageB.request.post(`/api/missions/${missionId}/actions`, { data: { title: "intruder" } }),
-        pageB.request.patch(`/api/missions/${missionId}/actions/${actionId[titles.first]}`, { data: { status: "RUNNING", expectedVersion: 1 } }),
-        pageB.request.post(`/api/missions/${missionId}/verification`, { data: { status: "VERIFIED", criteria: { s: "x" }, evidence: { s: "x" }, confidence: 1 } }),
-        pageB.request.post(`/api/missions/${missionId}/outcome`, { data: { verificationId, result: { s: "x" }, successScore: 1, status: "COMPLETED" } }),
+        pageB.request.patch(`/api/missions/${missionId}`, sameOriginApiOptions({ data: { status: "CANCELLED", expectedVersion: before.mission.version } })),
+        pageB.request.post(`/api/missions/${missionId}/actions`, sameOriginApiOptions({ data: { title: "intruder" } })),
+        pageB.request.patch(`/api/missions/${missionId}/actions/${actionId[titles.first]}`, sameOriginApiOptions({ data: { status: "RUNNING", expectedVersion: 1 } })),
+        pageB.request.post(`/api/missions/${missionId}/verification`, sameOriginApiOptions({ data: { status: "VERIFIED", criteria: { s: "x" }, evidence: { s: "x" }, confidence: 1 } })),
+        pageB.request.post(`/api/missions/${missionId}/outcome`, sameOriginApiOptions({ data: { verificationId, result: { s: "x" }, successScore: 1, status: "COMPLETED" } })),
       ];
       for (const response of await Promise.all(attempts)) expect(response.ok(), response.url()).toBe(false);
       const intruder = await ownerSession(userB);

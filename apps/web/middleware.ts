@@ -1,5 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import {
+  isTrustedSameOriginRequest,
+  shouldEnforceSameOriginForApiRequest,
+} from "./lib/request-origin.mjs";
 
 type RuntimeGlobal = typeof globalThis & {
   Netlify?: {
@@ -18,6 +22,20 @@ function getRuntimeEnv(name: string) {
 }
 
 export async function middleware(request: NextRequest) {
+  // API handlers use their own authentication. Enforce a same-origin boundary
+  // for every browser cookie-authenticated mutation without adding an Auth
+  // network round-trip to API requests. The internal worker route authenticates
+  // server-to-server requests independently.
+  if (request.nextUrl.pathname.startsWith("/api/")) {
+    if (shouldEnforceSameOriginForApiRequest(request) && !isTrustedSameOriginRequest(request)) {
+      return NextResponse.json(
+        { error: "Untrusted request origin." },
+        { status: 403, headers: { "Cache-Control": "no-store" } },
+      );
+    }
+    return NextResponse.next();
+  }
+
   // Read the public Supabase values at runtime. This prevents Next.js from
   // embedding the publishable key into the generated Netlify middleware bundle.
   const supabaseUrl = getRuntimeEnv("NEXT_PUBLIC_SUPABASE_URL");
@@ -58,5 +76,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/app/:path*", "/auth/:path*"],
+  matcher: ["/api/:path*", "/app/:path*", "/auth/:path*"],
 };
