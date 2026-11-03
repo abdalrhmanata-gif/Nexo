@@ -2,8 +2,9 @@ const MUTATING_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 /**
  * Trust only browser requests from this exact application origin.
- * Next may construct an internal request URL behind a proxy, so also compare
- * against the public Host and forwarded protocol when those headers exist.
+ * Next may construct an internal request URL behind a proxy. When Host is
+ * present, it is the public authority to validate; a matching internal URL
+ * must never bypass a conflicting Host / forwarded-protocol pair.
  * If Origin is absent, require Fetch Metadata to explicitly say same-origin.
  */
 export function isTrustedSameOriginRequest(request) {
@@ -18,18 +19,21 @@ export function isTrustedSameOriginRequest(request) {
     }
 
     const requestUrl = new URL(request.url);
-    if (suppliedOrigin === requestUrl.origin) return true;
-
     const host = request.headers.get("host");
-    if (!host) return false;
+    const forwardedProtocolHeader = request.headers.get("x-forwarded-proto");
+    let protocol = requestUrl.protocol.slice(0, -1);
 
-    const forwardedProtocol = request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim();
-    const protocol = forwardedProtocol && /^(https?)$/i.test(forwardedProtocol)
-      ? forwardedProtocol.toLowerCase()
-      : requestUrl.protocol.slice(0, -1);
+    if (forwardedProtocolHeader) {
+      const forwardedProtocol = forwardedProtocolHeader.split(",")[0]?.trim();
+      if (!forwardedProtocol || !/^(https?)$/i.test(forwardedProtocol)) return false;
+      protocol = forwardedProtocol.toLowerCase();
+    }
 
     try {
-      return suppliedOrigin === new URL(`${protocol}://${host}`).origin;
+      const expectedOrigin = host
+        ? new URL(`${protocol}://${host}`).origin
+        : requestUrl.origin;
+      return suppliedOrigin === expectedOrigin;
     } catch {
       return false;
     }
