@@ -12,6 +12,7 @@ on:
       - "codex/w82-unrelated-unique-violation-followup-20261102"
       - "codex/invitation-hash-and-w82-race-fix-20261102"
       - "codex/api-cookie-origin-guard-20261102"
+      - "codex/invitation-rpc-only-write-boundary-20261102"
     paths:
       - ".github/workflows/zavqera-w21-e2e.yml"
       - ".github/workflows/zavqera-web-unit.yml"
@@ -26,6 +27,7 @@ on:
       - "codex/workspace-member-dml-rpc-boundary-20261102"
       - "codex/w82-unrelated-unique-violation-followup-20261102"
       - "codex/invitation-hash-and-w82-race-fix-20261102"
+      - "codex/api-cookie-origin-guard-20261102"
     types: [opened, synchronize, reopened]
 
 concurrency:
