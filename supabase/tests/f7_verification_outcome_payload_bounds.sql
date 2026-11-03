@@ -1,13 +1,41 @@
 -- F7: database-level verification and outcome payload bounds.
 begin;
 create extension if not exists pgtap;
-select plan(10);
+select plan(12);
 
 select ok(to_regprocedure('private.mission_jsonb_within_bounds(jsonb,integer,integer,integer)') is not null,
   'shared JSONB bounds validator exists');
 select ok((select provolatile = 'i' from pg_proc
   where oid = 'private.mission_jsonb_within_bounds(jsonb,integer,integer,integer)'::regprocedure),
   'JSONB bounds validator is immutable');
+select ok(
+  not has_function_privilege('anon', 'private.mission_jsonb_within_bounds(jsonb,integer,integer,integer)', 'EXECUTE')
+  and not has_function_privilege('authenticated', 'private.mission_jsonb_within_bounds(jsonb,integer,integer,integer)', 'EXECUTE')
+  and not has_function_privilege('service_role', 'private.mission_jsonb_within_bounds(jsonb,integer,integer,integer)', 'EXECUTE')
+  and not exists (
+    select 1
+      from pg_proc p
+      cross join lateral aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a
+     where p.oid = 'private.mission_jsonb_within_bounds(jsonb,integer,integer,integer)'::regprocedure
+       and a.grantee = 0
+       and a.privilege_type = 'EXECUTE'
+  ),
+  'JSONB bounds validator is not executable by PUBLIC, anon, authenticated, or service_role'
+);
+select ok(
+  not has_function_privilege('anon', 'private.enforce_mission_verification_outcome_payload_bounds()', 'EXECUTE')
+  and not has_function_privilege('authenticated', 'private.enforce_mission_verification_outcome_payload_bounds()', 'EXECUTE')
+  and not has_function_privilege('service_role', 'private.enforce_mission_verification_outcome_payload_bounds()', 'EXECUTE')
+  and not exists (
+    select 1
+      from pg_proc p
+      cross join lateral aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a
+     where p.oid = 'private.enforce_mission_verification_outcome_payload_bounds()'::regprocedure
+       and a.grantee = 0
+       and a.privilege_type = 'EXECUTE'
+  ),
+  'verification/outcome trigger function is not executable by PUBLIC, anon, authenticated, or service_role'
+);
 select ok(exists (
   select 1 from pg_trigger
    where tgrelid = 'public.mission_verifications'::regclass
