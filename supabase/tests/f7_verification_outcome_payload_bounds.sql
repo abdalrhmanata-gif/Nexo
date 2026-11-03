@@ -24,7 +24,7 @@ select ok(not private.mission_jsonb_within_bounds(
   jsonb_build_object('payload', repeat('x', 65537)), 65536, 12, 1024
 ), 'JSONB byte ceiling rejects oversized values');
 select ok(not private.mission_jsonb_within_bounds(
-  '{"a":{"b":{"c":{"d":{"e":{"f":{"g":{"h":{"i":{"j":{"k":{"l":{"m":true}}}}}}}}}}}}'::jsonb,
+  '{"k":{"k":{"k":{"k":{"k":{"k":{"k":{"k":{"k":{"k":{"k":{"k":{"k":true}}}}}}}}}}}}}'::jsonb,
   65536, 12, 1024
 ), 'JSONB depth ceiling rejects excessive nesting');
 select ok(not private.mission_jsonb_within_bounds(
