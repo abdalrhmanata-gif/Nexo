@@ -59,3 +59,18 @@ export type VerificationReadiness = {
 export declare function verificationReadiness(
   mission: Pick<Mission, "lifecycleStatus" | "actions">,
 ): VerificationReadiness;
+
+export type MissionDraftInput = {
+  name?: unknown;
+  intent?: unknown;
+  criteria?: unknown;
+  actions?: unknown;
+};
+
+export type MissionDraftValidation = {
+  valid: boolean;
+  values: { name: string; intent: string; criteria: string; actions: string };
+  errors: { name: boolean; intent: boolean; criteria: boolean; actions: boolean };
+};
+
+export declare function validateMissionDraft(input?: MissionDraftInput | null): MissionDraftValidation;

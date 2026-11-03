@@ -113,14 +113,26 @@ function formWith(page, field) {
   return page.locator("form").filter({ has: field });
 }
 
-/** Submits the form owning `field` and waits for the server's verdict. */
+/** Submits a client form, waits for the API verdict and (on success) the App Router refresh. */
 async function submit(page, field, { method, path, expectStatus }) {
+  const pagePath = new URL(page.url()).pathname;
   const response = page.waitForResponse((r) => r.request().method() === method && new URL(r.url()).pathname === path);
-  const reload = expectStatus < 300 ? page.waitForEvent("load") : null;
+  // These forms use fetch() followed by router.refresh(). That refresh is an
+  // RSC request, not a document "load" event; waiting for "load" hangs until
+  // the whole Playwright test times out even though the mutation has succeeded.
+  const refresh = expectStatus < 300
+    ? page.waitForResponse((r) => {
+        const request = r.request();
+        const url = new URL(r.url());
+        return request.method() === "GET"
+          && url.pathname === pagePath
+          && request.headers()["rsc"] === "1";
+      })
+    : null;
   await formWith(page, field).locator('button[type="submit"]').click();
   const settled = await response;
   expect(settled.status(), `${method} ${path}`).toBe(expectStatus);
-  if (reload) await reload;
+  if (refresh) await refresh;
   return settled;
 }
 
@@ -130,18 +142,23 @@ async function waitForWorkspace(page) {
   const onPageError = (error) => pageErrors.push(error.message);
   page.on("pageerror", onPageError);
   try {
-    // Select the destination itself; its accessible name includes supporting copy.
-    await page.locator('a.workspace-quick-action[href="/app/opportunities"]').waitFor({ state: "visible" });
+    // A fresh account now renders first-Mission onboarding instead of the
+    // legacy quick-action grid. Accept either documented authenticated state.
+    const workspaceReady = page.locator([
+      '[aria-labelledby="workspace-onboarding-heading"]',
+      'a.workspace-quick-action[href="/app/opportunities"]',
+    ].join(", "));
+    await expect(workspaceReady.first()).toBeVisible();
   } catch (error) {
     const body = await page.locator("body").innerText().catch(() => "<body unavailable>");
     throw new Error(
       [
-        "The authenticated workspace did not render its Opportunity Intelligence shortcut.",
+        "The authenticated workspace did not render onboarding or its Opportunity Intelligence shortcut.",
         "URL: " + page.url(),
         "Body: " + body.slice(0, 1600),
         "Page errors: " + (pageErrors.join(" | ") || "none"),
         "Original failure: " + (error instanceof Error ? error.message : String(error)),
-      ].join("\n"),
+      ].join("\\n"),
     );
   } finally {
     page.off("pageerror", onPageError);
@@ -578,3 +595,157 @@ test("authenticated Opportunity Intelligence backup flow exports, imports, and r
   }
 });
 
+
+
+test("authenticated mission evidence and human decision are persisted", async ({ browser }) => {
+  assertRuntime();
+  const tag = `E2E evidence ${runtime.runId}`;
+  const ledger = createFixtureLedger({ runId: runtime.runId, onChange: (json) => writeLedgerFile(runtime.ledgerPath, json) });
+  const blocked = [];
+  const user = freshUser("mission-evidence");
+  const context = await browser.newContext({ baseURL: runtime.baseURL });
+  await guardNetwork(context, blocked);
+  const page = await context.newPage();
+
+  try {
+    await signUp(page, user);
+    const owner = await ownerSession(user);
+    ledger.record("user", owner.userId);
+
+    await page.goto("/app/missions/new");
+    await page.getByLabel("Mission name", { exact: true }).fill(tag);
+    await page.getByLabel("Intent", { exact: true }).fill("Verify the complete evidence and human decision workflow using an authenticated disposable account.");
+    await page.getByLabel("Success criteria", { exact: true }).fill("The reviewed source, human decision and rationale are persisted and visible.");
+    await page.getByLabel(/^First steps/).fill(`${tag} complete the implementation step`);
+    await formWith(page, page.getByLabel("Mission name", { exact: true })).locator('button[type="submit"]').click();
+    await expect(page).toHaveURL(/\/app\/missions\/[0-9a-f-]{36}$/i);
+
+    const missionUrl = page.url();
+    const missionId = missionUrl.split("/").pop();
+    const missionPath = `/api/missions/${missionId}`;
+    ledger.record("mission", missionId);
+
+    const actions = await readActions(owner.client, missionId);
+    expect(actions).toHaveLength(1);
+    const action = actions[0];
+    ledger.record("action", action.id);
+
+    const moveMission = async (to) => {
+      const state = page.getByLabel("Mission state", { exact: true });
+      await state.selectOption(to);
+      await submit(page, state, { method: "PATCH", path: missionPath, expectStatus: 200 });
+      expect((await readMission(owner.client, missionId)).status).toBe(to);
+    };
+    const actionStatus = page.getByLabel(`Status for ${action.title}`, { exact: true });
+    const moveAction = async (to) => {
+      await actionStatus.selectOption(to);
+      await submit(page, actionStatus, {
+        method: "PATCH",
+        path: `${missionPath}/actions/${action.id}`,
+        expectStatus: 200,
+      });
+      expect((await readActions(owner.client, missionId))[0].status).toBe(to);
+    };
+
+    await test.step("sign up, create the Mission and complete its action", async () => {
+      await moveMission("PLANNING");
+      await moveMission("READY");
+      await moveMission("RUNNING");
+      await moveAction("RUNNING");
+      await moveAction("COMPLETED");
+      expect((await readActions(owner.client, missionId))[0].status).toBe("COMPLETED");
+    });
+
+    const sourceTitle = `${tag} official source`;
+    const sourceObservation = "The official record confirms the stated success criterion was reached.";
+    const sourceUrl = "https://example.test/zavqera-evidence-record";
+    const observedDate = "2026-11-01";
+    let verificationId;
+
+    await test.step("record structured evidence from an authenticated browser session", async () => {
+      await moveMission("VERIFYING");
+
+      await page.getByLabel("Verification criteria", { exact: true }).fill("The completed action and the persisted result match the stated success criterion.");
+      await page.getByLabel("Evidence summary", { exact: true }).fill("One official source was reviewed and its relevant observation supports the intended outcome.");
+      await page.getByLabel("Evidence title", { exact: true }).fill(sourceTitle);
+      await page.getByLabel("What did you observe?", { exact: true }).fill(sourceObservation);
+      await page.getByLabel("Source type", { exact: true }).selectOption("official");
+      await page.getByLabel("Effect on the outcome", { exact: true }).selectOption("supports");
+      await page.getByLabel(/Reference URL/).fill(sourceUrl);
+      await page.getByLabel(/Published or observed date/).fill(observedDate);
+
+      await submit(page, page.getByLabel("Verification criteria", { exact: true }), {
+        method: "POST",
+        path: `${missionPath}/verification`,
+        expectStatus: 201,
+      });
+
+      const verifications = await readRows(owner.client, "mission_verifications", missionId, "id, status, criteria, evidence");
+      expect(verifications).toHaveLength(1);
+      expect(verifications[0].status).toBe("VERIFIED");
+      expect(verifications[0].criteria.summary).toContain("stated success criterion");
+      expect(verifications[0].evidence).toMatchObject({
+        recordType: "USER_REVIEWED_EVIDENCE",
+        independentVerification: false,
+        summary: "One official source was reviewed and its relevant observation supports the intended outcome.",
+      });
+      expect(verifications[0].evidence.items).toEqual([
+        expect.objectContaining({
+          title: sourceTitle,
+          observation: sourceObservation,
+          referenceUrl: sourceUrl,
+          sourceType: "official",
+          stance: "supports",
+          publishedAt: observedDate,
+        }),
+      ]);
+      verificationId = verifications[0].id;
+      ledger.record("verification", verificationId);
+
+      await expect(page.getByText(sourceTitle, { exact: true })).toBeVisible();
+      await expect(page.getByText(sourceObservation, { exact: true })).toBeVisible();
+      await expect(page.getByRole("link", { name: /Open reference/ })).toHaveAttribute("href", sourceUrl);
+      await expect(page.getByText(/has not independently verified/i)).toBeVisible();
+    });
+
+    await test.step("record a human Proceed decision and persist its rationale", async () => {
+      const outcomeSummary = "The completed action met the stated success criterion.";
+      const rationale = "The reviewed official source supports the result and the persisted action state confirms completion.";
+
+      await page.getByLabel("Outcome summary", { exact: true }).fill(outcomeSummary);
+      await page.getByLabel("Outcome decision", { exact: true }).selectOption("PROCEED");
+      await page.getByLabel("Decision rationale", { exact: true }).fill(rationale);
+
+      await submit(page, page.getByLabel("Outcome summary", { exact: true }), {
+        method: "POST",
+        path: `${missionPath}/outcome`,
+        expectStatus: 200,
+      });
+
+      const outcomes = await readRows(owner.client, "mission_outcomes", missionId, "id, status, verification_id, result");
+      expect(outcomes).toHaveLength(1);
+      expect(outcomes[0]).toMatchObject({
+        status: "COMPLETED",
+        verification_id: verificationId,
+      });
+      expect(outcomes[0].result).toMatchObject({
+        summary: outcomeSummary,
+        decision: "PROCEED",
+        rationale,
+        decisionType: "HUMAN_OUTCOME_DECISION",
+      });
+      ledger.record("outcome", outcomes[0].id);
+      expect((await readMission(owner.client, missionId)).status).toBe("COMPLETED");
+      await expect(page.getByText("Recorded human decision", { exact: true })).toBeVisible();
+      await expect(page.getByText("Proceed", { exact: true })).toBeVisible();
+      await expect(page.getByText(rationale, { exact: true })).toBeVisible();
+      await expect(page.getByLabel("Outcome summary", { exact: true })).toHaveCount(0);
+      await expect(page.getByLabel("Mission state", { exact: true })).toHaveCount(0);
+    });
+
+    expect(blocked, "requests left the loopback allowlist").toEqual([]);
+    await signOut(page);
+  } finally {
+    await context.close();
+  }
+});

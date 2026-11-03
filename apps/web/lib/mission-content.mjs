@@ -28,6 +28,30 @@ export function parseMissionObjective(objective) {
   return { name, intent, criteria };
 }
 
+
+/**
+ * Validates a Mission draft on the server before any repository write.
+ * Values are normalised once so the persisted objective and actions reflect
+ * the reviewed form values rather than untrimmed input.
+ */
+export function validateMissionDraft(input = {}) {
+  const source = input && typeof input === "object" ? input : {};
+  const text = (value) => typeof value === "string" ? value.trim() : "";
+  const values = {
+    name: text(source.name),
+    intent: text(source.intent),
+    criteria: text(source.criteria),
+    actions: text(source.actions),
+  };
+  const errors = {
+    name: !values.name || values.name.length > 100 || /[\r\n]/.test(values.name),
+    intent: values.intent.length < 12 || values.intent.length > 3000,
+    criteria: !values.criteria || values.criteria.length > 2000 || !values.criteria.split(/\r?\n/).some((line) => line.trim()),
+    actions: values.actions.length > 2000,
+  };
+  return { valid: !Object.values(errors).some(Boolean), values, errors };
+}
+
 export function composeMissionObjective({ name, intent, criteria }) {
   const lines = Array.isArray(criteria) ? criteria.join("\n") : criteria ?? "";
   return `${name}\n\n${intent}${CRITERIA_MARKER}${lines}`;

@@ -42,8 +42,9 @@ test("web CI smoke-tests the built robots route over HTTP", () => {
   }
 });
 
-test("web CI smoke-tests the actual Netlify deploy preview robots route", () => {
-  assert.match(webWorkflow, /name: Smoke-test Netlify deploy preview robots route/);
-  assert.match(webWorkflow, /PREVIEW_URL: https:\/\/deploy-preview-\$\{\{\s*github\.event\.pull_request\.number\s*\}\}--unique-kringle-3ce321\.netlify\.app/);
-  assert.match(webWorkflow, /Netlify preview \/robots\.txt returned HTTP 200/);
+test("Netlify checks robots.txt at the exact URL returned by its CLI deployment", () => {
+  assert.ok(netlifyWorkflow.includes("name: Verify robots.txt on the actual Netlify CLI preview"));
+  assert.ok(netlifyWorkflow.includes("PREVIEW_URL: ${{ steps.deploy.outputs.preview_url }}"));
+  assert.ok(netlifyWorkflow.includes("Netlify CLI preview /robots.txt returned HTTP 200"));
+  assert.equal(webWorkflow.includes("deploy-preview-${{ github.event.pull_request.number }}"), false);
 });

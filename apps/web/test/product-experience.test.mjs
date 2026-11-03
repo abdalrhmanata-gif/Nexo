@@ -3,6 +3,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import test from "node:test";
+import { translateUiText } from "../lib/ui-translations.mjs";
 import {
   allowedNextMissionStatuses,
   composeMissionObjective,
@@ -13,6 +14,7 @@ import {
   parseMissionObjective,
   routeToVerifying,
   verificationReadiness,
+  validateMissionDraft,
 } from "../lib/mission-content.mjs";
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -277,4 +279,166 @@ test("success criteria and first steps are separate fields", () => {
   assert.doesNotMatch(source, /becomes both a success criterion and an action/);
   // Omitting the steps must keep the pre-W19 behaviour of seeding from criteria.
   assert.match(source, /steps \? toLines\(steps\) : toLines\(criteria\)/);
+});
+
+
+test("Mission draft validation normalises reviewed values and accepts the documented limits", () => {
+  const draft = validateMissionDraft({
+    name: "  Plan the launch  ",
+    intent: "  Deliver a small, testable launch.  ",
+    criteria: "  Ten users interviewed  \n  Budget approved  ",
+    actions: "  Identify the first users  \n  Draft interview questions  ",
+  });
+  assert.equal(draft.valid, true);
+  assert.deepEqual(draft.errors, { name: false, intent: false, criteria: false, actions: false });
+  assert.equal(draft.values.name, "Plan the launch");
+  assert.equal(draft.values.intent, "Deliver a small, testable launch.");
+  assert.equal(draft.values.criteria, "Ten users interviewed  \n  Budget approved");
+  assert.equal(validateMissionDraft({
+    name: "N".repeat(100),
+    intent: "I".repeat(3000),
+    criteria: "C".repeat(2000),
+    actions: "A".repeat(2000),
+  }).valid, true);
+});
+
+test("Mission draft validation rejects missing, oversized and structurally unsafe fields", () => {
+  assert.deepEqual(validateMissionDraft({}).errors, {
+    name: true, intent: true, criteria: true, actions: false,
+  });
+  assert.equal(validateMissionDraft({ name: "two\nlines", intent: "a valid intent with enough text", criteria: "one" }).errors.name, true);
+  assert.equal(validateMissionDraft({ name: "N".repeat(101), intent: "a valid intent with enough text", criteria: "one" }).errors.name, true);
+  assert.equal(validateMissionDraft({ name: "Good", intent: "Too short", criteria: "one" }).errors.intent, true);
+  assert.equal(validateMissionDraft({ name: "Good", intent: "I".repeat(3001), criteria: "one" }).errors.intent, true);
+  assert.equal(validateMissionDraft({ name: "Good", intent: "A valid intent with enough detail", criteria: "  \n  " }).errors.criteria, true);
+  assert.equal(validateMissionDraft({ name: "Good", intent: "A valid intent with enough detail", criteria: "C".repeat(2001) }).errors.criteria, true);
+  assert.equal(validateMissionDraft({ name: "Good", intent: "A valid intent with enough detail", criteria: "done", actions: "A".repeat(2001) }).errors.actions, true);
+  assert.equal(validateMissionDraft({ name: 42, intent: null, criteria: [], actions: {} }).valid, false);
+  assert.equal(validateMissionDraft(null).valid, false);
+});
+
+test("Mission creation UI uses accessible native limits and server-side draft validation before writes", () => {
+  const page = read("app/app/missions/new/page.tsx");
+  assert.match(page, /validateMissionDraft\(/);
+  assert.ok(page.indexOf("validateMissionDraft(") < page.indexOf("createSupabaseMissionRepository()"));
+  assert.match(page, /minLength=\{12\}/);
+  assert.match(page, /maxLength=\{100\}/);
+  assert.match(page, /maxLength=\{3000\}/);
+  assert.match(page, /maxLength=\{2000\}/);
+  assert.match(page, /aria-invalid=\{field === "intent"\}/);
+  assert.match(page, /mission-form-section/);
+  assert.doesNotMatch(page, /noValidate/);
+});
+
+
+test("mission detail provides direct navigation to persisted execution sections", () => {
+  const page = read("app/app/missions/[id]/page.tsx");
+  assert.match(page, /aria-labelledby="mission-section-nav-label"/);
+  for (const target of ["mission-actions", "mission-verification", "mission-activity", "mission-outcome"]) {
+    assert.ok(page.includes('id="' + target + '"'), "missing " + target + " section anchor");
+  }
+  assert.match(page, /href={nextActionHref}/);
+  assert.match(page, /intelligence\.nextAction\.actionId/);
+});
+
+test("execution overview counts only saved action states and highlights the deterministic next action", () => {
+  const page = read("app/app/missions/[id]/page.tsx");
+  for (const status of ["PENDING", "RUNNING", "BLOCKED", "COMPLETED", "CANCELLED"]) {
+    assert.match(page, new RegExp('status === "' + status + '"'));
+  }
+  assert.ok(page.includes('id={`action-${action.id}`}'));
+  assert.match(page, /action\.id === intelligence\.nextAction\.actionId/);
+  assert.match(page, /mission-action-item-next/);
+  assert.match(page, /ActionMutationControls missionId={mission\.id} action={action}/);
+});
+
+test("execution workspace keeps existing verification and action APIs as the only mutation paths", () => {
+  const page = read("app/app/missions/[id]/page.tsx");
+  assert.match(page, /AddActionForm missionId={mission\.id}/);
+  assert.match(page, /VerificationControls missionId={mission\.id}/);
+  assert.match(page, /MissionMutationControls missionId={mission\.id}/);
+  assert.match(page, /ActionMutationControls missionId={mission\.id} action={action}/);
+  assert.equal(page.includes("fetch("), false);
+  assert.equal(page.includes(".rpc("), false);
+  assert.equal(page.includes("createSupabaseClient"), false);
+});
+
+test("Mission execution navigation and status overview are translated in all supported languages", () => {
+  const keys = [
+    "Execution workspace",
+    "Jump to",
+    "Mission sections",
+    "Go to next step",
+    "Actions recorded",
+    "Action overview",
+    "No actions are recorded yet.",
+    "Add the first concrete step needed to move this Mission forward.",
+  ];
+  for (const language of ["nb", "ar", "es", "fr", "de"]) {
+    for (const key of keys) {
+      assert.notEqual(translateUiText(language, key), key, "missing " + language + " translation for: " + key);
+    }
+  }
+});
+
+
+test("mission verification records bounded structured evidence through the existing authenticated route", () => {
+  const route = read("app/api/missions/[id]/verification/route.ts");
+  const form = read("components/verification-controls.tsx");
+  const record = read("components/mission-evidence-record.tsx");
+  assert.match(route, /validateMissionEvidencePayload\(body\.evidence\)/);
+  assert.match(route, /createSupabaseMissionRepository\(\)/);
+  assert.match(route, /repository\.recordVerification/);
+  assert.match(form, /MISSION_EVIDENCE_SOURCE_TYPES/);
+  assert.match(form, /MISSION_EVIDENCE_STANCES/);
+  assert.match(form, /evidenceItems\.length >= 8/);
+  assert.ok(form.includes('"/api/missions/" + missionId + "/verification"'));
+  assert.match(record, /isHttpSourceUrl\(referenceUrl\)/);
+  assert.match(record, /not independently verified/i);
+});
+
+test("human outcome decisions are persisted through the existing outcome boundary with consistent status", () => {
+  const route = read("app/api/missions/[id]/outcome/route.ts");
+  const form = read("components/verification-controls.tsx");
+  const page = read("app/app/missions/[id]/page.tsx");
+  assert.match(route, /validateMissionOutcomeDecision\(body\.result, body\.status\)/);
+  assert.match(route, /repository\.commitOutcome/);
+  assert.match(form, /decision === "PROCEED" \? "COMPLETED" : "FAILED"/);
+  assert.match(form, /result: \{ summary: checkedSummary, decision, rationale: checkedRationale \}/);
+  assert.match(page, /outcome\.result\.decision/);
+  assert.match(page, /outcome\.result\.rationale/);
+  assert.match(page, /not a delegated AI approval/);
+});
+
+test("mission evidence and human decision interface copy is translated in all supported languages", () => {
+  const keys = ["Evidence & decision record","Reviewed evidence","Human decision","Choose the outcome","The evidence has passed verification. Record what you decide should happen next and why.","Outcome summary","Describe the result that was actually reached, not an intended future result.","Outcome decision","Proceed — record a successful outcome","Stop — record an unsuccessful outcome","Decision rationale","Explain the evidence and reasoning behind this human decision.","This records a human outcome decision. It does not approve an AI agent, grant authority, or authorise an external action.","Human outcome decision recorded. Refreshing mission state…","Record human decision","Evidence review","Record what you checked","Keep the criteria, source observations and their relationship to the expected outcome together.","Describe the criteria you checked in 12 to 2,000 characters.","State the specific success criteria you checked.","Summarise what the collected evidence shows. Keep facts separate from your interpretation.","Evidence items","Add between 1 and 8 distinct observations. References are optional for internal records.","Evidence item","Evidence title","What did you observe?","Official source","Research or publication","Internal document","Measurement","Customer feedback","Conversation or interview","Effect on the outcome","Supports","Challenges","Context only","Reference URL","Published or observed date","Remove evidence item","Add another evidence item","These records document your review. Zavqera does not independently verify the source, and this review does not grant AI authority or approve an external action.","Record evidence and verification","Evidence references must use a public HTTP or HTTPS URL.","Record between 1 and 8 complete evidence items. Each needs a title and an observation.","Add an evidence summary between 12 and 2,000 characters.","Evidence summary","Outcome summary","Add an outcome summary of up to 2,000 characters.","Explain the decision in 12 to 1,200 characters.","Success score must be between 0 and 1.","Recorded human decision","Proceed","Stop","Decision rationale","Recorded","Criteria checked","Published or observed","Open reference","This is a recorded human outcome decision, not a delegated AI approval or permission to perform an external action.","These entries are user-reviewed records. Zavqera has not independently verified the referenced material."];
+  const extraKeys = [
+    "Remove evidence item", "Add another evidence item", "Verification criteria",
+    "Evidence summary", "Confidence", "Evidence references must use a public HTTP or HTTPS URL.",
+    "Record between 1 and 8 complete evidence items. Each needs a title and an observation.",
+    "Add an evidence summary between 12 and 2,000 characters.",
+    "Outcome summary", "Add an outcome summary of up to 2,000 characters.",
+    "Explain the decision in 12 to 1,200 characters.", "Success score must be between 0 and 1.",
+    "Evidence & decision record", "Reviewed evidence", "Human decision", "Choose the outcome",
+    "The evidence has passed verification. Record what you decide should happen next and why.",
+    "Proceed — record a successful outcome", "Stop — record an unsuccessful outcome",
+    "Decision rationale", "This records a human outcome decision. It does not approve an AI agent, grant authority, or authorise an external action.",
+    "Record human decision", "Evidence review", "Record what you checked",
+    "Keep the criteria, source observations and their relationship to the expected outcome together.",
+    "Describe the criteria you checked in 12 to 2,000 characters.",
+    "State the specific success criteria you checked.",
+    "Summarise what the collected evidence shows. Keep facts separate from your interpretation.",
+    "Evidence items", "Add between 1 and 8 distinct observations. References are optional for internal records.",
+    "Evidence item", "Evidence title", "What did you observe?", "Official source", "Research or publication",
+    "Internal document", "Measurement", "Customer feedback", "Conversation or interview", "Effect on the outcome",
+    "Supports", "Challenges", "Context only", "Reference URL", "Published or observed date",
+    "These records document your review. Zavqera does not independently verify the source, and this review does not grant AI authority or approve an external action.",
+    "Record evidence and verification", "These entries are user-reviewed records. Zavqera has not independently verified the referenced material.",
+    "Criteria checked", "Open reference", "This is a recorded human outcome decision, not a delegated AI approval or permission to perform an external action."
+  ];
+  for (const language of ["nb", "ar", "es", "fr", "de"]) {
+    for (const key of [...keys, ...extraKeys]) {
+      assert.notEqual(translateUiText(language, key), key, "missing " + language + " translation for: " + key);
+    }
+  }
 });

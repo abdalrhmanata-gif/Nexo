@@ -6,6 +6,7 @@ import { createSupabaseMissionRepository } from "../../../../lib/supabase/missio
 import { actionStatusHint, actionStatusLabel, formatFollowUp, missionStatusLabel, nextStepFor, verificationReadiness } from "../../../../lib/mission-content.mjs";
 import { StatusPill } from "../../../../components/shell";
 import { VerificationControls } from "../../../../components/verification-controls";
+import { MissionEvidenceRecord } from "../../../../components/mission-evidence-record";
 import { MissionMutationControls } from "../../../../components/mission-mutation-controls";
 import { ActionMutationControls } from "../../../../components/action-mutation-controls";
 import { AddActionForm } from "../../../../components/add-action-form";
@@ -30,6 +31,20 @@ export default async function MissionDetailPage({
   const outcome = mission.outcomes[0];
   const readiness = verificationReadiness(mission);
   const intelligence = missionIntelligenceFor(mission);
+  const actionCounts = {
+    pending: mission.actions.filter((action) => action.status === "PENDING").length,
+    running: mission.actions.filter((action) => action.status === "RUNNING").length,
+    waiting: mission.actions.filter((action) => action.status === "BLOCKED").length,
+    completed: mission.actions.filter((action) => action.status === "COMPLETED").length,
+    cancelled: mission.actions.filter((action) => action.status === "CANCELLED").length,
+  };
+  const nextActionHref = intelligence.nextAction.actionId
+    ? `#action-${intelligence.nextAction.actionId}`
+    : mission.lifecycleStatus === "VERIFYING"
+      ? "#mission-verification"
+      : ["COMPLETED", "FAILED", "CANCELLED"].includes(mission.lifecycleStatus)
+        ? "#mission-outcome"
+        : "#mission-actions";
 
   return <div className="container">
     <p className="eyebrow"><Link href="/app"><LocalizedText en="Workspace" /></Link> / <LocalizedText en="Mission detail" /></p>
@@ -51,6 +66,12 @@ export default async function MissionDetailPage({
             <strong>{mission.progress}%</strong>
           </div>
           <div className="progress"><span style={{ width: `${mission.progress}%` }} /></div>
+          <nav className="mission-section-nav" aria-labelledby="mission-section-nav-label">
+            <span id="mission-section-nav-label"><LocalizedText en="Jump to" /></span>
+            <a href="#mission-actions"><LocalizedText en="Actions" /> <strong>{mission.actions.length}</strong></a>
+            <a href="#mission-verification"><LocalizedText en="Verification" /></a>
+            <a href="#mission-activity"><LocalizedText en="Activity" /></a>
+          </nav>
         </section>
 
         <section className="card" aria-labelledby="next-action-heading">
@@ -62,6 +83,7 @@ export default async function MissionDetailPage({
           </p>
           {intelligence.nextAction.blockingCondition && <p className="action-hint"><LocalizedText en="Why:" /> <LocalizedMissionValue value={intelligence.nextAction.blockingCondition} /></p>}
           <p className="action-hint"><LocalizedText en="Based on this mission’s saved state:" /> <LocalizedText en={intelligence.nextAction.currentState} />.</p>
+          <a className="mission-next-action-link" href={nextActionHref}><LocalizedText en="Go to next step" /> <span aria-hidden="true">→</span></a>
         </section>
 
         <section className="card" aria-labelledby="plan-health-heading">
@@ -80,36 +102,66 @@ export default async function MissionDetailPage({
             : <p className="detail-intent"><LocalizedText en="No success criteria were recorded for this mission." /></p>}
         </section>
 
-        <section className="card">
-          <p className="eyebrow"><LocalizedText en="Actions" /></p>
-          <h2><LocalizedText en="The work this mission needs" /></h2>
-          {mission.actions.length
-            ? <ul className="list">{mission.actions.map((action) => {
-              const followUp = formatFollowUp(action.followUpAt);
-              return <li key={action.id}>
-              <div className="card-heading">
-                <div>
-                  <span className="action-title">{action.title}</span>
-                  <span className={`status status-action-${action.status.toLowerCase()}`}><LocalizedText en={actionStatusLabel(action.status)} /></span>
-                  {followUp && <span className={`follow-up${followUp.overdue ? " follow-up-overdue" : ""}`}>
-                    <LocalizedText en={followUp.overdue ? "Follow-up was due" : "Follow up"} /> <LocalizedFollowUpDate relative={followUp.relative} absolute={followUp.absolute} />
-                  </span>}
-                  <small className="action-hint"><LocalizedText en={actionStatusHint(action.status)} /></small>
-                </div>
-                <ActionMutationControls missionId={mission.id} action={action} />
+        <section className="card mission-action-section" id="mission-actions" aria-labelledby="mission-actions-heading">
+          <div className="card-heading mission-action-section-heading">
+            <div>
+              <p className="eyebrow"><LocalizedText en="Execution workspace" /></p>
+              <h2 id="mission-actions-heading"><LocalizedText en="The work this mission needs" /></h2>
+            </div>
+            <span className="mission-action-total">{mission.actions.length} <LocalizedText en="Actions recorded" /></span>
+          </div>
+
+          <div className="mission-action-overview" aria-labelledby="mission-action-overview-label">
+            <span className="visually-hidden" id="mission-action-overview-label"><LocalizedText en="Action overview" /></span>
+            {[
+              { key: "pending", label: "Not started", count: actionCounts.pending },
+              { key: "running", label: "In progress", count: actionCounts.running },
+              { key: "waiting", label: "Waiting", count: actionCounts.waiting },
+              { key: "completed", label: "Complete", count: actionCounts.completed },
+              { key: "cancelled", label: "Cancelled", count: actionCounts.cancelled },
+            ].map((item) => (
+              <div className={`mission-action-count mission-action-count-${item.key}`} key={item.key}>
+                <strong>{item.count}</strong>
+                <span><LocalizedText en={item.label} /></span>
               </div>
-            </li>;
+            ))}
+          </div>
+
+          {mission.actions.length
+            ? <ul className="list mission-action-list">{mission.actions.map((action) => {
+              const followUp = formatFollowUp(action.followUpAt);
+              const isNextAction = action.id === intelligence.nextAction.actionId;
+              return <li id={`action-${action.id}`} key={action.id} className={`mission-action-item${isNextAction ? " mission-action-item-next" : ""}`}>
+                <div className="mission-action-content">
+                  <div className="mission-action-copy">
+                    <div className="mission-action-title-row">
+                      <span className="action-title">{action.title}</span>
+                      {isNextAction && <span className="mission-action-next-marker"><LocalizedText en="Next up" /></span>}
+                    </div>
+                    <span className={`status status-action-${action.status.toLowerCase()}`}><LocalizedText en={actionStatusLabel(action.status)} /></span>
+                    {followUp && <span className={`follow-up${followUp.overdue ? " follow-up-overdue" : ""}`}>
+                      <LocalizedText en={followUp.overdue ? "Follow-up was due" : "Follow up"} /> <LocalizedFollowUpDate relative={followUp.relative} absolute={followUp.absolute} />
+                    </span>}
+                    <small className="action-hint"><LocalizedText en={actionStatusHint(action.status)} /></small>
+                  </div>
+                  <ActionMutationControls missionId={mission.id} action={action} />
+                </div>
+              </li>;
             })}</ul>
-            : <p className="detail-intent"><LocalizedText en="No actions have been added yet." /></p>}
+            : <div className="mission-action-empty">
+              <strong><LocalizedText en="No actions are recorded yet." /></strong>
+              <p><LocalizedText en="Add the first concrete step needed to move this Mission forward." /></p>
+            </div>}
           {repository.addAction && <AddActionForm missionId={mission.id} />}
         </section>
 
         {repository.updateMission && <section className="card"><p className="eyebrow"><LocalizedText en="Mission setup" /></p><h2><LocalizedText en="Edit this mission" /></h2><p><LocalizedText en="Changes are accepted only after the server confirms the current version." /></p><MissionMutationControls missionId={mission.id} name={mission.name} intent={mission.intent} criteria={mission.criteria} status={mission.lifecycleStatus} version={mission.version} /></section>}
 
-        <section className="card">
+        <section className="card" id="mission-verification">
           <p className="eyebrow"><LocalizedText en="Verification" /></p>
           <h2><LocalizedText en={verification ? "Verification" : "Record what you checked"} /></h2>
           <p><LocalizedText en="A mission is only verified once evidence has been recorded through the authenticated server boundary. Work being reported as finished is not the same as ZAVQERA considering it verified." /></p>
+          {verification && <MissionEvidenceRecord verification={verification} />}
           {readiness.ready
             ? (verification
               ? <>{!outcome && <VerificationControls missionId={mission.id} verification={verification} />}</>
@@ -123,15 +175,26 @@ export default async function MissionDetailPage({
             </div>}
         </section>
 
-        <section className="card">
+        <section className="card" id="mission-outcome">
           <p className="eyebrow"><LocalizedText en="Outcome" /></p>
           <h2><LocalizedText en={outcome ? "Outcome" : "No outcome yet"} /></h2>
           {outcome
-            ? <p><LocalizedText en={outcome.status === "COMPLETED" ? "This mission reached its stated outcome." : "This mission closed without reaching its stated outcome."} /> <LocalizedText en="Recorded confidence" /> {Math.round(outcome.successScore * 100)}%.</p>
+            ? <div className="mission-outcome-record">
+                <p><LocalizedText en={outcome.status === "COMPLETED" ? "This mission reached its stated outcome." : "This mission closed without reaching its stated outcome."} /> <LocalizedText en="Recorded confidence" /> {Math.round(outcome.successScore * 100)}%.</p>
+                {typeof outcome.result.summary === "string" && <div className="mission-evidence-record-block"><span><LocalizedText en="Outcome summary" /></span><p>{outcome.result.summary}</p></div>}
+                {outcome.result.decision === "PROCEED" || outcome.result.decision === "STOP"
+                  ? <div className="mission-decision-record">
+                      <span><LocalizedText en="Recorded human decision" /></span>
+                      <strong><LocalizedText en={outcome.result.decision === "PROCEED" ? "Proceed" : "Stop"} /></strong>
+                    </div>
+                  : null}
+                {typeof outcome.result.rationale === "string" && <div className="mission-evidence-record-block"><span><LocalizedText en="Decision rationale" /></span><p>{outcome.result.rationale}</p></div>}
+                {outcome.result.decisionType === "HUMAN_OUTCOME_DECISION" && <p className="mission-evidence-record-caveat"><LocalizedText en="This is a recorded human outcome decision, not a delegated AI approval or permission to perform an external action." /></p>}
+              </div>
             : <p className="detail-intent"><LocalizedText en="An outcome can only be committed after a verification is recorded." /></p>}
         </section>
 
-        <section className="card">
+        <section className="card" id="mission-activity">
           <p className="eyebrow"><LocalizedText en="Activity" /></p>
           <h2><LocalizedText en="Recent checkpoints" /></h2>
           {mission.activity.length
