@@ -66,7 +66,9 @@ test("shared navigation shows sign-in to anonymous visitors and sign-out only fo
   const shell = read("components/shell.tsx");
   assert.match(shell, /getAuthenticatedUser/);
   assert.match(shell, /const user = await getAuthenticatedUser\(\)\.catch\(\(\) => null\)/);
-  assert.match(shell, /\\{\\s*user\\s*\\?\\s*<SignOutButton\\s*\\/>\\s*:\\s*<Link className="button button-small" href="\\/auth\\/sign-in">/);
+  assert.ok(shell.includes("const user = await getAuthenticatedUser().catch(() => null);"));
+  assert.ok(shell.includes("? <SignOutButton />"));
+  assert.ok(shell.includes(': <Link className="button button-small" href="/auth/sign-in">'));
 });
 
 test("the Netlify workflow grants only the dedicated design branch a draft preview path", () => {
