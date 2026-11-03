@@ -1,7 +1,7 @@
--- Verify default EXECUTE and sequence privileges for new postgres-owned public objects.
+-- Verify default EXECUTE and sequence privileges for new postgres-owned objects across schemas.
 begin;
 create extension if not exists pgtap;
-select plan(10);
+select plan(12);
 
 create function public.zavqera_default_function_acl_probe()
 returns boolean
@@ -11,6 +11,15 @@ set search_path = pg_catalog
 as $$ select true $$;
 
 create sequence public.zavqera_default_sequence_acl_probe;
+
+-- The migration's PUBLIC EXECUTE revoke is global, not public-schema scoped.
+-- private is a non-exposed application schema and proves the global default.
+create function private.zavqera_default_function_acl_global_probe()
+returns boolean
+language sql
+security definer
+set search_path = pg_catalog
+as $body$ select true $body$;
 
 select ok(
   not has_function_privilege('anon','public.zavqera_default_function_acl_probe()','EXECUTE'),
@@ -34,6 +43,24 @@ select ok(
        and a.privilege_type='EXECUTE'
   ),
   'new public SECURITY DEFINER functions do not inherit PUBLIC EXECUTE'
+);
+
+select ok(
+  not has_function_privilege('anon','private.zavqera_default_function_acl_global_probe()','EXECUTE')
+  and not has_function_privilege('authenticated','private.zavqera_default_function_acl_global_probe()','EXECUTE')
+  and not has_function_privilege('service_role','private.zavqera_default_function_acl_global_probe()','EXECUTE'),
+  'global PUBLIC EXECUTE default is revoked for new functions outside public too'
+);
+select ok(
+  not exists (
+    select 1
+      from pg_proc p
+      cross join lateral aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a
+     where p.oid='private.zavqera_default_function_acl_global_probe()'::regprocedure
+       and a.grantee=0
+       and a.privilege_type='EXECUTE'
+  ),
+  'non-public schema functions do not inherit PUBLIC EXECUTE'
 );
 
 grant execute on function public.zavqera_default_function_acl_probe() to authenticated;
@@ -83,5 +110,6 @@ select ok(
 
 drop sequence public.zavqera_default_sequence_acl_probe;
 drop function public.zavqera_default_function_acl_probe();
+drop function private.zavqera_default_function_acl_global_probe();
 select * from finish();
 rollback;
