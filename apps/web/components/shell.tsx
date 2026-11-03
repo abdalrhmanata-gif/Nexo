@@ -5,6 +5,7 @@ import { LocalizedText } from "./localized-text";
 import { NavLink, WorkspaceNavLink } from "./nav-link";
 import { NotificationBell } from "./notification-bell";
 import { missionStatusLabel } from "../lib/mission-content.mjs";
+import { getAuthenticatedUser } from "../lib/supabase/server";
 
 function NavIcon({ name }: { name: "search" | "plus" | "business" | "templates" | "pricing" | "workspace" | "opportunities" }) {
   const common = { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true as const };
@@ -19,7 +20,8 @@ function NavIcon({ name }: { name: "search" | "plus" | "business" | "templates" 
   }
 }
 
-export function Shell({ children }: { children: React.ReactNode }) {
+export async function Shell({ children }: { children: React.ReactNode }) {
+  const user = await getAuthenticatedUser().catch(() => null);
   return (
     <div className="site-shell">
       <header className="topbar">
@@ -38,7 +40,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <NavLink href="/app/opportunities" className="nav-link nav-opportunities"><NavIcon name="opportunities" /><LocalizedText en="Opportunity Intelligence" nb="Mulighetsanalyse" ar="تحليل الفرص" /></NavLink>
           <NotificationBell />
           <LanguageSwitcher />
-          <SignOutButton />
+          {user
+            ? <SignOutButton />
+            : <Link className="button button-small" href="/auth/sign-in"><LocalizedText en="Sign in" /></Link>}
         </nav>
       </header>
       <main>{children}</main>

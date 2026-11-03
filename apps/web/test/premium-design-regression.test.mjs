@@ -61,6 +61,14 @@ test("pricing distinguishes available free access from proposed paid plans", () 
   assert.match(pricing, /href="\/auth\/sign-up"/);
 });
 
+
+test("shared navigation shows sign-in to anonymous visitors and sign-out only for authenticated users", () => {
+  const shell = read("components/shell.tsx");
+  assert.match(shell, /getAuthenticatedUser/);
+  assert.match(shell, /const user = await getAuthenticatedUser\(\)\.catch\(\(\) => null\)/);
+  assert.match(shell, /user[\s\S]{0,100}\? <SignOutButton \/> : <Link className="button button-small" href="\/auth\/sign-in">/);
+});
+
 test("the Netlify workflow grants only the dedicated design branch a draft preview path", () => {
   const workflow = read("../../.github/workflows/web-deploy-netlify.yml");
   assert.match(workflow, /codex\/zavqera-premium-mission-control-design-20261101/);
