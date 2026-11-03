@@ -1,0 +1,12 @@
+[build]
+  command = "bash scripts/netlify-build.sh"
+  publish = "build/web"
+
+[build.environment]
+  FLUTTER_VERSION = "3.47.2"
+
+# Flutter Web uses client-side routing. Serve index.html for app routes.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
