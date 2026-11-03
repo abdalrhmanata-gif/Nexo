@@ -14,6 +14,7 @@ on:
       - "codex/api-cookie-origin-guard-20261102"
       - "codex/invitation-rpc-only-write-boundary-20261102"
       - "codex/security-stack-integration-candidate-20261103"
+      - "codex/f7-verification-outcome-payload-bounds-20261103"
       - "codex/w82-rpc-race-e2e-20261102"
       - "codex/postgres-default-acl-cross-schema-test-20261102"
     paths:
@@ -168,6 +169,7 @@ jobs:
           cp "$GITHUB_WORKSPACE/supabase/tests/w79_trusted_research_completion.sql" "$workdir/supabase/tests/w79_trusted_research_completion.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w81_read_only_research_jit_claim.sql" "$workdir/supabase/tests/w81_read_only_research_jit_claim.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/w82_ai_generation_reservation_identity.sql" "$workdir/supabase/tests/w82_ai_generation_reservation_identity.sql"
+          cp "$GITHUB_WORKSPACE/supabase/tests/f7_verification_outcome_payload_bounds.sql" "$workdir/supabase/tests/f7_verification_outcome_payload_bounds.sql"
           cp "$GITHUB_WORKSPACE/supabase/tests/pr29_workspace_member_mutation_authorization.sql" "$workdir/supabase/tests/pr29_workspace_member_mutation_authorization.sql"
           cat > "$workdir/supabase/migrations/20260921180005_e2e_historical_auth_compat.sql" <<'SQL'
           create schema if not exists private;
@@ -240,6 +242,7 @@ jobs:
             supabase/tests/w75_correlatable_provider_receipt.sql \
             supabase/tests/w76_external_success_insert_guard.sql \
             supabase/tests/w77_read_only_research_payload_bounds.sql \
+            supabase/tests/f7_verification_outcome_payload_bounds.sql \
             supabase/tests/w78_research_history_event_binding.sql \
             supabase/tests/w79_trusted_research_completion.sql \
             supabase/tests/w81_read_only_research_jit_claim.sql
