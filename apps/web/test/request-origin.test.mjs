@@ -46,6 +46,30 @@ test("uses the forwarded public protocol when comparing the Host origin", () => 
   assert.equal(isTrustedSameOriginRequest(request), true);
 });
 
+test("rejects an internal request URL Origin when the public Host identifies another origin", () => {
+  const request = new Request("http://next-internal:3210/api/missions/1", {
+    method: "POST",
+    headers: {
+      origin: "http://next-internal:3210",
+      host: "zavqera.example",
+      "x-forwarded-proto": "https",
+    },
+  });
+  assert.equal(isTrustedSameOriginRequest(request), false);
+});
+
+test("rejects malformed forwarded protocols instead of falling back to the internal URL", () => {
+  const request = new Request("http://next-internal:3210/api/missions/1", {
+    method: "POST",
+    headers: {
+      origin: "https://zavqera.example",
+      host: "zavqera.example",
+      "x-forwarded-proto": "javascript",
+    },
+  });
+  assert.equal(isTrustedSameOriginRequest(request), false);
+});
+
 test("rejects opaque or malformed Origin values", () => {
   const request = new Request(endpoint, {
     method: "POST",
