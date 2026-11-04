@@ -38,7 +38,7 @@ const NB: Record<string, string> = {
   "Find friction in recurring work and measure a safe improvement.":"Finn friksjon i gjentakende arbeid og mål en trygg forbedring.",
   "Describe the current workflow and baseline":"Beskriv dagens arbeidsflyt og utgangspunkt",
   "Test one reversible improvement":"Test én reversibel forbedring",
-  "Compare the outcome with the baseline":"Sammenlign resultatet med utgangspunktet"
+  "Compare the outcome with the baseline":"Sammenlign resultatet med utgangspunktet",
   "A clear view of active work, decisions that need you, and the next best action.":"Et klart bilde av aktivt arbeid, avgjørelser som venter på deg, og neste beste handling.",
   "Recommended next step":"Anbefalt neste steg",
   "Your mission board is clear":"Oppdragstavlen er tom",
@@ -129,7 +129,7 @@ const AR: Record<string, string> = {
   "Find friction in recurring work and measure a safe improvement.":"اكتشف الاحتكاك في العمل المتكرر وقِس تحسيناً آمناً.",
   "Describe the current workflow and baseline":"صف سير العمل الحالي وخط الأساس",
   "Test one reversible improvement":"اختبر تحسيناً واحداً قابلاً للتراجع",
-  "Compare the outcome with the baseline":"قارن النتيجة بخط الأساس"
+  "Compare the outcome with the baseline":"قارن النتيجة بخط الأساس",
   "A clear view of active work, decisions that need you, and the next best action.":"رؤية واضحة للعمل النشط والقرارات التي تنتظرك والخطوة التالية الأفضل.",
   "Recommended next step":"الخطوة التالية المقترحة",
   "Your mission board is clear":"لوحة مهامك خالية",
@@ -224,7 +224,7 @@ const ES: Record<string, string> = {
   "Find friction in recurring work and measure a safe improvement.":"Detecta fricciones en el trabajo recurrente y mide una mejora segura.",
   "Describe the current workflow and baseline":"Describe el flujo actual y su línea base",
   "Test one reversible improvement":"Prueba una mejora reversible",
-  "Compare the outcome with the baseline":"Compara el resultado con la línea base"
+  "Compare the outcome with the baseline":"Compara el resultado con la línea base",
   "A clear view of active work, decisions that need you, and the next best action.":"Una vista clara del trabajo activo, las decisiones que te esperan y la mejor acción siguiente.",
   "Recommended next step":"Siguiente paso recomendado",
   "Your mission board is clear":"Tu tablero de misiones está despejado",
@@ -319,7 +319,7 @@ const FR: Record<string, string> = {
   "Find friction in recurring work and measure a safe improvement.":"Repérez les frictions du travail récurrent et mesurez une amélioration sûre.",
   "Describe the current workflow and baseline":"Décrivez le flux actuel et sa référence",
   "Test one reversible improvement":"Testez une amélioration réversible",
-  "Compare the outcome with the baseline":"Comparez le résultat à la référence"
+  "Compare the outcome with the baseline":"Comparez le résultat à la référence",
   "A clear view of active work, decisions that need you, and the next best action.":"Une vue claire du travail en cours, des décisions qui vous attendent et de la meilleure action suivante.",
   "Recommended next step":"Prochaine étape recommandée",
   "Your mission board is clear":"Votre tableau de missions est vide",
@@ -414,7 +414,7 @@ const DE: Record<string, string> = {
   "Find friction in recurring work and measure a safe improvement.":"Finden Sie Reibung in wiederkehrender Arbeit und messen Sie eine sichere Verbesserung.",
   "Describe the current workflow and baseline":"Aktuellen Ablauf und Ausgangswert beschreiben",
   "Test one reversible improvement":"Eine umkehrbare Verbesserung testen",
-  "Compare the outcome with the baseline":"Ergebnis mit dem Ausgangswert vergleichen"
+  "Compare the outcome with the baseline":"Ergebnis mit dem Ausgangswert vergleichen",
   "A clear view of active work, decisions that need you, and the next best action.":"Ein klarer Blick auf laufende Arbeit, anstehende Entscheidungen und den nächsten besten Schritt.",
   "Recommended next step":"Empfohlener nächster Schritt",
   "Your mission board is clear":"Ihr Missions-Board ist leer",
