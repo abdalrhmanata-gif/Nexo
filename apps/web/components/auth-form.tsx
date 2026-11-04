@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { safeNextPath } from "../lib/auth/redirect.mjs";
+import { LocalizedText } from "./localized-text";
 
 const CONFIRMATION_ERRORS: Record<string, string> = {
   "confirmation-link": "That confirmation link is invalid or has expired. Request a new one by signing up again.",
@@ -73,6 +74,6 @@ export function SignOutButton() {
   }
 
   return <button className="button button-small" onClick={signOut} disabled={loading}>
-    {loading ? "Signing out…" : "Sign out"}
+    {loading ? <LocalizedText en="Signing out…" /> : <LocalizedText en="Sign out" />}
   </button>;
 }

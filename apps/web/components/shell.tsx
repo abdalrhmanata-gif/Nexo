@@ -4,6 +4,7 @@ import { LanguageSwitcher } from "./language-switcher";
 import { LocalizedText } from "./localized-text";
 import { NavLink, WorkspaceNavLink } from "./nav-link";
 import { NotificationBell } from "./notification-bell";
+import { ThemeSwitcher } from "./theme-switcher";
 
 function NavIcon({ name }: { name: "search" | "plus" | "business" | "templates" | "pricing" | "workspace" | "opportunities" }) {
   const common = { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true as const };
@@ -37,6 +38,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <NavLink href="/app/opportunities" className="nav-link nav-opportunities"><NavIcon name="opportunities" /><LocalizedText en="Opportunity Intelligence" nb="Mulighetsanalyse" ar="تحليل الفرص" /></NavLink>
           <NotificationBell />
           <LanguageSwitcher />
+          <ThemeSwitcher />
           <SignOutButton />
         </nav>
       </header>

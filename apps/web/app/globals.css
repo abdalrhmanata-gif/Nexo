@@ -1008,3 +1008,83 @@ a:hover { color:var(--teal); }
   .opportunity-layout--form-open .opportunity-results { order:2; }
 }
 .topbar .brand .visually-hidden { display:block; }
+
+/* ---------------------------------------------------------------------------
+   Theme switch control
+   --------------------------------------------------------------------------- */
+.theme-switcher {
+  display:inline-flex; align-items:center; justify-content:center;
+  width:36px; height:36px; padding:0; cursor:pointer;
+  border:1px solid var(--line); border-radius:8px;
+  background:var(--white); color:var(--muted);
+  transition:color .15s ease, border-color .15s ease, background .15s ease;
+}
+.theme-switcher:hover { color:var(--teal); border-color:var(--teal); }
+.theme-switcher-icon { display:inline-flex; }
+
+/* ---------------------------------------------------------------------------
+   Dark theme
+   Applied from data-theme="dark" on <html>, set before paint by the inline
+   script in the root layout and toggled by ThemeSwitcher.
+   --------------------------------------------------------------------------- */
+:root[data-theme="dark"] {
+  --ink:#e7eef6;
+  --muted:#9bacbe;
+  --line:#263341;
+  --paper:#0e151d;
+  --white:#161f2a;
+  --teal:#3ac9bd;
+  --navy:#dbe6f0;
+  --orange:#e08a4e;
+  color-scheme:dark;
+}
+:root[data-theme="dark"] html,
+html[data-theme="dark"] { background:var(--paper); }
+:root[data-theme="dark"] body {
+  background:
+    radial-gradient(ellipse at 5% 0%, rgba(58,201,189,.07), transparent 28rem),
+    var(--paper);
+}
+
+/* Primary action keeps a light-on-accent relationship instead of inheriting
+   --navy/--white, which swap meaning in dark. */
+:root[data-theme="dark"] .button { background:var(--teal); color:#07141a; border-color:var(--teal); }
+:root[data-theme="dark"] .button:hover { background:#55ded2; color:#07141a; }
+:root[data-theme="dark"] .button-quiet { background:transparent; color:var(--ink); border-color:var(--line); }
+:root[data-theme="dark"] .button-quiet:hover { color:var(--teal); border-color:var(--teal); background:transparent; }
+:root[data-theme="dark"] .button-danger { background:#c25a3a; border-color:#c25a3a; color:#0e151d; }
+:root[data-theme="dark"] .button-danger:hover { background:#a84a2d; border-color:#a84a2d; }
+:root[data-theme="dark"] .brand { color:var(--ink); }
+
+/* Surfaces that hard-code light values in the base sheet. */
+:root[data-theme="dark"] .card { box-shadow:0 6px 20px rgba(0,0,0,.28); }
+:root[data-theme="dark"] .progress { background:#22303d; }
+:root[data-theme="dark"] .stat { background:var(--white); }
+:root[data-theme="dark"] .stat:hover,
+:root[data-theme="dark"] .stat:focus-visible,
+:root[data-theme="dark"] .stat-selected { background:#15302e; color:var(--ink); }
+:root[data-theme="dark"] .status-active { color:#5fe0d2; background:#13302d; }
+:root[data-theme="dark"] .status-waiting { color:#f0a269; background:#33220f; }
+:root[data-theme="dark"] .status-completed { color:#a8c0d6; background:#1c2835; }
+:root[data-theme="dark"] .attention-panel { background:#13302d; border-color:#245049; }
+:root[data-theme="dark"] .attention-panel p:not(.eyebrow) { color:#9fded5; }
+:root[data-theme="dark"] .empty-state,
+:root[data-theme="dark"] .loading-state { background:#131c25; border-color:#2b3a49; }
+:root[data-theme="dark"] .loading-bar { background:#22303d; }
+:root[data-theme="dark"] .form-note,
+:root[data-theme="dark"] .success-state { background:#13302d; color:#9fded5; }
+:root[data-theme="dark"] .field input,
+:root[data-theme="dark"] .field textarea,
+:root[data-theme="dark"] .field select,
+:root[data-theme="dark"] .action-control select {
+  background:#111a23; border-color:#2b3a49; color:var(--ink);
+}
+:root[data-theme="dark"] .field-error { color:#f08a6a !important; }
+:root[data-theme="dark"] .danger-copy { color:#f08a6a; }
+:root[data-theme="dark"] .next-step { background:#131c25; border-left-color:var(--line); }
+:root[data-theme="dark"] .next-step-attention { background:#2a1d12; border-left-color:var(--orange); }
+:root[data-theme="dark"] .next-step-attention .next-step-label { color:#f0a269; }
+:root[data-theme="dark"] .next-step-info { background:#13302d; border-left-color:var(--teal); }
+:root[data-theme="dark"] .next-step-info .next-step-label { color:#5fe0d2; }
+:root[data-theme="dark"] .timeline-item { border-left-color:#245049; }
+:root[data-theme="dark"] .theme-switcher { background:var(--white); }
