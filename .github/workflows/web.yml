@@ -2,13 +2,18 @@ name: ZAVQERA Web CI
 
 on:
   push:
-    branches: ["zavqera/**"]
+    # main is the branch Netlify builds for production. It was missing here,
+    # so the production build command (npm run build) was never exercised by
+    # CI on main and a build break reached production undetected.
+    branches: ["main", "zavqera/**"]
     paths:
       - "apps/web/**"
+      - "netlify.toml"
       - ".github/workflows/web.yml"
   pull_request:
     paths:
       - "apps/web/**"
+      - "netlify.toml"
       - ".github/workflows/web.yml"
 
 permissions:
