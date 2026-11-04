@@ -26,9 +26,6 @@ export declare function nextStepFor(
   mission: Pick<Mission, "actions" | "verifications" | "outcomes"> & Partial<Pick<Mission, "lifecycleStatus">>,
 ): MissionNextStep;
 
-export declare function formatDateOnly(value: string | null | undefined): string;
-export declare function formatDateTime(value: string | null | undefined): string;
-
 export declare function summariseEventPayload(payload: unknown): string;
 export declare function humaniseEventType(eventType: string): string;
 
@@ -62,9 +59,3 @@ export type VerificationReadiness = {
 export declare function verificationReadiness(
   mission: Pick<Mission, "lifecycleStatus" | "actions">,
 ): VerificationReadiness;
-
-export declare function summariseApprovalScope(scope: unknown): string;
-
-export declare function summariseApprovalScope(scope: unknown): string;
-
-export declare function summariseApprovalPayloadPreview(preview: unknown): string;

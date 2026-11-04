@@ -1,75 +1,86 @@
 import Link from "next/link";
-import { LocalizedText } from "../components/localized-text";
 
-// Launch landing: value first; full plan details live on /pricing.
+const capabilities = [
+  {
+    number: "01",
+    title: "Make intent explicit",
+    description: "Define the outcome, success criteria, and boundaries before work begins.",
+    icon: "target",
+    tone: "teal",
+  },
+  {
+    number: "02",
+    title: "Know what happens next",
+    description: "Track each Mission, its actions, blockers, and progress in one place.",
+    icon: "steps",
+    tone: "blue",
+  },
+  {
+    number: "03",
+    title: "Decide with evidence",
+    description: "Compare opportunities, record what you know, and expose what is still uncertain.",
+    icon: "evidence",
+    tone: "amber",
+  },
+];
+
+function CapabilityIcon({ kind }: { kind: string }) {
+  if (kind === "target") return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg>;
+  if (kind === "steps") return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h11M4 19h7"/><circle cx="19" cy="12" r="2"/><circle cx="15" cy="19" r="2"/></svg>;
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.5 5.2 5.8.9-4.2 4.1 1 5.8-5.1-2.7-5.1 2.7 1-5.8-4.2-4.1 5.8-.9L12 3Z"/></svg>;
+}
+
 export default function HomePage() {
-  return <div className="container">
-    <section className="hero">
-      <p className="eyebrow"><LocalizedText en="AI missions for real work — with you in control" nb="KI-oppdrag for ekte arbeid – med deg i kontroll" ar="مهام ذكاء اصطناعي لإنجاز عمل حقيقي، وأنت صاحب القرار" /></p>
-      <h1><LocalizedText en="Give AI a mission. Keep control of the outcome." nb="Gi KI et oppdrag. Behold kontrollen over resultatet." ar="امنح الذكاء الاصطناعي مهمة، واحتفظ أنت بالتحكم في النتيجة." /></h1>
-      <p><LocalizedText en="Turn a goal into a clear plan, defined boundaries, and work you can review step by step. ZAVQERA helps you delegate to AI without handing over the keys." nb="Gjør et mål om til en tydelig plan, klare grenser og arbeid du kan følge steg for steg. ZAVQERA hjelper deg å delegere til KI uten å gi fra deg kontrollen." ar="حوّل هدفك إلى خطة واضحة وحدود محددة وعمل يمكنك مراجعته خطوة بخطوة. يساعدك ZAVQERA على تفويض العمل للذكاء الاصطناعي دون التنازل عن التحكم." /></p>
-      <div className="hero-actions">
-        <Link className="button" href="/try"><LocalizedText en="Try ZAVQERA free" nb="Prøv ZAVQERA gratis" ar="جرّب ZAVQERA مجانًا" /></Link>
-        <Link className="button button-quiet" href="/templates"><LocalizedText en="Explore mission templates" nb="Utforsk oppdragsmaler" ar="اكتشف قوالب المهام" /></Link>
-      </div>
-      <p className="hero-free"><strong><LocalizedText en="Start free." nb="Start gratis." ar="ابدأ مجانًا." /></strong> <LocalizedText en="5 AI generations each month. No payment required." nb="5 KI-genereringer hver måned. Ingen betaling nødvendig." ar="5 عمليات توليد بالذكاء الاصطناعي شهريًا، دون الحاجة إلى الدفع." /></p>
-      <span className="visually-hidden">Free $0 / 5 AI generations. Plus $9 / 50 AI generations. Pro $25 / 300 AI generations. See Pricing for full plan details. Billing is not enabled yet; paid plans are shown for launch planning.</span>
-    </section>
-
-    <section className="card ai-value-preview" aria-labelledby="ai-value-heading">
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow"><LocalizedText en="From thought to mission" nb="Fra tanke til oppdrag" ar="من الفكرة إلى المهمة" /></p>
-          <h2 id="ai-value-heading"><LocalizedText en="Describe the result. Get a mission you can actually use." nb="Beskriv resultatet. Få et oppdrag du kan bruke." ar="صف النتيجة، واحصل على مهمة عملية يمكنك استخدامها." /></h2>
+  return <div className="landing-page">
+    <section className="landing-hero">
+      <div className="landing-hero-copy">
+        <p className="eyebrow"><span className="landing-live-dot" aria-hidden="true" /> Mission control for AI-assisted work</p>
+        <h1>From intent to action. <span>With control at every step.</span></h1>
+        <p className="landing-lede">Turn goals into structured Missions, keep every next step visible, and make decisions with the evidence you actually have.</p>
+        <div className="landing-hero-actions">
+          <Link className="button" href="/app">Open workspace <span aria-hidden="true">→</span></Link>
+          <Link className="button button-quiet" href="/app/opportunities">Explore Opportunity Intelligence</Link>
         </div>
-        <p><LocalizedText en="No project-management setup required." nb="Ingen prosjektstyring nødvendig." ar="لا حاجة لإعدادات معقدة لإدارة المشاريع." /></p>
+        <div className="landing-trust-line"><span aria-hidden="true">✓</span> Review before action. Clear boundaries. No false certainty.</div>
+        <Link className="landing-template-link" href="/templates">Browse mission templates <span aria-hidden="true">→</span></Link>
       </div>
-      <div className="ai-value-grid">
-        <div className="ai-value-input">
-          <span className="ai-value-label"><LocalizedText en="You say" nb="Du sier" ar="أنت تقول" /></span>
-          <p>“<LocalizedText en="I want to launch a small online shop in six weeks." nb="Jeg vil lansere en liten nettbutikk innen seks uker." ar="أريد إطلاق متجر إلكتروني صغير خلال ستة أسابيع." />”</p>
-        </div>
-        <div className="ai-value-arrow" aria-hidden="true">→</div>
-        <div className="ai-value-output">
-          <span className="ai-value-label"><LocalizedText en="ZAVQERA prepares" nb="ZAVQERA lager" ar="ZAVQERA تُعدّ" /></span>
-          <ul>
-            <li><LocalizedText en="A clear mission and intent" nb="Et tydelig oppdrag og mål" ar="مهمة وهدف واضحان" /></li>
-            <li><LocalizedText en="Success criteria" nb="Suksesskriterier" ar="معايير النجاح" /></li>
-            <li><LocalizedText en="Practical first steps" nb="Praktiske første steg" ar="خطوات عملية أولى" /></li>
-            <li><LocalizedText en="Clear boundaries before execution" nb="Tydelige grenser før kjøring" ar="حدود واضحة قبل التنفيذ" /></li>
-          </ul>
-        </div>
+      <div className="landing-visual" role="group" aria-label="Illustrative view of a governed Mission">
+        <div className="landing-visual-top"><span className="landing-window-dots"><i/><i/><i/></span><span>MISSION CONTROL</span><span className="landing-preview-tag">Illustrative view</span></div>
+        <div className="landing-visual-heading"><span className="landing-mission-symbol" aria-hidden="true">◎</span><div><p>ACTIVE MISSION</p><strong>Validate a new opportunity</strong></div><span className="status status-active">Active</span></div>
+        <p className="landing-visual-intent">Outcome: decide whether this idea is worth pursuing, using evidence and a small test.</p>
+        <div className="landing-visual-section"><span>Next steps</span><span>2 of 3 ready</span></div>
+        <div className="landing-mini-step"><span className="landing-step-check">✓</span><div><strong>Define the success criteria</strong><small>Completed · Clear outcome recorded</small></div></div>
+        <div className="landing-mini-step"><span className="landing-step-check">✓</span><div><strong>Gather initial evidence</strong><small>Completed · Notes captured</small></div></div>
+        <div className="landing-mini-step landing-mini-step-current"><span className="landing-step-number">3</span><div><strong>Review the weakest assumption</strong><small>Next action · Human decision required</small></div></div>
+        <div className="landing-visual-footer"><span><i className="landing-indicator" /> Authority bounded</span><span>Progress is reviewable</span></div>
       </div>
-      <p className="ai-value-trust"><LocalizedText en="You review and edit the draft. Nothing is created or executed until you decide." nb="Du gjennomgår og redigerer utkastet. Ingenting opprettes eller utføres før du bestemmer deg." ar="أنت تراجع المسودة وتعدلها. لا يتم إنشاء أي شيء أو تنفيذه قبل قرارك." /></p>
     </section>
 
+    <section className="landing-proof-strip" aria-label="Product principles">
+      <div><span className="landing-proof-icon">01</span><span><strong>Explicit goals</strong><small>Know what success means</small></span></div>
+      <div><span className="landing-proof-icon">02</span><span><strong>Visible work</strong><small>See actions and blockers</small></span></div>
+      <div><span className="landing-proof-icon">03</span><span><strong>Human oversight</strong><small>Keep decisions in your hands</small></span></div>
+    </section>
 
-    <section className="card mission-template-callout" aria-labelledby="templates-heading">
-      <div>
-        <p className="eyebrow"><LocalizedText en="Start faster" nb="Kom raskere i gang" ar="ابدأ بسرعة" /></p>
-        <h2 id="templates-heading"><LocalizedText en="Skip the blank page. Start with a proven pattern." nb="Hopp over den tomme siden. Start med en gjennomprøvd mal." ar="تجاوز الصفحة الفارغة وابدأ بقالب عملي جاهز." /></h2>
-        <p><LocalizedText en="Choose a goal, adapt it to your needs, and share the template with your team." nb="Velg et mål, tilpass det og del malen med teamet." ar="اختر هدفًا، وعدّله ليناسبك، وشارك القالب مع فريقك." /></p>
+    <section className="landing-capabilities">
+      <div className="landing-section-heading"><div><p className="eyebrow">A system for making progress</p><h2>Less uncertainty. Better next steps.</h2></div><p>Zavqera brings planning, execution tracking, and decision support into one calm workspace.</p></div>
+      <div className="landing-capability-grid">{capabilities.map((item) => <article className="landing-capability-card" key={item.number}>
+        <div className={`landing-capability-icon landing-capability-${item.tone}`}><CapabilityIcon kind={item.icon}/></div>
+        <span className="landing-capability-number">{item.number}</span>
+        <h3>{item.title}</h3>
+        <p>{item.description}</p>
+      </article>)}</div>
+    </section>
+
+    <section className="landing-how">
+      <div><p className="eyebrow">How it works</p><h2>Progress you can explain.</h2><p>Every Mission starts with an intended outcome and remains reviewable as the work changes.</p></div>
+      <div className="landing-how-steps">
+        <div><span>1</span><strong>Define</strong><p>State the goal and what good looks like.</p></div>
+        <div><span>2</span><strong>Work</strong><p>Track steps, status, and decisions that need you.</p></div>
+        <div><span>3</span><strong>Review</strong><p>Check evidence before you accept an outcome.</p></div>
       </div>
-      <Link className="button button-quiet" href="/templates"><LocalizedText en="Browse mission templates" nb="Se oppdragsmaler" ar="تصفح قوالب المهام" /></Link>
     </section>
 
-    <section className="value-grid" aria-labelledby="product-principles-heading">
-      <h2 className="visually-hidden" id="product-principles-heading"><LocalizedText en="Product principles" nb="Prinsipper for produktet" ar="مبادئ المنتج" /></h2>
-      <article className="card value-card">
-        <p className="eyebrow"><LocalizedText en="01 · Intent" nb="01 · Intensjon" ar="01 · الهدف" /></p>
-        <h2><LocalizedText en="Start with the outcome." nb="Begynn med resultatet." ar="ابدأ بالنتيجة." /></h2>
-        <p><LocalizedText en="Tell ZAVQERA what you want in plain language. The structure comes after." nb="Fortell ZAVQERA hva du ønsker, med egne ord. Strukturen kommer etterpå." ar="أخبر ZAVQERA بما تريد بلغة واضحة، ثم تأتي البنية بعد ذلك." /></p>
-      </article>
-      <article className="card value-card">
-        <p className="eyebrow"><LocalizedText en="02 · Control" nb="02 · Kontroll" ar="02 · التحكم" /></p>
-        <h2><LocalizedText en="Review before action." nb="Gå gjennom før handling." ar="راجع الخطة قبل التنفيذ." /></h2>
-        <p><LocalizedText en="AI can draft. You decide what gets created and what moves." nb="KI kan lage et utkast. Du bestemmer hva som opprettes og settes i gang." ar="يمكن للذكاء الاصطناعي إعداد مسودة. أنت تقرر ما الذي يُنشأ وما الذي يبدأ تنفيذه." /></p>
-      </article>
-      <article className="card value-card">
-        <p className="eyebrow"><LocalizedText en="03 · Clarity" nb="03 · Klarhet" ar="03 · الوضوح" /></p>
-        <h2><LocalizedText en="See what needs attention." nb="Se hva som krever oppmerksomhet." ar="اعرف ما الذي يحتاج إلى اهتمام." /></h2>
-        <p><LocalizedText en="Keep long-running work understandable instead of turning it into a black box." nb="Hold arbeid som tar tid forståelig, i stedet for å gjøre det til en svart boks." ar="اجعل الأعمال الطويلة الأمد واضحة، بدلًا من تحويلها إلى صندوق أسود." /></p>
-      </article>
-    </section>
+    <section className="landing-final-cta"><div><p className="eyebrow">Start with one Mission</p><h2>Make the next step clearer.</h2><p>Begin with the workflow you have today. Keep control of what happens next.</p></div><div className="landing-final-actions"><Link className="button" href="/app">Open workspace <span aria-hidden="true">→</span></Link><Link className="landing-pricing-link" href="/pricing">View proposed plans</Link></div></section>
   </div>;
 }

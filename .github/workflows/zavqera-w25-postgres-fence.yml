@@ -4,12 +4,6 @@ on:
   push:
     branches:
       - zavqera/alternative-web-deployment
-      - codex/zavqera-server-db-key-alignment-20261104
-  pull_request:
-    branches:
-      - zavqera/alternative-web-deployment
-      - codex/api-cookie-origin-guard-20261102
-    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 permissions:

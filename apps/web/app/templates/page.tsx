@@ -1,34 +1,66 @@
 import Link from "next/link";
 import { LocalizedText } from "../../components/localized-text";
-import { MISSION_TEMPLATES } from "../../lib/mission-templates";
-import { ShareTemplateButton } from "../../components/share-template-button";
+
+const templates = [
+  {
+    id: "launch-plan",
+    title: "Launch a small project",
+    description: "Turn an idea into a bounded launch plan with clear milestones.",
+    intent: "Prepare and validate a small project launch while keeping cost, timing, and risk visible.",
+    criteria: ["Define the target audience and outcome", "Validate demand with credible evidence", "Create a milestone plan and budget"],
+    actions: ["Describe the target user and problem", "Collect evidence for demand", "Draft milestones, costs, and risks"],
+  },
+  {
+    id: "research-decision",
+    title: "Make an evidence-based decision",
+    description: "Compare options, preserve uncertainty, and document the decision.",
+    intent: "Compare realistic options using trustworthy evidence and make a decision with assumptions and uncertainties clearly stated.",
+    criteria: ["Identify at least two realistic options", "Record supporting and contradictory evidence", "Document a decision and remaining unknowns"],
+    actions: ["Define the decision and constraints", "Collect primary or authoritative sources", "Compare options and record open questions"],
+  },
+  {
+    id: "weekly-operations",
+    title: "Improve a weekly workflow",
+    description: "Find friction in recurring work and measure a safe improvement.",
+    intent: "Improve one recurring workflow without disrupting critical operations, and confirm whether the change helped.",
+    criteria: ["Describe the current workflow and baseline", "Test one reversible improvement", "Compare the outcome with the baseline"],
+    actions: ["Map the current steps and bottlenecks", "Choose a small reversible change", "Review results and decide whether to keep it"],
+  },
+];
+
+function TemplateIcon({ id }: { id: string }) {
+  if (id === "launch-plan") return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20 10 4l4 7 6 2-16 7Z" /><path d="m10 4 4 7" /></svg>;
+  if (id === "research-decision") return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m15.5 15.5 5 5M8 10.5h5M10.5 8v5" /></svg>;
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h10M4 19h6" /><circle cx="18" cy="12" r="2" /><circle cx="14" cy="19" r="2" /></svg>;
+}
+
+function templateHref(template: typeof templates[number]) {
+  const params = new URLSearchParams({
+    name: template.title,
+    intent: template.intent,
+    criteria: template.criteria.join("\n"),
+    actions: template.actions.join("\n"),
+  });
+  return `/app/missions/new?${params.toString()}`;
+}
 
 export default function TemplatesPage() {
   return <div className="container templates-page">
     <section className="hero template-hero-panel">
       <p className="eyebrow"><LocalizedText en="Mission templates" nb="Oppdragsmaler" ar="قوالب المهام" /></p>
-      <h1><LocalizedText en="Start with a mission someone already made useful." nb="Start med et oppdrag som allerede er nyttig." ar="ابدأ بمهمة مفيدة وجاهزة." /></h1>
-      <p><LocalizedText en="Use a template, change the details, and let ZAVQERA turn it into a mission you control." nb="Bruk en mal, endre detaljene og la ZAVQERA gjøre den om til et oppdrag du kontrollerer." ar="استخدم قالبًا، عدّل التفاصيل، ودع ZAVQERA يحوله إلى مهمة تحت سيطرتك." /></p>
-      <p className="template-preview-note"><LocalizedText en="Preview a free AI plan before signing up. Your shared link opens this exact template, ready to review." nb="Forhåndsvis en gratis KI-plan før du registrerer deg. Delingslenken åpner akkurat denne malen, klar til gjennomgang." ar="عاين خطة مجانية بالذكاء الاصطناعي قبل التسجيل. يفتح رابط المشاركة هذا القالب نفسه جاهزًا للمراجعة." /></p>
+      <h1><LocalizedText en="Start with a useful first plan." nb="Start med en nyttig første plan." ar="ابدأ بخطة أولية مفيدة." /></h1>
+      <p><LocalizedText en="Choose a starting point, review every field, and keep control of the mission before you create it." nb="Velg et utgangspunkt, gå gjennom feltene og behold kontrollen før du oppretter oppdraget." ar="اختر نقطة بداية وراجع كل حقل واحتفظ بالتحكم قبل إنشاء المهمة." /></p>
     </section>
-
-    <section className="value-grid" aria-label="Mission templates">
-      {MISSION_TEMPLATES.map((template) => <article className="card value-card" key={template.id}>
-        <p className="eyebrow"><LocalizedText en={template.category} /> · <LocalizedText en="Mission" /></p>
-        <h2><LocalizedText en={template.title} /></h2>
-        <p><LocalizedText en={template.description} /></p>
-        <p className="template-goal">“<LocalizedText en={template.goal} />”</p>
-        <div className="template-actions"><Link className="button" href={"/try?template=" + encodeURIComponent(template.id)}>
-          <LocalizedText en="Preview & try free" nb="Forhåndsvis og prøv gratis" ar="عاين وجرّب مجانًا" />
-        </Link><ShareTemplateButton templateId={template.id} title={template.title} /></div>
+    <section className="grid" aria-label="Mission templates">
+      {templates.map((template) => <article className="card template-card" key={template.id}>
+        <div className={`template-icon template-icon-${template.id}`}><TemplateIcon id={template.id} /></div>
+        <p className="eyebrow"><LocalizedText en="Mission template" nb="Oppdragsmal" ar="قالب مهمة" /></p>
+        <h2><LocalizedText en={template.title} nb={template.title} ar={template.title} /></h2>
+        <p><LocalizedText en={template.description} nb={template.description} ar={template.description} /></p>
+        <ul className="template-criteria">{template.criteria.map((criterion) => <li key={criterion}><LocalizedText en={criterion} nb={criterion} ar={criterion} /></li>)}</ul>
+        <Link className="button" href={templateHref(template)}><LocalizedText en="Use this template" nb="Bruk denne malen" ar="استخدم هذا القالب" /></Link>
       </article>)}
     </section>
-
-    <section className="card pricing-note">
-      <h2><LocalizedText en="Make your own" nb="Lag ditt eget" ar="أنشئ مهمتك الخاصة" /></h2>
-      <p><LocalizedText en="You do not need to copy a template. Describe any outcome in your own words and ZAVQERA will build the first draft." nb="Du trenger ikke kopiere en mal. Beskriv et hvilket som helst mål med egne ord, så lager ZAVQERA første utkast." ar="لا تحتاج إلى نسخ قالب. اشرح أي نتيجة تريدها بكلماتك، وسيبني ZAVQERA المسودة الأولى." /></p>
-      <Link className="button button-quiet" href="/try"><LocalizedText en="Describe my own mission" nb="Beskriv mitt eget oppdrag" ar="صف مهمتي الخاصة" /></Link>
-      <p className="action-hint"><LocalizedText en="For signed-in users, we count successful template shares in aggregate. Mission text and prompts are never sent to product metrics." nb="For innloggede brukere teller vi vellykkede maldelinger aggregert. Oppdragstekst og spørsmål sendes aldri til produktmåling." ar="للمستخدمين المسجلين، نحتسب مشاركات القوالب الناجحة بشكل إجمالي. لا نرسل نص المهمة أو المطالبات إلى قياسات المنتج." /></p>
-    </section>
+    <p className="action-hint template-note"><LocalizedText en="A template only pre-fills a draft. Nothing is created until you review it and submit the mission form." nb="En mal fyller bare ut et utkast. Ingenting opprettes før du har gjennomgått og sendt inn skjemaet." ar="القالب يملأ مسودة فقط. لا تُنشأ أي مهمة حتى تراجع النموذج وترسله." /></p>
   </div>;
 }

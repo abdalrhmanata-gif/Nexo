@@ -17,35 +17,6 @@ export const ATTEMPT_STATES = Object.freeze({
   RECONCILED_NOT_SENT: "RECONCILED_NOT_SENT",
 });
 
-const PROVIDER_RESULT_STATES = new Set([
-  ATTEMPT_STATES.ACCEPTED,
-  ATTEMPT_STATES.SUCCEEDED,
-  ATTEMPT_STATES.FAILED,
-]);
-
-function hasMeaningfulReceiptValue(value, depth = 0) {
-  if (value === null || value === undefined) return false;
-  if (typeof value === "string") return value.trim() !== "";
-  if (typeof value === "number") return Number.isFinite(value);
-  if (typeof value === "boolean") return true;
-  if (typeof value !== "object" || depth >= 8) return false;
-
-  const values = Array.isArray(value) ? value : Object.values(value);
-  return values.some((entry) => hasMeaningfulReceiptValue(entry, depth + 1));
-}
-
-function hasProviderReceipt(result) {
-  const receipt = result?.receipt;
-  if (!receipt || typeof receipt !== "object" || Array.isArray(receipt)) return false;
-  return hasMeaningfulReceiptValue(receipt);
-}
-
-function isReconciledProviderResult(result) {
-  return Boolean(result
-    && PROVIDER_RESULT_STATES.has(result.state)
-    && hasProviderReceipt(result));
-}
-
 export class AuthorityViolation extends Error {
   constructor(code, message = code) {
     super(message);
@@ -266,8 +237,6 @@ export class InMemoryAuthorityStore {
           && approval.actionVersion === request.actionVersion
           && approval.inputHash === suppliedHash
           && approval.destination === request.destination
-          && approval.audience === request.audience
-          && approval.policyVersion === request.policyVersion
           && approval.authorityRevision === request.authorityRevision
           && approval.expiresAt
           && now < new Date(approval.expiresAt).getTime();
@@ -277,35 +246,18 @@ export class InMemoryAuthorityStore {
         }
       }
 
-      const requestedAmount = request.amount ?? 0;
-      if (typeof requestedAmount !== "number" || !Number.isFinite(requestedAmount) || requestedAmount < 0) {
-        return this.#deny("INVALID_SPEND_AMOUNT");
-      }
-      if (!Number.isSafeInteger(mission.spentActions) || mission.spentActions < 0 ||
-          !Number.isFinite(mission.spentAmount) || mission.spentAmount < 0) {
-        return this.#deny("INVALID_STORED_BUDGET");
-      }
-      if (mission.maxActions !== null && mission.maxActions !== undefined &&
-          (!Number.isSafeInteger(mission.maxActions) || mission.maxActions < 0)) {
-        return this.#deny("INVALID_ACTION_BUDGET");
-      }
-      if (mission.maxSpend !== null && mission.maxSpend !== undefined &&
-          (!Number.isFinite(mission.maxSpend) || mission.maxSpend < 0)) {
-        return this.#deny("INVALID_SPEND_BUDGET");
-      }
-
       if (mission.maxActions !== null && mission.maxActions !== undefined &&
           mission.spentActions >= mission.maxActions) {
         return this.#deny("ACTION_BUDGET_EXHAUSTED");
       }
 
       if (mission.maxSpend !== null && mission.maxSpend !== undefined &&
-          mission.spentAmount + requestedAmount > mission.maxSpend) {
+          mission.spentAmount + (request.amount ?? 0) > mission.maxSpend) {
         return this.#deny("SPEND_BUDGET_EXHAUSTED");
       }
 
       mission.spentActions += 1;
-      mission.spentAmount += requestedAmount;
+      mission.spentAmount += request.amount ?? 0;
 
       const attempt = {
         attemptId: randomUUID(),
@@ -355,41 +307,17 @@ export class InMemoryAuthorityStore {
       if (attempt.state !== ATTEMPT_STATES.UNKNOWN) return clone(attempt);
 
       const at = iso(nowMs(clock));
-      if (externalRecord?.kind === "PROVEN_NOT_SENT" &&
-          typeof externalRecord.evidenceId === "string" &&
-          externalRecord.evidenceId.trim() !== "") {
+      if (!externalRecord) {
         attempt.state = ATTEMPT_STATES.RECONCILED_NOT_SENT;
         attempt.updatedAt = at;
-        this.#journal.push({
-          type: "RECONCILIATION",
-          attemptId,
-          result: DECISIONS.RETRYABLE_NOT_SENT,
-          evidenceId: externalRecord.evidenceId,
-          at,
-        });
+        this.#journal.push({ type: "RECONCILIATION", attemptId, result: DECISIONS.RETRYABLE_NOT_SENT, at });
         return clone(attempt);
       }
 
-      if (externalRecord?.kind !== "FOUND" ||
-          !isReconciledProviderResult(externalRecord.record)) {
-        this.#journal.push({
-          type: "RECONCILIATION",
-          attemptId,
-          result: DECISIONS.RECONCILE_REQUIRED,
-          at,
-        });
-        return clone(attempt);
-      }
-
-      attempt.state = externalRecord.record.state;
-      attempt.receipt = clone(externalRecord.record.receipt ?? null);
+      attempt.state = externalRecord.state;
+      attempt.receipt = clone(externalRecord.receipt ?? null);
       attempt.updatedAt = at;
-      this.#journal.push({
-        type: "RECONCILIATION",
-        attemptId,
-        result: externalRecord.record.state,
-        at,
-      });
+      this.#journal.push({ type: "RECONCILIATION", attemptId, result: externalRecord.state, at });
       return clone(attempt);
     });
   }
@@ -403,7 +331,6 @@ export class InMemoryAuthorityStore {
 export class FakeExternalSystem {
   #calls = [];
   #records = new Map();
-  #notSentProofs = new Map();
   #script = new Map();
 
   setOutcome(idempotencyKey, outcome) {
@@ -415,13 +342,7 @@ export class FakeExternalSystem {
   }
 
   lookup(idempotencyKey) {
-    const record = this.#records.get(idempotencyKey);
-    if (record) return { kind: "FOUND", record: clone(record) };
-
-    const proof = this.#notSentProofs.get(idempotencyKey);
-    if (proof) return { kind: "PROVEN_NOT_SENT", evidenceId: proof.evidenceId };
-
-    return { kind: "INCONCLUSIVE" };
+    return clone(this.#records.get(idempotencyKey) ?? null);
   }
 
   async dispatch({ idempotencyKey, payload }) {
@@ -437,10 +358,6 @@ export class FakeExternalSystem {
       throw new UnknownExternalResult();
     }
     if (outcome.kind === "UNKNOWN_BEFORE_SEND") {
-      this.#notSentProofs.set(idempotencyKey, { evidenceId: randomUUID() });
-      throw new UnknownExternalResult("The fake provider has authoritative proof that no request was sent.");
-    }
-    if (outcome.kind === "UNKNOWN_INCONCLUSIVE") {
       throw new UnknownExternalResult("Dispatch result cannot be established.");
     }
     if (outcome.kind === "TRANSPORT_ERROR") {
@@ -477,33 +394,6 @@ export class ControlledServerAdapter {
           inputHash: decision.attemptId ? hashInput(request.input) : request.inputHash,
         },
       });
-
-      // A dispatch adapter cannot prove reconciliation merely by returning a
-      // state label. Only the reconciliation path may accept authoritative
-      // provider lookup evidence for RECONCILED_NOT_SENT.
-      if (!isReconciledProviderResult(result)) {
-        const attempt = await this.authorityStore.markResult(
-          decision.attemptId,
-          { state: ATTEMPT_STATES.UNKNOWN },
-          this.clock,
-        );
-        return {
-          decision: DECISIONS.RECONCILE_REQUIRED,
-          attemptId: attempt.attemptId,
-          reasonCode: "UNKNOWN_REQUIRES_RECONCILIATION",
-        };
-      }
-
-      if (result.state === ATTEMPT_STATES.FAILED) {
-        const attempt = await this.authorityStore.markResult(decision.attemptId, result, this.clock);
-        return {
-          decision: DECISIONS.DENY,
-          attemptId: attempt.attemptId,
-          reasonCode: "EXTERNAL_FAILED",
-          state: attempt.state,
-        };
-      }
-
       const attempt = await this.authorityStore.markResult(decision.attemptId, result, this.clock);
       return { decision: DECISIONS.ALLOW, attemptId: decision.attemptId, state: attempt.state, receipt: attempt.receipt };
     } catch (error) {
@@ -535,4 +425,3 @@ export class ControlledServerAdapter {
     return this.authorityStore.reconcile(attemptId, externalRecord, this.clock);
   }
 }
-

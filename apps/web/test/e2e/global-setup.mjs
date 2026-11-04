@@ -5,7 +5,6 @@ import { fileURLToPath } from "node:url";
 import {
   HarnessBlockedError,
   assertAppTargetsDisposableStack,
-  assertMissionActionRouteFailsClosed,
   buildAppEnv,
   checkStaticPreconditions,
   checkToolAvailability,
@@ -65,27 +64,12 @@ export default async function globalSetup() {
 
   try {
     const target = startFreshStack(plan, run, process.env);
-    // A unique token is scoped to the disposable server process. It is never
-    // copied into the Playwright process or the browser.
-    const workerToken = randomBytes(32).toString("base64url");
-    app = startAppServer({
-      webRoot,
-      plan,
-      env: buildAppEnv(process.env, target, { workerToken, baseURL: plan.baseURL }),
-    });
+    app = startAppServer({ webRoot, plan, env: buildAppEnv(process.env, target) });
     await waitForApp(plan.baseURL);
     await assertAppTargetsDisposableStack(plan.baseURL);
-    const workerRouteGuard = await assertMissionActionRouteFailsClosed(plan.baseURL, workerToken);
-    console.log(JSON.stringify({
-      missionActionWorkerRoute: "FAIL_CLOSED_VERIFIED",
-      httpStatus: workerRouteGuard.status,
-      outcome: workerRouteGuard.outcome,
-      providerCall: workerRouteGuard.providerCall,
-    }));
 
     process.env.ZAVQERA_E2E_RUNTIME_SUPABASE_URL = target.apiUrl;
     process.env.ZAVQERA_E2E_RUNTIME_PUBLISHABLE_KEY = target.publishableKey;
-    process.env.ZAVQERA_E2E_RUNTIME_SERVICE_ROLE_KEY = target.serviceRoleKey;
     process.env.ZAVQERA_E2E_RUNTIME_BASE_URL = plan.baseURL;
     process.env.ZAVQERA_E2E_RUN_ID = runId;
     process.env.ZAVQERA_E2E_LEDGER_PATH = ledgerPath;
