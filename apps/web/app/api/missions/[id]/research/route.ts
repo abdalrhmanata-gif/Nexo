@@ -1,0 +1,461 @@
+import { NextResponse } from "next/server";
+import { getAuthenticatedUser, createSupabaseServerClient } from "../../../../../lib/supabase/server";
+import { resolveTrustedWorkerOrigin } from "../../../../../lib/mission-authority/trusted-worker-origin.mjs";
+import { createSupabaseMissionRepository } from "../../../../../lib/supabase/mission-repository";
+import { buildMockMissionResearch, requestMissionResearch, type MissionResearch } from "../../../../../lib/ai-research";
+import { parseMissionObjective } from "../../../../../lib/mission-content.mjs";
+import { runAiGeneration, AI_GENERATION_OUTCOMES } from "../../../../../lib/ai-generation-service";
+import { reserveAiGeneration, consumeAiGeneration, releaseAiGeneration } from "../../../../../lib/ai-usage";
+import { buildResearchClaimFailureCompletion } from "../../../../../lib/research-claim-failure.mjs";
+
+export const runtime = "nodejs";
+export const maxDuration = 35;
+
+function isTerminalLifecycle(status: string) {
+  return status === "COMPLETED" || status === "CANCELLED";
+}
+
+type ResearchCompletionStatus = "SUCCEEDED" | "FAILED" | "UNKNOWN";
+
+async function preflightReadOnlyResearchCompletion(request: Request, requestedBy: string) {
+  const workerToken = process.env.ZAVQERA_EXECUTION_WORKER_TOKEN;
+  if (!workerToken || !/^[A-Za-z0-9._~-]{32,512}$/.test(workerToken)) return false;
+
+  const origin = resolveTrustedWorkerOrigin({
+    nodeEnv: process.env.NODE_ENV,
+    e2eRuntimeBaseUrl: process.env.ZAVQERA_E2E_RUNTIME_BASE_URL,
+    deployPrimeUrl: process.env.DEPLOY_PRIME_URL,
+    deployUrl: process.env.DEPLOY_URL,
+    siteUrl: process.env.URL,
+    publicSiteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+    requestUrl: request.url,
+  });
+  if (!origin) return false;
+
+  try {
+    const response = await fetch(new URL(
+      `/api/internal/agent-executions/${crypto.randomUUID()}`,
+      origin,
+    ), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${workerToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        operation: "preflight_read_only_research",
+        requestedBy,
+      }),
+      cache: "no-store",
+      redirect: "error",
+      signal: AbortSignal.timeout(10_000),
+    });
+    const payload: unknown = await response.json().catch(() => null);
+    return response.ok
+      && payload !== null
+      && typeof payload === "object"
+      && !Array.isArray(payload)
+      && (payload as { ready?: unknown }).ready === true;
+  } catch {
+    return false;
+  }
+}
+
+async function completeReadOnlyResearchExecution(request: Request, input: {
+  requestedBy: string;
+  executionId: string;
+  status: ResearchCompletionStatus;
+  result: Record<string, unknown>;
+  evidence: Record<string, unknown>;
+  errorCode?: string;
+  errorMessage?: string;
+}) {
+  const workerToken = process.env.ZAVQERA_EXECUTION_WORKER_TOKEN;
+  if (!workerToken || !/^[A-Za-z0-9._~-]{32,512}$/.test(workerToken)) {
+    return { data: null, error: { message: "TRUSTED_EXECUTION_NOT_CONFIGURED" } };
+  }
+
+  const origin = resolveTrustedWorkerOrigin({
+    nodeEnv: process.env.NODE_ENV,
+    e2eRuntimeBaseUrl: process.env.ZAVQERA_E2E_RUNTIME_BASE_URL,
+    deployPrimeUrl: process.env.DEPLOY_PRIME_URL,
+    deployUrl: process.env.DEPLOY_URL,
+    siteUrl: process.env.URL,
+    publicSiteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+    requestUrl: request.url,
+  });
+  if (!origin) return { data: null, error: { message: "TRUSTED_EXECUTION_ORIGIN_NOT_CONFIGURED" } };
+
+  try {
+    const response = await fetch(new URL(
+      `/api/internal/agent-executions/${encodeURIComponent(input.executionId)}`,
+      origin,
+    ), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${workerToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        operation: "complete_read_only_research",
+        requestedBy: input.requestedBy,
+        status: input.status,
+        result: input.result,
+        evidence: input.evidence,
+        errorCode: input.errorCode ?? null,
+        errorMessage: input.errorMessage ?? null,
+      }),
+      cache: "no-store",
+      redirect: "error",
+      signal: AbortSignal.timeout(20_000),
+    });
+    const payload: unknown = await response.json().catch(() => null);
+    if (!response.ok || !payload || typeof payload !== "object" || Array.isArray(payload)) {
+      return { data: null, error: { message: "TRUSTED_RESEARCH_COMPLETION_UNCONFIRMED" } };
+    }
+    const execution = (payload as { execution?: unknown }).execution;
+    if (!execution || typeof execution !== "object" || Array.isArray(execution)) {
+      return { data: null, error: { message: "TRUSTED_RESEARCH_COMPLETION_UNCONFIRMED" } };
+    }
+    const row = execution as Record<string, unknown>;
+    if (row.id !== input.executionId || row.status !== input.status) {
+      return { data: null, error: { message: "TRUSTED_RESEARCH_COMPLETION_UNCONFIRMED" } };
+    }
+    return { data: row, error: null };
+  } catch {
+    return { data: null, error: { message: "TRUSTED_RESEARCH_COMPLETION_UNCONFIRMED" } };
+  }
+}
+
+async function claimReadOnlyResearchExecution(request: Request, input: {
+  requestedBy: string;
+  executionId: string;
+  requestId: string;
+}): Promise<{ mission: { name: string; intent: string; criteria: string[] } }> {
+  const workerToken = process.env.ZAVQERA_EXECUTION_WORKER_TOKEN;
+  if (!workerToken || !/^[A-Za-z0-9._~-]{32,512}$/.test(workerToken)) {
+    throw new Error("AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED");
+  }
+  const origin = resolveTrustedWorkerOrigin({
+    nodeEnv: process.env.NODE_ENV,
+    e2eRuntimeBaseUrl: process.env.ZAVQERA_E2E_RUNTIME_BASE_URL,
+    deployPrimeUrl: process.env.DEPLOY_PRIME_URL,
+    deployUrl: process.env.DEPLOY_URL,
+    siteUrl: process.env.URL,
+    publicSiteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+    requestUrl: request.url,
+  });
+  if (!origin) throw new Error("AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED");
+
+  let response: Response;
+  try {
+    response = await fetch(new URL(`/api/internal/agent-executions/${encodeURIComponent(input.executionId)}`, origin), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${workerToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        operation: "claim_read_only_research",
+        requestedBy: input.requestedBy,
+        requestId: input.requestId,
+      }),
+      cache: "no-store",
+      redirect: "error",
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch {
+    throw new Error("AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED");
+  }
+  if (response.status === 409) {
+    const denial: unknown = await response.json().catch(() => null);
+    const denialCode = denial && typeof denial === "object" && !Array.isArray(denial)
+      ? (denial as { errorCode?: unknown }).errorCode
+      : null;
+    const safeCode = typeof denialCode === "string" && /^[A-Z0-9_]{1,128}$/.test(denialCode)
+      ? denialCode
+      : "RESEARCH_CLAIM_REJECTED";
+    throw new Error(`AGENT_RESEARCH_JIT_CLAIM_DENIED:${safeCode}`);
+  }
+  if (!response.ok) throw new Error("AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED");
+
+  const payload: unknown = await response.json().catch(() => null);
+  const claim = payload && typeof payload === "object" && !Array.isArray(payload)
+    ? (payload as { claim?: unknown }).claim
+    : null;
+  if (!claim || typeof claim !== "object" || Array.isArray(claim)) {
+    throw new Error("AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED");
+  }
+  const row = claim as Record<string, unknown>;
+  if (row.execution_id !== input.executionId
+      || row.requested_by !== input.requestedBy
+      || row.request_id !== input.requestId
+      || typeof row.mission_objective !== "string"
+      || !Number.isSafeInteger(row.mission_version)
+      || typeof row.request_hash !== "string" || !/^[0-9a-f]{64}$/.test(row.request_hash)
+      || typeof row.authority_hash !== "string" || !/^[0-9a-f]{64}$/.test(row.authority_hash)
+      || typeof row.claimed_at !== "string") {
+    throw new Error("AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED");
+  }
+  return { mission: parseMissionObjective(row.mission_objective) };
+}
+
+function normaliseRequestId(request: Request) {
+  const supplied = request.headers.get("x-request-id")?.trim();
+  return supplied && supplied.length >= 16 && supplied.length <= 200 ? supplied : crypto.randomUUID();
+}
+
+async function authenticatedMission(missionId: string) {
+  const user = await getAuthenticatedUser();
+  if (!user) return { error: NextResponse.json({ error: "Authentication is required." }, { status: 401 }) } as const;
+  const repository = await createSupabaseMissionRepository();
+  const supabase = await createSupabaseServerClient();
+  const mission = await repository.getMission(missionId);
+  if (!mission) return { error: NextResponse.json({ error: "Mission not found." }, { status: 404 }) } as const;
+  return { user, repository, supabase, mission } as const;
+}
+
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const auth = await authenticatedMission((await params).id);
+    if ("error" in auth) return auth.error;
+    const runs = await auth.repository.listResearchRuns?.(auth.mission.id) ?? [];
+    return NextResponse.json({ runs }, { headers: { "Cache-Control": "no-store" } });
+  } catch {
+    return NextResponse.json({ error: "Research history could not be loaded." }, { status: 503 });
+  }
+}
+
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    const auth = await authenticatedMission((await params).id);
+    if ("error" in auth) return auth.error;
+    const { user, repository, supabase, mission } = auth;
+
+    if (isTerminalLifecycle(mission.lifecycleStatus)) {
+      return NextResponse.json({ error: "This mission is closed. Create a new mission for additional research." }, { status: 422 });
+    }
+
+    const requestId = normaliseRequestId(request);
+    const agents = await repository.listWorkspaceAgents?.() ?? [];
+    const researchAgent = agents.find((agent) =>
+      agent.status === "ACTIVE"
+      && agent.name === "ZAVQERA Research Agent"
+      && agent.authority?.mode === "read_only"
+      && agent.authority?.external_side_effects === false
+    );
+    if (!researchAgent) {
+      return NextResponse.json({ error: "No active research agent is available for this workspace." }, { status: 503 });
+    }
+    const agentId = researchAgent.id;
+    const configuredProviderMode = process.env.ZAVQERA_AI_PROVIDER_MODE || "openai";
+    const isProductionRuntime = process.env.NODE_ENV === "production";
+    const providerMode = configuredProviderMode === "mock" && !isProductionRuntime ? "mock" : "openai";
+
+    // Validate all trusted-completion prerequisites before quota reservation
+    // or an external AI call. The enable flag alone must never permit a live
+    // provider request if the protected worker channel/origin is unavailable.
+    const workerToken = process.env.ZAVQERA_EXECUTION_WORKER_TOKEN;
+    const trustedWorkerOrigin = resolveTrustedWorkerOrigin({
+      nodeEnv: process.env.NODE_ENV,
+      e2eRuntimeBaseUrl: process.env.ZAVQERA_E2E_RUNTIME_BASE_URL,
+      deployPrimeUrl: process.env.DEPLOY_PRIME_URL,
+      deployUrl: process.env.DEPLOY_URL,
+      siteUrl: process.env.URL,
+      publicSiteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+      requestUrl: request.url,
+    });
+    const trustedResearchCompletionConfigured =
+      process.env.ZAVQERA_TRUSTED_RESEARCH_COMPLETION_ENABLED === "true"
+      && process.env.ZAVQERA_TRUSTED_RESEARCH_DEPLOY_CONTEXT === "deploy-preview"
+      && typeof workerToken === "string"
+      && /^[A-Za-z0-9._~-]{32,512}$/.test(workerToken)
+      && trustedWorkerOrigin !== null;
+
+    if (providerMode !== "mock" && !trustedResearchCompletionConfigured) {
+      return NextResponse.json(
+        { error: "Mission Research is temporarily unavailable on this environment." },
+        { status: 503 },
+      );
+    }
+
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (providerMode !== "mock" && !apiKey) {
+      return NextResponse.json({ error: "AI execution is not configured yet." }, { status: 503 });
+    }
+
+    // Confirm the exact trusted completion RPC signature exists before reserving
+    // quota or sending mission data to the AI provider. Hosted schema drift must
+    // fail closed before an external request can incur cost.
+    if (providerMode !== "mock"
+        && !(await preflightReadOnlyResearchCompletion(request, user.id))) {
+      return NextResponse.json(
+        { error: "Mission Research is temporarily unavailable on this environment." },
+        { status: 503 },
+      );
+    }
+
+    let executionId: string | null = null;
+    let claimedResearchMission: { name: string; intent: string; criteria: string[] } | null = null;
+    const result = await runAiGeneration({
+      requestId,
+      reserve: (id) => reserveAiGeneration(id, "research", { missionId: mission.id, requestId: id }),
+      prepare: async () => {
+        // The execution/approval gate must succeed before any data is sent to
+        // the external AI provider. This callback runs after quota reservation
+        // but before generate(), and a denied gate releases the unused quota.
+        const execution = await supabase.rpc("start_agent_execution", {
+          p_mission_id: mission.id,
+          p_action_id: null,
+          p_agent_id: agentId,
+          p_idempotency_key: `research-${requestId}`,
+          p_request: { type: "read_only_research", request_id: requestId },
+        });
+        if (execution.error) {
+          if (execution.error.message === "APPROVAL_REQUIRED") {
+            throw new Error("AGENT_APPROVAL_REQUIRED");
+          }
+          if (execution.error.message === "EXECUTION_ALREADY_EXISTS") {
+            throw new Error("AGENT_EXECUTION_ALREADY_EXISTS");
+          }
+          throw new Error("AGENT_EXECUTION_START_FAILED");
+        }
+        const startedId = (execution.data as { id?: unknown } | null)?.id;
+        if (typeof startedId !== "string" || !/^[0-9a-f-]{36}$/i.test(startedId)) {
+          throw new Error("AGENT_EXECUTION_START_FAILED");
+        }
+        executionId = startedId;
+        const claim = await claimReadOnlyResearchExecution(request, {
+          requestedBy: user.id,
+          executionId: startedId,
+          requestId,
+        });
+        claimedResearchMission = claim.mission;
+      },
+      generate: () => {
+        if (!claimedResearchMission) throw new Error("AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED");
+        return providerMode === "mock"
+          ? Promise.resolve(buildMockMissionResearch(claimedResearchMission))
+          : requestMissionResearch(
+          claimedResearchMission,
+          { apiKey: apiKey as string, model: process.env.OPENAI_MODEL || "gpt-6-luna", requestId },
+        );
+      },
+      consume: consumeAiGeneration,
+      release: releaseAiGeneration,
+    });
+
+    if (result.kind === AI_GENERATION_OUTCOMES.QUOTA) {
+      if (result.reservation?.reason === "duplicate_request") {
+        return NextResponse.json({ error: "This research request was already handled. Start a new request to run research again." }, { status: 409 });
+      }
+      return NextResponse.json({ error: "Monthly AI limit reached." }, { status: 429 });
+    }
+
+    const startedExecutionId = executionId;
+    if (result.kind === AI_GENERATION_OUTCOMES.SETTLEMENT_FAILED) {
+      if (startedExecutionId) {
+        const completion = await completeReadOnlyResearchExecution(request, {
+          requestedBy: user.id,
+          executionId: startedExecutionId,
+          status: "UNKNOWN",
+          result: { reason: "AI_USAGE_SETTLEMENT_FAILED" },
+          evidence: { outcome: "UNKNOWN", verified: false, request_id: requestId },
+        });
+        if (completion.error) {
+          return NextResponse.json({ error: "Research may have completed, but execution recovery evidence could not be recorded." }, { status: 503 });
+        }
+      }
+      return NextResponse.json({ error: "Research completed, but usage settlement is temporarily unavailable." }, { status: 503 });
+    }
+
+    if (result.kind === AI_GENERATION_OUTCOMES.PROVIDER_ERROR) {
+      if (startedExecutionId) {
+        const claimFailure = buildResearchClaimFailureCompletion(result.code, requestId);
+        const executionStatus = claimFailure?.status ?? (result.disposition === "hold" ? "UNKNOWN" : "FAILED");
+        const completion = await completeReadOnlyResearchExecution(request, {
+          requestedBy: user.id,
+          executionId: startedExecutionId,
+          status: executionStatus,
+          result: claimFailure?.result ?? { reason: result.code },
+          evidence: claimFailure?.evidence ?? { outcome: executionStatus, verified: false, request_id: requestId },
+          errorCode: claimFailure?.errorCode ?? result.code,
+        });
+        if (completion.error) {
+          return NextResponse.json({ error: "The research attempt could not be safely reconciled. Inspect execution history before retrying." }, { status: 503 });
+        }
+      }
+      if (result.code === "AGENT_APPROVAL_REQUIRED") {
+        return NextResponse.json({ error: "This agent requires human approval before execution." }, { status: 409 });
+      }
+      if (result.code === "AGENT_EXECUTION_ALREADY_EXISTS") {
+        return NextResponse.json({ error: "An attempt with this request ID already exists. Inspect execution history before starting another attempt." }, { status: 409 });
+      }
+      if (result.code === "AGENT_EXECUTION_START_FAILED") {
+        return NextResponse.json({ error: "The agent execution boundary could not be opened." }, { status: 503 });
+      }
+      if (result.code === "AGENT_RESEARCH_JIT_CLAIM_DENIED") {
+        return NextResponse.json({
+          error: "Mission Research authorization changed before the provider request.",
+          errorCode: result.detail ?? "RESEARCH_CLAIM_REJECTED",
+        }, { status: 409 });
+      }
+      if (result.code === "AGENT_RESEARCH_JIT_CLAIM_UNCONFIRMED") {
+        return NextResponse.json({ error: "Mission Research authorization could not be confirmed. Inspect execution history before retrying." }, { status: 503 });
+      }
+      if (result.code === "RATE_LIMITED") return NextResponse.json({ error: "AI usage is temporarily limited. Please try again later." }, { status: 429 });
+      if (result.disposition === "hold") return NextResponse.json({ error: "The research result is uncertain; please retry after reconciliation." }, { status: 504 });
+      return NextResponse.json({ error: "Mission research is temporarily unavailable." }, { status: 502 });
+    }
+
+    const research = result.plan as MissionResearch;
+    if (!startedExecutionId) {
+      return NextResponse.json({ error: "The research execution boundary was not recorded." }, { status: 503 });
+    }
+    const completion = await completeReadOnlyResearchExecution(request, {
+      requestedBy: user.id,
+      executionId: startedExecutionId,
+      status: "SUCCEEDED",
+      result: { summary: research.summary, source_count: research.sources.length },
+      evidence: { outcome: "SUCCEEDED", request_id: requestId, verified: false, sources: research.sources },
+    });
+    if (completion.error) return NextResponse.json({ error: "Research completed but execution evidence could not be recorded." }, { status: 503 });
+
+    const runId = crypto.randomUUID();
+    let historyPersisted = false;
+    if (repository.recordResearchRun) {
+      try {
+        await repository.recordResearchRun({
+          missionId: mission.id,
+          executionId: startedExecutionId,
+          runId,
+          requestId,
+          summary: research.summary,
+          sources: research.sources,
+        });
+        historyPersisted = true;
+      } catch {
+        historyPersisted = false;
+      }
+    }
+
+    return NextResponse.json(
+      {
+        ...research,
+        run: {
+          runId,
+          status: "COMPLETED",
+          createdAt: new Date().toISOString(),
+          verified: false,
+        },
+        history_persisted: historyPersisted,
+      },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  } catch (error) {
+    if (error instanceof Error && error.message === "AI_USAGE_UNAVAILABLE") {
+      return NextResponse.json({ error: "AI usage service is temporarily unavailable." }, { status: 503 });
+    }
+    return NextResponse.json({ error: "Mission research was not completed." }, { status: 502 });
+  }
+}

@@ -1,9 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexo_followthrough/data/mission_repository.dart';
-import 'package:nexo_followthrough/domain/intent.dart';
-import 'package:nexo_followthrough/domain/mission_ledger.dart';
-import 'package:nexo_followthrough/domain/mission.dart';
-import 'package:nexo_followthrough/domain/execution_lease.dart';
+import 'package:zavqera_followthrough/data/mission_repository.dart';
+import 'package:zavqera_followthrough/domain/intent.dart';
+import 'package:zavqera_followthrough/domain/mission_ledger.dart';
+import 'package:zavqera_followthrough/domain/mission.dart';
+import 'package:zavqera_followthrough/domain/execution_lease.dart';
 
 IntentDraft draft(String objective) => IntentDraft(
       rawGoal: objective,
@@ -45,6 +45,36 @@ void main() {
 
       expect((await repo.getMission(first.id)).completedActionCount, 1);
       expect((await repo.getMission(second.id)).completedActionCount, 0);
+    });
+
+    test('completion summary agrees for zero, partial, and full completion',
+        () async {
+      final repo = DemoMissionRepository();
+      final mission = await repo.createMission(IntentDraft(
+        rawGoal: 'completion summary',
+        objective: 'Completion summary',
+        constraints: const [],
+        successCriteria: const [],
+        authorityRequests: const [],
+        timeWindow: null,
+        steps: const ['First step', 'Second step'],
+      ));
+
+      expect(mission.completionSummary,
+          '0 of 2 steps completed. 2 steps still need attention.');
+      final partial = await repo.updateActionProgress(
+        mission.id,
+        'a1',
+        status: ActionStatus.succeeded,
+      );
+      expect(partial.completionSummary,
+          '1 of 2 steps completed. 1 step still need attention.');
+      final complete = await repo.updateActionProgress(
+        mission.id,
+        'a2',
+        status: ActionStatus.succeeded,
+      );
+      expect(complete.completionSummary, 'All steps have been completed.');
     });
 
     test('creates the user-defined steps in the supplied order', () async {

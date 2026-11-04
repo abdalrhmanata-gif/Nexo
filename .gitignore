@@ -10,3 +10,9 @@ coverage/
 *.iml
 __pycache__/
 *.py[cod]
+.env
+.env.*
+!.env.example
+
+# Generated debug APK artifact (not tracked; exceeds GitHub's file size limit)
+artifacts/nexo-first-test.apk

@@ -22,8 +22,8 @@ for path in DART_FILES:
     relpath = path.relative_to(ROOT).as_posix()
     for m in re.finditer(r"(?:import|export|part)\s+['\"]([^'\"]+)['\"]", text):
         ref = m.group(1)
-        if ref.startswith('package:nexo_followthrough/'):
-            rel = 'lib/' + ref[len('package:nexo_followthrough/'):]
+        if ref.startswith('package:zavqera_followthrough/'):
+            rel = 'lib/' + ref[len('package:zavqera_followthrough/'):]
             if rel not in ALL_REL and rel + '.dart' not in ALL_REL:
                 errors.append(f'missing package reference: {relpath}: {ref}')
         elif ref.startswith('.'):
@@ -39,8 +39,8 @@ for path in DART_FILES:
             warnings.append(f'unlisted external package: {relpath}: {ref}')
 
 pubspec = (ROOT / 'pubspec.yaml').read_text(encoding='utf-8')
-if not re.search(r'^name:\s*nexo_followthrough\s*$', pubspec, re.M):
-    errors.append('pubspec package name is not nexo_followthrough')
+if not re.search(r'^name:\s*zavqera_followthrough\s*$', pubspec, re.M):
+    errors.append('pubspec package name is not zavqera_followthrough')
 
 required = [
     'lib/domain/security_constitution.dart',
@@ -74,6 +74,83 @@ for required_cmd in [
     if required_cmd not in verify:
         errors.append(f'Flutter gate missing from verify script: {required_cmd}')
 
+WEB_ROOT = ROOT / 'apps' / 'web'
+WEB_FILES = [
+    p for p in WEB_ROOT.rglob('*')
+    if p.is_file()
+    and p.suffix in {'.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'}
+    and 'node_modules' not in p.parts
+    and '.next' not in p.parts
+]
+# Boundary checks below protect production Web code. Test and disposable E2E
+# harnesses are intentionally allowed to use privileged fixtures and direct
+# table reads so the checker does not confuse test setup with runtime access.
+WEB_TEST_ROOT = WEB_ROOT / 'test'
+WEB_POLICY_FILES = [p for p in WEB_FILES if WEB_TEST_ROOT not in p.parents]
+
+WEB_REPOSITORY = WEB_ROOT / 'lib' / 'supabase' / 'mission-repository.ts'
+AUTHORITATIVE_TABLES = (
+    'workspaces',
+    'missions',
+    'mission_actions',
+    'mission_events',
+    'mission_verifications',
+    'mission_outcomes',
+)
+
+for path in WEB_POLICY_FILES:
+    text = path.read_text(encoding='utf-8')
+    relpath = path.relative_to(ROOT).as_posix()
+    if path.name != 'auth-form.tsx' and path != WEB_REPOSITORY and re.search(
+        r'from\s+["\'](?:\.\.?/)*lib/supabase/browser["\']|'
+        r'from\s+["\'].*supabase/browser["\']',
+        text,
+    ):
+        errors.append(f'authoritative Web code imports browser Supabase client: {relpath}')
+    trusted_admin_client = WEB_ROOT / 'lib' / 'supabase' / 'admin.ts'
+    if re.search(r'service[_-]?role|SUPABASE_SERVICE_ROLE', text, re.I) and path != trusted_admin_client:
+        errors.append(f'service-role credential/client referenced by Web code: {relpath}')
+    if path != WEB_REPOSITORY and re.search(
+        r'\.from\(\s*["\'](?:' + '|'.join(AUTHORITATIVE_TABLES) + r')["\']\s*\)',
+        text,
+    ):
+        errors.append(f'authoritative table access bypasses Web repository: {relpath}')
+    for line_number, line in enumerate(text.splitlines(), 1):
+        if re.search(r'\b(owner_id|user_id)\b', line) and re.search(
+            r'\b(request|body|searchParams|params|form|query)\b',
+            line,
+        ):
+            errors.append(
+                f'browser-supplied ownership authority pattern: '
+                f'{relpath}:{line_number}'
+            )
+
+if not WEB_REPOSITORY.is_file():
+    errors.append('missing authoritative Web repository: apps/web/lib/supabase/mission-repository.ts')
+
+# A privileged service-role client is permitted only in this exact server-only
+# module and only when consumed by the dedicated internal worker route.
+TRUSTED_ADMIN_CLIENT = WEB_ROOT / 'lib' / 'supabase' / 'admin.ts'
+TRUSTED_WORKER_ROUTE = WEB_ROOT / 'app' / 'api' / 'internal' / 'agent-executions' / '[executionId]' / 'route.ts'
+if TRUSTED_ADMIN_CLIENT.is_file():
+    admin_source = TRUSTED_ADMIN_CLIENT.read_text(encoding='utf-8')
+    if not re.search(r'^\s*import\s+["\']server-only["\']', admin_source, re.M):
+        errors.append('trusted Supabase admin client must import server-only')
+    if not re.search(r'createClient\(supabaseUrl,\s*serviceRoleKey', admin_source):
+        errors.append('trusted Supabase admin client must use the configured service-role key only in the isolated factory')
+    if not TRUSTED_WORKER_ROUTE.is_file():
+        errors.append('trusted Supabase admin client exists without the dedicated internal worker route')
+    else:
+        route_source = TRUSTED_WORKER_ROUTE.read_text(encoding='utf-8')
+        if not re.search(r'from\s+["\'][^"\']*supabase/admin["\']', route_source):
+            errors.append('internal worker route must be the explicit consumer of the trusted Supabase admin client')
+    for path in WEB_POLICY_FILES:
+        if path == TRUSTED_WORKER_ROUTE:
+            continue
+        source = path.read_text(encoding='utf-8')
+        if re.search(r'from\s+["\'][^"\']*supabase/admin["\']', source):
+            errors.append(f'trusted Supabase admin client imported outside internal worker route: {path.relative_to(ROOT).as_posix()}')
+
 report = {
     'status': 'STATIC_PASS' if not errors else 'STATIC_FAIL',
     'dart_files': len(DART_FILES),
@@ -81,13 +158,20 @@ report = {
     'test_files': len(list((ROOT / 'test').rglob('*.dart'))),
     'errors': errors,
     'warnings': warnings,
+    'web_read_boundary': {
+        'status': 'STATIC_PASS' if not errors else 'STATIC_FAIL',
+        'scanned_files': len(WEB_POLICY_FILES),
+        'excluded_test_files': len(WEB_FILES) - len(WEB_POLICY_FILES),
+        'repository': 'apps/web/lib/supabase/mission-repository.ts',
+        'authoritative_tables': list(AUTHORITATIVE_TABLES),
+    },
     'sha256': {
         p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest()
         for p in sorted(DART_FILES)
     },
 }
 
-out = ROOT / 'NEXO_STATIC_CONTRACT_REPORT.json'
+out = ROOT / 'ZAVQERA_STATIC_CONTRACT_REPORT.json'
 out.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
 print(json.dumps({k: report[k] for k in ('status','dart_files','lib_files','test_files','errors','warnings')}, indent=2))
 sys.exit(1 if errors else 0)

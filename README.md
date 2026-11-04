@@ -1,6 +1,6 @@
-# NEXO Follow-through MVP v1.9
+# ZAVQERA Follow-through MVP v1.9
 
-NEXO is the mission control plane for autonomous AI: it turns human intent into bounded, verifiable authority for long-running AI missions.
+ZAVQERA is the mission control plane for autonomous AI: it turns human intent into bounded, verifiable authority for long-running AI missions.
 
 ## v1.0 — Mission Runtime Contract
 
@@ -20,7 +20,7 @@ This release turns the MVP from a provider-aware execution demo into a durable m
 Intent → Principal → Mission → Delegation → Policy → Authority Passport → Intelligence Router → Execution Gateway → JIT Authorization → Adapter → External System → Evidence → Verification → Outcome
 
 ### Security position
-AI can reason and replan. NEXO remains authoritative over mission identity, delegated authority, budgets, policy, verification and outcome. No model output, tool output, webhook or runtime event is itself permission.
+AI can reason and replan. ZAVQERA remains authoritative over mission identity, delegated authority, budgets, policy, verification and outcome. No model output, tool output, webhook or runtime event is itself permission.
 
 ### Scope
 Local/demo Flutter contract only. No production credentials. No Supabase Main migration. Production certification remains incomplete until PostgreSQL 17 live concurrency, ownership, grants, provider ambiguity, webhook, OAuth, SSRF and secret-boundary tests pass.
@@ -52,3 +52,5 @@ This project now includes the v1.7 provenance chain, v1.8 trust graph, and v1.9 
 These contracts do not certify production security and do not replace server-side authorization, PostgreSQL constraints/RLS, live concurrency tests, provider reconciliation, or production evidence gates.
 
 Use `./tool/verify_project.sh` in a Flutter-enabled environment to run dependency resolution, formatting, static analysis, and the complete Dart/Flutter test suite. In a non-Flutter environment the script fails closed with exit code 20 after completing the static contract gate.
+
+<!-- Netlify preview refresh: 2026-10-07 -->

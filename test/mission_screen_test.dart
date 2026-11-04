@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nexo_followthrough/data/mission_repository.dart';
-import 'package:nexo_followthrough/domain/intent.dart';
-import 'package:nexo_followthrough/domain/mission.dart';
-import 'package:nexo_followthrough/ui/mission_screen.dart';
+import 'package:zavqera_followthrough/data/mission_repository.dart';
+import 'package:zavqera_followthrough/domain/intent.dart';
+import 'package:zavqera_followthrough/domain/mission.dart';
+import 'package:zavqera_followthrough/ui/mission_screen.dart';
 
 IntentDraft _draft(String objective) => IntentDraft(
       rawGoal: objective,
@@ -68,7 +68,52 @@ void main() {
 
     expect(find.text('What needs attention next?'), findsOneWidget);
     expect(find.text('Research suitable leads'), findsOneWidget);
-    expect(find.text('0 of 3 steps completed'), findsOneWidget);
+    expect(find.text('0 of 3 steps completed. 3 steps still need attention.'),
+        findsOneWidget);
     expect(find.text('This is the next step to work on.'), findsOneWidget);
+  });
+
+  testWidgets('canceling deletion leaves the Mission unchanged',
+      (tester) async {
+    final repo = DemoMissionRepository();
+    final mission = await repo.createMission(_draft('keep this mission'));
+    await tester.pumpWidget(MaterialApp(
+      home: MissionScreen(
+        repository: repo,
+        missionId: mission.id,
+        onBack: () {},
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Delete Mission'));
+    await tester.pumpAndSettle();
+    expect(find.text('Delete Mission?'), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+
+    expect(await repo.getMission(mission.id), isNotNull);
+  });
+
+  testWidgets('confirming deletion removes the Mission', (tester) async {
+    final repo = DemoMissionRepository();
+    final mission = await repo.createMission(_draft('remove this mission'));
+    var returned = false;
+    await tester.pumpWidget(MaterialApp(
+      home: MissionScreen(
+        repository: repo,
+        missionId: mission.id,
+        onBack: () => returned = true,
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Delete Mission'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+
+    expect(returned, isTrue);
+    expect(() => repo.getMission(mission.id), throwsStateError);
   });
 }

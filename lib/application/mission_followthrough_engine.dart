@@ -6,7 +6,7 @@ import '../domain/verification_outcome.dart';
 import 'execution_gateway.dart';
 import 'mission_control_boundary.dart';
 
-/// Port for NEXO-owned verification. Implementations may later use storage,
+/// Port for ZAVQERA-owned verification. Implementations may later use storage,
 /// webhooks, or provider-specific evidence without changing this orchestration.
 abstract interface class FollowThroughVerifier {
   Future<VerificationResult> verify({

@@ -1,7 +1,7 @@
 import '../domain/execution_gateway.dart';
 
-/// NEXO gateway: provider selection is replaceable; authority remains outside
-/// the provider adapter. A provider cannot mint, enlarge, or redefine NEXO authority.
+/// ZAVQERA gateway: provider selection is replaceable; authority remains outside
+/// the provider adapter. A provider cannot mint, enlarge, or redefine ZAVQERA authority.
 class ExecutionGateway {
   final Map<String, AgentProviderAdapter> adapters;
   final ProviderSelector selector;

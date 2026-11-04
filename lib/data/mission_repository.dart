@@ -6,6 +6,7 @@ import 'local_mission_store.dart';
 
 abstract interface class MissionRepository {
   Future<Mission> createMission(IntentDraft draft);
+  Future<void> deleteMission(String missionId);
   Future<Mission> approveAuthority(String missionId);
   Future<Mission> startMission(String missionId);
   Future<Mission> continueMission(String missionId);
@@ -48,6 +49,22 @@ class DemoMissionRepository implements MissionRepository {
   Mission? get currentMission => _mission;
   List<Mission> get missions => List.unmodifiable(_missions.values);
   Future<List<Mission>> listMissions() async => missions;
+
+  @override
+  Future<void> deleteMission(String missionId) async {
+    _require(missionId);
+    _missions.remove(missionId);
+    _ledgers.remove(missionId);
+    _leases.remove(missionId);
+    if (_mission?.id == missionId) {
+      _mission = _missions.values.isEmpty ? null : _missions.values.last;
+      _ledger
+        ..clear()
+        ..addAll(_mission == null ? const [] : _ledgers[_mission!.id]!);
+      _lease = _mission == null ? null : _leases[_mission!.id];
+    }
+    await _persist();
+  }
 
   Future<void> restore() async {
     final store = _store;

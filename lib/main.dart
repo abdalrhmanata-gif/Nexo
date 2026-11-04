@@ -13,16 +13,16 @@ Future<void> main() async {
     store: SharedPreferencesMissionStore(),
   );
   await repository.restore();
-  runApp(NexoApp(repository: repository));
+  runApp(ZavqeraApp(repository: repository));
 }
 
-class NexoApp extends StatelessWidget {
+class ZavqeraApp extends StatelessWidget {
   final DemoMissionRepository repository;
-  const NexoApp({super.key, required this.repository});
+  const ZavqeraApp({super.key, required this.repository});
 
   @override
   Widget build(BuildContext context) => MaterialApp(
-        title: 'NEXO',
+        title: 'ZAVQERA',
         theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.indigo),
         home: _Home(repository: repository),
       );
@@ -58,9 +58,19 @@ class _HomeState extends State<_Home> {
     });
   }
 
+  void _cancelCreation() {
+    if (!mounted) return;
+    setState(() => creating = false);
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (creating) return IntentBuilderScreen(onApproved: _create);
+    if (creating) {
+      return IntentBuilderScreen(
+        onApproved: _create,
+        onCancel: _cancelCreation,
+      );
+    }
     final openId = openMissionId;
     if (openId != null) {
       return MissionScreen(
