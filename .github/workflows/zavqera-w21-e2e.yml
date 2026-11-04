@@ -12,6 +12,7 @@ on:
       - "codex/w82-unrelated-unique-violation-followup-20261102"
       - "codex/invitation-hash-and-w82-race-fix-20261102"
       - "codex/api-cookie-origin-guard-20261102"
+      - "codex/zavqera-server-db-key-alignment-20261104"
     paths:
       - ".github/workflows/zavqera-w21-e2e.yml"
       - ".github/workflows/zavqera-web-unit.yml"
@@ -38,7 +39,7 @@ permissions:
 
 jobs:
   w21-e2e:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
 
     steps:
