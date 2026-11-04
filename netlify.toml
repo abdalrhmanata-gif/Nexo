@@ -3,12 +3,18 @@
   command = "npm run build"
   publish = ".next"
 
-# Pin the Node major used by the build. Without this the site builds on
-# Netlify's default image Node, which does not match the version the unit
-# suite is validated against in CI (.github/workflows/zavqera-web-unit.yml
-# and web.yml both use Node 22), and `npm run build` runs `npm test` first.
+# Pin the Node major used by the build to 20.
+#
+# Evidence: this tree built successfully as deploy-preview-50 on 2026-10-30
+# against the Netlify image default of that time, and the only production
+# build that has ever succeeded on this site (the pr-72 merge) pinned
+# NODE_VERSION = "20". Two builds of this exact tree have failed with
+# "exit code 4" since: one on the current unpinned image default, and one
+# pinned to 22. The unit suite passes locally on Node 22, so the failure is
+# in `next build`, not in `npm test`.
 [build.environment]
-  NODE_VERSION = "22"
+  NODE_VERSION = "20"
+  NEXT_DISABLE_NETLIFY_EDGE = "true"
 
 # Framework auto-detection does not run for this site, so the deploy published
 # raw .next assets with no Functions or Edge Functions. Declaring the adapter
