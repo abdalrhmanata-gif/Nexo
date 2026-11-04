@@ -19,6 +19,6 @@ test("admin RPC client uses the documented server-side Supabase key", () => {
 });
 
 test("admin RPC client remains fail-closed when URL or server key is missing", () => {
-  assert.match(adminSource, /if \(!supabaseUrl \|\| !serverKey\)/);
+  assert.match(adminSource, /if \(!supabaseUrl \|\| !serviceRoleKey\)/);
   assert.match(adminSource, /TRUSTED_EXECUTION_NOT_CONFIGURED/);
 });
