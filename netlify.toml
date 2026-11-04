@@ -3,6 +3,13 @@
   command = "npm run build"
   publish = ".next"
 
+# Pin the Node major used by the build. Without this the site builds on
+# Netlify's default image Node, which does not match the version the unit
+# suite is validated against in CI (.github/workflows/zavqera-web-unit.yml
+# and web.yml both use Node 22), and `npm run build` runs `npm test` first.
+[build.environment]
+  NODE_VERSION = "22"
+
 # Framework auto-detection does not run for this site, so the deploy published
 # raw .next assets with no Functions or Edge Functions. Declaring the adapter
 # explicitly provisions SSR, Middleware, and Route Handlers. Left unpinned so
