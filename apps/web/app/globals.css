@@ -1412,9 +1412,21 @@ html[dir="rtl"] p, html[dir="rtl"] li, html[dir="rtl"] dt, html[dir="rtl"] dd,
 html[dir="rtl"] span, html[dir="rtl"] small, html[dir="rtl"] strong, html[dir="rtl"] em,
 html[dir="rtl"] a, html[dir="rtl"] button, html[dir="rtl"] label,
 html[dir="rtl"] td, html[dir="rtl"] th, html[dir="rtl"] figcaption,
-html[dir="rtl"] blockquote, html[dir="rtl"] summary {
+html[dir="rtl"] blockquote, html[dir="rtl"] summary,
+/* Several text blocks are plain divs (.landing-trust-line among them), which
+   the first pass missed and which kept showing a leading full stop. */
+html[dir="rtl"] div {
   unicode-bidi: plaintext;
   text-align: start;
+}
+/* Layout containers must not inherit text-align from the rule above. */
+html[dir="rtl"] .topbar, html[dir="rtl"] nav, html[dir="rtl"] .grid,
+html[dir="rtl"] .stats, html[dir="rtl"] .section-heading,
+html[dir="rtl"] .card-heading, html[dir="rtl"] .action-control,
+html[dir="rtl"] .detail-layout, html[dir="rtl"] .detail-stack,
+html[dir="rtl"] .progress-row, html[dir="rtl"] .card-meta,
+html[dir="rtl"] .attention-panel, html[dir="rtl"] .form-grid {
+  text-align: unset;
 }
 /* Inputs carry user text, which may be in either script. */
 html[dir="rtl"] input, html[dir="rtl"] textarea {
