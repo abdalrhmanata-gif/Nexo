@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { LocalizedText } from "./localized-text";
 import { useRouter } from "next/navigation";
 import type { ActionStatus, MissionAction } from "../lib/view-models";
 import {
@@ -89,8 +90,8 @@ export function ActionMutationControls({ missionId, action }: { missionId: strin
       </>}
       <button className="button button-small" type="submit" disabled={busy}>{busy ? "Saving…" : "Save"}</button>
     </div>
-    {wantsFollowUp && <p className="action-hint">Optional: the date you intend to check back. Leave empty for no reminder.</p>}
-    {losesFollowUp && <p className="action-hint">Saving this will remove the follow-up date, because it only applies while Waiting.</p>}
+    {wantsFollowUp && <p className="action-hint"><LocalizedText en="Optional: the date you intend to check back. Leave empty for no reminder." /></p>}
+    {losesFollowUp && <p className="action-hint"><LocalizedText en="Saving this will remove the follow-up date, because it only applies while Waiting." /></p>}
     {message && <p className="field-error" role="alert">{message}</p>}
   </form>;
 }

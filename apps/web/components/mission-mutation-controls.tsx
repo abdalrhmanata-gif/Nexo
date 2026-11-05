@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { LocalizedText } from "./localized-text";
 import { useRouter } from "next/navigation";
 import type { MissionLifecycleStatus } from "../lib/view-models";
 import {
@@ -89,27 +90,27 @@ export function MissionMutationControls({
 
   return <div className="form-grid">
     <form onSubmit={saveDetails}>
-      <div className="field"><label htmlFor="mission-name">Mission name</label><input id="mission-name" name="name" defaultValue={name} required /></div>
-      <div className="field"><label htmlFor="mission-intent">Intent</label><textarea id="mission-intent" name="intent" defaultValue={intent} required /></div>
+      <div className="field"><label htmlFor="mission-name"><LocalizedText en="Mission name" /></label><input id="mission-name" name="name" defaultValue={name} required /></div>
+      <div className="field"><label htmlFor="mission-intent"><LocalizedText en="Intent" /></label><textarea id="mission-intent" name="intent" defaultValue={intent} required /></div>
       <div className="field">
-        <label htmlFor="mission-criteria">Success criteria</label>
+        <label htmlFor="mission-criteria"><LocalizedText en="Success criteria" /></label>
         <textarea id="mission-criteria" name="criteria" defaultValue={criteria.join("\n")} />
-        <small>One per line. These describe what good looks like, not the work itself.</small>
+        <small><LocalizedText en="One per line. These describe what good looks like, not the work itself." /></small>
       </div>
-      <button className="button button-small" type="submit" disabled={busy}>Save mission</button>
+      <button className="button button-small" type="submit" disabled={busy}><LocalizedText en="Save mission" /></button>
     </form>
 
     {isTerminalMissionStatus(status)
       ? <p className="action-final">{missionStatusLabel(status)} — this mission is closed.</p>
       : <form key={status} onSubmit={transition}>
         <div className="field">
-          <label htmlFor="status">Mission state</label>
+          <label htmlFor="status"><LocalizedText en="Mission state" /></label>
           <select id="status" name="status" defaultValue={nextStates[0]} disabled={busy}>
             {nextStates.map((item) => <option key={item} value={item}>{missionStatusLabel(item)}</option>)}
           </select>
           <small>Currently {missionStatusLabel(status).toLowerCase()}. Only states this mission can legally move to are listed.</small>
         </div>
-        <button className="button button-small" type="submit" disabled={busy}>Move mission</button>
+        <button className="button button-small" type="submit" disabled={busy}><LocalizedText en="Move mission" /></button>
       </form>}
     {message && <div className="field-error" role="alert">{message}</div>}
   </div>;

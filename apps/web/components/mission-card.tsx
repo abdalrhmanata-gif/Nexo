@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LocalizedText } from "./localized-text";
 import type { Mission } from "../lib/view-models";
 import { nextStepFor } from "../lib/mission-content.mjs";
 import { StatusPill } from "./shell";
@@ -9,7 +10,7 @@ export function MissionCard({ mission }: { mission: Mission }) {
     <article className="card mission-card">
       <div className="card-heading">
         <div>
-          <p className="eyebrow">Mission</p>
+          <p className="eyebrow"><LocalizedText en="Mission" /></p>
           <h3><Link href={`/app/missions/${mission.id}`}>{mission.name}</Link></h3>
         </div>
         <StatusPill status={mission.status} />
