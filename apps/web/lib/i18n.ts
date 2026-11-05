@@ -487,6 +487,11 @@ const NB: Record<string, string> = {
   "steps added to first steps.":"steg lagt til i første steg.",
   "criterion added.":"kriterium lagt til.",
   "criteria added.":"kriterier lagt til.",
+  "Nothing planned":"Ingenting planlagt",
+  "Missions with no work behind them":"Oppdrag uten arbeid bak seg",
+  "This mission states an outcome but holds no step that would reach it.":"Dette oppdraget beskriver et mål, men har ingen steg som når det.",
+  "Plan it":"Planlegg det",
+  "Every mission has at least one step behind it.":"Hvert oppdrag har minst ett steg bak seg.",
 };
 const AR: Record<string, string> = {
   "MISSION CONTROL":"مركز التحكم", "Search":"بحث", "New mission":"مهمة جديدة",
@@ -949,6 +954,11 @@ const AR: Record<string, string> = {
   "steps added to first steps.":"خطوات أُضيفت إلى الخطوات الأولى.",
   "criterion added.":"معيار أُضيف.",
   "criteria added.":"معايير أُضيفت.",
+  "Nothing planned":"بلا خطة",
+  "Missions with no work behind them":"مهام لا عمل خلفها",
+  "This mission states an outcome but holds no step that would reach it.":"هذه المهمة تذكر نتيجة لكنها لا تحمل خطوة تبلغها.",
+  "Plan it":"خطّط لها",
+  "Every mission has at least one step behind it.":"كل مهمة خلفها خطوة واحدة على الأقل.",
 };
 const ES: Record<string, string> = {
   "Search":"Buscar", "New mission":"Nueva misión", "Business":"Empresa", "Templates":"Plantillas",
@@ -1415,6 +1425,11 @@ const ES: Record<string, string> = {
   "steps added to first steps.":"pasos añadidos a los primeros pasos.",
   "criterion added.":"criterio añadido.",
   "criteria added.":"criterios añadidos.",
+  "Nothing planned":"Sin planificar",
+  "Missions with no work behind them":"Misiones sin trabajo detrás",
+  "This mission states an outcome but holds no step that would reach it.":"Esta misión plantea un resultado pero no tiene ningún paso que lo alcance.",
+  "Plan it":"Planificarla",
+  "Every mission has at least one step behind it.":"Cada misión tiene al menos un paso detrás.",
 };
 const FR: Record<string, string> = {
   "Search":"Rechercher", "New mission":"Nouvelle mission", "Business":"Entreprise", "Templates":"Modèles",
@@ -1881,6 +1896,11 @@ const FR: Record<string, string> = {
   "steps added to first steps.":"étapes ajoutées aux premières étapes.",
   "criterion added.":"critère ajouté.",
   "criteria added.":"critères ajoutés.",
+  "Nothing planned":"Rien de planifié",
+  "Missions with no work behind them":"Missions sans travail derrière elles",
+  "This mission states an outcome but holds no step that would reach it.":"Cette mission énonce un résultat mais ne contient aucune étape pour l'atteindre.",
+  "Plan it":"La planifier",
+  "Every mission has at least one step behind it.":"Chaque mission a au moins une étape derrière elle.",
 };
 const DE: Record<string, string> = {
   "Search":"Suchen", "New mission":"Neue Mission", "Business":"Unternehmen", "Templates":"Vorlagen",
@@ -2347,6 +2367,11 @@ const DE: Record<string, string> = {
   "steps added to first steps.":"Schritte zu den ersten Schritten hinzugefügt.",
   "criterion added.":"Kriterium hinzugefügt.",
   "criteria added.":"Kriterien hinzugefügt.",
+  "Nothing planned":"Nichts geplant",
+  "Missions with no work behind them":"Missionen ohne hinterlegte Arbeit",
+  "This mission states an outcome but holds no step that would reach it.":"Diese Mission nennt ein Ergebnis, enthält aber keinen Schritt dorthin.",
+  "Plan it":"Planen",
+  "Every mission has at least one step behind it.":"Jede Mission hat mindestens einen Schritt hinterlegt.",
 };
 
 export const DICTIONARIES: Record<AppLanguage, Record<string, string>> = {

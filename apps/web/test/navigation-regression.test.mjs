@@ -200,3 +200,18 @@ test("every .mjs module imported from TypeScript has a .d.mts declaration", () =
   }
   assert.deepEqual(missing, [], "these .mjs imports have no .d.mts declaration, so tsc will fail");
 });
+
+test("every category the badge counts is a category the notifications page explains", () => {
+  // The badge and the page are two readings of the same question. When the
+  // badge learned to count missions with no work, the page still showed only
+  // "waiting" and "due" — so a user would have seen a number with nothing
+  // behind it, which is the exact complaint this product keeps earning.
+  const endpoint = read("app/api/notifications/route.ts");
+  const page = read("app/app/notifications/page.tsx");
+  const counted = endpoint.match(/const (waiting|followUps|unplanned) =/g) ?? [];
+  assert.ok(counted.length >= 3, "expected the badge to count at least three categories");
+  for (const name of ["waiting", "followUps", "unplanned"]) {
+    assert.ok(endpoint.includes(`const ${name} =`), `badge no longer counts ${name}`);
+    assert.ok(page.includes(`${name}.length`), `the page does not account for ${name}`);
+  }
+});
