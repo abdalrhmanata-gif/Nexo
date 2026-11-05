@@ -5,6 +5,13 @@ import { localMockMissionRepository } from "../../../lib/local-mock-repository";
 
 export const dynamic = "force-dynamic";
 
+// A signed-out caller is an ordinary state here, not a failure. This route is
+// outside the middleware matcher, so the bell's poll reaches it even with no
+// session; returning 503 for that filled the logs with errors and told the
+// client nothing. An empty count is the honest answer.
+const EMPTY = { count: 0 };
+const NO_STORE = { headers: { "Cache-Control": "no-store" } };
+
 export async function GET() {
   try {
     const repository = isSupabaseConfigured()
@@ -21,8 +28,9 @@ export async function GET() {
     const waiting = missions.filter((mission) => mission.status === "WAITING").length;
     return NextResponse.json({ count: waiting + followUps }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
-    if (error instanceof Error && error.message === "Authentication required.") {
-      return NextResponse.json({ error: "Authentication is required." }, { status: 401, headers: { "Cache-Control": "no-store" } });
+    const message = error instanceof Error ? error.message : "";
+    if (/auth|session|jwt|not authenticated|unauthor/i.test(message)) {
+      return NextResponse.json(EMPTY, NO_STORE);
     }
     return NextResponse.json({ error: "Notifications are temporarily unavailable." }, { status: 503, headers: { "Cache-Control": "no-store" } });
   }
