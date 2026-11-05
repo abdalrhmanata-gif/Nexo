@@ -4,8 +4,11 @@ import { LocalizedText } from "../../../components/localized-text";
 import { isSupabaseConfigured } from "../../../lib/supabase/config";
 import { createSupabaseMissionRepository } from "../../../lib/supabase/mission-repository";
 import { localMockMissionRepository } from "../../../lib/local-mock-repository";
+import { getTranslate } from "../../../lib/i18n-server";
+import { fill } from "../../../lib/i18n";
 
 export default async function BusinessWorkspacePage() {
+  const t = await getTranslate();
   const repository = isSupabaseConfigured()
     ? await createSupabaseMissionRepository()
     : localMockMissionRepository;
@@ -28,7 +31,7 @@ export default async function BusinessWorkspacePage() {
       <Link className="button business-primary-cta" href="/app/missions/new"><span aria-hidden="true">＋</span> <LocalizedText en="New mission" nb="Nytt oppdrag" ar="مهمة جديدة" /></Link>
     </section>
 
-    <section className="business-metrics" aria-label="Business workspace metrics">
+    <section className="business-metrics" aria-label={t("Business workspace metrics")}>
       <Link className="business-metric business-metric-total" href="/app">
         <span className="business-metric-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h10" /></svg></span>
         <span className="business-metric-copy"><strong>{missions.length}</strong><span><LocalizedText en="Total missions" nb="Oppdrag totalt" ar="إجمالي المهام" /></span></span>
@@ -114,7 +117,7 @@ export default async function BusinessWorkspacePage() {
         <Link className="button button-quiet" href="/app"><LocalizedText en="View all missions" nb="Se alle oppdrag" ar="عرض كل المهام" /> <span aria-hidden="true">→</span></Link>
       </div>
       {recent.length
-        ? <div className="grid business-recent-grid">{recent.map((mission) => <MissionCard key={mission.id} mission={mission} />)}</div>
+        ? <div className="grid business-recent-grid">{recent.map((mission) => <MissionCard key={mission.id} mission={mission} progressLabel={fill(t("Mission progress for {mission}"), { mission: mission.name })} />)}</div>
         : <div className="empty-state"><h2><LocalizedText en="Your workspace is ready" nb="Arbeidsområdet er klart" ar="مساحة العمل جاهزة" /></h2><p><LocalizedText en="Create your first mission to start tracking a concrete outcome." nb="Opprett ditt første oppdrag for å følge et konkret resultat." ar="أنشئ مهمتك الأولى لمتابعة نتيجة واضحة." /></p><Link className="button" href="/app/missions/new"><LocalizedText en="Create first mission" nb="Opprett første oppdrag" ar="أنشئ المهمة الأولى" /></Link></div>}
     </section>
   </div>;

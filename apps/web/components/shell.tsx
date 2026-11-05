@@ -42,7 +42,7 @@ export async function readSignedIn(): Promise<boolean> {
   }
 }
 
-export function Shell({ children, signedIn = false }: { children: React.ReactNode; signedIn?: boolean }) {
+export function Shell({ children, signedIn = false, navLabel = "Primary navigation" }: { children: React.ReactNode; signedIn?: boolean; navLabel?: string }) {
   return (
     <div className="site-shell">
       <header className="topbar">
@@ -51,7 +51,7 @@ export function Shell({ children, signedIn = false }: { children: React.ReactNod
           <span className="brand-subtitle"><LocalizedText en="MISSION CONTROL" nb="KONTROLLSENTER" ar="مركز التحكم" /></span>
           <span className="visually-hidden"><LocalizedText en="Home" nb="Hjem" ar="الرئيسية" /></span>
         </Link>
-        <nav className="primary-nav" aria-label="Primary navigation">
+        <nav className="primary-nav" aria-label={navLabel}>
           {/* The whole product is on show to a first-time visitor, because a
               half-empty header makes the product look smaller than it is. The
               workspace links still need a session, so for a signed-out visitor

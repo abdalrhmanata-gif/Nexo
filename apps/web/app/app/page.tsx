@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LocalizedText } from "../../components/localized-text";
 import { getTranslate } from "../../lib/i18n-server";
+import { fill } from "../../lib/i18n";
 import { MissionCard } from "../../components/mission-card";
 import { localMockMissionRepository } from "../../lib/local-mock-repository";
 import { isSupabaseConfigured } from "../../lib/supabase/config";
@@ -117,7 +118,7 @@ export default async function WorkspacePage({
       {selectedStatus && <Link className="button button-quiet" href={query ? `/app?q=${encodeURIComponent(query)}#mission-search` : "/app"}><LocalizedText en="Show all" /></Link>}
     </div>
     {visibleMissions.length
-      ? <div className="grid">{visibleMissions.map((mission) => <MissionCard key={mission.id} mission={mission} />)}</div>
+      ? <div className="grid">{visibleMissions.map((mission) => <MissionCard key={mission.id} mission={mission} progressLabel={fill(t("Mission progress for {mission}"), { mission: mission.name })} />)}</div>
       : <div className="empty-state">
         <h2>{query ? t("No matching missions") : t("No missions yet")}</h2>
         <p>{query ? t("Try a different search term or clear the search to see your missions.") : t("A mission records an outcome you intend to reach and the work required to reach it. Create your first one to begin.")}</p>

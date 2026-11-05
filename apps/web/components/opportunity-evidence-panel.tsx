@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { LocalizedText } from "./localized-text";
+import { LocalizedText, useTranslate, fill } from "./localized-text";
 import {
   buildPublicSearchUrls,
   EVIDENCE_SOURCE_TYPES,
@@ -73,6 +73,7 @@ export function OpportunityEvidencePanel({
   onAddEvidence: (item: OpportunityEvidenceItem) => void;
   onRemoveEvidence: (itemId: string) => void;
 }) {
+  const t = useTranslate();
   const [expanded, setExpanded] = useState(false);
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [error, setError] = useState("");
@@ -129,7 +130,7 @@ export function OpportunityEvidencePanel({
   }
 
   return (
-    <section className="evidence-ledger" aria-label={`Evidence ledger for ${opportunity.title}`}>
+    <section className="evidence-ledger" aria-label={fill(t("Evidence ledger for {opportunity}"), { opportunity: opportunity.title })}>
       <div className="evidence-ledger-head">
         <div>
           <strong><LocalizedText en="Evidence ledger" /></strong>
@@ -176,7 +177,7 @@ export function OpportunityEvidencePanel({
                 className="evidence-remove"
                 type="button"
                 onClick={() => onRemoveEvidence(item.id)}
-                aria-label={`Remove evidence note: ${item.title}`}
+                aria-label={fill(t("Remove evidence note: {title}"), { title: item.title })}
               >
                 Remove note
               </button>
@@ -211,11 +212,11 @@ export function OpportunityEvidencePanel({
             </div>
             <div className="field">
               <label htmlFor={`evidence-title-${opportunity.id}`}><LocalizedText en="Source title" /></label>
-              <input id={`evidence-title-${opportunity.id}`} maxLength={180} value={draft.title} onChange={(event) => updateDraft("title", event.target.value)} placeholder="Report, article, announcement, or customer signal" required />
+              <input id={`evidence-title-${opportunity.id}`} maxLength={180} value={draft.title} onChange={(event) => updateDraft("title", event.target.value)} placeholder={t("Report, article, announcement, or customer signal")} required />
             </div>
             <div className="field">
               <label htmlFor={`evidence-observation-${opportunity.id}`}><LocalizedText en="What does the source actually say?" /></label>
-              <textarea id={`evidence-observation-${opportunity.id}`} maxLength={1200} value={draft.observation} onChange={(event) => updateDraft("observation", event.target.value)} placeholder="Summarise the relevant claim in your own words. Separate facts from your interpretation." required />
+              <textarea id={`evidence-observation-${opportunity.id}`} maxLength={1200} value={draft.observation} onChange={(event) => updateDraft("observation", event.target.value)} placeholder={t("Summarise the relevant claim in your own words. Separate facts from your interpretation.")} required />
               <small><LocalizedText en="Record the specific observation, not a conclusion the source does not support. Avoid confidential or sensitive personal information." /></small>
             </div>
             <div className="evidence-form-grid">

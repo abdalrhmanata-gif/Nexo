@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Shell, readSignedIn } from "../components/shell";
+import { getLanguage, getTranslate } from "../lib/i18n-server";
 
 export const metadata: Metadata = { title: "ZAVQERA Mission Control", description: "Structure AI-assisted work into explicit Missions, track progress, and review evidence before committing to outcomes." };
 
@@ -17,12 +18,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // middleware, so showing them to a signed-out visitor made each one bounce
   // to the sign-in page and read as a dead button.
   const signedIn = await readSignedIn();
+  // Render lang and dir from the saved language rather than hardcoding
+  // English: an Arabic visitor otherwise gets a left-to-right first paint,
+  // and assistive technology is told the wrong language for the whole page.
+  const language = await getLanguage();
+  const t = await getTranslate();
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={language} dir={language === "ar" ? "rtl" : "ltr"} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
       </head>
-      <body><Shell signedIn={signedIn}>{children}</Shell></body>
+      <body><Shell signedIn={signedIn} navLabel={t("Primary navigation")}>{children}</Shell></body>
     </html>
   );
 }

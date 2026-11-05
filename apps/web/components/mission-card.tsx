@@ -4,7 +4,7 @@ import type { Mission } from "../lib/view-models";
 import { nextStepFor } from "../lib/mission-content.mjs";
 import { StatusPill } from "./shell";
 
-export function MissionCard({ mission }: { mission: Mission }) {
+export function MissionCard({ mission, progressLabel }: { mission: Mission; progressLabel?: string }) {
   const next = nextStepFor(mission);
   return (
     <article className="card mission-card">
@@ -24,7 +24,7 @@ export function MissionCard({ mission }: { mission: Mission }) {
         <span>{mission.actionsTotal ? `${mission.actionsCompleted} of ${mission.actionsTotal} actions complete` : "No actions yet"}</span>
         <strong>{mission.progress}%</strong>
       </div>
-      <div className="progress mission-progress" role="progressbar" aria-label={`Mission progress for ${mission.name}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={mission.progress}><span style={{ width: `${mission.progress}%` }} /></div>
+      <div className="progress mission-progress" role="progressbar" aria-label={progressLabel ?? `Mission progress for ${mission.name}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={mission.progress}><span style={{ width: `${mission.progress}%` }} /></div>
       <div className="card-meta"><span>Updated {mission.updated}</span></div>
       <Link className="button button-small mission-open" href={`/app/missions/${mission.id}`}>
         Open mission <span aria-hidden="true">→</span><span className="visually-hidden">: {mission.name}</span>

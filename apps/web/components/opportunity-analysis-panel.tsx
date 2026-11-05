@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LocalizedText } from "./localized-text";
+import { LocalizedText, useTranslate, fill } from "./localized-text";
 import type { OpportunityEvidenceItem } from "../lib/evidence-ledger.mjs";
 import type { OpportunityAnalysisReport } from "../lib/opportunity-analysis.mjs";
 
@@ -65,6 +65,7 @@ export function OpportunityAnalysisPanel({
   opportunity: OpportunityAnalysisSubject;
   score: number;
 }) {
+  const t = useTranslate();
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState<OpportunityAnalysisReport | null>(null);
   const [error, setError] = useState("");
@@ -121,7 +122,7 @@ export function OpportunityAnalysisPanel({
   }
 
   return (
-    <section className="opportunity-analysis" aria-label={`AI analysis for ${opportunity.title}`}>
+    <section className="opportunity-analysis" aria-label={fill(t("AI analysis for {opportunity}"), { opportunity: opportunity.title })}>
       <div className="analysis-toolbar">
         <div>
           <p className="eyebrow"><LocalizedText en="Optional AI analyst" /></p>
@@ -162,7 +163,7 @@ export function OpportunityAnalysisPanel({
                         {claim.evidenceIds.map((id) => {
                           const source = evidenceById.get(id);
                           return source ? (
-                            <a key={id} href={source.url} target="_blank" rel="noopener noreferrer" title="User-provided source; not fetched by Zavqera">
+                            <a key={id} href={source.url} target="_blank" rel="noopener noreferrer" title={t("User-provided source; not fetched by Zavqera")}>
                               Source: {source.title}
                             </a>
                           ) : null;

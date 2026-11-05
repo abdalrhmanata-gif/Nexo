@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LocalizedText } from "./localized-text";
+import { LocalizedText, useTranslate, fill } from "./localized-text";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type CSSProperties, type FormEvent } from "react";
 import { MAX_OPPORTUNITY_BACKUP_BYTES, createOpportunityBackup, mergeOpportunityBackup, parseOpportunityBackup, type OpportunityBackup } from "../lib/opportunity-portability.mjs";
 import { opportunityPriority, priorityDescription, scoreOpportunity } from "../lib/opportunity-intelligence.mjs";
@@ -149,6 +149,7 @@ function RatingField({
 }
 
 export function OpportunityIntelligence() {
+  const t = useTranslate();
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [form, setForm] = useState<OpportunityForm>(EMPTY_FORM);
   const [storageReady, setStorageReady] = useState(false);
@@ -348,7 +349,7 @@ export function OpportunityIntelligence() {
         </div>
       </div>
 
-      <section className="opportunity-portability" aria-label="Opportunity data backup">
+      <section className="opportunity-portability" aria-label={t("Opportunity data backup")}>
         <div className="opportunity-portability-copy">
           <span className="opportunity-portability-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none"><path d="M12 16V4M7 9l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -367,7 +368,7 @@ export function OpportunityIntelligence() {
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" /></svg>
             Choose backup
           </label>
-          <input ref={backupInputRef} id="opportunity-backup-file" className="visually-hidden" type="file" accept=".json,application/json" aria-label="Choose a Zavqera opportunity backup file" onChange={selectBackup} disabled={!storageReady || backupBusy} />
+          <input ref={backupInputRef} id="opportunity-backup-file" className="visually-hidden" type="file" accept=".json,application/json" aria-label={t("Choose a Zavqera opportunity backup file")} onChange={selectBackup} disabled={!storageReady || backupBusy} />
         </div>
         {backupBusy && <p className="opportunity-backup-status" role="status"><LocalizedText en="Checking backup file…" /></p>}
         {backupPreview && (
@@ -387,7 +388,7 @@ export function OpportunityIntelligence() {
         {backupNotice && <p className="success-state opportunity-backup-status" role="status">{backupNotice}</p>}
       </section>
 
-      <section className="opportunity-metrics" aria-label="Opportunity overview">
+      <section className="opportunity-metrics" aria-label={t("Opportunity overview")}>
         <div className="opportunity-metric">
           <span className="opportunity-metric-icon opportunity-icon-tracked" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="m12 3 8 4.5-8 4.5-8-4.5L12 3Z M4 12l8 4.5 8-4.5 M4 16.5l8 4.5 8-4.5" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg></span>
           <div className="opportunity-metric-copy"><strong>{opportunities.length}</strong><span><LocalizedText en="Opportunities tracked" /></span></div>
@@ -411,15 +412,15 @@ export function OpportunityIntelligence() {
           <form id="add-opportunity-form" className="form-grid opportunity-form" onSubmit={addOpportunity}>
             <div className="field">
               <label htmlFor="opportunity-title"><LocalizedText en="Opportunity name" /></label>
-              <input id="opportunity-title" value={form.title} maxLength={100} onChange={(event) => updateForm("title", event.target.value)} placeholder="e.g. Reach an underserved customer segment" required />
+              <input id="opportunity-title" value={form.title} maxLength={100} onChange={(event) => updateForm("title", event.target.value)} placeholder={t("e.g. Reach an underserved customer segment")} required />
             </div>
             <div className="field">
               <label htmlFor="opportunity-target"><LocalizedText en="Who could benefit?" /> <span className="field-optional"><LocalizedText en="optional" /></span></label>
-              <input id="opportunity-target" value={form.target} maxLength={160} onChange={(event) => updateForm("target", event.target.value)} placeholder="Customer, user group, market, or internal team" />
+              <input id="opportunity-target" value={form.target} maxLength={160} onChange={(event) => updateForm("target", event.target.value)} placeholder={t("Customer, user group, market, or internal team")} />
             </div>
             <div className="field">
               <label htmlFor="opportunity-thesis"><LocalizedText en="Opportunity thesis" /></label>
-              <textarea id="opportunity-thesis" value={form.thesis} maxLength={1200} onChange={(event) => updateForm("thesis", event.target.value)} placeholder="What is the unmet need, signal, or possible advantage? Why might it matter?" required />
+              <textarea id="opportunity-thesis" value={form.thesis} maxLength={1200} onChange={(event) => updateForm("thesis", event.target.value)} placeholder={t("What is the unmet need, signal, or possible advantage? Why might it matter?")} required />
               <small><LocalizedText en="Separate what you know from what you suspect. Do not enter confidential or sensitive personal information." /></small>
             </div>
             <div className="field">
@@ -457,9 +458,9 @@ export function OpportunityIntelligence() {
               <label className="opportunity-search">
                 <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="1.8" /><path d="m15.5 15.5 5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
                 <span className="visually-hidden"><LocalizedText en="Search opportunities" /></span>
-                <input type="search" value={opportunityQuery} onChange={(event) => setOpportunityQuery(event.target.value)} placeholder="Search opportunities…" aria-label="Search opportunities" />
+                <input type="search" value={opportunityQuery} onChange={(event) => setOpportunityQuery(event.target.value)} placeholder={t("Search opportunities…")} aria-label={t("Search opportunities")} />
               </label>
-              <div className="opportunity-filter-group" role="group" aria-label="Filter opportunities by priority">
+              <div className="opportunity-filter-group" role="group" aria-label={t("Filter opportunities by priority")}>
                 {([
                   { value: "ALL", label: "All" },
                   { value: "HIGH_SCORE", label: "Strong" },
@@ -505,13 +506,13 @@ export function OpportunityIntelligence() {
                         <h3>{opportunity.title}</h3>
                         {opportunity.target && <p className="opportunity-target">For: {opportunity.target}</p>}
                       </div>
-                      <div className="opportunity-score" style={{ "--opportunity-score": `${score}%` } as CSSProperties} aria-label={`Priority score ${score} out of 100`}>
+                      <div className="opportunity-score" style={{ "--opportunity-score": `${score}%` } as CSSProperties} aria-label={fill(t("Priority score {score} out of 100"), { score })}>
                         <strong>{score}</strong><span>/100</span>
                       </div>
                     </div>
                     <p className="opportunity-thesis">{opportunity.thesis}</p>
                     <p className="opportunity-reason">{priorityDescription(priority)}</p>
-                    <div className="opportunity-factor-list" aria-label="Scoring factors">
+                    <div className="opportunity-factor-list" aria-label={t("Scoring factors")}>
                       <span><LocalizedText en="Fit" /> <b>{opportunity.strategicFit}/5</b></span>
                       <span><LocalizedText en="Value" /> <b>{opportunity.potentialValue}/5</b></span>
                       <span><LocalizedText en="Timing" /> <b>{opportunity.urgency}/5</b></span>
@@ -534,7 +535,7 @@ export function OpportunityIntelligence() {
                     <OpportunityAnalysisPanel opportunity={opportunity} score={score} />
                     <div className="opportunity-card-actions">
                       <Link className="button button-small" href={missionHref(opportunity)}><LocalizedText en="Turn into Mission" /></Link>
-                      <button className="button button-quiet button-small" type="button" onClick={() => setOpportunities((current) => current.filter((item) => item.id !== opportunity.id))} aria-label={`Remove ${opportunity.title}`}><LocalizedText en="Remove" /></button>
+                      <button className="button button-quiet button-small" type="button" onClick={() => setOpportunities((current) => current.filter((item) => item.id !== opportunity.id))} aria-label={fill(t("Remove {opportunity}"), { opportunity: opportunity.title })}><LocalizedText en="Remove" /></button>
                     </div>
                   </article>
                 );

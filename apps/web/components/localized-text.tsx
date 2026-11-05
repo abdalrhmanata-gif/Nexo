@@ -9,6 +9,7 @@ import {
   translate,
   type AppLanguage,
 } from "../lib/i18n";
+export { fill } from "../lib/i18n";
 
 // The tables live in lib/i18n so server components can translate as well.
 // LocalizedText renders a text node; useLanguage and useTranslate give the same

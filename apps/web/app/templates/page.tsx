@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LocalizedText } from "../../components/localized-text";
+import { getTranslate } from "../../lib/i18n-server";
 
 const templates = [
   {
@@ -44,14 +45,15 @@ function templateHref(template: typeof templates[number]) {
   return `/app/missions/new?${params.toString()}`;
 }
 
-export default function TemplatesPage() {
+export default async function TemplatesPage() {
+  const t = await getTranslate();
   return <div className="container templates-page">
     <section className="hero template-hero-panel">
       <p className="eyebrow"><LocalizedText en="Mission templates" nb="Oppdragsmaler" ar="قوالب المهام" /></p>
       <h1><LocalizedText en="Start with a useful first plan." nb="Start med en nyttig første plan." ar="ابدأ بخطة أولية مفيدة." /></h1>
       <p><LocalizedText en="Choose a starting point, review every field, and keep control of the mission before you create it." nb="Velg et utgangspunkt, gå gjennom feltene og behold kontrollen før du oppretter oppdraget." ar="اختر نقطة بداية وراجع كل حقل واحتفظ بالتحكم قبل إنشاء المهمة." /></p>
     </section>
-    <section className="grid" aria-label="Mission templates">
+    <section className="grid" aria-label={t("Mission templates")}>
       {templates.map((template) => <article className="card template-card" key={template.id}>
         <div className={`template-icon template-icon-${template.id}`}><TemplateIcon id={template.id} /></div>
         <p className="eyebrow"><LocalizedText en="Mission template" nb="Oppdragsmal" ar="قالب مهمة" /></p>
