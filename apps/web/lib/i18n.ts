@@ -526,6 +526,10 @@ const NB: Record<string, string> = {
   "“{text}” names a subject, not a result someone could check. Add what must be true, a number, or a date.":"«{text}» navngir et emne, ikke et resultat noen kan sjekke. Legg til hva som må stemme, et tall eller en dato.",
   "“{text}” is also a success criterion. A criterion is how you judge the result; a step is work you do.":"«{text}» er også et suksesskriterium. Et kriterium er hvordan du vurderer resultatet; et steg er arbeid du gjør.",
   "“{text}” uses only words already in the goal, so it restates the outcome instead of naming work.":"«{text}» bruker bare ord som allerede står i målet, og gjentar dermed resultatet i stedet for å navngi arbeid.",
+  "Privacy":"Personvern",
+  "Terms":"Vilkår",
+  "Privacy notice":"Personvernerklæring",
+  "Terms of service":"Vilkår for bruk",
 };
 const AR: Record<string, string> = {
   "MISSION CONTROL":"مركز التحكم", "Search":"بحث", "New mission":"مهمة جديدة",
@@ -1027,6 +1031,10 @@ const AR: Record<string, string> = {
   "“{text}” names a subject, not a result someone could check. Add what must be true, a number, or a date.":"«{text}» يسمّي موضوعاً لا نتيجة يستطيع أحد التحقق منها. أضف ما يجب أن يتحقق، أو رقماً، أو تاريخاً.",
   "“{text}” is also a success criterion. A criterion is how you judge the result; a step is work you do.":"«{text}» هو أيضاً معيار نجاح. المعيار هو كيف تحكم على النتيجة؛ والخطوة عمل تؤديه.",
   "“{text}” uses only words already in the goal, so it restates the outcome instead of naming work.":"«{text}» لا يستخدم إلا كلمات موجودة في الهدف، فهو يعيد صياغة النتيجة بدل أن يسمّي عملاً.",
+  "Privacy":"الخصوصية",
+  "Terms":"الشروط",
+  "Privacy notice":"إشعار الخصوصية",
+  "Terms of service":"شروط الخدمة",
 };
 const ES: Record<string, string> = {
   "Search":"Buscar", "New mission":"Nueva misión", "Business":"Empresa", "Templates":"Plantillas",
@@ -1532,6 +1540,10 @@ const ES: Record<string, string> = {
   "“{text}” names a subject, not a result someone could check. Add what must be true, a number, or a date.":"«{text}» nombra un tema, no un resultado que alguien pueda comprobar. Añade qué debe ser cierto, un número o una fecha.",
   "“{text}” is also a success criterion. A criterion is how you judge the result; a step is work you do.":"«{text}» también es un criterio de éxito. Un criterio es cómo juzgas el resultado; un paso es trabajo que haces.",
   "“{text}” uses only words already in the goal, so it restates the outcome instead of naming work.":"«{text}» solo usa palabras que ya están en el objetivo, así que repite el resultado en vez de nombrar trabajo.",
+  "Privacy":"Privacidad",
+  "Terms":"Términos",
+  "Privacy notice":"Aviso de privacidad",
+  "Terms of service":"Términos del servicio",
 };
 const FR: Record<string, string> = {
   "Search":"Rechercher", "New mission":"Nouvelle mission", "Business":"Entreprise", "Templates":"Modèles",
@@ -2037,6 +2049,10 @@ const FR: Record<string, string> = {
   "“{text}” names a subject, not a result someone could check. Add what must be true, a number, or a date.":"« {text} » nomme un sujet, pas un résultat vérifiable. Ajoutez ce qui doit être vrai, un nombre ou une date.",
   "“{text}” is also a success criterion. A criterion is how you judge the result; a step is work you do.":"« {text} » est aussi un critère de réussite. Un critère juge le résultat ; une étape est un travail que vous faites.",
   "“{text}” uses only words already in the goal, so it restates the outcome instead of naming work.":"« {text} » n'utilise que des mots déjà présents dans l'objectif : il répète le résultat au lieu de nommer un travail.",
+  "Privacy":"Confidentialité",
+  "Terms":"Conditions",
+  "Privacy notice":"Avis de confidentialité",
+  "Terms of service":"Conditions d'utilisation",
 };
 const DE: Record<string, string> = {
   "Search":"Suchen", "New mission":"Neue Mission", "Business":"Unternehmen", "Templates":"Vorlagen",
@@ -2542,6 +2558,10 @@ const DE: Record<string, string> = {
   "“{text}” names a subject, not a result someone could check. Add what must be true, a number, or a date.":"„{text}“ nennt ein Thema, kein überprüfbares Ergebnis. Ergänzen Sie, was zutreffen muss, eine Zahl oder ein Datum.",
   "“{text}” is also a success criterion. A criterion is how you judge the result; a step is work you do.":"„{text}“ ist auch ein Erfolgskriterium. Ein Kriterium bewertet das Ergebnis; ein Schritt ist Arbeit, die Sie tun.",
   "“{text}” uses only words already in the goal, so it restates the outcome instead of naming work.":"„{text}“ verwendet nur Wörter aus dem Ziel und wiederholt so das Ergebnis, statt Arbeit zu benennen.",
+  "Privacy":"Datenschutz",
+  "Terms":"Bedingungen",
+  "Privacy notice":"Datenschutzhinweis",
+  "Terms of service":"Nutzungsbedingungen",
 };
 
 export const DICTIONARIES: Record<AppLanguage, Record<string, string>> = {

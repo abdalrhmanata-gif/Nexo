@@ -215,3 +215,41 @@ test("every category the badge counts is a category the notifications page expla
     assert.ok(page.includes(`${name}.length`), `the page does not account for ${name}`);
   }
 });
+
+test("privacy and terms exist, are reachable from every page, and say what the code does", () => {
+  // A product that collects email addresses and user content from the EEA
+  // needs these before launch, and they need to be findable before sign-up —
+  // which means the footer, not a page only account holders ever see.
+  const shell = read("components/shell.tsx");
+  assert.ok(shell.includes('href="/privacy"'), "the footer must link to the privacy notice");
+  assert.ok(shell.includes('href="/terms"'), "the footer must link to the terms");
+  assert.equal(existsSync(join(webRoot, "app/privacy/page.tsx")), true);
+  assert.equal(existsSync(join(webRoot, "app/terms/page.tsx")), true);
+
+  const privacy = read("app/privacy/page.tsx");
+  // Each of these is a fact the reader can check against this repository.
+  // If one stops being true, the notice has to change with it.
+  assert.match(privacy, /zavqera\.opportunity-intelligence\.v1/, "names the browser key it claims never leaves the device");
+  assert.match(privacy, /zavqera-language/, "names the preference cookies it sets");
+  assert.match(privacy, /zavqera-theme/);
+  assert.match(privacy, /eu-west-1/, "names the region the database actually runs in");
+
+  const terms = read("app/terms/page.tsx");
+  assert.match(terms, /None of it is legal, financial, medical, immigration or other professional advice/i,
+    "the product proposes steps for regulated activities; this clause is the one that must not go missing");
+});
+
+test("the privacy notice's claim of no analytics is true of the code", () => {
+  const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    if (entry.name === "node_modules" || entry.name === ".next") return [];
+    const full = join(dir, entry.name);
+    return entry.isDirectory() ? walk(full) : [full];
+  });
+  const sources = walk(join(webRoot, "app"))
+    .concat(walk(join(webRoot, "components")), walk(join(webRoot, "lib")))
+    .filter((file) => /\.(ts|tsx|mjs)$/.test(file));
+  const trackers = /googletagmanager|google-analytics|gtag\(|posthog|mixpanel|segment\.com|hotjar|fullstory|plausible|amplitude/i;
+  const offenders = sources.filter((file) => trackers.test(readFileSync(file, "utf8")));
+  assert.deepEqual(offenders.map((file) => relative(webRoot, file)), [],
+    "the privacy notice promises no analytics; adding one means changing the notice too");
+});
