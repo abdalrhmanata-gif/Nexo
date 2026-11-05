@@ -103,3 +103,53 @@ test("a trip plan asks about entry requirements without claiming what they are",
   assert.doesNotMatch(plan.steps.join(" "), /\b(you need a visa|visa-free|no visa)\b/i,
     "the planner must not state what any country requires");
 });
+
+test("one typo does not cost the whole reading", () => {
+  // Reported: "jeg vil flyte tilbake til norge" — "flytte" with a letter
+  // missing. Moving country was not recognised at all, and a stray "reise" in
+  // the success criteria then won the mission a trip plan.
+  const typed = mission({
+    name: "jeg vil flyte tilbe til norge",
+    intent: "jeg er norsk og jeg vil flyte tilbake til norge",
+    criteria: ["reise tilbake"],
+  });
+  assert.equal(suggestPlanFor(typed).kind, "move");
+  assert.equal(suggestPlanFor(mission({ intent: "I want to open a pharmcy in Bergen" })).kind, "venture");
+});
+
+test("a word in the goal outweighs a word in the success criteria", () => {
+  // Both domains are mentioned; the goal says which one the mission is about.
+  const moving = mission({ intent: "jeg vil flytte til norge", criteria: ["reise tilbake"] });
+  assert.equal(suggestPlanFor(moving).kind, "move");
+  const travelling = mission({ intent: "jeg vil reise til norge", criteria: ["flytte inn hos en venn"] });
+  assert.equal(suggestPlanFor(travelling).kind, "travel");
+});
+
+test("an inflected or prefixed form is the same word, not a different one", () => {
+  assert.equal(suggestPlanFor(mission({ intent: "jeg reiser til japan" })).kind, "travel");
+  // Arabic joins the definite article to the word: السفر for سفر.
+  assert.equal(suggestPlanFor(mission({ intent: "أريد السفر إلى كندا" })).kind, "travel");
+});
+
+test("detection holds across all six languages", () => {
+  const cases = [
+    ["jeg vil åpne ny apotek", "venture"],
+    ["abrir una farmacia", "venture"],
+    ["أريد افتتاح صيدلية في النرويج", "venture"],
+    ["je veux voyager au canada", "travel"],
+    ["ich will Medizin studieren", "study"],
+    ["launch the mobile app", "product"],
+    ["hire a second engineer", "hiring"],
+    ["reduce the time it takes to close the books", "generic"],
+  ];
+  for (const [intent, want] of cases) {
+    assert.equal(suggestPlanFor(mission({ intent })).kind, want, `wrong plan for: ${intent}`);
+  }
+});
+
+test("a single short word is not stretched into a false match", () => {
+  // Fuzzy matching is limited to words of five letters or more, so a two-edit
+  // coincidence between short words cannot invent a domain.
+  assert.equal(suggestPlanFor(mission({ intent: "sort out the recycling rota" })).kind, "generic");
+  assert.equal(suggestPlanFor(mission({ intent: "fix the leaking tap in the kitchen" })).kind, "generic");
+});
