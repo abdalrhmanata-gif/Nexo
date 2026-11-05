@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { LocalizedText } from "./localized-text";
 import {
   buildPublicSearchUrls,
   EVIDENCE_SOURCE_TYPES,
@@ -131,7 +132,7 @@ export function OpportunityEvidencePanel({
     <section className="evidence-ledger" aria-label={`Evidence ledger for ${opportunity.title}`}>
       <div className="evidence-ledger-head">
         <div>
-          <strong>Evidence ledger</strong>
+          <strong><LocalizedText en="Evidence ledger" /></strong>
           <p>{evidenceCount} reviewed note{evidenceCount === 1 ? "" : "s"} · {summary.supports} support · {summary.challenges} counter-signal</p>
         </div>
         <button
@@ -146,9 +147,9 @@ export function OpportunityEvidencePanel({
 
       {opportunity.evidenceUrl && (
         <div className="evidence-legacy">
-          <span>Original reference · not yet reviewed</span>
+          <span><LocalizedText en="Original reference · not yet reviewed" /></span>
           {isHttpSourceUrl(opportunity.evidenceUrl) && (
-            <a href={opportunity.evidenceUrl} target="_blank" rel="noopener noreferrer">Open original source</a>
+            <a href={opportunity.evidenceUrl} target="_blank" rel="noopener noreferrer"><LocalizedText en="Open original source" /></a>
           )}
         </div>
       )}
@@ -169,7 +170,7 @@ export function OpportunityEvidencePanel({
                 <span>Reviewed: {new Date(item.checkedAt).toLocaleDateString()}</span>
               </div>
               {isHttpSourceUrl(item.url) && (
-                <p className="evidence-source-link"><a href={item.url} target="_blank" rel="noopener noreferrer">Open cited source ↗</a></p>
+                <p className="evidence-source-link"><a href={item.url} target="_blank" rel="noopener noreferrer"><LocalizedText en="Open cited source ↗" /></a></p>
               )}
               <button
                 className="evidence-remove"
@@ -194,8 +195,8 @@ export function OpportunityEvidencePanel({
       {expanded && (
         <div className="evidence-research-workspace">
           <div className="evidence-search-actions">
-            <a className="button button-small" href={search.webUrl} target="_blank" rel="noopener noreferrer">Search the web ↗</a>
-            <a className="button button-small button-quiet" href={search.newsUrl} target="_blank" rel="noopener noreferrer">Search news ↗</a>
+            <a className="button button-small" href={search.webUrl} target="_blank" rel="noopener noreferrer"><LocalizedText en="Search the web ↗" /></a>
+            <a className="button button-small button-quiet" href={search.newsUrl} target="_blank" rel="noopener noreferrer"><LocalizedText en="Search news ↗" /></a>
           </div>
           <p className="evidence-search-note">
             Searches open public results in a new tab. No crawler or search API runs inside Zavqera. Read the source yourself, then record the specific observation and whether it supports or challenges the thesis.
@@ -205,48 +206,48 @@ export function OpportunityEvidencePanel({
           </p>
           <form className="form-grid evidence-form" onSubmit={recordEvidence}>
             <div className="field">
-              <label htmlFor={`evidence-url-${opportunity.id}`}>Source URL</label>
+              <label htmlFor={`evidence-url-${opportunity.id}`}><LocalizedText en="Source URL" /></label>
               <input id={`evidence-url-${opportunity.id}`} type="url" inputMode="url" maxLength={500} value={draft.url} onChange={(event) => updateDraft("url", event.target.value)} placeholder="https://…" required />
             </div>
             <div className="field">
-              <label htmlFor={`evidence-title-${opportunity.id}`}>Source title</label>
+              <label htmlFor={`evidence-title-${opportunity.id}`}><LocalizedText en="Source title" /></label>
               <input id={`evidence-title-${opportunity.id}`} maxLength={180} value={draft.title} onChange={(event) => updateDraft("title", event.target.value)} placeholder="Report, article, announcement, or customer signal" required />
             </div>
             <div className="field">
-              <label htmlFor={`evidence-observation-${opportunity.id}`}>What does the source actually say?</label>
+              <label htmlFor={`evidence-observation-${opportunity.id}`}><LocalizedText en="What does the source actually say?" /></label>
               <textarea id={`evidence-observation-${opportunity.id}`} maxLength={1200} value={draft.observation} onChange={(event) => updateDraft("observation", event.target.value)} placeholder="Summarise the relevant claim in your own words. Separate facts from your interpretation." required />
-              <small>Record the specific observation, not a conclusion the source does not support. Avoid confidential or sensitive personal information.</small>
+              <small><LocalizedText en="Record the specific observation, not a conclusion the source does not support. Avoid confidential or sensitive personal information." /></small>
             </div>
             <div className="evidence-form-grid">
               <div className="field">
-                <label htmlFor={`evidence-stance-${opportunity.id}`}>Effect on the thesis</label>
+                <label htmlFor={`evidence-stance-${opportunity.id}`}><LocalizedText en="Effect on the thesis" /></label>
                 <select id={`evidence-stance-${opportunity.id}`} value={draft.stance} onChange={(event) => updateDraft("stance", event.target.value as EvidenceStance)}>
                   {EVIDENCE_STANCES.map((stance) => <option value={stance} key={stance}>{STANCE_LABELS[stance]}</option>)}
                 </select>
               </div>
               <div className="field">
-                <label htmlFor={`evidence-type-${opportunity.id}`}>Source type</label>
+                <label htmlFor={`evidence-type-${opportunity.id}`}><LocalizedText en="Source type" /></label>
                 <select id={`evidence-type-${opportunity.id}`} value={draft.sourceType} onChange={(event) => updateDraft("sourceType", event.target.value as EvidenceSourceType)}>
                   {EVIDENCE_SOURCE_TYPES.map((type) => <option value={type} key={type}>{SOURCE_LABELS[type]}</option>)}
                 </select>
               </div>
               <div className="field">
-                <label htmlFor={`evidence-date-${opportunity.id}`}>Published date <span className="field-optional">optional</span></label>
+                <label htmlFor={`evidence-date-${opportunity.id}`}><LocalizedText en="Published date" /> <span className="field-optional"><LocalizedText en="optional" /></span></label>
                 <input id={`evidence-date-${opportunity.id}`} type="date" value={draft.sourceDate} onChange={(event) => updateDraft("sourceDate", event.target.value)} />
               </div>
               <div className="field">
-                <label htmlFor={`evidence-reliability-${opportunity.id}`}>Your reliability estimate</label>
+                <label htmlFor={`evidence-reliability-${opportunity.id}`}><LocalizedText en="Your reliability estimate" /></label>
                 <select id={`evidence-reliability-${opportunity.id}`} value={draft.reliability} onChange={(event) => updateDraft("reliability", event.target.value)}>
-                  <option value="1">1 — Very low</option>
-                  <option value="2">2 — Low</option>
-                  <option value="3">3 — Moderate</option>
-                  <option value="4">4 — High</option>
-                  <option value="5">5 — Very high</option>
+                  <option value="1"><LocalizedText en="1 — Very low" /></option>
+                  <option value="2"><LocalizedText en="2 — Low" /></option>
+                  <option value="3"><LocalizedText en="3 — Moderate" /></option>
+                  <option value="4"><LocalizedText en="4 — High" /></option>
+                  <option value="5"><LocalizedText en="5 — Very high" /></option>
                 </select>
               </div>
             </div>
             {error && <p className="field-error evidence-error" role="alert">{error}</p>}
-            <button className="button" type="submit">Save evidence note</button>
+            <button className="button" type="submit"><LocalizedText en="Save evidence note" /></button>
           </form>
         </div>
       )}
