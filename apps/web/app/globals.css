@@ -737,8 +737,24 @@ a:hover { color:var(--teal); }
 @media (max-width:1050px) {
   .topbar { align-items:stretch; flex-direction:column; gap:12px; padding:12px 0; }
   .brand { min-width:0; align-self:flex-start; }
-  .primary-nav { width:100%; justify-content:flex-start; gap:6px; }
-  .primary-nav .nav-link { min-height:38px; font-size:12px; }
+  /* Every destination stays on show, but a wrapping nav grew to four or five
+     rows here and pushed the product message off the first screen. One
+     horizontally scrollable row keeps all of them reachable and gives the page
+     back its opening. */
+  /* overflow-x:clip, not hidden: clip contains the scrolling nav without
+     creating a scroll container, so the sticky header keeps sticking.
+     Without it the nav's overflow leaks into the document and the whole page
+     scrolls sideways. */
+  .site-shell { overflow-x:clip; }
+  .primary-nav {
+    width:100%; max-width:100%; min-width:0;
+    justify-content:flex-start; gap:6px;
+    flex-wrap:nowrap; overflow-x:auto; overscroll-behavior-x:contain;
+    scrollbar-width:none; padding-bottom:3px;
+  }
+  .primary-nav::-webkit-scrollbar { display:none; }
+  .primary-nav > * { flex:0 0 auto; }
+  .primary-nav .nav-link { min-height:38px; font-size:12px; white-space:nowrap; }
   .business-metrics { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .business-focus { grid-template-columns:minmax(0,1fr); gap:16px; }
   .business-recent-grid,.workspace-page .grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
@@ -752,13 +768,10 @@ a:hover { color:var(--teal); }
 }
 @media (max-width:620px) {
   .topbar { width:calc(100% - 28px); }
-  .primary-nav { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:stretch; }
-  .primary-nav .nav-link { width:100%; justify-content:flex-start; padding:10px 11px; white-space:normal; }
-  .primary-nav .notification-bell { width:100%; justify-content:flex-start; }
-  .primary-nav .language-switcher { width:100%; }
-  .primary-nav .language-switcher select { width:100%; max-width:none; }
-  .primary-nav > form,.primary-nav > form button { width:100%; }
-  .primary-nav .nav-opportunities { min-height:42px; }
+  .primary-nav .nav-link { padding:9px 10px; }
+  .primary-nav .language-switcher { width:auto; }
+  .primary-nav .language-switcher select { width:auto; max-width:116px; }
+  .primary-nav > form, .primary-nav > form button, .primary-nav .notification-bell { width:auto; }
   .container,.business-dashboard { width:calc(100% - 28px); padding-top:28px; padding-bottom:36px; }
   .footer { width:calc(100% - 28px); }
   .section-heading { align-items:flex-start; flex-direction:column; gap:15px; }
