@@ -5,6 +5,8 @@ import { LocalizedText } from "./localized-text";
 import { NavLink, WorkspaceNavLink } from "./nav-link";
 import { NotificationBell } from "./notification-bell";
 import { ThemeSwitcher } from "./theme-switcher";
+import { isSupabaseConfigured } from "../lib/supabase/config";
+import { createSupabaseServerClient } from "../lib/supabase/server";
 
 function NavIcon({ name }: { name: "search" | "plus" | "business" | "templates" | "pricing" | "workspace" | "opportunities" }) {
   const common = { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true as const };
@@ -19,7 +21,28 @@ function NavIcon({ name }: { name: "search" | "plus" | "business" | "templates" 
   }
 }
 
-export function Shell({ children }: { children: React.ReactNode }) {
+// Every /app route is behind the middleware. Rendering the workspace nav to a
+// signed-out visitor meant each of those links silently bounced them to the
+// sign-in page, which reads as a broken button. The header now follows the
+// session: a visitor gets a short public nav and a clear way in, and only a
+// signed-in user sees the workspace links.
+// Read in the root layout rather than here: Next special-cases the default
+// export of layout.tsx, so an async layout type-checks under the React 18
+// types this project pins, while an async non-page component used as JSX does
+// not reliably.
+export async function readSignedIn(): Promise<boolean> {
+  if (!isSupabaseConfigured()) return false;
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    return Boolean(user);
+  } catch {
+    // Treat an unreadable session as signed out rather than failing the page.
+    return false;
+  }
+}
+
+export function Shell({ children, signedIn = false }: { children: React.ReactNode; signedIn?: boolean }) {
   return (
     <div className="site-shell">
       <header className="topbar">
@@ -29,17 +52,26 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <span className="visually-hidden"><LocalizedText en="Home" nb="Hjem" ar="الرئيسية" /></span>
         </Link>
         <nav className="primary-nav" aria-label="Primary navigation">
-          <Link className="nav-link nav-search" href="/app#mission-search" prefetch={false}><NavIcon name="search" /><LocalizedText en="Search" nb="Søk" ar="بحث" /></Link>
-          <Link className="nav-link nav-new-mission" href="/app/missions/new" prefetch={false}><NavIcon name="plus" /><LocalizedText en="New mission" nb="Nytt oppdrag" ar="مهمة جديدة" /></Link>
-          <NavLink className="nav-link nav-business" href="/app/business"><NavIcon name="business" /><LocalizedText en="Business" nb="Bedrift" ar="الأعمال" /></NavLink>
+          {signedIn && <>
+            <Link className="nav-link nav-search" href="/app#mission-search" prefetch={false}><NavIcon name="search" /><LocalizedText en="Search" nb="Søk" ar="بحث" /></Link>
+            <Link className="nav-link nav-new-mission" href="/app/missions/new" prefetch={false}><NavIcon name="plus" /><LocalizedText en="New mission" nb="Nytt oppdrag" ar="مهمة جديدة" /></Link>
+            <NavLink className="nav-link nav-business" href="/app/business"><NavIcon name="business" /><LocalizedText en="Business" nb="Bedrift" ar="الأعمال" /></NavLink>
+          </>}
           <NavLink className="nav-link nav-templates" href="/templates"><NavIcon name="templates" /><LocalizedText en="Templates" nb="Maler" ar="القوالب" /></NavLink>
           <NavLink className="nav-link nav-pricing" href="/pricing"><NavIcon name="pricing" /><LocalizedText en="Pricing" nb="Priser" ar="الأسعار" /></NavLink>
-          <WorkspaceNavLink />
-          <NavLink href="/app/opportunities" className="nav-link nav-opportunities"><NavIcon name="opportunities" /><LocalizedText en="Opportunity Intelligence" nb="Mulighetsanalyse" ar="تحليل الفرص" /></NavLink>
-          <NotificationBell />
+          {signedIn && <>
+            <WorkspaceNavLink />
+            <NavLink href="/app/opportunities" className="nav-link nav-opportunities"><NavIcon name="opportunities" /><LocalizedText en="Opportunity Intelligence" nb="Mulighetsanalyse" ar="تحليل الفرص" /></NavLink>
+            <NotificationBell />
+          </>}
           <LanguageSwitcher />
           <ThemeSwitcher />
-          <SignOutButton />
+          {signedIn
+            ? <SignOutButton />
+            : <>
+              <Link className="nav-link nav-sign-in" href="/auth/sign-in"><LocalizedText en="Sign in" /></Link>
+              <Link className="button button-small nav-start-free" href="/auth/sign-up"><LocalizedText en="Start free" /></Link>
+            </>}
         </nav>
       </header>
       <main>{children}</main>

@@ -82,7 +82,13 @@ test("notification badge is scoped to workspace routes and pauses in hidden tabs
 test("Supabase browser SDK is loaded only when the user submits an auth action", () => {
   const auth = read("components/auth-form.tsx");
   assert.ok(!auth.includes('import { createSupabaseBrowserClient } from "../lib/supabase/browser"'));
-  assert.equal(auth.split('await import("../lib/supabase/browser")').length - 1, 2);
+  // Assert the invariant rather than a fixed count: the client must never be
+  // constructed without a dynamic import first, however many auth forms the
+  // file grows. A static import would pull the SDK into the initial bundle.
+  const dynamicImports = auth.split('await import("../lib/supabase/browser")').length - 1;
+  const clientUses = auth.split("createSupabaseBrowserClient()").length - 1;
+  assert.ok(dynamicImports >= 2, "expected the SDK to be imported lazily per auth action");
+  assert.equal(dynamicImports, clientUses, "every client construction needs its own lazy import");
   assert.ok(auth.includes("async function submit"));
   assert.ok(auth.includes("async function signOut"));
 });
