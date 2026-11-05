@@ -26,7 +26,12 @@ export async function GET() {
       return Number.isFinite(dueAt) && dueAt <= followUpWindow;
     }).length, 0);
     const waiting = missions.filter((mission) => mission.status === "WAITING").length;
-    return NextResponse.json({ count: waiting + followUps }, { headers: { "Cache-Control": "no-store" } });
+    // A mission that states an outcome and holds no work is the easiest thing
+    // to lose track of, and it was the one thing the badge never counted.
+    const unplanned = missions.filter((mission) =>
+      mission.status !== "COMPLETED"
+      && mission.actions.filter((action) => action.status !== "CANCELLED").length === 0).length;
+    return NextResponse.json({ count: waiting + followUps + unplanned }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
     if (/auth|session|jwt|not authenticated|unauthor/i.test(message)) {

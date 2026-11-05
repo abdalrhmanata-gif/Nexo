@@ -68,14 +68,17 @@ test("language control supports English, Norwegian, Arabic, and right-to-left di
   assert.match(language, /localStorage\.setItem/);
 });
 
-test("notification badge is scoped to workspace routes and pauses in hidden tabs", () => {
+test("notification badge follows the signed-in header everywhere and pauses in hidden tabs", () => {
   const bell = read("components/notification-bell.tsx");
   const shell = read("components/shell.tsx");
   const endpoint = read("app/api/notifications/route.ts");
-  assert.ok(bell.includes("usePathname"));
-  assert.ok(bell.includes('const isWorkspaceRoute = pathname === "/app" || pathname.startsWith("/app/");'));
-  assert.ok(bell.includes("if (!isWorkspaceRoute) return null;"));
-  assert.ok(shell.includes("<NotificationBell />"));
+  // The badge is no longer scoped to /app: a signed-in user reading pricing or
+  // templates could not see that anything needed them. Shell still renders it
+  // only when signed in, which is what keeps it off public pages.
+  assert.ok(!bell.includes("usePathname"), "the badge must not re-introduce route scoping");
+  assert.ok(!bell.includes("isWorkspaceRoute"), "the badge must not re-introduce route scoping");
+  assert.ok(shell.includes("{signedIn && <NotificationBell />}"), "the badge stays behind the session");
+  assert.ok(endpoint.includes("unplanned"), "a mission with no actions must count as needing attention");
   assert.ok(shell.includes("<SignOutButton />"));
   assert.ok(bell.includes('if (document.visibilityState !== "visible") return;'));
   assert.ok(bell.includes('document.addEventListener("visibilitychange"'));
