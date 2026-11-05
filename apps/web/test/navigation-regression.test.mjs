@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import test from "node:test";
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -174,4 +174,29 @@ test("templates prefill the normal review-before-create mission flow", () => {
     assert.match(missionForm, new RegExp(`params\\.${field}`));
   }
   assert.match(templates, /Nothing is created until you review/);
+});
+
+test("every .mjs module imported from TypeScript has a .d.mts declaration", () => {
+  // tsconfig sets allowJs:false with strict:true, so importing an .mjs module
+  // from a .ts/.tsx file fails typecheck (TS7016) unless a declaration sits
+  // beside it. The unit suite happily passes without one, so only CI caught
+  // it — this test moves that failure back to the local run. A .mjs module
+  // that only other .mjs files import needs no declaration, so the check
+  // follows the imports rather than the directory.
+  const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const full = join(dir, entry.name);
+    if (entry.name === "node_modules" || entry.name === ".next") return [];
+    return entry.isDirectory() ? walk(full) : [full];
+  });
+  const sources = walk(webRoot).filter((file) => file.endsWith(".ts") || file.endsWith(".tsx"));
+  const missing = [];
+  for (const file of sources) {
+    const body = readFileSync(file, "utf8");
+    for (const match of body.matchAll(/from "([^"]+\.mjs)"/g)) {
+      const target = resolve(dirname(file), match[1]);
+      const declaration = target.replace(/\.mjs$/, ".d.mts");
+      if (!existsSync(declaration)) missing.push(`${relative(webRoot, file)} -> ${match[1]}`);
+    }
+  }
+  assert.deepEqual(missing, [], "these .mjs imports have no .d.mts declaration, so tsc will fail");
 });
