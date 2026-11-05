@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { LocalizedText } from "./localized-text";
 import type { OpportunityEvidenceItem } from "../lib/evidence-ledger.mjs";
 import type { OpportunityAnalysisReport } from "../lib/opportunity-analysis.mjs";
 
@@ -123,32 +124,32 @@ export function OpportunityAnalysisPanel({
     <section className="opportunity-analysis" aria-label={`AI analysis for ${opportunity.title}`}>
       <div className="analysis-toolbar">
         <div>
-          <p className="eyebrow">Optional AI analyst</p>
-          <p className="action-hint">Challenges assumptions, checks the evidence you recorded, and proposes a measurable test.</p>
+          <p className="eyebrow"><LocalizedText en="Optional AI analyst" /></p>
+          <p className="action-hint"><LocalizedText en="Challenges assumptions, checks the evidence you recorded, and proposes a measurable test." /></p>
         </div>
         <button className="button button-small" type="button" onClick={generateBrief} disabled={loading} aria-busy={loading}>
           {loading ? "Analyzing…" : report ? "Regenerate AI brief" : "Generate AI brief"}
         </button>
       </div>
       <p className="analysis-caution">When enabled, this sends the opportunity and up to {MAX_EVIDENCE_ITEMS} of your most recent evidence notes to the configured AI provider. Zavqera does not fetch the cited URLs. Review every conclusion before acting.</p>
-      {loading && <p className="analysis-status" role="status">Reviewing the supplied evidence and drafting a validation experiment…</p>}
+      {loading && <p className="analysis-status" role="status"><LocalizedText en="Reviewing the supplied evidence and drafting a validation experiment…" /></p>}
       {error && <p className="field-error analysis-error" role="alert">{error}</p>}
       {report && (
         <div className="analysis-report" aria-live="polite">
           <div className="analysis-report-heading">
             <div>
-              <p className="eyebrow">AI Opportunity Brief</p>
+              <p className="eyebrow"><LocalizedText en="AI Opportunity Brief" /></p>
               <h3>{decisionLabel(report.decision)}</h3>
             </div>
             <span className="analysis-score-note">Rule-based score: {score}/100</span>
           </div>
           <p>{report.executiveSummary}</p>
           <div className="analysis-section">
-            <h4>Why this decision?</h4>
+            <h4><LocalizedText en="Why this decision?" /></h4>
             <p>{report.decisionRationale}</p>
           </div>
           <div className="analysis-section">
-            <h4>Signals and conclusions</h4>
+            <h4><LocalizedText en="Signals and conclusions" /></h4>
             {report.claims.length ? (
               <ul className="analysis-list">
                 {report.claims.map((claim, index) => (
@@ -171,10 +172,10 @@ export function OpportunityAnalysisPanel({
                   </li>
                 ))}
               </ul>
-            ) : <p>No source-backed claims were returned. Treat the report as a hypothesis until evidence is added.</p>}
+            ) : <p><LocalizedText en="No source-backed claims were returned. Treat the report as a hypothesis until evidence is added." /></p>}
           </div>
           <div className="analysis-section">
-            <h4>Risks to resolve</h4>
+            <h4><LocalizedText en="Risks to resolve" /></h4>
             {report.risks.length ? (
               <ul className="analysis-list">
                 {report.risks.map((risk, index) => (
@@ -184,32 +185,32 @@ export function OpportunityAnalysisPanel({
                   </li>
                 ))}
               </ul>
-            ) : <p>No explicit risks were returned. Perform an independent risk review.</p>}
+            ) : <p><LocalizedText en="No explicit risks were returned. Perform an independent risk review." /></p>}
           </div>
           <div className="analysis-section">
-            <h4>Critical unknowns</h4>
+            <h4><LocalizedText en="Critical unknowns" /></h4>
             {report.criticalUnknowns.length
               ? <ul className="analysis-list">{report.criticalUnknowns.map((item, index) => <li key={index}>{item}</li>)}</ul>
-              : <p>No critical unknowns were listed; this does not prove that all important facts are known.</p>}
+              : <p><LocalizedText en="No critical unknowns were listed; this does not prove that all important facts are known." /></p>}
           </div>
           <div className="analysis-experiment">
-            <p className="eyebrow">Recommended next experiment</p>
+            <p className="eyebrow"><LocalizedText en="Recommended next experiment" /></p>
             <h4>{report.recommendedExperiment.hypothesis}</h4>
             <ol>{report.recommendedExperiment.steps.map((step, index) => <li key={index}>{step}</li>)}</ol>
-            <p><strong>Metric:</strong> {report.recommendedExperiment.successMetric}</p>
-            <p><strong>Success threshold:</strong> {report.recommendedExperiment.successThreshold}</p>
-            <p><strong>Failure threshold:</strong> {report.recommendedExperiment.failureThreshold}</p>
-            <p><strong>Effort:</strong> {report.recommendedExperiment.estimatedEffort}</p>
-            <p><strong>Cost assumptions:</strong> {report.recommendedExperiment.costAssumptions}</p>
+            <p><strong><LocalizedText en="Metric:" /></strong> {report.recommendedExperiment.successMetric}</p>
+            <p><strong><LocalizedText en="Success threshold:" /></strong> {report.recommendedExperiment.successThreshold}</p>
+            <p><strong><LocalizedText en="Failure threshold:" /></strong> {report.recommendedExperiment.failureThreshold}</p>
+            <p><strong><LocalizedText en="Effort:" /></strong> {report.recommendedExperiment.estimatedEffort}</p>
+            <p><strong><LocalizedText en="Cost assumptions:" /></strong> {report.recommendedExperiment.costAssumptions}</p>
           </div>
           {opportunity.evidenceItems.length > MAX_EVIDENCE_ITEMS && (
             <p className="action-hint">The brief used the {MAX_EVIDENCE_ITEMS} most recent notes. {opportunity.evidenceItems.length - MAX_EVIDENCE_ITEMS} older notes were not sent to the provider.</p>
           )}
           <div className="analysis-mission-draft">
-            <h4>Mission draft</h4>
+            <h4><LocalizedText en="Mission draft" /></h4>
             <p>{report.missionDraft.intent}</p>
-            <p className="action-hint">Nothing is created automatically. You can review and edit the draft before submitting it.</p>
-            <a className="button button-small" href={missionHref(report, score)}>Review as Mission</a>
+            <p className="action-hint"><LocalizedText en="Nothing is created automatically. You can review and edit the draft before submitting it." /></p>
+            <a className="button button-small" href={missionHref(report, score)}><LocalizedText en="Review as Mission" /></a>
           </div>
         </div>
       )}
