@@ -492,6 +492,13 @@ const NB: Record<string, string> = {
   "This mission states an outcome but holds no step that would reach it.":"Dette oppdraget beskriver et mål, men har ingen steg som når det.",
   "Plan it":"Planlegg det",
   "Every mission has at least one step behind it.":"Hvert oppdrag har minst ett steg bak seg.",
+  "A follow-up on this mission is already overdue.":"En oppfølging på dette oppdraget er allerede forfalt.",
+  "A follow-up on this mission falls due within the week.":"En oppfølging på dette oppdraget forfaller denne uken.",
+  "It states an outcome but holds no step that would reach it.":"Det beskriver et mål, men har ingen steg som når det.",
+  "Every step on this mission is still unstarted.":"Alle steg i dette oppdraget er ennå ikke påbegynt.",
+  "Nothing has moved on this mission for two weeks or more.":"Ingenting har skjedd med dette oppdraget på to uker eller mer.",
+  "other mission also needs you.":"annet oppdrag trenger deg også.",
+  "other missions also need you.":"andre oppdrag trenger deg også.",
 };
 const AR: Record<string, string> = {
   "MISSION CONTROL":"مركز التحكم", "Search":"بحث", "New mission":"مهمة جديدة",
@@ -959,6 +966,13 @@ const AR: Record<string, string> = {
   "This mission states an outcome but holds no step that would reach it.":"هذه المهمة تذكر نتيجة لكنها لا تحمل خطوة تبلغها.",
   "Plan it":"خطّط لها",
   "Every mission has at least one step behind it.":"كل مهمة خلفها خطوة واحدة على الأقل.",
+  "A follow-up on this mission is already overdue.":"متابعة في هذه المهمة متأخرة بالفعل.",
+  "A follow-up on this mission falls due within the week.":"متابعة في هذه المهمة تستحق خلال الأسبوع.",
+  "It states an outcome but holds no step that would reach it.":"تذكر نتيجة لكنها لا تحمل خطوة تبلغها.",
+  "Every step on this mission is still unstarted.":"كل خطوات هذه المهمة لم تبدأ بعد.",
+  "Nothing has moved on this mission for two weeks or more.":"لم يتحرك شيء في هذه المهمة منذ أسبوعين أو أكثر.",
+  "other mission also needs you.":"مهمة أخرى تحتاجك أيضاً.",
+  "other missions also need you.":"مهام أخرى تحتاجك أيضاً.",
 };
 const ES: Record<string, string> = {
   "Search":"Buscar", "New mission":"Nueva misión", "Business":"Empresa", "Templates":"Plantillas",
@@ -1430,6 +1444,13 @@ const ES: Record<string, string> = {
   "This mission states an outcome but holds no step that would reach it.":"Esta misión plantea un resultado pero no tiene ningún paso que lo alcance.",
   "Plan it":"Planificarla",
   "Every mission has at least one step behind it.":"Cada misión tiene al menos un paso detrás.",
+  "A follow-up on this mission is already overdue.":"Un seguimiento de esta misión ya está vencido.",
+  "A follow-up on this mission falls due within the week.":"Un seguimiento de esta misión vence esta semana.",
+  "It states an outcome but holds no step that would reach it.":"Plantea un resultado pero no tiene ningún paso que lo alcance.",
+  "Every step on this mission is still unstarted.":"Todos los pasos de esta misión siguen sin empezar.",
+  "Nothing has moved on this mission for two weeks or more.":"Nada se ha movido en esta misión desde hace dos semanas o más.",
+  "other mission also needs you.":"otra misión también te necesita.",
+  "other missions also need you.":"otras misiones también te necesitan.",
 };
 const FR: Record<string, string> = {
   "Search":"Rechercher", "New mission":"Nouvelle mission", "Business":"Entreprise", "Templates":"Modèles",
@@ -1901,6 +1922,13 @@ const FR: Record<string, string> = {
   "This mission states an outcome but holds no step that would reach it.":"Cette mission énonce un résultat mais ne contient aucune étape pour l'atteindre.",
   "Plan it":"La planifier",
   "Every mission has at least one step behind it.":"Chaque mission a au moins une étape derrière elle.",
+  "A follow-up on this mission is already overdue.":"Un suivi de cette mission est déjà en retard.",
+  "A follow-up on this mission falls due within the week.":"Un suivi de cette mission arrive à échéance cette semaine.",
+  "It states an outcome but holds no step that would reach it.":"Elle énonce un résultat mais ne contient aucune étape pour l'atteindre.",
+  "Every step on this mission is still unstarted.":"Toutes les étapes de cette mission n'ont pas encore commencé.",
+  "Nothing has moved on this mission for two weeks or more.":"Rien n'a bougé sur cette mission depuis deux semaines ou plus.",
+  "other mission also needs you.":"autre mission a aussi besoin de vous.",
+  "other missions also need you.":"autres missions ont aussi besoin de vous.",
 };
 const DE: Record<string, string> = {
   "Search":"Suchen", "New mission":"Neue Mission", "Business":"Unternehmen", "Templates":"Vorlagen",
@@ -2372,6 +2400,13 @@ const DE: Record<string, string> = {
   "This mission states an outcome but holds no step that would reach it.":"Diese Mission nennt ein Ergebnis, enthält aber keinen Schritt dorthin.",
   "Plan it":"Planen",
   "Every mission has at least one step behind it.":"Jede Mission hat mindestens einen Schritt hinterlegt.",
+  "A follow-up on this mission is already overdue.":"Eine Nachfassung zu dieser Mission ist bereits überfällig.",
+  "A follow-up on this mission falls due within the week.":"Eine Nachfassung zu dieser Mission wird diese Woche fällig.",
+  "It states an outcome but holds no step that would reach it.":"Sie nennt ein Ergebnis, enthält aber keinen Schritt dorthin.",
+  "Every step on this mission is still unstarted.":"Alle Schritte dieser Mission sind noch nicht begonnen.",
+  "Nothing has moved on this mission for two weeks or more.":"Seit zwei Wochen oder länger hat sich an dieser Mission nichts bewegt.",
+  "other mission also needs you.":"weitere Mission braucht Sie ebenfalls.",
+  "other missions also need you.":"weitere Missionen brauchen Sie ebenfalls.",
 };
 
 export const DICTIONARIES: Record<AppLanguage, Record<string, string>> = {
