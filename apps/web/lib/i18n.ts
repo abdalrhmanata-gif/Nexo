@@ -479,6 +479,14 @@ const NB: Record<string, string> = {
   "Needs attention":"Krever oppmerksomhet",
   "Why:":"Hvorfor:",
   "Based on this mission’s saved state:":"Basert på oppdragets lagrede tilstand:",
+  "Based on what you have typed so far. Nothing is saved until you create the mission.":"Basert på det du har skrevet så langt. Ingenting lagres før du oppretter oppdraget.",
+  "Add these as first steps":"Legg til som første steg",
+  "Add the success criteria":"Legg til suksesskriteriene",
+  "Those are already in the field.":"De står allerede i feltet.",
+  "step added to first steps.":"steg lagt til i første steg.",
+  "steps added to first steps.":"steg lagt til i første steg.",
+  "criterion added.":"kriterium lagt til.",
+  "criteria added.":"kriterier lagt til.",
 };
 const AR: Record<string, string> = {
   "MISSION CONTROL":"مركز التحكم", "Search":"بحث", "New mission":"مهمة جديدة",
@@ -933,6 +941,14 @@ const AR: Record<string, string> = {
   "Needs attention":"يتطلب انتباهاً",
   "Why:":"السبب:",
   "Based on this mission’s saved state:":"بناءً على الحالة المحفوظة لهذه المهمة:",
+  "Based on what you have typed so far. Nothing is saved until you create the mission.":"بناءً على ما كتبته حتى الآن. لا يُحفظ شيء قبل أن تُنشئ المهمة.",
+  "Add these as first steps":"أضِفها كخطوات أولى",
+  "Add the success criteria":"أضِف معايير النجاح",
+  "Those are already in the field.":"هذه موجودة في الحقل بالفعل.",
+  "step added to first steps.":"خطوة أُضيفت إلى الخطوات الأولى.",
+  "steps added to first steps.":"خطوات أُضيفت إلى الخطوات الأولى.",
+  "criterion added.":"معيار أُضيف.",
+  "criteria added.":"معايير أُضيفت.",
 };
 const ES: Record<string, string> = {
   "Search":"Buscar", "New mission":"Nueva misión", "Business":"Empresa", "Templates":"Plantillas",
@@ -1391,6 +1407,14 @@ const ES: Record<string, string> = {
   "Needs attention":"Requiere atención",
   "Why:":"Por qué:",
   "Based on this mission’s saved state:":"Según el estado guardado de esta misión:",
+  "Based on what you have typed so far. Nothing is saved until you create the mission.":"Según lo que has escrito hasta ahora. No se guarda nada hasta que crees la misión.",
+  "Add these as first steps":"Añadir como primeros pasos",
+  "Add the success criteria":"Añadir los criterios de éxito",
+  "Those are already in the field.":"Ya están en el campo.",
+  "step added to first steps.":"paso añadido a los primeros pasos.",
+  "steps added to first steps.":"pasos añadidos a los primeros pasos.",
+  "criterion added.":"criterio añadido.",
+  "criteria added.":"criterios añadidos.",
 };
 const FR: Record<string, string> = {
   "Search":"Rechercher", "New mission":"Nouvelle mission", "Business":"Entreprise", "Templates":"Modèles",
@@ -1849,6 +1873,14 @@ const FR: Record<string, string> = {
   "Needs attention":"Nécessite une attention",
   "Why:":"Pourquoi :",
   "Based on this mission’s saved state:":"D'après l'état enregistré de cette mission :",
+  "Based on what you have typed so far. Nothing is saved until you create the mission.":"D'après ce que vous avez écrit jusqu'ici. Rien n'est enregistré avant la création de la mission.",
+  "Add these as first steps":"Ajouter comme premières étapes",
+  "Add the success criteria":"Ajouter les critères de réussite",
+  "Those are already in the field.":"Ils sont déjà dans le champ.",
+  "step added to first steps.":"étape ajoutée aux premières étapes.",
+  "steps added to first steps.":"étapes ajoutées aux premières étapes.",
+  "criterion added.":"critère ajouté.",
+  "criteria added.":"critères ajoutés.",
 };
 const DE: Record<string, string> = {
   "Search":"Suchen", "New mission":"Neue Mission", "Business":"Unternehmen", "Templates":"Vorlagen",
@@ -2307,6 +2339,14 @@ const DE: Record<string, string> = {
   "Needs attention":"Erfordert Aufmerksamkeit",
   "Why:":"Warum:",
   "Based on this mission’s saved state:":"Nach dem gespeicherten Zustand dieser Mission:",
+  "Based on what you have typed so far. Nothing is saved until you create the mission.":"Basierend auf dem bisher Geschriebenen. Nichts wird gespeichert, bevor Sie die Mission anlegen.",
+  "Add these as first steps":"Als erste Schritte hinzufügen",
+  "Add the success criteria":"Erfolgskriterien hinzufügen",
+  "Those are already in the field.":"Die stehen bereits im Feld.",
+  "step added to first steps.":"Schritt zu den ersten Schritten hinzugefügt.",
+  "steps added to first steps.":"Schritte zu den ersten Schritten hinzugefügt.",
+  "criterion added.":"Kriterium hinzugefügt.",
+  "criteria added.":"Kriterien hinzugefügt.",
 };
 
 export const DICTIONARIES: Record<AppLanguage, Record<string, string>> = {

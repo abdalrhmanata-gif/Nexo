@@ -94,3 +94,20 @@ test("no proposed step asserts a fact about law, price or market", () => {
     }
   }
 });
+
+test("the planner accepts a half-typed draft, which is what the new-mission form passes", () => {
+  // The form calls this on every keystroke with no id, no status and no saved
+  // actions. It must answer on the intent alone and must never throw.
+  assert.equal(suggestPlanFor({ name: "", intent: "jeg vil åpne ny apotek", criteria: [], actions: [] }).kind, "venture");
+  assert.equal(suggestPlanFor({ name: "åpne apotek" }).kind, "venture");
+  assert.equal(suggestPlanFor({}), null);
+  assert.equal(suggestPlanFor({ intent: "" }), null);
+  assert.doesNotThrow(() => suggestPlanFor({ name: undefined, intent: undefined, criteria: undefined }));
+});
+
+test("a plan is recognised from the name alone, before an intent is typed", () => {
+  // Someone types the mission name first; the suggestion should not wait.
+  const plan = suggestPlanFor({ name: "Open a pharmacy in Bergen", intent: "" });
+  assert.equal(plan.kind, "venture");
+  assert.equal(plan.licensed, true);
+});

@@ -1,6 +1,16 @@
-import type { Mission } from "./view-models";
-
 export type PlanKind = "venture" | "hiring" | "product" | "generic";
+
+/**
+ * What the planner actually reads. Narrower than Mission on purpose: the new
+ * mission form calls it with a half-typed draft that has no id, no status and
+ * no saved actions yet.
+ */
+export type PlannableMission = {
+  name?: string;
+  intent?: string;
+  criteria?: string[];
+  actions?: { title: string; status: string }[];
+};
 
 export type SuggestedPlan = {
   kind: PlanKind;
@@ -11,9 +21,9 @@ export type SuggestedPlan = {
 };
 
 /** A mission that states an outcome but holds no work that would move it. */
-export declare function planIsThin(mission: Mission): boolean;
+export declare function planIsThin(mission: PlannableMission): boolean;
 
 /** Null when the mission says too little to propose anything useful about. */
-export declare function suggestPlanFor(mission: Mission): SuggestedPlan | null;
+export declare function suggestPlanFor(mission: PlannableMission): SuggestedPlan | null;
 
-export declare function planHeadline(kind: PlanKind): string;
+export declare function planHeadline(kind: PlanKind | string): string;
