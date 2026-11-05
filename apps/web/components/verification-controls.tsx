@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { LocalizedText } from "./localized-text";
 import { useRouter } from "next/navigation";
 import type { MissionVerification } from "../lib/view-models";
 
@@ -64,6 +65,6 @@ export function VerificationControls({ missionId, verification }: { missionId: s
     }
   }
 
-  if (verification?.status === "VERIFIED") return <div className="form-grid"><form onSubmit={commit}><div className="field"><label htmlFor="result">Outcome result</label><textarea id="result" name="result" required /></div><div className="field"><label htmlFor="score">Success score</label><input id="score" name="score" type="number" min="0" max="1" step="0.01" defaultValue="1" /></div><button className="button" type="submit" disabled={busy}>Commit verified outcome</button></form>{message && <div className="field-error" role="alert">{message}</div>}</div>;
-  return <div className="form-grid"><form onSubmit={verify}><div className="field"><label htmlFor="criteria">Verification criteria</label><textarea id="criteria" name="criteria" required /></div><div className="field"><label htmlFor="evidence">Evidence summary</label><textarea id="evidence" name="evidence" required /></div><div className="field"><label htmlFor="confidence">Confidence</label><input id="confidence" name="confidence" type="number" min="0" max="1" step="0.01" defaultValue="1" /></div><button className="button" type="submit" disabled={busy}>Record verification</button></form>{message && <div className="field-error" role="alert">{message}</div>}</div>;
+  if (verification?.status === "VERIFIED") return <div className="form-grid"><form onSubmit={commit}><div className="field"><label htmlFor="result"><LocalizedText en="Outcome result" /></label><textarea id="result" name="result" required /></div><div className="field"><label htmlFor="score"><LocalizedText en="Success score" /></label><input id="score" name="score" type="number" min="0" max="1" step="0.01" defaultValue="1" /></div><button className="button" type="submit" disabled={busy}><LocalizedText en="Commit verified outcome" /></button></form>{message && <div className="field-error" role="alert">{message}</div>}</div>;
+  return <div className="form-grid"><form onSubmit={verify}><div className="field"><label htmlFor="criteria"><LocalizedText en="Verification criteria" /></label><textarea id="criteria" name="criteria" required /></div><div className="field"><label htmlFor="evidence"><LocalizedText en="Evidence summary" /></label><textarea id="evidence" name="evidence" required /></div><div className="field"><label htmlFor="confidence"><LocalizedText en="Confidence" /></label><input id="confidence" name="confidence" type="number" min="0" max="1" step="0.01" defaultValue="1" /></div><button className="button" type="submit" disabled={busy}><LocalizedText en="Record verification" /></button></form>{message && <div className="field-error" role="alert">{message}</div>}</div>;
 }

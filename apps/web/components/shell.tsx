@@ -52,18 +52,21 @@ export function Shell({ children, signedIn = false }: { children: React.ReactNod
           <span className="visually-hidden"><LocalizedText en="Home" nb="Hjem" ar="الرئيسية" /></span>
         </Link>
         <nav className="primary-nav" aria-label="Primary navigation">
-          {signedIn && <>
-            <Link className="nav-link nav-search" href="/app#mission-search" prefetch={false}><NavIcon name="search" /><LocalizedText en="Search" nb="Søk" ar="بحث" /></Link>
-            <Link className="nav-link nav-new-mission" href="/app/missions/new" prefetch={false}><NavIcon name="plus" /><LocalizedText en="New mission" nb="Nytt oppdrag" ar="مهمة جديدة" /></Link>
-            <NavLink className="nav-link nav-business" href="/app/business"><NavIcon name="business" /><LocalizedText en="Business" nb="Bedrift" ar="الأعمال" /></NavLink>
-          </>}
+          {/* The whole product is on show to a first-time visitor, because a
+              half-empty header makes the product look smaller than it is. The
+              workspace links still need a session, so for a signed-out visitor
+              they carry ?next= and the sign-in page names where they were
+              heading, instead of dropping them on an unexplained form. */}
+          <Link className="nav-link nav-search" href={signedIn ? "/app#mission-search" : "/auth/sign-in?next=%2Fapp"} prefetch={false}><NavIcon name="search" /><LocalizedText en="Search" nb="Søk" ar="بحث" /></Link>
+          <Link className="nav-link nav-new-mission" href={signedIn ? "/app/missions/new" : "/auth/sign-in?next=%2Fapp%2Fmissions%2Fnew"} prefetch={false}><NavIcon name="plus" /><LocalizedText en="New mission" nb="Nytt oppdrag" ar="مهمة جديدة" /></Link>
+          <NavLink className="nav-link nav-business" href={signedIn ? "/app/business" : "/auth/sign-in?next=%2Fapp%2Fbusiness"}><NavIcon name="business" /><LocalizedText en="Business" nb="Bedrift" ar="الأعمال" /></NavLink>
           <NavLink className="nav-link nav-templates" href="/templates"><NavIcon name="templates" /><LocalizedText en="Templates" nb="Maler" ar="القوالب" /></NavLink>
           <NavLink className="nav-link nav-pricing" href="/pricing"><NavIcon name="pricing" /><LocalizedText en="Pricing" nb="Priser" ar="الأسعار" /></NavLink>
-          {signedIn && <>
-            <WorkspaceNavLink />
-            <NavLink href="/app/opportunities" className="nav-link nav-opportunities"><NavIcon name="opportunities" /><LocalizedText en="Opportunity Intelligence" nb="Mulighetsanalyse" ar="تحليل الفرص" /></NavLink>
-            <NotificationBell />
-          </>}
+          {signedIn
+            ? <WorkspaceNavLink />
+            : <Link className="nav-link workspace-nav" href="/auth/sign-in?next=%2Fapp" prefetch={false}><NavIcon name="workspace" /><LocalizedText en="Workspace" nb="Arbeidsområde" ar="مساحة العمل" /></Link>}
+          <NavLink href={signedIn ? "/app/opportunities" : "/auth/sign-in?next=%2Fapp%2Fopportunities"} className="nav-link nav-opportunities"><NavIcon name="opportunities" /><LocalizedText en="Opportunity Intelligence" nb="Mulighetsanalyse" ar="تحليل الفرص" /></NavLink>
+          {signedIn && <NotificationBell />}
           <LanguageSwitcher />
           <ThemeSwitcher />
           {signedIn

@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { LocalizedText } from "./localized-text";
 import { useRouter } from "next/navigation";
 
 export function AddActionForm({ missionId }: { missionId: string }) {
@@ -41,7 +42,7 @@ export function AddActionForm({ missionId }: { missionId: string }) {
 
   return <form onSubmit={submit} className="add-action">
     <div className="action-control">
-      <label className="visually-hidden" htmlFor="new-action">Add an action</label>
+      <label className="visually-hidden" htmlFor="new-action"><LocalizedText en="Add an action" /></label>
       <input
         id="new-action"
         name="title"
@@ -52,7 +53,7 @@ export function AddActionForm({ missionId }: { missionId: string }) {
       />
       <button className="button button-small" type="submit" disabled={busy}>{busy ? "Adding…" : "Add action"}</button>
     </div>
-    <p className="action-hint">Plans change. Add a step whenever you discover one.</p>
+    <p className="action-hint"><LocalizedText en="Plans change. Add a step whenever you discover one." /></p>
     {message && <p className="field-error" role="alert">{message}</p>}
   </form>;
 }

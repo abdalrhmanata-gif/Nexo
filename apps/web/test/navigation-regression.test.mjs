@@ -10,8 +10,15 @@ const read = (path) => readFileSync(join(webRoot, path), "utf8");
 test("global navigation and auth cross-links do not prefetch unopened pages", () => {
   const shell = read("components/shell.tsx");
   assert.match(shell, /<Link className="brand" href="\/" prefetch=\{false\}>/);
-  assert.match(shell, /href="\/app#mission-search"[^>]*prefetch=\{false\}/);
-  assert.match(shell, /href="\/app\/missions\/new"[^>]*prefetch=\{false\}/);
+  // The workspace links take a conditional href so a signed-out visitor is
+  // sent to sign-in with ?next= instead of a silent bounce, so assert the
+  // invariant — every Link mentioning these routes opts out of prefetch —
+  // rather than a literal attribute order.
+  for (const route of ["/app#mission-search", "/app/missions/new"]) {
+    const link = shell.split("\n").find((line) => line.includes(route) && line.includes("<Link"));
+    assert.ok(link, `no Link found for ${route}`);
+    assert.ok(link.includes("prefetch={false}"), `${route} must not prefetch`);
+  }
   const nav = read("components/nav-link.tsx");
   assert.match(nav, /<Link href=\{href\} prefetch=\{false\}/);
   const signIn = read("app/auth/sign-in/page.tsx");
