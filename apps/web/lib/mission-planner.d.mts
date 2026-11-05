@@ -1,4 +1,4 @@
-export type PlanKind = "venture" | "hiring" | "product" | "generic";
+export type PlanKind = "venture" | "travel" | "move" | "study" | "hiring" | "product" | "generic";
 
 /**
  * What the planner actually reads. Narrower than Mission on purpose: the new
@@ -19,9 +19,6 @@ export type SuggestedPlan = {
   steps: string[];
   criteria: string[];
 };
-
-/** A mission that states an outcome but holds no work that would move it. */
-export declare function planIsThin(mission: PlannableMission): boolean;
 
 /** Null when the mission says too little to propose anything useful about. */
 export declare function suggestPlanFor(mission: PlannableMission): SuggestedPlan | null;
