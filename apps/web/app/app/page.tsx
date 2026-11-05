@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LocalizedText } from "../../components/localized-text";
+import { getTranslate } from "../../lib/i18n-server";
 import { MissionCard } from "../../components/mission-card";
 import { localMockMissionRepository } from "../../lib/local-mock-repository";
 import { isSupabaseConfigured } from "../../lib/supabase/config";
@@ -16,6 +17,7 @@ export default async function WorkspacePage({
 }: {
   searchParams: Promise<{ error?: string; status?: string; q?: string }>;
 }) {
+  const t = await getTranslate();
   const repository = isSupabaseConfigured() ? await createSupabaseMissionRepository() : localMockMissionRepository;
   const missions = await repository.listMissions();
   const { error, status, q } = await searchParams;
@@ -34,7 +36,7 @@ export default async function WorkspacePage({
   ].some((value) => value.toLocaleLowerCase().includes(normalizedQuery)));
 
   return <div className="container workspace-page">
-    {errorMessage && <div className="field-error" role="alert">{errorMessage}</div>}
+    {errorMessage && <div className="field-error" role="alert">{t(errorMessage)}</div>}
     <div className="section-heading">
       <div>
         <p className="eyebrow"><LocalizedText en="Workspace" /></p>
@@ -48,20 +50,20 @@ export default async function WorkspacePage({
       <div>
         <p className="eyebrow"><LocalizedText en="Next up" /></p>
         <h2 id="attention-heading">{waiting.length
-          ? `${waiting.length} ${waiting.length === 1 ? "mission needs" : "missions need"} your input`
+          ? `${waiting.length} ${t(waiting.length === 1 ? "mission needs your input" : "missions need your input")}`
           : unstarted.length
-            ? `${unstarted.length} ${unstarted.length === 1 ? "mission has" : "missions have"} no actions yet`
-            : "Nothing is waiting on you"}</h2>
+            ? `${unstarted.length} ${t(unstarted.length === 1 ? "mission has no actions yet" : "missions have no actions yet")}`
+            : t("Nothing is waiting on you")}</h2>
         <p>{waiting.length
-          ? "Work is paused until you resolve the open decision."
+          ? t("Work is paused until you resolve the open decision.")
           : unstarted.length
-            ? "Add the work each mission needs before it can move."
-            : "Your active missions are moving within their stated boundaries."}</p>
+            ? t("Add the work each mission needs before it can move.")
+            : t("Your active missions are moving within their stated boundaries.")}</p>
       </div>
       {(waiting[0] ?? unstarted[0]) && <Link className="button button-quiet" href={`/app/missions/${(waiting[0] ?? unstarted[0]).id}`}><LocalizedText en="Open mission" /></Link>}
     </section>}
 
-    <section className="workspace-quick-actions" aria-label="Quick actions">
+    <section className="workspace-quick-actions" aria-label={t("Quick actions")}>
       <Link className="workspace-quick-action" href="/app/missions/new">
         <span className="workspace-quick-icon quick-icon-create" aria-hidden="true">＋</span>
         <span><strong><LocalizedText en="Create a mission" /></strong><small><LocalizedText en="Start with a concrete outcome" /></small></span>
@@ -88,14 +90,14 @@ export default async function WorkspacePage({
       <form className="mission-search-form" method="get" action="/app" role="search">
         {selectedStatus && <input type="hidden" name="status" value={selectedStatus} />}
         <label className="visually-hidden" htmlFor="mission-search-input"><LocalizedText en="Search missions" /></label>
-        <input id="mission-search-input" name="q" type="search" defaultValue={query} maxLength={120} placeholder="Search missions…" autoComplete="off" />
+        <input id="mission-search-input" name="q" type="search" defaultValue={query} maxLength={120} placeholder={t("Search missions…")} autoComplete="off" />
         <button className="button" type="submit"><LocalizedText en="Search" /></button>
         {query && <Link className="button button-quiet" href={selectedStatus ? `/app?status=${selectedStatus}#mission-search` : "/app#mission-search"}><LocalizedText en="Clear" /></Link>}
       </form>
       {query && <p className="mission-search-result" aria-live="polite"><strong>{visibleMissions.length}</strong> {visibleMissions.length === 1 ? "mission" : "missions"} found for “{query}”.</p>}
     </section>
 
-    {missions.length > 0 && <div className="stats workspace-stats" aria-label="Mission status filters">
+    {missions.length > 0 && <div className="stats workspace-stats" aria-label={t("Mission status filters")}>
       <Link className={`stat${!selectedStatus ? " stat-selected" : ""}`} href={query ? `/app?q=${encodeURIComponent(query)}#mission-search` : "/app"} aria-current={!selectedStatus ? "page" : undefined}>
         <strong>{missions.length}</strong><span><LocalizedText en="All missions" /></span>
       </Link>
@@ -111,15 +113,15 @@ export default async function WorkspacePage({
     </div>}
 
     <div className="section-heading">
-      <div><h2>{selectedStatus ? `${selectedStatus[0]}${selectedStatus.slice(1).toLowerCase()} missions` : "Your missions"}</h2><p><LocalizedText en="Most recently updated first." /></p></div>
+      <div><h2>{selectedStatus ? `${selectedStatus[0]}${selectedStatus.slice(1).toLowerCase()} ${t("missions")}` : t("Your missions")}</h2><p><LocalizedText en="Most recently updated first." /></p></div>
       {selectedStatus && <Link className="button button-quiet" href={query ? `/app?q=${encodeURIComponent(query)}#mission-search` : "/app"}><LocalizedText en="Show all" /></Link>}
     </div>
     {visibleMissions.length
       ? <div className="grid">{visibleMissions.map((mission) => <MissionCard key={mission.id} mission={mission} />)}</div>
       : <div className="empty-state">
-        <h2>{query ? "No matching missions" : "No missions yet"}</h2>
-        <p>{query ? "Try a different search term or clear the search to see your missions." : "A mission records an outcome you intend to reach and the work required to reach it. Create your first one to begin."}</p>
-        <Link className="button" href={query ? "/app#mission-search" : "/app/missions/new"}>{query ? "Clear search" : "Create mission"}</Link>
+        <h2>{query ? t("No matching missions") : t("No missions yet")}</h2>
+        <p>{query ? t("Try a different search term or clear the search to see your missions.") : t("A mission records an outcome you intend to reach and the work required to reach it. Create your first one to begin.")}</p>
+        <Link className="button" href={query ? "/app#mission-search" : "/app/missions/new"}>{query ? t("Clear search") : t("Create mission")}</Link>
       </div>}
   </div>;
 }
