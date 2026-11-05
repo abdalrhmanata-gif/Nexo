@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LocalizedText } from "../../components/localized-text";
 import { getTranslate } from "../../lib/i18n-server";
+import { rankByAttention } from "../../lib/mission-attention.mjs";
 import { fill } from "../../lib/i18n";
 import { MissionCard } from "../../components/mission-card";
 import { localMockMissionRepository } from "../../lib/local-mock-repository";
@@ -29,6 +30,9 @@ export default async function WorkspacePage({
   const active = missions.filter((mission) => mission.status === "ACTIVE");
   const completed = missions.filter((mission) => mission.status === "COMPLETED");
   const unstarted = missions.filter((mission) => mission.actionsTotal === 0);
+  // Ranked by how stuck each mission is, not by what was touched last.
+  const ranked = rankByAttention(missions);
+  const attention = ranked[0];
   const selectedStatus = ["ACTIVE", "WAITING", "COMPLETED"].includes(status ?? "") ? status : "";
   const selectedMissions = selectedStatus ? missions.filter((mission) => mission.status === selectedStatus) : missions;
   const normalizedQuery = query.toLocaleLowerCase();
@@ -50,18 +54,18 @@ export default async function WorkspacePage({
     {missions.length > 0 && <section className="attention-panel" aria-labelledby="attention-heading">
       <div>
         <p className="eyebrow"><LocalizedText en="Next up" /></p>
-        <h2 id="attention-heading">{waiting.length
-          ? `${waiting.length} ${t(waiting.length === 1 ? "mission needs your input" : "missions need your input")}`
-          : unstarted.length
-            ? `${unstarted.length} ${t(unstarted.length === 1 ? "mission has no actions yet" : "missions have no actions yet")}`
-            : t("Nothing is waiting on you")}</h2>
-        <p>{waiting.length
-          ? t("Work is paused until you resolve the open decision.")
-          : unstarted.length
-            ? t("Add the work each mission needs before it can move.")
-            : t("Your active missions are moving within their stated boundaries.")}</p>
+        {/* Name the mission and say what earned it the top place. "3 missions
+            need your input" told nobody which one, or why. */}
+        <h2 id="attention-heading">{attention ? attention.mission.name : t("Nothing is waiting on you")}</h2>
+        <p>{attention
+          ? t(attention.reason ?? "")
+          : t("Your active missions are moving within their stated boundaries.")}</p>
+        {ranked.length > 1 && <p className="attention-more">
+          {`${ranked.length - 1} `}
+          {t(ranked.length === 2 ? "other mission also needs you." : "other missions also need you.")}
+        </p>}
       </div>
-      {(waiting[0] ?? unstarted[0]) && <Link className="button button-quiet" href={`/app/missions/${(waiting[0] ?? unstarted[0]).id}`}><LocalizedText en="Open mission" /></Link>}
+      {attention && <Link className="button button-quiet" href={`/app/missions/${attention.mission.id}`}><LocalizedText en="Open mission" /></Link>}
     </section>}
 
     <section className="workspace-quick-actions" aria-label={t("Quick actions")}>
