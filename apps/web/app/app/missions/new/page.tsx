@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LocalizedText } from "../../../../components/localized-text";
+import { getTranslate } from "../../../../lib/i18n-server";
 import { redirect } from "next/navigation";
 import { createSupabaseMissionRepository } from "../../../../lib/supabase/mission-repository";
 import { composeMissionObjective } from "../../../../lib/mission-content.mjs";
@@ -37,19 +38,20 @@ function SubmitButton() {
 }
 
 export default async function NewMissionPage({ searchParams }: { searchParams: Promise<NewMissionSearchParams> }) {
+  const t = await getTranslate();
   const params = await searchParams;
   const fromOpportunity = params.fromOpportunity === "1";
   return <div className="container"><div className="form">
     <p className="eyebrow"><Link href="/app"><LocalizedText en="Workspace" /></Link> / <Link href="/app/opportunities"><LocalizedText en="Opportunity Intelligence" /></Link> <LocalizedText en="/ New mission" /></p>
-    <h1 className="detail-title">{fromOpportunity ? "Validate the opportunity." : "Shape the intent."}</h1>
-    <p className="detail-intent">{fromOpportunity ? "Review the evidence and assumptions before committing resources." : "Define what good looks like before anything is allowed to move."}</p>
+    <h1 className="detail-title">{fromOpportunity ? t("Validate the opportunity.") : t("Shape the intent.")}</h1>
+    <p className="detail-intent">{fromOpportunity ? t("Review the evidence and assumptions before committing resources.") : t("Define what good looks like before anything is allowed to move.")}</p>
     <div className="form-note"><LocalizedText en="Your mission is saved to your private workspace. Ownership comes from your authenticated session." /></div>
     {fromOpportunity && <div className="opportunity-form-origin"><strong><LocalizedText en="Started from Opportunity Intelligence." /></strong> <LocalizedText en="The priority score is a rule-based decision aid, not a verified forecast. Review every field and confirm the source before creating the Mission." /></div>}
     <form className="form-grid" action={createMission} noValidate>
-      <div className="field"><label htmlFor="name"><LocalizedText en="Mission name" /></label><input id="name" name="name" defaultValue={params.name ?? ""} maxLength={100} placeholder="e.g. Renew my passport" required /></div>
-      <div className="field"><label htmlFor="intent"><LocalizedText en="Intent" /></label><textarea id="intent" name="intent" defaultValue={params.intent ?? ""} maxLength={3000} placeholder="What should this mission help you accomplish?" required /><small><LocalizedText en="Use plain language. Keep the decision you want to make visible." /></small></div>
-      <div className="field"><label htmlFor="criteria"><LocalizedText en="Success criteria" /></label><textarea id="criteria" name="criteria" defaultValue={params.criteria ?? ""} maxLength={2000} placeholder="One criterion per line" required /><small><LocalizedText en="How you will know this mission succeeded. One per line." /></small></div>
-      <div className="field"><label htmlFor="actions"><LocalizedText en="First steps" /> <span className="field-optional"><LocalizedText en="optional" /></span></label><textarea id="actions" name="actions" defaultValue={params.actions ?? ""} maxLength={2000} placeholder="One step per line" /><small><LocalizedText en="The work you already know about, in the order you would do it. You can add more at any time. Leave empty to start from your success criteria." /></small></div>
+      <div className="field"><label htmlFor="name"><LocalizedText en="Mission name" /></label><input id="name" name="name" defaultValue={params.name ?? ""} maxLength={100} placeholder={t("e.g. Renew my passport")} required /></div>
+      <div className="field"><label htmlFor="intent"><LocalizedText en="Intent" /></label><textarea id="intent" name="intent" defaultValue={params.intent ?? ""} maxLength={3000} placeholder={t("What should this mission help you accomplish?")} required /><small><LocalizedText en="Use plain language. Keep the decision you want to make visible." /></small></div>
+      <div className="field"><label htmlFor="criteria"><LocalizedText en="Success criteria" /></label><textarea id="criteria" name="criteria" defaultValue={params.criteria ?? ""} maxLength={2000} placeholder={t("One criterion per line")} required /><small><LocalizedText en="How you will know this mission succeeded. One per line." /></small></div>
+      <div className="field"><label htmlFor="actions"><LocalizedText en="First steps" /> <span className="field-optional"><LocalizedText en="optional" /></span></label><textarea id="actions" name="actions" defaultValue={params.actions ?? ""} maxLength={2000} placeholder={t("One step per line")} /><small><LocalizedText en="The work you already know about, in the order you would do it. You can add more at any time. Leave empty to start from your success criteria." /></small></div>
       <SubmitButton />
       <Link className="button button-quiet" href={fromOpportunity ? "/app/opportunities" : "/app"}><LocalizedText en="Cancel" /></Link>
     </form>

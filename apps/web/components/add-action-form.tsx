@@ -1,10 +1,11 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { LocalizedText } from "./localized-text";
+import { LocalizedText, useTranslate } from "./localized-text";
 import { useRouter } from "next/navigation";
 
 export function AddActionForm({ missionId }: { missionId: string }) {
+  const t = useTranslate();
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [busy, setBusy] = useState(false);
@@ -48,7 +49,7 @@ export function AddActionForm({ missionId }: { missionId: string }) {
         name="title"
         value={title}
         disabled={busy}
-        placeholder="What needs to happen next?"
+        placeholder={t("What needs to happen next?")}
         onChange={(event) => setTitle(event.target.value)}
       />
       <button className="button button-small" type="submit" disabled={busy}>{busy ? "Adding…" : "Add action"}</button>

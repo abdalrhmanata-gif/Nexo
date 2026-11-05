@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LocalizedText } from "../components/localized-text";
+import { getTranslate } from "../lib/i18n-server";
 
 const capabilities = [
   {
@@ -31,7 +32,8 @@ function CapabilityIcon({ kind }: { kind: string }) {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 2.5 5.2 5.8.9-4.2 4.1 1 5.8-5.1-2.7-5.1 2.7 1-5.8-4.2-4.1 5.8-.9L12 3Z"/></svg>;
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  const t = await getTranslate();
   return <div className="landing-page">
     <section className="landing-hero">
       <div className="landing-hero-copy">
@@ -45,7 +47,7 @@ export default function HomePage() {
         <div className="landing-trust-line"><span aria-hidden="true">✓</span> <LocalizedText en="Review before action. Clear boundaries. No false certainty." /></div>
         <Link className="landing-template-link" href="/templates"><LocalizedText en="Browse mission templates" /> <span aria-hidden="true">→</span></Link>
       </div>
-      <div className="landing-visual" role="group" aria-label="Illustrative view of a governed Mission">
+      <div className="landing-visual" role="group" aria-label={t("Illustrative view of a governed Mission")}>
         <div className="landing-visual-top"><span className="landing-window-dots"><i/><i/><i/></span><span><LocalizedText en="MISSION CONTROL" /></span><span className="landing-preview-tag"><LocalizedText en="Illustrative view" /></span></div>
         <div className="landing-visual-heading"><span className="landing-mission-symbol" aria-hidden="true">◎</span><div><p><LocalizedText en="ACTIVE MISSION" /></p><strong><LocalizedText en="Validate a new opportunity" /></strong></div><span className="status status-active"><LocalizedText en="Active" /></span></div>
         <p className="landing-visual-intent"><LocalizedText en="Outcome: decide whether this idea is worth pursuing, using evidence and a small test." /></p>
@@ -57,7 +59,7 @@ export default function HomePage() {
       </div>
     </section>
 
-    <section className="landing-proof-strip" aria-label="Product principles">
+    <section className="landing-proof-strip" aria-label={t("Product principles")}>
       <div><span className="landing-proof-icon">01</span><span><strong><LocalizedText en="Explicit goals" /></strong><small><LocalizedText en="Know what success means" /></small></span></div>
       <div><span className="landing-proof-icon">02</span><span><strong><LocalizedText en="Visible work" /></strong><small><LocalizedText en="See actions and blockers" /></small></span></div>
       <div><span className="landing-proof-icon">03</span><span><strong><LocalizedText en="Human oversight" /></strong><small><LocalizedText en="Keep decisions in your hands" /></small></span></div>
