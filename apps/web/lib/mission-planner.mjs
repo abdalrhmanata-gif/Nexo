@@ -36,6 +36,28 @@ const LICENSED = [
   "bank", "insurance", "forsikring", "بنك", "تأمين", "taxi", "transport",
 ];
 
+const TRAVEL_WORDS = [
+  "travel", "trip", "visit", "holiday", "vacation", "journey", "fly", "flight", "tour",
+  "reise", "ferie", "tur", "besøke", "flytur",
+  "سفر", "أسافر", "اسافر", "رحلة", "زيارة", "عطلة", "سياحة",
+  "viajar", "viaje", "vacaciones", "voyage", "voyager", "vacances",
+  "reisen", "urlaub", "flug",
+];
+
+const MOVE_WORDS = [
+  "move to", "relocate", "emigrate", "immigrate", "residence permit",
+  "flytte", "utvandre", "oppholdstillatelse",
+  "انتقال", "الهجرة", "هجرة", "إقامة", "اقامة",
+  "mudarse", "emigrar", "déménager", "umziehen", "auswandern",
+];
+
+const STUDY_WORDS = [
+  "study", "degree", "university", "course", "certification", "exam", "learn",
+  "studere", "studium", "universitet", "kurs", "eksamen", "lære",
+  "دراسة", "أدرس", "ادرس", "جامعة", "شهادة", "دورة", "امتحان", "تعلم",
+  "estudiar", "universidad", "curso", "étudier", "université", "studieren", "prüfung",
+];
+
 const PRODUCT_WORDS = [
   "app", "product", "feature", "platform", "website", "service", "saas",
   "produkt", "nettside", "tjeneste", "منتج", "تطبيق", "منصة", "موقع", "خدمة",
@@ -56,23 +78,6 @@ function haystack(mission) {
 
 function mentions(text, words) {
   return words.some((word) => text.includes(word.toLocaleLowerCase()));
-}
-
-/**
- * A plan is thin when the mission states an outcome but nothing that would move
- * it: no actions at all, or a single action that only restates the mission's own
- * name. That is exactly the state a freshly created mission is in.
- */
-export function planIsThin(mission) {
-  const actions = mission?.actions ?? [];
-  const live = actions.filter((action) => action.status !== "CANCELLED");
-  if (live.length === 0) return true;
-  if (live.length > 1) return false;
-  const only = (live[0]?.title ?? "").trim().toLocaleLowerCase();
-  const name = (mission?.name ?? "").trim().toLocaleLowerCase();
-  if (!only) return true;
-  // One action that merely echoes the mission name is not a plan.
-  return only === name || name.includes(only) || only.includes(name);
 }
 
 const VENTURE_STEPS = [
@@ -107,6 +112,36 @@ const HIRING_STEPS = [
   "Set the date you will decide, with or without the perfect candidate",
 ];
 
+const TRAVEL_STEPS = [
+  "Write the dates, and what has to be true before you can leave on them",
+  "Check what each destination requires from someone with your passport, and how long it takes to get",
+  "Price the whole trip — travel, stay, moving around, eating, and a margin for the unplanned",
+  "Book the one thing that is hardest to change, and build the rest around it",
+  "List what must be arranged at home while you are away",
+  "Write down what you would do if a leg of it falls through",
+];
+
+const TRAVEL_CRITERIA = [
+  "Entry requirements are confirmed from the official source for your passport",
+  "The full cost is written down, including a margin for the unplanned",
+];
+
+const MOVE_STEPS = [
+  "Confirm what residence permits your situation needs, and the processing time for each",
+  "Work out what the first twelve months cost before any income arrives",
+  "Check what your qualifications are worth there, and what recognition takes",
+  "Decide what happens to what you hold now — home, contracts, commitments",
+  "Set the date you decide, and what evidence would make you stay",
+];
+
+const STUDY_STEPS = [
+  "Write what you will be able to do at the end that you cannot do now",
+  "Compare the real entry requirements, cost and length of the options",
+  "Check what the qualification is accepted for where you intend to use it",
+  "Plan the hours per week against what your life already holds",
+  "Set the checkpoint where you confirm it is still worth continuing",
+];
+
 const GENERIC_STEPS = [
   "Write what success looks like in one sentence you could measure",
   "List what must be true for this to work, and mark which you have not checked",
@@ -136,6 +171,15 @@ export function suggestPlanFor(mission) {
       criteria: VENTURE_CRITERIA,
     };
   }
+  if (mentions(text, MOVE_WORDS)) {
+    return { kind: "move", licensed: false, steps: MOVE_STEPS, criteria: GENERIC_CRITERIA };
+  }
+  if (mentions(text, TRAVEL_WORDS)) {
+    return { kind: "travel", licensed: false, steps: TRAVEL_STEPS, criteria: TRAVEL_CRITERIA };
+  }
+  if (mentions(text, STUDY_WORDS)) {
+    return { kind: "study", licensed: false, steps: STUDY_STEPS, criteria: GENERIC_CRITERIA };
+  }
   if (mentions(text, HIRING_WORDS)) {
     return { kind: "hiring", licensed: false, steps: HIRING_STEPS, criteria: GENERIC_CRITERIA };
   }
@@ -151,6 +195,9 @@ export function planHeadline(kind) {
     case "venture": return "Opening something takes these seven steps";
     case "hiring": return "Hiring well starts with these five steps";
     case "product": return "Before building, settle these five things";
+    case "travel": return "A trip holds together on these six";
+    case "move": return "Moving countries turns on these five";
+    case "study": return "Committing years to study starts with these five";
     default: return "A first plan for this outcome";
   }
 }

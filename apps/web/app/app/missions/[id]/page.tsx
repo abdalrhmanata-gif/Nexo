@@ -5,7 +5,9 @@ import { localMockMissionRepository } from "../../../../lib/local-mock-repositor
 import { isSupabaseConfigured } from "../../../../lib/supabase/config";
 import { createSupabaseMissionRepository } from "../../../../lib/supabase/mission-repository";
 import { actionStatusHint, actionStatusLabel, formatFollowUp, missionStatusLabel, nextStepFor, verificationReadiness } from "../../../../lib/mission-content.mjs";
-import { planIsThin, planHeadline, suggestPlanFor } from "../../../../lib/mission-planner.mjs";
+import { planHeadline, suggestPlanFor } from "../../../../lib/mission-planner.mjs";
+import { critiqueMission, planIsThin } from "../../../../lib/mission-critique.mjs";
+import { fill } from "../../../../lib/i18n";
 import { SuggestedPlan } from "../../../../components/suggested-plan";
 import { getTranslate } from "../../../../lib/i18n-server";
 import { StatusPill } from "../../../../components/shell";
@@ -33,6 +35,10 @@ export default async function MissionDetailPage({
   // A stated outcome with no work behind it is the moment the product is
   // least useful, so that is where it offers a first plan.
   const suggested = planIsThin(mission) ? suggestPlanFor(mission) : null;
+  // Plan health only ever read lifecycle fields, so it reported "no issues"
+  // for a mission whose criterion and only step were the same three words.
+  const critique = critiqueMission(mission);
+  const healthy = intelligence.planHealth.healthy && critique.length === 0;
 
   return <div className="container">
     <p className="eyebrow"><Link href="/app"><LocalizedText en="Workspace" /></Link> <LocalizedText en="/ Mission detail" /></p>
@@ -78,10 +84,15 @@ export default async function MissionDetailPage({
 
         <section className="card" aria-labelledby="plan-health-heading">
           <p className="eyebrow"><LocalizedText en="Plan health" /></p>
-          <h2 id="plan-health-heading">{intelligence.planHealth.healthy ? t("No issues detected") : t("Needs attention")}</h2>
-          {intelligence.planHealth.healthy
+          <h2 id="plan-health-heading">{healthy ? t("No issues detected") : t("Needs attention")}</h2>
+          {healthy
             ? <p className="detail-intent"><LocalizedText en="The saved actions and lifecycle do not show a known planning issue." /></p>
-            : <ul className="list">{intelligence.planHealth.findings.map((finding) => <li key={finding.code}>{finding.message}</li>)}</ul>}
+            : <ul className="list">
+              {critique.map((finding) => <li key={`${finding.code}:${finding.quote ?? ""}`} className={finding.severity === "high" ? "finding-high" : undefined}>
+                {finding.quote ? fill(t(finding.message), { text: finding.quote }) : t(finding.message)}
+              </li>)}
+              {intelligence.planHealth.findings.map((finding) => <li key={finding.code}>{finding.message}</li>)}
+            </ul>}
         </section>
 
         <section className="card">

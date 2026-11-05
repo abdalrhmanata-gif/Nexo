@@ -1,35 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { planHeadline, planIsThin, suggestPlanFor } from "../lib/mission-planner.mjs";
+import { planHeadline, suggestPlanFor } from "../lib/mission-planner.mjs";
 
 const mission = (over = {}) => ({
   name: "", intent: "", criteria: [], actions: [], ...over,
 });
 const action = (title, status = "PENDING") => ({ id: title, title, status, version: 1, followUpAt: null });
-
-test("a mission with no actions has a thin plan", () => {
-  assert.equal(planIsThin(mission({ name: "Open a pharmacy" })), true);
-});
-
-test("a single action that only echoes the mission name is still a thin plan", () => {
-  // This is the exact state a mission lands in when the same words are typed
-  // into the name, the criterion and the first action.
-  assert.equal(planIsThin(mission({ name: "bra apotek", actions: [action("bra apotek")] })), true);
-  assert.equal(planIsThin(mission({ name: "Open a pharmacy", actions: [action("pharmacy")] })), true);
-});
-
-test("a mission with real distinct work is not thin", () => {
-  const m = mission({
-    name: "Open a pharmacy",
-    actions: [action("Confirm the licence requirements"), action("Model the running costs")],
-  });
-  assert.equal(planIsThin(m), false);
-});
-
-test("cancelled actions do not count as a plan", () => {
-  const m = mission({ name: "Open a pharmacy", actions: [action("Something", "CANCELLED")] });
-  assert.equal(planIsThin(m), true);
-});
 
 test("opening a pharmacy is recognised as a venture, and as licensed", () => {
   const plan = suggestPlanFor(mission({ name: "jeg vil åpne ny apotek", intent: "to åpne min apotek i norge" }));
@@ -77,7 +53,7 @@ test("a mission that says almost nothing gets no plan rather than noise", () => 
 });
 
 test("every plan kind has a headline", () => {
-  for (const kind of ["venture", "hiring", "product", "generic"]) {
+  for (const kind of ["venture", "travel", "move", "study", "hiring", "product", "generic"]) {
     assert.equal(typeof planHeadline(kind), "string");
     assert.ok(planHeadline(kind).length > 0);
   }
@@ -110,4 +86,20 @@ test("a plan is recognised from the name alone, before an intent is typed", () =
   const plan = suggestPlanFor({ name: "Open a pharmacy in Bergen", intent: "" });
   assert.equal(plan.kind, "venture");
   assert.equal(plan.licensed, true);
+});
+
+test("travel, moving and studying are recognised, each with its own plan", () => {
+  assert.equal(suggestPlanFor(mission({ intent: "jeg vil reise til usa og canada" })).kind, "travel");
+  assert.equal(suggestPlanFor(mission({ intent: "I want to travel to Japan" })).kind, "travel");
+  assert.equal(suggestPlanFor(mission({ intent: "أريد السفر إلى كندا" })).kind, "travel");
+  assert.equal(suggestPlanFor(mission({ intent: "jeg vil flytte til Norge" })).kind, "move");
+  assert.equal(suggestPlanFor(mission({ intent: "أريد دراسة الطب" })).kind, "study");
+});
+
+test("a trip plan asks about entry requirements without claiming what they are", () => {
+  const plan = suggestPlanFor(mission({ intent: "travel to the usa and canada" }));
+  assert.equal(plan.kind, "travel");
+  assert.ok(plan.steps.some((step) => /requires from someone with your passport/.test(step)));
+  assert.doesNotMatch(plan.steps.join(" "), /\b(you need a visa|visa-free|no visa)\b/i,
+    "the planner must not state what any country requires");
 });

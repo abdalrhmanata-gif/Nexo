@@ -3,7 +3,7 @@ import { isSupabaseConfigured } from "../../../lib/supabase/config";
 import { createSupabaseMissionRepository } from "../../../lib/supabase/mission-repository";
 import { localMockMissionRepository } from "../../../lib/local-mock-repository";
 import { LocalizedText } from "../../../components/localized-text";
-import { planIsThin } from "../../../lib/mission-planner.mjs";
+import { planIsThin } from "../../../lib/mission-critique.mjs";
 
 export default async function NotificationsPage() {
   const repository = isSupabaseConfigured()
