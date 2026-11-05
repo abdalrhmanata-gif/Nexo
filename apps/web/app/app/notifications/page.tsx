@@ -3,6 +3,7 @@ import { isSupabaseConfigured } from "../../../lib/supabase/config";
 import { createSupabaseMissionRepository } from "../../../lib/supabase/mission-repository";
 import { localMockMissionRepository } from "../../../lib/local-mock-repository";
 import { LocalizedText } from "../../../components/localized-text";
+import { planIsThin } from "../../../lib/mission-planner.mjs";
 
 export default async function NotificationsPage() {
   const repository = isSupabaseConfigured()
@@ -24,6 +25,10 @@ export default async function NotificationsPage() {
       overdue: Date.parse(action.followUpAt as string) < now,
     })))
     .sort((a, b) => Date.parse(a.dueAt) - Date.parse(b.dueAt));
+  // The badge counts these, so the page has to explain them. A mission that
+  // states an outcome and holds no work is the easiest one to lose, and it
+  // never appears under "waiting" or "due" because it has nothing to be late.
+  const unplanned = missions.filter((mission) => mission.status !== "COMPLETED" && planIsThin(mission));
 
   return <div className="container notifications-page">
     <section className="section-heading">
@@ -32,7 +37,7 @@ export default async function NotificationsPage() {
         <h1><LocalizedText en="Notifications" nb="Varsler" ar="الإشعارات" /></h1>
         <p><LocalizedText en="Missions and follow-ups that need your attention." nb="Oppdrag og oppfølginger som krever oppmerksomhet." ar="المهام والمتابعات التي تتطلب انتباهك." /></p>
       </div>
-      <span className="notification-summary"><strong>{waiting.length + followUps.length}</strong> <LocalizedText en="need attention" nb="krever oppmerksomhet" ar="تحتاج إلى اهتمام" /></span>
+      <span className="notification-summary"><strong>{waiting.length + followUps.length + unplanned.length}</strong> <LocalizedText en="need attention" nb="krever oppmerksomhet" ar="تحتاج إلى اهتمام" /></span>
     </section>
 
     <section className="card notification-section">
@@ -58,6 +63,20 @@ export default async function NotificationsPage() {
         </div>
       </li>)}</ul> : <p className="detail-intent"><LocalizedText en="No follow-up tasks are overdue or due in the next 7 days." nb="Ingen oppfølgingsoppgaver er forfalt eller forfaller de neste 7 dagene." ar="لا توجد متابعات متأخرة أو مستحقة خلال الأيام السبعة القادمة." /></p>}
     </section>
+    <section className="card notification-section">
+      <p className="eyebrow"><LocalizedText en="Nothing planned" /></p>
+      <h2><LocalizedText en="Missions with no work behind them" /></h2>
+      {unplanned.length ? <ul className="list">{unplanned.map((mission) => <li key={mission.id}>
+        <div className="notification-item">
+          <div>
+            <strong>{mission.name}</strong>
+            <p className="action-hint"><LocalizedText en="This mission states an outcome but holds no step that would reach it." /></p>
+          </div>
+          <Link className="button button-small" href={`/app/missions/${mission.id}`}><LocalizedText en="Plan it" /></Link>
+        </div>
+      </li>)}</ul> : <p className="detail-intent"><LocalizedText en="Every mission has at least one step behind it." /></p>}
+    </section>
+
     <p><Link className="button button-quiet" href="/app"><LocalizedText en="Back to workspace" nb="Tilbake til arbeidsområdet" ar="العودة إلى مساحة العمل" /></Link></p>
   </div>;
 }

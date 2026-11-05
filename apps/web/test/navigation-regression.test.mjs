@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import test from "node:test";
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -68,14 +68,17 @@ test("language control supports English, Norwegian, Arabic, and right-to-left di
   assert.match(language, /localStorage\.setItem/);
 });
 
-test("notification badge is scoped to workspace routes and pauses in hidden tabs", () => {
+test("notification badge follows the signed-in header everywhere and pauses in hidden tabs", () => {
   const bell = read("components/notification-bell.tsx");
   const shell = read("components/shell.tsx");
   const endpoint = read("app/api/notifications/route.ts");
-  assert.ok(bell.includes("usePathname"));
-  assert.ok(bell.includes('const isWorkspaceRoute = pathname === "/app" || pathname.startsWith("/app/");'));
-  assert.ok(bell.includes("if (!isWorkspaceRoute) return null;"));
-  assert.ok(shell.includes("<NotificationBell />"));
+  // The badge is no longer scoped to /app: a signed-in user reading pricing or
+  // templates could not see that anything needed them. Shell still renders it
+  // only when signed in, which is what keeps it off public pages.
+  assert.ok(!bell.includes("usePathname"), "the badge must not re-introduce route scoping");
+  assert.ok(!bell.includes("isWorkspaceRoute"), "the badge must not re-introduce route scoping");
+  assert.ok(shell.includes("{signedIn && <NotificationBell />}"), "the badge stays behind the session");
+  assert.ok(endpoint.includes("unplanned"), "a mission with no actions must count as needing attention");
   assert.ok(shell.includes("<SignOutButton />"));
   assert.ok(bell.includes('if (document.visibilityState !== "visible") return;'));
   assert.ok(bell.includes('document.addEventListener("visibilitychange"'));
@@ -171,4 +174,44 @@ test("templates prefill the normal review-before-create mission flow", () => {
     assert.match(missionForm, new RegExp(`params\\.${field}`));
   }
   assert.match(templates, /Nothing is created until you review/);
+});
+
+test("every .mjs module imported from TypeScript has a .d.mts declaration", () => {
+  // tsconfig sets allowJs:false with strict:true, so importing an .mjs module
+  // from a .ts/.tsx file fails typecheck (TS7016) unless a declaration sits
+  // beside it. The unit suite happily passes without one, so only CI caught
+  // it — this test moves that failure back to the local run. A .mjs module
+  // that only other .mjs files import needs no declaration, so the check
+  // follows the imports rather than the directory.
+  const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const full = join(dir, entry.name);
+    if (entry.name === "node_modules" || entry.name === ".next") return [];
+    return entry.isDirectory() ? walk(full) : [full];
+  });
+  const sources = walk(webRoot).filter((file) => file.endsWith(".ts") || file.endsWith(".tsx"));
+  const missing = [];
+  for (const file of sources) {
+    const body = readFileSync(file, "utf8");
+    for (const match of body.matchAll(/from "([^"]+\.mjs)"/g)) {
+      const target = resolve(dirname(file), match[1]);
+      const declaration = target.replace(/\.mjs$/, ".d.mts");
+      if (!existsSync(declaration)) missing.push(`${relative(webRoot, file)} -> ${match[1]}`);
+    }
+  }
+  assert.deepEqual(missing, [], "these .mjs imports have no .d.mts declaration, so tsc will fail");
+});
+
+test("every category the badge counts is a category the notifications page explains", () => {
+  // The badge and the page are two readings of the same question. When the
+  // badge learned to count missions with no work, the page still showed only
+  // "waiting" and "due" — so a user would have seen a number with nothing
+  // behind it, which is the exact complaint this product keeps earning.
+  const endpoint = read("app/api/notifications/route.ts");
+  const page = read("app/app/notifications/page.tsx");
+  const counted = endpoint.match(/const (waiting|followUps|unplanned) =/g) ?? [];
+  assert.ok(counted.length >= 3, "expected the badge to count at least three categories");
+  for (const name of ["waiting", "followUps", "unplanned"]) {
+    assert.ok(endpoint.includes(`const ${name} =`), `badge no longer counts ${name}`);
+    assert.ok(page.includes(`${name}.length`), `the page does not account for ${name}`);
+  }
 });

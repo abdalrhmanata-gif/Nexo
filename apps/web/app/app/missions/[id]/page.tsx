@@ -5,6 +5,9 @@ import { localMockMissionRepository } from "../../../../lib/local-mock-repositor
 import { isSupabaseConfigured } from "../../../../lib/supabase/config";
 import { createSupabaseMissionRepository } from "../../../../lib/supabase/mission-repository";
 import { actionStatusHint, actionStatusLabel, formatFollowUp, missionStatusLabel, nextStepFor, verificationReadiness } from "../../../../lib/mission-content.mjs";
+import { planIsThin, planHeadline, suggestPlanFor } from "../../../../lib/mission-planner.mjs";
+import { SuggestedPlan } from "../../../../components/suggested-plan";
+import { getTranslate } from "../../../../lib/i18n-server";
 import { StatusPill } from "../../../../components/shell";
 import { VerificationControls } from "../../../../components/verification-controls";
 import { MissionMutationControls } from "../../../../components/mission-mutation-controls";
@@ -17,6 +20,7 @@ export default async function MissionDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const t = await getTranslate();
   const repository = isSupabaseConfigured() ? await createSupabaseMissionRepository() : localMockMissionRepository;
   const mission = await repository.getMission((await params).id);
   if (!mission) return <div className="container"><p className="eyebrow"><LocalizedText en="Mission unavailable" /></p><h1 className="detail-title"><LocalizedText en="We could not find that mission." /></h1><p className="detail-intent"><LocalizedText en="It may have been deleted, or it belongs to another workspace." /></p><Link className="button" href="/app"><LocalizedText en="Back to workspace" /></Link></div>;
@@ -26,6 +30,9 @@ export default async function MissionDetailPage({
   const outcome = mission.outcomes[0];
   const readiness = verificationReadiness(mission);
   const intelligence = missionIntelligenceFor(mission);
+  // A stated outcome with no work behind it is the moment the product is
+  // least useful, so that is where it offers a first plan.
+  const suggested = planIsThin(mission) ? suggestPlanFor(mission) : null;
 
   return <div className="container">
     <p className="eyebrow"><Link href="/app"><LocalizedText en="Workspace" /></Link> <LocalizedText en="/ Mission detail" /></p>
@@ -57,13 +64,21 @@ export default async function MissionDetailPage({
             <span className="next-step-label">{intelligence.nextAction.nextAction}</span>
             <span className="next-step-detail">{intelligence.nextAction.reason}</span>
           </p>
-          {intelligence.nextAction.blockingCondition && <p className="action-hint">Why: {intelligence.nextAction.blockingCondition}</p>}
-          <p className="action-hint">Based on this mission’s saved state: {intelligence.nextAction.currentState}.</p>
+          {intelligence.nextAction.blockingCondition && <p className="action-hint">{t("Why:")} {intelligence.nextAction.blockingCondition}</p>}
+          <p className="action-hint">{t("Based on this mission’s saved state:")} {intelligence.nextAction.currentState}.</p>
         </section>
+
+        {suggested && <SuggestedPlan
+          missionId={mission.id}
+          headline={planHeadline(suggested.kind)}
+          steps={suggested.steps}
+          criteria={suggested.criteria}
+          licensed={suggested.licensed}
+        />}
 
         <section className="card" aria-labelledby="plan-health-heading">
           <p className="eyebrow"><LocalizedText en="Plan health" /></p>
-          <h2 id="plan-health-heading">{intelligence.planHealth.healthy ? "No issues detected" : "Needs attention"}</h2>
+          <h2 id="plan-health-heading">{intelligence.planHealth.healthy ? t("No issues detected") : t("Needs attention")}</h2>
           {intelligence.planHealth.healthy
             ? <p className="detail-intent"><LocalizedText en="The saved actions and lifecycle do not show a known planning issue." /></p>
             : <ul className="list">{intelligence.planHealth.findings.map((finding) => <li key={finding.code}>{finding.message}</li>)}</ul>}
