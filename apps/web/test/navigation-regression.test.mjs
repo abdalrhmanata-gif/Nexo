@@ -367,3 +367,19 @@ test("no dictionary declares the same key twice", () => {
     assert.deepEqual([...duplicates], [], `dictionary ${name} declares a key twice`);
   }
 });
+
+test("the open interest endpoint cannot be used to fill the database", () => {
+  // record_plan_interest must stay callable by anon — the people worth hearing
+  // from have not signed up — and it deliberately records nothing about the
+  // caller, so no per-person rate limit is available. A daily ceiling needs
+  // none, and bounds the worst case in advance.
+  const cap = readFileSync(
+    join(webRoot, "../../supabase/migrations/20261106120000_plan_interest_daily_cap.sql"), "utf8");
+  assert.match(cap, /v_today >= 500/, "the function must stop accepting rows past a daily ceiling");
+  assert.doesNotMatch(cap, /x-forwarded-for|ip_address|user_agent/i,
+    "a rate limit must not be bought by starting to record who the caller is");
+
+  const form = read("components/plan-interest.tsx");
+  assert.match(form, /name="company"/, "a honeypot field catches the scripts that fill every input");
+  assert.match(form, /aria-hidden="true"/, "the honeypot must be hidden from assistive technology too");
+});
