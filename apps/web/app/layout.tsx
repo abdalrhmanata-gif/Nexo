@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Shell, readSignedIn } from "../components/shell";
+import { PageMetrics } from "../components/page-metrics";
 import { getLanguage, getTranslate } from "../lib/i18n-server";
 
 export const metadata: Metadata = { title: "ZAVQERA Mission Control", description: "Structure AI-assisted work into explicit Missions, track progress, and review evidence before committing to outcomes." };
@@ -28,7 +29,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
       </head>
-      <body><Shell signedIn={signedIn} navLabel={t("Primary navigation")}>{children}</Shell></body>
+      <body>
+        <Shell signedIn={signedIn} navLabel={t("Primary navigation")}>{children}</Shell>
+        <PageMetrics />
+      </body>
     </html>
   );
 }

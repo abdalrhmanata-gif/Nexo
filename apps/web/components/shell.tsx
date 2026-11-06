@@ -78,7 +78,15 @@ export function Shell({ children, signedIn = false, navLabel = "Primary navigati
         </nav>
       </header>
       <main>{children}</main>
-      <footer className="footer"><LocalizedText en="A calm control plane for bounded AI work." nb="Et oversiktlig kontrollsenter for avgrenset KI-arbeid." ar="مركز تحكم واضح للعمل بالذكاء الاصطناعي ضمن حدود محددة." /></footer>
+      <footer className="footer">
+        <span><LocalizedText en="A calm control plane for bounded AI work." nb="Et oversiktlig kontrollsenter for avgrenset KI-arbeid." ar="مركز تحكم واضح للعمل بالذكاء الاصطناعي ضمن حدود محددة." /></span>
+        {/* Reachable from every page, which is what makes them findable at the
+            moment someone wants them: before they sign up. */}
+        <span className="footer-links">
+          <Link href="/privacy" prefetch={false}><LocalizedText en="Privacy" /></Link>
+          <Link href="/terms" prefetch={false}><LocalizedText en="Terms" /></Link>
+        </span>
+      </footer>
     </div>
   );
 }
