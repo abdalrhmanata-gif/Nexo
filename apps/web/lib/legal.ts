@@ -30,6 +30,22 @@ export const LEGAL = {
   ],
 } as const;
 
+/** A value still carrying its bracketed marker has not been filled in. */
+export function isPlaceholder(value: string): boolean {
+  return /^\[.*\]$/.test(value.trim());
+}
+
+/**
+ * The legal pages are published as soon as the site is. Until the controller's
+ * own details are filled in they would otherwise show a raw bracket to any
+ * visitor, which reads as a broken page rather than an unfinished one. The
+ * pages check this and say plainly that the notice is not yet in force.
+ */
+export function legalDetailsPending(): boolean {
+  return [LEGAL.controllerName, LEGAL.controllerAddress, LEGAL.privacyEmail, LEGAL.supportEmail]
+    .some(isPlaceholder);
+}
+
 export type Processor = {
   name: string;
   role: string;

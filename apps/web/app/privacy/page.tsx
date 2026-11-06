@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { LocalizedText } from "../../components/localized-text";
-import { LEGAL, PROCESSORS, PURPOSES } from "../../lib/legal";
+import { LEGAL, PROCESSORS, PURPOSES, legalDetailsPending } from "../../lib/legal";
 
 // Deliberately English only, and the page says so. A mistranslated data or
 // liability clause binds a reader to something nobody intended, and this is
@@ -26,6 +26,11 @@ export default function PrivacyPage() {
       long it is kept, and what you can require of us. It is given under Articles 13 and 14 of the General Data
       Protection Regulation as it applies in Norway through the Personal Data Act (personopplysningsloven).
     </p>
+    {legalDetailsPending() && <p className="legal-pending" role="status">
+      <strong>This document is not yet in force.</strong> The service is not open to users, and the
+      operator&rsquo;s own details below are still unfilled — anything shown in square brackets is a
+      placeholder, not a value. It will be completed, and dated, before anyone is invited to create an account.
+    </p>}
     <p className="legal-meta">Last updated: {LEGAL.lastUpdated} · English only — see “Language” below</p>
 
     <section>

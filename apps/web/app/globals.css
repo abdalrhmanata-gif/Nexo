@@ -44,6 +44,8 @@ main { flex:1; }.footer { width:min(1120px, calc(100% - 40px)); margin:0 auto; p
 .legal-page section { margin-top:32px; padding-top:22px; border-top:1px solid var(--line); }
 .legal-page p { color:var(--muted); }
 .legal-page .legal-lead { font-size:17px; color:var(--ink); }
+.legal-pending { margin:0 0 18px; padding:14px 16px; border:1px solid var(--orange); border-radius:8px; color:var(--ink); font-size:14px; }
+.legal-pending strong { display:block; margin-bottom:4px; }
 .legal-page .legal-meta { font-size:13px; }
 .legal-page code { padding:2px 5px; border:1px solid var(--line); border-radius:4px; font-size:13px; unicode-bidi:plaintext; }
 .legal-page .list li { color:var(--muted); }
