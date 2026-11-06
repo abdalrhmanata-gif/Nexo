@@ -1,10 +1,26 @@
 name: ZAVQERA W21 Isolated Browser E2E
 
+# main is the branch Netlify builds for production. This workflow ran only on
+# a feature branch that has since been merged and abandoned, so the strongest
+# verification in this repository — an authenticated browser run against a
+# real, disposable Supabase stack — was never exercised on the deployed code.
+#
+# It references no secrets and reaches no hosted environment, so a pull
+# request trigger exposes nothing: there is nothing for an author's code to
+# read.
 on:
   workflow_dispatch:
   push:
     branches:
+      - "main"
       - "zavqera/pricing-opportunity-clarity-20261028"
+    paths:
+      - "apps/web/**"
+      - ".github/workflows/zavqera-w21-e2e.yml"
+      - "supabase/test-snapshots/**"
+  pull_request:
+    branches:
+      - "main"
     paths:
       - "apps/web/**"
       - ".github/workflows/zavqera-w21-e2e.yml"

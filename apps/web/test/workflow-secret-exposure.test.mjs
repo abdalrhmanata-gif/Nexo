@@ -70,3 +70,30 @@ test("the deploy workflow does not deploy from a pull request", () => {
   assert.doesNotMatch(triggerBlock(deploy.body), /^\s{0,2}pull_request(_target)?:/m,
     "the workflow holding the Netlify token must not run on pull_request");
 });
+
+test("every security workflow runs on the branch that is actually deployed", () => {
+  // The ownership hole lived on main because nothing was looking for it there:
+  // W21 and W25 were pinned to feature branches that had since been merged and
+  // abandoned. A proof that does not run on the deployed branch is decoration.
+  const security = [
+    "zavqera-w21-e2e.yml",
+    "zavqera-w25-postgres-fence.yml",
+    "zavqera-w99-workspace-ownership.yml",
+  ];
+  for (const name of security) {
+    const workflow = workflows.find((candidate) => candidate.name === name);
+    assert.ok(workflow, `${name} is missing`);
+    assert.match(triggerBlock(workflow.body), /^\s+- ["']?main["']?$/m, `${name} does not run on main`);
+  }
+});
+
+test("a workflow earns its pull_request trigger by holding nothing worth stealing", () => {
+  // The rule is not "never run on pull_request". It is that such a job must
+  // reference no secret at all — these build their own throwaway database and
+  // reach no hosted environment, which is what makes them safe to run from a
+  // branch the author controls.
+  for (const { name, body } of pullRequestTriggered) {
+    const secrets = [...new Set(body.match(/secrets\.[A-Z0-9_]+/g) ?? [])];
+    assert.deepEqual(secrets, [], `${name} runs on pull_request and references ${secrets.join(", ")}`);
+  }
+});
