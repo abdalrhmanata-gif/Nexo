@@ -1,9 +1,17 @@
 name: ZAVQERA W25 Isolated PostgreSQL Atomic Fence
 
+# Ran only on zavqera/alternative-web-deployment, which is no longer the
+# deployed branch. The atomic fence it proves matters most on main.
+#
+# References no secrets and uses a throwaway service container.
 on:
   push:
     branches:
+      - main
       - zavqera/alternative-web-deployment
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
