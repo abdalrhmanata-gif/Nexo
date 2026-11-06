@@ -71,8 +71,8 @@ export default async function HomePage() {
       <div className="landing-capability-grid">{capabilities.map((item) => <article className="landing-capability-card" key={item.number}>
         <div className={`landing-capability-icon landing-capability-${item.tone}`}><CapabilityIcon kind={item.icon}/></div>
         <span className="landing-capability-number">{item.number}</span>
-        <h3>{item.title}</h3>
-        <p>{item.description}</p>
+        <h3>{t(item.title)}</h3>
+        <p>{t(item.description)}</p>
       </article>)}</div>
     </section>
 

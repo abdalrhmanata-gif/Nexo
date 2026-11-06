@@ -133,9 +133,13 @@ function RatingField({
   value: string;
   onChange: (value: string) => void;
 }) {
+  // The label and help arrive as English source text from the call site, the
+  // same way LocalizedText takes `en`. Translating here means a new factor is
+  // translated by construction rather than by remembering.
+  const t = useTranslate();
   return (
     <div className="field">
-      <label htmlFor={id}>{label}</label>
+      <label htmlFor={id}>{t(label)}</label>
       <select id={id} value={value} onChange={(event) => onChange(event.target.value)}>
         <option value="1"><LocalizedText en="1 — Very low" /></option>
         <option value="2"><LocalizedText en="2 — Low" /></option>
@@ -143,7 +147,7 @@ function RatingField({
         <option value="4"><LocalizedText en="4 — High" /></option>
         <option value="5"><LocalizedText en="5 — Very high" /></option>
       </select>
-      <small>{help}</small>
+      <small>{t(help)}</small>
     </div>
   );
 }
@@ -329,7 +333,7 @@ export function OpportunityIntelligence() {
           </div>
         </div>
         <p className="detail-intent">
-          Compare opportunities, challenge assumptions, and turn the strongest candidate into a governed Mission.
+          <LocalizedText en="Compare opportunities, challenge assumptions, and turn the strongest candidate into a governed Mission." />
         </p>
         <div className="opportunity-hero-bottom">
           <div className="opportunity-hero-note">
@@ -344,7 +348,7 @@ export function OpportunityIntelligence() {
             onClick={() => setIsOpportunityFormOpen((open) => !open)}
           >
             <span aria-hidden="true">{isOpportunityFormOpen ? "−" : "＋"}</span>
-            {isOpportunityFormOpen ? "Hide form" : "Add opportunity"}
+            {isOpportunityFormOpen ? t("Hide form") : t("Add opportunity")}
           </button>
         </div>
       </div>
@@ -362,11 +366,11 @@ export function OpportunityIntelligence() {
         <div className="opportunity-portability-actions">
           <button className="button button-small" type="button" onClick={exportBackup} disabled={!storageReady || opportunities.length === 0} title={opportunities.length === 0 ? "Add an opportunity before exporting a backup" : "Download your opportunity data"}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v12m-5-5 5 5 5-5M4 20h16" /></svg>
-            Export backup
+            <LocalizedText en="Export backup" />
           </button>
           <label className="button button-quiet button-small opportunity-import-label" htmlFor="opportunity-backup-file">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" /></svg>
-            Choose backup
+            <LocalizedText en="Choose backup" />
           </label>
           <input ref={backupInputRef} id="opportunity-backup-file" className="visually-hidden" type="file" accept=".json,application/json" aria-label={t("Choose a Zavqera opportunity backup file")} onChange={selectBackup} disabled={!storageReady || backupBusy} />
         </div>
@@ -375,7 +379,7 @@ export function OpportunityIntelligence() {
           <div className="opportunity-backup-preview">
             <div>
               <strong>Backup ready: {backupFileName}</strong>
-              <p>{backupPreview.opportunityCount} opportunities · {backupPreview.evidenceCount} evidence notes. {backupPreview.exportedAt.slice(0, 10)} export.</p>
+              <p>{fill(t("{count} opportunities · {notes} evidence notes. Exported {date}."), { count: backupPreview.opportunityCount, notes: backupPreview.evidenceCount, date: backupPreview.exportedAt.slice(0, 10) })}</p>
               <small><LocalizedText en="Existing records with matching IDs will be skipped. Nothing currently saved will be overwritten." /></small>
             </div>
             <div className="opportunity-backup-preview-actions">
@@ -450,7 +454,7 @@ export function OpportunityIntelligence() {
               <h2 id="ranked-opportunities-heading"><LocalizedText en="Opportunity radar" /></h2>
               <p><LocalizedText en="Ranked by transparent criteria. Evidence still needs human review." /></p>
             </div>
-            <span className="opportunity-result-count">{ranked.length} {ranked.length === 1 ? "opportunity" : "opportunities"}</span>
+            <span className="opportunity-result-count">{ranked.length} {t(ranked.length === 1 ? "opportunity" : "opportunities")}</span>
           </div>
 
           {storageReady && ranked.length > 0 && (
