@@ -38,6 +38,9 @@ export default async function MissionDetailPage({
   // Plan health only ever read lifecycle fields, so it reported "no issues"
   // for a mission whose criterion and only step were the same three words.
   const critique = critiqueMission(mission);
+  const completedSteps = mission.actions
+    .filter((action) => action.status === "COMPLETED")
+    .map((action) => action.title);
   const healthy = intelligence.planHealth.healthy && critique.length === 0;
 
   return <div className="container">
@@ -135,8 +138,8 @@ export default async function MissionDetailPage({
           <p><LocalizedText en="A mission is only verified once evidence has been recorded through the authenticated server boundary. Work being reported as finished is not the same as ZAVQERA considering it verified." /></p>
           {readiness.ready
             ? (verification
-              ? <>{!outcome && <VerificationControls missionId={mission.id} verification={verification} />}</>
-              : <VerificationControls missionId={mission.id} />)
+              ? <>{!outcome && <VerificationControls missionId={mission.id} verification={verification} criteria={mission.criteria} completedSteps={completedSteps} />}</>
+              : <VerificationControls missionId={mission.id} criteria={mission.criteria} completedSteps={completedSteps} />)
             : <div className="readiness" role="status">
               <p>{readiness.reason}</p>
               {readiness.unresolved.length > 0 && <p className="action-hint">

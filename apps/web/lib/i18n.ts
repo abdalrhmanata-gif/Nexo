@@ -526,6 +526,10 @@ const NB: Record<string, string> = {
   "“{text}” names a subject, not a result someone could check. Add what must be true, a number, or a date.":"«{text}» navngir et emne, ikke et resultat noen kan sjekke. Legg til hva som må stemme, et tall eller en dato.",
   "“{text}” is also a success criterion. A criterion is how you judge the result; a step is work you do.":"«{text}» er også et suksesskriterium. Et kriterium er hvordan du vurderer resultatet; et steg er arbeid du gjør.",
   "“{text}” uses only words already in the goal, so it restates the outcome instead of naming work.":"«{text}» bruker bare ord som allerede står i målet, og gjentar dermed resultatet i stedet for å navngi arbeid.",
+  "Filled in from this mission's own success criteria. Change it if what you checked was different.":"Fylt ut fra oppdragets egne suksesskriterier. Endre det hvis du sjekket noe annet.",
+  "This mission records no success criteria, so there is nothing to fill in. Write what you actually checked.":"Dette oppdraget har ingen suksesskriterier, så det er ingenting å fylle ut. Skriv hva du faktisk sjekket.",
+  "Completed steps you can cite:":"Fullførte steg du kan vise til:",
+  "Add this step to the evidence":"Legg dette steget til i dokumentasjonen",
 };
 const AR: Record<string, string> = {
   "MISSION CONTROL":"مركز التحكم", "Search":"بحث", "New mission":"مهمة جديدة",
@@ -1027,6 +1031,10 @@ const AR: Record<string, string> = {
   "“{text}” names a subject, not a result someone could check. Add what must be true, a number, or a date.":"«{text}» يسمّي موضوعاً لا نتيجة يستطيع أحد التحقق منها. أضف ما يجب أن يتحقق، أو رقماً، أو تاريخاً.",
   "“{text}” is also a success criterion. A criterion is how you judge the result; a step is work you do.":"«{text}» هو أيضاً معيار نجاح. المعيار هو كيف تحكم على النتيجة؛ والخطوة عمل تؤديه.",
   "“{text}” uses only words already in the goal, so it restates the outcome instead of naming work.":"«{text}» لا يستخدم إلا كلمات موجودة في الهدف، فهو يعيد صياغة النتيجة بدل أن يسمّي عملاً.",
+  "Filled in from this mission's own success criteria. Change it if what you checked was different.":"مملوءة من معايير نجاح هذه المهمة نفسها. غيّرها إن كان ما فحصته مختلفاً.",
+  "This mission records no success criteria, so there is nothing to fill in. Write what you actually checked.":"هذه المهمة بلا معايير نجاح مسجّلة، فلا شيء يُملأ. اكتب ما فحصته فعلاً.",
+  "Completed steps you can cite:":"خطوات مكتملة يمكنك الاستشهاد بها:",
+  "Add this step to the evidence":"أضف هذه الخطوة إلى الأدلة",
 };
 const ES: Record<string, string> = {
   "Search":"Buscar", "New mission":"Nueva misión", "Business":"Empresa", "Templates":"Plantillas",
@@ -1532,6 +1540,10 @@ const ES: Record<string, string> = {
   "“{text}” names a subject, not a result someone could check. Add what must be true, a number, or a date.":"«{text}» nombra un tema, no un resultado que alguien pueda comprobar. Añade qué debe ser cierto, un número o una fecha.",
   "“{text}” is also a success criterion. A criterion is how you judge the result; a step is work you do.":"«{text}» también es un criterio de éxito. Un criterio es cómo juzgas el resultado; un paso es trabajo que haces.",
   "“{text}” uses only words already in the goal, so it restates the outcome instead of naming work.":"«{text}» solo usa palabras que ya están en el objetivo, así que repite el resultado en vez de nombrar trabajo.",
+  "Filled in from this mission's own success criteria. Change it if what you checked was different.":"Rellenado con los criterios de éxito de esta misión. Cámbialo si lo que comprobaste fue distinto.",
+  "This mission records no success criteria, so there is nothing to fill in. Write what you actually checked.":"Esta misión no registra criterios de éxito, así que no hay nada que rellenar. Escribe qué comprobaste realmente.",
+  "Completed steps you can cite:":"Pasos completados que puedes citar:",
+  "Add this step to the evidence":"Añadir este paso a la evidencia",
 };
 const FR: Record<string, string> = {
   "Search":"Rechercher", "New mission":"Nouvelle mission", "Business":"Entreprise", "Templates":"Modèles",
@@ -2037,6 +2049,10 @@ const FR: Record<string, string> = {
   "“{text}” names a subject, not a result someone could check. Add what must be true, a number, or a date.":"« {text} » nomme un sujet, pas un résultat vérifiable. Ajoutez ce qui doit être vrai, un nombre ou une date.",
   "“{text}” is also a success criterion. A criterion is how you judge the result; a step is work you do.":"« {text} » est aussi un critère de réussite. Un critère juge le résultat ; une étape est un travail que vous faites.",
   "“{text}” uses only words already in the goal, so it restates the outcome instead of naming work.":"« {text} » n'utilise que des mots déjà présents dans l'objectif : il répète le résultat au lieu de nommer un travail.",
+  "Filled in from this mission's own success criteria. Change it if what you checked was different.":"Rempli à partir des critères de réussite de cette mission. Modifiez-le si vous avez vérifié autre chose.",
+  "This mission records no success criteria, so there is nothing to fill in. Write what you actually checked.":"Cette mission n'enregistre aucun critère de réussite : il n'y a rien à préremplir. Écrivez ce que vous avez vraiment vérifié.",
+  "Completed steps you can cite:":"Étapes terminées que vous pouvez citer :",
+  "Add this step to the evidence":"Ajouter cette étape aux preuves",
 };
 const DE: Record<string, string> = {
   "Search":"Suchen", "New mission":"Neue Mission", "Business":"Unternehmen", "Templates":"Vorlagen",
@@ -2542,6 +2558,10 @@ const DE: Record<string, string> = {
   "“{text}” names a subject, not a result someone could check. Add what must be true, a number, or a date.":"„{text}“ nennt ein Thema, kein überprüfbares Ergebnis. Ergänzen Sie, was zutreffen muss, eine Zahl oder ein Datum.",
   "“{text}” is also a success criterion. A criterion is how you judge the result; a step is work you do.":"„{text}“ ist auch ein Erfolgskriterium. Ein Kriterium bewertet das Ergebnis; ein Schritt ist Arbeit, die Sie tun.",
   "“{text}” uses only words already in the goal, so it restates the outcome instead of naming work.":"„{text}“ verwendet nur Wörter aus dem Ziel und wiederholt so das Ergebnis, statt Arbeit zu benennen.",
+  "Filled in from this mission's own success criteria. Change it if what you checked was different.":"Aus den Erfolgskriterien dieser Mission übernommen. Ändern Sie es, wenn Sie etwas anderes geprüft haben.",
+  "This mission records no success criteria, so there is nothing to fill in. Write what you actually checked.":"Diese Mission hat keine Erfolgskriterien, also gibt es nichts vorauszufüllen. Schreiben Sie, was Sie tatsächlich geprüft haben.",
+  "Completed steps you can cite:":"Abgeschlossene Schritte, die Sie anführen können:",
+  "Add this step to the evidence":"Diesen Schritt den Nachweisen hinzufügen",
 };
 
 export const DICTIONARIES: Record<AppLanguage, Record<string, string>> = {
