@@ -280,7 +280,7 @@ jobs:
 
       - name: Upload Lighthouse reports
         if: always() && steps.creds.outputs.ready == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: zavqera-lighthouse-${{ github.run_id }}
           path: lighthouse-reports/
