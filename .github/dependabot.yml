@@ -1,0 +1,24 @@
+# The runtime dependency surface here is deliberately small — five packages —
+# so keeping it current is cheap, and an unpatched transitive vulnerability is
+# the kind of finding that stops a technical review cold.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /apps/web
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      # One pull request per ecosystem rather than one per package: the point
+      # is that somebody actually reads them.
+      production:
+        dependency-type: production
+      development:
+        dependency-type: development
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
