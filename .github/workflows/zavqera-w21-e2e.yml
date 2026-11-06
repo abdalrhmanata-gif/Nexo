@@ -31,7 +31,13 @@ permissions:
 
 jobs:
   w21-e2e:
-    runs-on: ubuntu-latest
+    # Pinned, not latest. ubuntu-latest has rolled to 26.04 and the pinned
+    # Playwright (1.55.1) refuses to install Chromium there:
+    #   ERROR: Playwright does not support chromium on ubuntu26.04-x64
+    # This job is the only one that installs browsers, so it is the only one
+    # that cares. Revisit when Playwright is upgraded; until then an image
+    # that moves under us is a worse failure than one that is explicit.
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
 
     steps:

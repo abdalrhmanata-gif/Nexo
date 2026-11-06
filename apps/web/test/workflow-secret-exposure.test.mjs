@@ -97,3 +97,14 @@ test("a workflow earns its pull_request trigger by holding nothing worth stealin
     assert.deepEqual(secrets, [], `${name} runs on pull_request and references ${secrets.join(", ")}`);
   }
 });
+
+test("the browser job pins its runner image", () => {
+  // ubuntu-latest rolled to 26.04 and the pinned Playwright refused to install
+  // Chromium there. The job had been failing unnoticed because it only ran on
+  // an abandoned branch. A browser job on a moving image will break again.
+  const e2e = workflows.find(({ name }) => name === "zavqera-w21-e2e.yml");
+  assert.ok(e2e, "zavqera-w21-e2e.yml is missing");
+  assert.doesNotMatch(e2e.body, /runs-on:\s*ubuntu-latest/,
+    "a job that installs browsers must pin its runner image");
+  assert.match(e2e.body, /runs-on:\s*ubuntu-\d{2}\.\d{2}/, "the pinned image must be explicit");
+});
