@@ -1,140 +1,249 @@
 import Link from "next/link";
 import { LocalizedText } from "../../components/localized-text";
+import { LEGAL, PROCESSORS, PURPOSES } from "../../lib/legal";
 
-// Deliberately in English only, and the page says so. A liability or data
-// clause that is mistranslated is worse than one the reader has to read in a
-// second language, and this text is the one place in the product where being
-// approximately right is not good enough. Everything here is drawn from what
-// the code actually does — the cookie names, the storage key, the region, the
-// fact that no analytics exist — so it can be checked against the repository
-// rather than believed.
+// Deliberately English only, and the page says so. A mistranslated data or
+// liability clause binds a reader to something nobody intended, and this is
+// the one text in the product where being approximately right is not good
+// enough.
+//
+// Every factual claim here is drawn from the code: the cookie names, the
+// browser storage key, the region the database runs in, the absence of any
+// tracker. Tests in test/navigation-regression.test.mjs hold those claims to
+// the source, so the notice cannot quietly drift away from the product.
 
 export const metadata = {
-  title: "Privacy — ZAVQERA",
-  description: "What ZAVQERA stores, where it is stored, and what you can ask for.",
+  title: "Privacy notice — ZAVQERA",
+  description: "What ZAVQERA collects, the legal basis for each use, who processes it, how long it is kept, and your rights.",
 };
-
-const LAST_UPDATED = "5 November 2026";
 
 export default function PrivacyPage() {
   return <div className="container legal-page">
     <p className="eyebrow"><LocalizedText en="Privacy" /></p>
     <h1>Privacy notice</h1>
     <p className="legal-lead">
-      This notice describes what ZAVQERA stores about you, where it is stored, and what you can ask us to do with it.
-      It is written in English only: a mistranslated data or liability clause would be worse than one you read in a
-      second language.
+      This notice explains what personal data ZAVQERA collects, why, on what legal basis, who else handles it, how
+      long it is kept, and what you can require of us. It is given under Articles 13 and 14 of the General Data
+      Protection Regulation as it applies in Norway through the Personal Data Act (personopplysningsloven).
     </p>
-    <p className="legal-meta">Last updated: {LAST_UPDATED}</p>
+    <p className="legal-meta">Last updated: {LEGAL.lastUpdated} · English only — see “Language” below</p>
 
     <section>
-      <h2>Who is responsible</h2>
-      <p>
-        ZAVQERA is operated by the account holder named on this deployment, who is the data controller for the
-        purposes of the EU and UK General Data Protection Regulation. Contact for any privacy question or request:{" "}
-        <strong>[contact email — replace before launch]</strong>.
-      </p>
-    </section>
-
-    <section>
-      <h2>What is stored, and why</h2>
+      <h2>1. Who is responsible</h2>
+      <p>The controller for the processing described here is:</p>
       <ul className="list">
-        <li>
-          <strong>Your email address</strong>, so you can sign in and so we can send you a password reset link when
-          you ask for one. Legal basis: performance of the contract you enter by creating an account.
-        </li>
-        <li>
-          <strong>Your password</strong>, stored only as a cryptographic hash by our authentication provider. We never
-          see, store or transmit your password in readable form.
-        </li>
-        <li>
-          <strong>What you write into a Mission</strong> — its name, intent, success criteria, steps, follow-up dates,
-          verification notes and outcomes. This is the content of the service; without it there is nothing to show you.
-        </li>
+        <li>{LEGAL.controllerName}</li>
+        <li>{LEGAL.controllerAddress}</li>
+        <li>{LEGAL.organisationNumber}</li>
+        <li>Privacy contact: <strong>{LEGAL.privacyEmail}</strong></li>
       </ul>
       <p>
-        We do not collect analytics, we do not use advertising or tracking cookies, we do not profile you, and we do
-        not sell or share your data with anyone for their own purposes. At the time of writing there is no analytics
-        product of any kind in this application; you can verify that in the source.
+        We have not appointed a Data Protection Officer. We are not required to: we do not carry out large-scale
+        monitoring and we do not process special categories of data as a core activity. Privacy questions go to the
+        address above and are answered by the controller.
       </p>
     </section>
 
     <section>
-      <h2>Where it is stored</h2>
+      <h2>2. What we collect, why, and on what basis</h2>
+      <p>Each purpose has its own legal basis. We do not rely on a single blanket justification.</p>
+      <div className="legal-table-scroll">
+        <table className="legal-table">
+          <thead>
+            <tr><th>Purpose</th><th>Data</th><th>Legal basis</th><th>Kept for</th></tr>
+          </thead>
+          <tbody>
+            {PURPOSES.map((row) => <tr key={row.purpose}>
+              <td>{row.purpose}</td>
+              <td>{row.data}</td>
+              <td>{row.basis}</td>
+              <td>{row.retention}</td>
+            </tr>)}
+          </tbody>
+        </table>
+      </div>
       <p>
-        Account and Mission data are held in a managed PostgreSQL database operated by Supabase in the{" "}
-        <strong>eu-west-1 region (Ireland)</strong>, inside the European Economic Area. The application itself is
-        served by Netlify. Both act as processors on our instructions.
+        <strong>Is providing it optional?</strong> An email address and a password are required to have an account;
+        without them we cannot create one. Everything you write into a Mission is entirely your choice, and a Mission
+        can hold as little as you like.
+      </p>
+      <p>
+        <strong>What we do not do.</strong> We do not sell personal data. We do not share it for anyone else&rsquo;s
+        own purposes. We do not profile you, build an advertising audience, or combine your data with data bought from
+        elsewhere. We do not use your Missions to train machine-learning models.
       </p>
     </section>
 
     <section>
-      <h2>What stays only in your browser</h2>
+      <h2>3. Who else handles it</h2>
+      <p>
+        These are our processors. They act only on our documented instructions, under a data processing agreement, and
+        may not use your data for themselves.
+      </p>
+      <div className="legal-table-scroll">
+        <table className="legal-table">
+          <thead><tr><th>Processor</th><th>What it does</th><th>Where</th><th>Transfers</th></tr></thead>
+          <tbody>
+            {PROCESSORS.map((processor) => <tr key={processor.name}>
+              <td><strong>{processor.name}</strong></td>
+              <td>{processor.role}</td>
+              <td>{processor.location}</td>
+              <td>{processor.transfer}</td>
+            </tr>)}
+          </tbody>
+        </table>
+      </div>
+      <p>
+        We may also disclose data where the law requires it, or to establish or defend a legal claim. If that ever
+        happens we will tell you unless we are forbidden to.
+      </p>
+    </section>
+
+    <section>
+      <h2>4. What never reaches us</h2>
       <p>
         <strong>Opportunity Intelligence</strong> — the opportunities you score and the evidence notes you attach —
-        is stored in your own browser under the key <code>zavqera.opportunity-intelligence.v1</code> and is never sent
-        to our servers. It is not backed up by us, it does not follow you to another device, and clearing your browser
-        data deletes it. Use the export button if you want a copy.
+        is held in your own browser under the key <code>zavqera.opportunity-intelligence.v1</code>. It is not
+        transmitted to our servers, not included in any backup we hold, and not visible to us. It does not follow you
+        to another device, and clearing your browser data erases it. Export a backup file if you want a copy you
+        control.
       </p>
     </section>
 
     <section>
-      <h2>Cookies</h2>
+      <h2>5. Cookies and your device</h2>
+      <p>
+        Norwegian law (ekomloven § 2-7b, implementing the ePrivacy Directive) requires consent before storing or
+        reading information on your device, unless it is strictly necessary for a service you asked for. We store
+        three things, and all three are strictly necessary or set by your own choice:
+      </p>
       <ul className="list">
         <li>
-          <strong>Session cookies</strong> set by our authentication provider, which keep you signed in. Strictly
-          necessary: without them the service cannot tell one signed-in person from another.
+          <strong>Session cookies</strong> set by our authentication provider, which keep you signed in. Without them
+          the service cannot tell one signed-in person from another.
         </li>
         <li>
-          <strong><code>zavqera-language</code></strong> and <strong><code>zavqera-theme</code></strong>, which
-          remember the language and the light or dark setting you chose. They last one year and hold nothing but that
-          choice.
+          <strong><code>zavqera-language</code></strong> — the language you selected. One year.
+        </li>
+        <li>
+          <strong><code>zavqera-theme</code></strong> — the light or dark setting you selected. One year.
         </li>
       </ul>
-      <p>There are no analytics, advertising or third-party tracking cookies, which is why this site shows no cookie banner.</p>
+      <p>
+        There are no advertising cookies, no third-party trackers, and no analytics script of any kind. Our page
+        counting is described below and touches nothing on your device, which is why this site shows no cookie banner:
+        there is no consent to ask for.
+      </p>
     </section>
 
     <section>
-      <h2>Artificial intelligence</h2>
+      <h2>6. How we count visits</h2>
       <p>
-        The plan suggestions and the review of what you have written are produced on our own servers by rules in our
-        source code. Nothing you type is sent to an AI provider to generate them.
+        We record, on our own servers, how many times each page was opened on each day and which website linked here.
+        That is the whole record. We do not store an IP address against it, we do not set a cookie or identifier, we
+        do not fingerprint your browser, and nothing is written to your device. The result is a daily total per page —
+        it cannot be traced to you, and we could not single you out from it if we tried.
+      </p>
+      <p>
+        We do this to know whether anyone is using the service and which parts are reached, on the basis of our
+        legitimate interest under Article 6(1)(f). Because no one is identified, this processing does not affect your
+        rights and freedoms; you may still object using the contact address above.
+      </p>
+    </section>
+
+    <section>
+      <h2>7. Artificial intelligence and automated decisions</h2>
+      <p>
+        The plan suggestions and the review of what you have written are produced by rules in our own source code,
+        running on our own servers. Nothing you type is sent to an AI provider to generate them.
       </p>
       <p>
         A separate server-side AI analyst exists in the codebase for the Opportunity Brief. It is switched off and
-        restricted to approved testers. If it is ever enabled for your account, the text you submit for analysis would
-        be sent to the AI provider named at that time, and this notice will be updated before that happens.
+        restricted to approved testers. If it is ever enabled for your account, the text you submit would be sent to
+        the AI provider named at that time, and this notice will be updated and you will be told before that happens.
+      </p>
+      <p>
+        <strong>No automated decision-making.</strong> Nothing here produces a decision with legal or similarly
+        significant effects for you within the meaning of Article 22. Suggestions are proposals you are free to
+        ignore, and no outcome is applied to you automatically.
       </p>
     </section>
 
     <section>
-      <h2>How long it is kept</h2>
+      <h2>8. How long we keep it</h2>
       <p>
-        Mission data is kept until you delete it or ask us to close your account. Some Missions keep a historical
-        record of what was decided and verified, which is the point of the product; deleting a Mission removes it from
-        your workspace. Backups, where they exist, are retained for a limited period by our database provider and then
-        overwritten.
+        The retention period for each purpose is in the table in section 2. In addition: closing your account deletes
+        your account record and your Missions within 30 days. Copies may persist in our database provider&rsquo;s
+        backups for a limited further period before being overwritten, and we cannot selectively erase a backup.
+        Server logs held by our providers follow their own retention rules.
       </p>
     </section>
 
     <section>
-      <h2>Your rights</h2>
+      <h2>9. Security</h2>
       <p>
-        Under the GDPR you may ask for a copy of your data, ask for it to be corrected or erased, ask us to restrict
-        or stop a particular use, and ask for it in a portable form. Write to the contact address above and we will
-        answer within one month.
+        Data is encrypted in transit. Passwords are stored only as a cryptographic hash and are never visible to us.
+        Access to the database is restricted at the row level so that one account cannot read another&rsquo;s data,
+        and those rules deny by default rather than allow by default.
       </p>
       <p>
-        If you are not satisfied with how we handle a request, you may complain to your national supervisory
-        authority. In Norway this is Datatilsynet.
+        If a breach occurs that is likely to result in a risk to your rights and freedoms, we will notify Datatilsynet
+        within 72 hours of becoming aware of it, and tell you directly where the risk is high.
       </p>
     </section>
 
     <section>
-      <h2>Changes</h2>
+      <h2>10. Your rights</h2>
+      <p>You may ask us to:</p>
+      <ul className="list">
+        <li><strong>Give you a copy</strong> of the personal data we hold about you (Article 15).</li>
+        <li><strong>Correct</strong> anything inaccurate or incomplete (Article 16).</li>
+        <li><strong>Erase</strong> it (Article 17).</li>
+        <li><strong>Restrict</strong> how we use it while a dispute is resolved (Article 18).</li>
+        <li><strong>Send it on</strong> to you or another provider in a machine-readable form (Article 20).</li>
+        <li>
+          <strong>Object</strong> to any use we base on legitimate interest, including the page counting in section 6
+          (Article 21).
+        </li>
+      </ul>
       <p>
-        When this notice changes materially we will update the date above and, where the change affects how your data
-        is used, tell you in the application before it takes effect.
+        Write to {LEGAL.privacyEmail}. We answer within one month, and will say so if a request is complex enough to
+        need the two-month extension the regulation allows. Exercising these rights is free; we will only charge, or
+        refuse, where a request is manifestly unfounded or excessive, and we will explain why.
+      </p>
+      <p>
+        You may also complain to the supervisory authority. For a controller established in Norway that is{" "}
+        <strong>{LEGAL.authority.name}</strong>, {LEGAL.authority.postal} — {LEGAL.authority.email} —{" "}
+        <a href={LEGAL.authority.web} rel="noreferrer noopener" target="_blank">{LEGAL.authority.web}</a>. You may
+        instead complain to the authority in the EEA country where you live.
+      </p>
+    </section>
+
+    <section>
+      <h2>11. Children</h2>
+      <p>
+        This service is intended for adults and is not directed at children. You must be 18 or over to create an
+        account, as the terms of service require. We do not knowingly collect data from children; if you believe a
+        child has created an account, write to {LEGAL.privacyEmail} and we will delete it.
+      </p>
+    </section>
+
+    <section>
+      <h2>12. Language</h2>
+      <p>
+        The application is available in six languages. This notice and the terms of service are published in English
+        only, and the English text governs. A mistranslated clause about data or liability would bind a reader to
+        something nobody intended, which we consider worse than asking you to read two pages in a second language. If
+        anything here is unclear, write to {LEGAL.privacyEmail} and we will explain it in your language.
+      </p>
+    </section>
+
+    <section>
+      <h2>13. Changes</h2>
+      <p>
+        When this notice changes materially we update the date at the top and, where the change affects how your data
+        is used, tell you inside the application before it takes effect. Continuing to use the service after that
+        means the current version applies.
       </p>
     </section>
 

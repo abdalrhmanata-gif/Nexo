@@ -226,16 +226,23 @@ test("privacy and terms exist, are reachable from every page, and say what the c
   assert.equal(existsSync(join(webRoot, "app/privacy/page.tsx")), true);
   assert.equal(existsSync(join(webRoot, "app/terms/page.tsx")), true);
 
-  const privacy = read("app/privacy/page.tsx");
+  // The notice draws its company and processor facts from lib/legal.ts, so the
+  // claims are checked across both rather than against one file's wording.
+  const privacy = read("app/privacy/page.tsx") + read("lib/legal.ts");
   // Each of these is a fact the reader can check against this repository.
   // If one stops being true, the notice has to change with it.
   assert.match(privacy, /zavqera\.opportunity-intelligence\.v1/, "names the browser key it claims never leaves the device");
   assert.match(privacy, /zavqera-language/, "names the preference cookies it sets");
   assert.match(privacy, /zavqera-theme/);
   assert.match(privacy, /eu-west-1/, "names the region the database actually runs in");
+  assert.match(privacy, /Datatilsynet/, "names the supervisory authority for a Norwegian controller");
+  assert.match(privacy, /Article 6\(1\)\(b\)/, "states a legal basis per purpose, not one blanket justification");
+  assert.match(privacy, /Article 6\(1\)\(f\)/);
+  assert.match(privacy, /Netlify/, "names every processor, as Article 13(1)(e) requires");
+  assert.match(privacy, /Supabase/);
 
   const terms = read("app/terms/page.tsx");
-  assert.match(terms, /None of it is legal, financial, medical, immigration or other professional advice/i,
+  assert.match(terms, /None of it is legal, financial, medical, immigration[^.]*professional advice/i,
     "the product proposes steps for regulated activities; this clause is the one that must not go missing");
 });
 
@@ -252,4 +259,32 @@ test("the privacy notice's claim of no analytics is true of the code", () => {
   const offenders = sources.filter((file) => trackers.test(readFileSync(file, "utf8")));
   assert.deepEqual(offenders.map((file) => relative(webRoot, file)), [],
     "the privacy notice promises no analytics; adding one means changing the notice too");
+});
+
+test("the page counter stores nothing that could identify a visitor", () => {
+  // The privacy notice says there is no identifier, no IP and nothing written
+  // to the device. These are the places that promise could quietly break.
+  const route = read("app/api/metrics/route.ts");
+  const beacon = read("components/page-metrics.tsx");
+  const migration = readFileSync(
+    join(webRoot, "../../supabase/migrations/20261106090000_page_metrics_cookieless_counter.sql"), "utf8");
+
+  // Comments in these files describe what is deliberately absent, so they must
+  // be stripped before searching — otherwise the test fails on its own subject.
+  const code = (source) => source
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .split("\n")
+    .map((line) => line.replace(/\s*(\/\/|--).*$/, ""))
+    .join("\n");
+
+  for (const source of [route, beacon, migration]) {
+    assert.doesNotMatch(code(source), /localStorage|sessionStorage|document\.cookie/,
+      "the counter must not touch the visitor's device, or it needs a consent banner");
+    assert.doesNotMatch(code(source), /x-forwarded-for|\bip_address\b|user[_-]?agent/i,
+      "the counter must not record anything about who the visitor is");
+  }
+  assert.match(migration, /enable row level security/, "the table must deny by default");
+  assert.match(migration, /revoke all on table public\.page_metrics from anon, authenticated/,
+    "no one reads this table through the API");
+  assert.match(route, /normaliseRoute/, "paths must be reduced to a fixed set before they reach the database");
 });

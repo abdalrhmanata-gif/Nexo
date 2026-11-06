@@ -530,6 +530,9 @@ const NB: Record<string, string> = {
   "Terms":"Vilkår",
   "Privacy notice":"Personvernerklæring",
   "Terms of service":"Vilkår for bruk",
+  "Mission control for goals you have to get right":"Kontrollsenter for mål du må treffe",
+  "Write the outcome you want. Get a first plan back, with the weak parts of your own wording pointed out — then keep the evidence that you reached it.":"Skriv målet du vil nå. Få en første plan tilbake, med de svake punktene i din egen formulering påpekt — og behold dokumentasjonen på at du kom i mål.",
+  "Suggestions come from rules in our source code, not from a model guessing. Nothing you write is sent to an AI provider.":"Forslagene kommer fra regler i kildekoden vår, ikke fra en modell som gjetter. Ingenting du skriver sendes til en KI-leverandør.",
 };
 const AR: Record<string, string> = {
   "MISSION CONTROL":"مركز التحكم", "Search":"بحث", "New mission":"مهمة جديدة",
@@ -1035,6 +1038,9 @@ const AR: Record<string, string> = {
   "Terms":"الشروط",
   "Privacy notice":"إشعار الخصوصية",
   "Terms of service":"شروط الخدمة",
+  "Mission control for goals you have to get right":"مركز تحكم للأهداف التي لا تحتمل الخطأ",
+  "Write the outcome you want. Get a first plan back, with the weak parts of your own wording pointed out — then keep the evidence that you reached it.":"اكتب النتيجة التي تريدها. تعود إليك خطة أولى، مع إشارة إلى مواضع الضعف في صياغتك أنت — ثم احتفظ بالدليل على بلوغها.",
+  "Suggestions come from rules in our source code, not from a model guessing. Nothing you write is sent to an AI provider.":"الاقتراحات تأتي من قواعد في شيفرتنا المصدرية، لا من نموذج يُخمّن. ولا يُرسَل شيء مما تكتبه إلى أي مزوّد ذكاء اصطناعي.",
 };
 const ES: Record<string, string> = {
   "Search":"Buscar", "New mission":"Nueva misión", "Business":"Empresa", "Templates":"Plantillas",
@@ -1544,6 +1550,9 @@ const ES: Record<string, string> = {
   "Terms":"Términos",
   "Privacy notice":"Aviso de privacidad",
   "Terms of service":"Términos del servicio",
+  "Mission control for goals you have to get right":"Centro de control para objetivos que no admiten error",
+  "Write the outcome you want. Get a first plan back, with the weak parts of your own wording pointed out — then keep the evidence that you reached it.":"Escribe el resultado que quieres. Recibes un primer plan, con los puntos débiles de tu propia redacción señalados, y conservas la evidencia de haberlo logrado.",
+  "Suggestions come from rules in our source code, not from a model guessing. Nothing you write is sent to an AI provider.":"Las sugerencias vienen de reglas en nuestro código fuente, no de un modelo que adivina. Nada de lo que escribes se envía a un proveedor de IA.",
 };
 const FR: Record<string, string> = {
   "Search":"Rechercher", "New mission":"Nouvelle mission", "Business":"Entreprise", "Templates":"Modèles",
@@ -2053,6 +2062,9 @@ const FR: Record<string, string> = {
   "Terms":"Conditions",
   "Privacy notice":"Avis de confidentialité",
   "Terms of service":"Conditions d'utilisation",
+  "Mission control for goals you have to get right":"Centre de contrôle pour les objectifs à ne pas rater",
+  "Write the outcome you want. Get a first plan back, with the weak parts of your own wording pointed out — then keep the evidence that you reached it.":"Écrivez le résultat visé. Vous recevez un premier plan, avec les points faibles de votre propre formulation signalés — puis vous gardez la preuve de l'avoir atteint.",
+  "Suggestions come from rules in our source code, not from a model guessing. Nothing you write is sent to an AI provider.":"Les suggestions viennent de règles dans notre code source, pas d'un modèle qui devine. Rien de ce que vous écrivez n'est envoyé à un fournisseur d'IA.",
 };
 const DE: Record<string, string> = {
   "Search":"Suchen", "New mission":"Neue Mission", "Business":"Unternehmen", "Templates":"Vorlagen",
@@ -2562,6 +2574,9 @@ const DE: Record<string, string> = {
   "Terms":"Bedingungen",
   "Privacy notice":"Datenschutzhinweis",
   "Terms of service":"Nutzungsbedingungen",
+  "Mission control for goals you have to get right":"Kontrollzentrum für Ziele, die sitzen müssen",
+  "Write the outcome you want. Get a first plan back, with the weak parts of your own wording pointed out — then keep the evidence that you reached it.":"Schreiben Sie das gewünschte Ergebnis. Sie erhalten einen ersten Plan, mit den schwachen Stellen Ihrer eigenen Formulierung benannt — und behalten den Nachweis, dass Sie es erreicht haben.",
+  "Suggestions come from rules in our source code, not from a model guessing. Nothing you write is sent to an AI provider.":"Die Vorschläge stammen aus Regeln in unserem Quellcode, nicht aus einem ratenden Modell. Nichts, was Sie schreiben, geht an einen KI-Anbieter.",
 };
 
 export const DICTIONARIES: Record<AppLanguage, Record<string, string>> = {

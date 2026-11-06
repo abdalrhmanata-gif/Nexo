@@ -37,14 +37,15 @@ export default async function HomePage() {
   return <div className="landing-page">
     <section className="landing-hero">
       <div className="landing-hero-copy">
-        <p className="eyebrow"><span className="landing-live-dot" aria-hidden="true" /> <LocalizedText en="Mission control for AI-assisted work" /></p>
+        <p className="eyebrow"><span className="landing-live-dot" aria-hidden="true" /> <LocalizedText en="Mission control for goals you have to get right" /></p>
         <h1><LocalizedText en="From intent to action." /> <span><LocalizedText en="With control at every step." /></span></h1>
-        <p className="landing-lede"><LocalizedText en="Turn goals into structured Missions, keep every next step visible, and make decisions with the evidence you actually have." /></p>
+        <p className="landing-lede"><LocalizedText en="Write the outcome you want. Get a first plan back, with the weak parts of your own wording pointed out — then keep the evidence that you reached it." /></p>
         <div className="landing-hero-actions">
           <Link className="button" href="/app"><LocalizedText en="Open workspace" /> <span aria-hidden="true">→</span></Link>
           <Link className="button button-quiet" href="/app/opportunities"><LocalizedText en="Explore Opportunity Intelligence" /></Link>
         </div>
         <div className="landing-trust-line"><span aria-hidden="true">✓</span> <LocalizedText en="Review before action. Clear boundaries. No false certainty." /></div>
+        <p className="landing-honesty"><LocalizedText en="Suggestions come from rules in our source code, not from a model guessing. Nothing you write is sent to an AI provider." /></p>
         <Link className="landing-template-link" href="/templates"><LocalizedText en="Browse mission templates" /> <span aria-hidden="true">→</span></Link>
       </div>
       <div className="landing-visual" role="group" aria-label={t("Illustrative view of a governed Mission")}>
