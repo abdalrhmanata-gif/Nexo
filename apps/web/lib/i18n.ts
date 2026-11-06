@@ -537,6 +537,13 @@ const NB: Record<string, string> = {
   "This mission records no success criteria, so there is nothing to fill in. Write what you actually checked.":"Dette oppdraget har ingen suksesskriterier, så det er ingenting å fylle ut. Skriv hva du faktisk sjekket.",
   "Completed steps you can cite:":"Fullførte steg du kan vise til:",
   "Add this step to the evidence":"Legg dette steget til i dokumentasjonen",
+  "Tell me when it is ready":"Si fra når den er klar",
+  "Notify me":"Varsle meg",
+  "Email address":"E-postadresse",
+  "you@example.com":"deg@eksempel.no",
+  "Noted — you will hear from us once, when it is ready.":"Notert — du hører fra oss én gang, når den er klar.",
+  "One email, when this plan opens. Nothing else, and no account needed. You can ask us to delete your address at any time.":"Én e-post, når denne planen åpner. Ingenting annet, og ingen konto nødvendig. Du kan når som helst be oss slette adressen din.",
+  "That did not save. Check your connection and try again.":"Det ble ikke lagret. Sjekk forbindelsen og prøv igjen.",
 };
 const AR: Record<string, string> = {
   "MISSION CONTROL":"مركز التحكم", "Search":"بحث", "New mission":"مهمة جديدة",
@@ -1049,6 +1056,13 @@ const AR: Record<string, string> = {
   "This mission records no success criteria, so there is nothing to fill in. Write what you actually checked.":"هذه المهمة بلا معايير نجاح مسجّلة، فلا شيء يُملأ. اكتب ما فحصته فعلاً.",
   "Completed steps you can cite:":"خطوات مكتملة يمكنك الاستشهاد بها:",
   "Add this step to the evidence":"أضف هذه الخطوة إلى الأدلة",
+  "Tell me when it is ready":"أخبرني عندما تجهز",
+  "Notify me":"أبلغني",
+  "Email address":"البريد الإلكتروني",
+  "you@example.com":"you@example.com",
+  "Noted — you will hear from us once, when it is ready.":"سُجّل — ستصلك رسالة واحدة عندما تجهز.",
+  "One email, when this plan opens. Nothing else, and no account needed. You can ask us to delete your address at any time.":"رسالة واحدة عند فتح هذه الخطة. لا شيء غيرها، ولا حاجة لحساب. ويمكنك أن تطلب حذف عنوانك في أي وقت.",
+  "That did not save. Check your connection and try again.":"لم يُحفظ. تحقق من اتصالك وحاول مجدداً.",
 };
 const ES: Record<string, string> = {
   "Search":"Buscar", "New mission":"Nueva misión", "Business":"Empresa", "Templates":"Plantillas",
@@ -1565,6 +1579,13 @@ const ES: Record<string, string> = {
   "This mission records no success criteria, so there is nothing to fill in. Write what you actually checked.":"Esta misión no registra criterios de éxito, así que no hay nada que rellenar. Escribe qué comprobaste realmente.",
   "Completed steps you can cite:":"Pasos completados que puedes citar:",
   "Add this step to the evidence":"Añadir este paso a la evidencia",
+  "Tell me when it is ready":"Avísame cuando esté lista",
+  "Notify me":"Avisarme",
+  "Email address":"Correo electrónico",
+  "you@example.com":"tu@ejemplo.com",
+  "Noted — you will hear from us once, when it is ready.":"Anotado: te escribiremos una vez, cuando esté lista.",
+  "One email, when this plan opens. Nothing else, and no account needed. You can ask us to delete your address at any time.":"Un solo correo, cuando se abra este plan. Nada más, y sin necesidad de cuenta. Puedes pedirnos que borremos tu dirección cuando quieras.",
+  "That did not save. Check your connection and try again.":"No se guardó. Comprueba tu conexión e inténtalo de nuevo.",
 };
 const FR: Record<string, string> = {
   "Search":"Rechercher", "New mission":"Nouvelle mission", "Business":"Entreprise", "Templates":"Modèles",
@@ -2081,6 +2102,13 @@ const FR: Record<string, string> = {
   "This mission records no success criteria, so there is nothing to fill in. Write what you actually checked.":"Cette mission n'enregistre aucun critère de réussite : il n'y a rien à préremplir. Écrivez ce que vous avez vraiment vérifié.",
   "Completed steps you can cite:":"Étapes terminées que vous pouvez citer :",
   "Add this step to the evidence":"Ajouter cette étape aux preuves",
+  "Tell me when it is ready":"Prévenez-moi quand ce sera prêt",
+  "Notify me":"Me prévenir",
+  "Email address":"Adresse e-mail",
+  "you@example.com":"vous@exemple.com",
+  "Noted — you will hear from us once, when it is ready.":"Noté — vous aurez un message, une seule fois, quand ce sera prêt.",
+  "One email, when this plan opens. Nothing else, and no account needed. You can ask us to delete your address at any time.":"Un seul e-mail, à l'ouverture de ce plan. Rien d'autre, et aucun compte requis. Vous pouvez demander la suppression de votre adresse à tout moment.",
+  "That did not save. Check your connection and try again.":"Cela n'a pas été enregistré. Vérifiez votre connexion et réessayez.",
 };
 const DE: Record<string, string> = {
   "Search":"Suchen", "New mission":"Neue Mission", "Business":"Unternehmen", "Templates":"Vorlagen",
@@ -2597,6 +2625,13 @@ const DE: Record<string, string> = {
   "This mission records no success criteria, so there is nothing to fill in. Write what you actually checked.":"Diese Mission hat keine Erfolgskriterien, also gibt es nichts vorauszufüllen. Schreiben Sie, was Sie tatsächlich geprüft haben.",
   "Completed steps you can cite:":"Abgeschlossene Schritte, die Sie anführen können:",
   "Add this step to the evidence":"Diesen Schritt den Nachweisen hinzufügen",
+  "Tell me when it is ready":"Sagen Sie Bescheid, wenn es so weit ist",
+  "Notify me":"Benachrichtigen",
+  "Email address":"E-Mail-Adresse",
+  "you@example.com":"du@beispiel.de",
+  "Noted — you will hear from us once, when it is ready.":"Notiert — Sie hören einmal von uns, sobald es so weit ist.",
+  "One email, when this plan opens. Nothing else, and no account needed. You can ask us to delete your address at any time.":"Eine E-Mail, wenn dieser Plan öffnet. Sonst nichts, und kein Konto nötig. Sie können die Löschung Ihrer Adresse jederzeit verlangen.",
+  "That did not save. Check your connection and try again.":"Das wurde nicht gespeichert. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
 };
 
 export const DICTIONARIES: Record<AppLanguage, Record<string, string>> = {

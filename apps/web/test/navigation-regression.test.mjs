@@ -318,3 +318,52 @@ test("the legal pages announce themselves as unfinished while placeholders remai
   // rather than needing someone to remember to delete it.
   assert.match(legal, /\.some\(isPlaceholder\)/, "the banner must be driven by the values, not by a flag");
 });
+
+test("the pricing page can capture intent, and the notice declares why", () => {
+  // The page advertised three plans and sold none. "Planned for launch" was a
+  // dead end where the one useful question belonged: would you pay for this?
+  const pricing = read("app/pricing/page.tsx");
+  assert.ok(pricing.includes("<PlanInterest plan={plan.name} />"), "a plan with no CTA must ask instead");
+  assert.doesNotMatch(pricing, /pricing-cta-muted/, "the dead end must be gone, not merely hidden");
+
+  // An email address is personal data taken on consent, so the privacy notice
+  // has to carry the purpose and the basis — collecting it silently would
+  // make the notice untrue the moment someone typed into the form.
+  const legal = read("lib/legal.ts");
+  assert.match(legal, /Article 6\(1\)\(a\)/, "consent must be named as the basis for the address");
+  assert.match(legal, /withdraw it at any time/, "a consent with no withdrawal route is not a consent");
+
+  const route = read("app/api/plan-interest/route.ts");
+  const form = read("components/plan-interest.tsx");
+  assert.match(form, /const CONSENT =/, "the exact wording agreed to must be sent and stored");
+  assert.match(route, /p_consent_text/);
+  // Every outcome answers identically. Anything else lets a stranger test
+  // whether a given address is on the list.
+  assert.doesNotMatch(route, /status:\s*(4\d\d|5\d\d)/, "the endpoint must not distinguish outcomes by status");
+});
+
+test("no dictionary declares the same key twice", () => {
+  // A duplicate key is a syntax error under tsc (TS1117) but not to the unit
+  // suite, so it used to reach CI. Adding a phrase that already exists is the
+  // easy mistake — the later entry silently wins, or the build breaks.
+  const source = read("lib/i18n.ts");
+  for (const name of ["NB", "AR", "ES", "FR", "DE"]) {
+    const start = source.indexOf(`const ${name}: Record<string, string> = {`);
+    assert.ok(start > -1, `dictionary ${name} is missing`);
+    let depth = 1;
+    let index = start + source.slice(start).indexOf("{") + 1;
+    while (depth > 0) {
+      if (source[index] === "{") depth += 1;
+      else if (source[index] === "}") depth -= 1;
+      index += 1;
+    }
+    const body = source.slice(start, index);
+    const seen = new Set();
+    const duplicates = new Set();
+    for (const match of body.matchAll(/^\s*"((?:[^"\\]|\\.)*)"\s*:/gm)) {
+      if (seen.has(match[1])) duplicates.add(match[1]);
+      seen.add(match[1]);
+    }
+    assert.deepEqual([...duplicates], [], `dictionary ${name} declares a key twice`);
+  }
+});

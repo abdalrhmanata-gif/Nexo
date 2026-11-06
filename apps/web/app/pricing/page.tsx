@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LocalizedText } from "../../components/localized-text";
+import { PlanInterest } from "../../components/plan-interest";
 
 const plans = [
   {
@@ -65,7 +66,7 @@ export default function PricingPage() {
           </ul>
           {plan.cta
             ? <Link className="button pricing-cta" href="/auth/sign-up"><LocalizedText en="Start free" /></Link>
-            : <span className="pricing-cta pricing-cta-muted"><LocalizedText en="Planned for launch" /></span>}
+            : <PlanInterest plan={plan.name} />}
         </article>)}
       </div>
     </section>
