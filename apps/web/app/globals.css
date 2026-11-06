@@ -50,6 +50,9 @@ main { flex:1; }.footer { width:min(1120px, calc(100% - 40px)); margin:0 auto; p
 .legal-page .list li strong { color:var(--ink); }
 .legal-footer-links { display:flex; flex-wrap:wrap; gap:10px; margin-top:38px; }
 
+.evidence-cite { margin-top:10px; }
+.evidence-cite-list { display:flex; flex-wrap:wrap; gap:7px; margin-top:7px; }
+.evidence-cite-list .button { font-size:12px; }
 .list li.finding-high { border-left:3px solid var(--orange); padding-inline-start:12px; }
 .attention-panel .attention-more { margin:8px 0 0; color:var(--muted); font-size:13px; }
 /* Draft assistant on the new-mission form. Variables only, same reason. */

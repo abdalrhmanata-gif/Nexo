@@ -288,3 +288,17 @@ test("the page counter stores nothing that could identify a visitor", () => {
     "no one reads this table through the API");
   assert.match(route, /normaliseRoute/, "paths must be reduced to a fixed set before they reach the database");
 });
+
+test("verification is filled in from the mission instead of asked for again", () => {
+  // It used to open two empty boxes and ask the person to retype, from memory,
+  // the success criteria written a few centimetres up the same page.
+  const controls = read("components/verification-controls.tsx");
+  const page = read("app/app/missions/[id]/page.tsx");
+  assert.match(controls, /defaultValue=\{criteria\.join\("\\n"\)\}/, "criteria must be prefilled from the mission");
+  assert.match(controls, /completedSteps/, "finished steps must be offered as citable evidence");
+  assert.ok(controls.includes("const citeStep = (step: string)"), "the cite handler must be typed, or tsc fails");
+  for (const prop of ["criteria={mission.criteria}", "completedSteps={completedSteps}"]) {
+    assert.ok(page.includes(prop), `the page must pass ${prop} to verification`);
+  }
+  assert.match(page, /action\.status === "COMPLETED"/, "citable evidence comes from completed steps only");
+});

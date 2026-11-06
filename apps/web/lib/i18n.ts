@@ -533,6 +533,10 @@ const NB: Record<string, string> = {
   "Mission control for goals you have to get right":"Kontrollsenter for mål du må treffe",
   "Write the outcome you want. Get a first plan back, with the weak parts of your own wording pointed out — then keep the evidence that you reached it.":"Skriv målet du vil nå. Få en første plan tilbake, med de svake punktene i din egen formulering påpekt — og behold dokumentasjonen på at du kom i mål.",
   "Suggestions come from rules in our source code, not from a model guessing. Nothing you write is sent to an AI provider.":"Forslagene kommer fra regler i kildekoden vår, ikke fra en modell som gjetter. Ingenting du skriver sendes til en KI-leverandør.",
+  "Filled in from this mission's own success criteria. Change it if what you checked was different.":"Fylt ut fra oppdragets egne suksesskriterier. Endre det hvis du sjekket noe annet.",
+  "This mission records no success criteria, so there is nothing to fill in. Write what you actually checked.":"Dette oppdraget har ingen suksesskriterier, så det er ingenting å fylle ut. Skriv hva du faktisk sjekket.",
+  "Completed steps you can cite:":"Fullførte steg du kan vise til:",
+  "Add this step to the evidence":"Legg dette steget til i dokumentasjonen",
 };
 const AR: Record<string, string> = {
   "MISSION CONTROL":"مركز التحكم", "Search":"بحث", "New mission":"مهمة جديدة",
@@ -1041,6 +1045,10 @@ const AR: Record<string, string> = {
   "Mission control for goals you have to get right":"مركز تحكم للأهداف التي لا تحتمل الخطأ",
   "Write the outcome you want. Get a first plan back, with the weak parts of your own wording pointed out — then keep the evidence that you reached it.":"اكتب النتيجة التي تريدها. تعود إليك خطة أولى، مع إشارة إلى مواضع الضعف في صياغتك أنت — ثم احتفظ بالدليل على بلوغها.",
   "Suggestions come from rules in our source code, not from a model guessing. Nothing you write is sent to an AI provider.":"الاقتراحات تأتي من قواعد في شيفرتنا المصدرية، لا من نموذج يُخمّن. ولا يُرسَل شيء مما تكتبه إلى أي مزوّد ذكاء اصطناعي.",
+  "Filled in from this mission's own success criteria. Change it if what you checked was different.":"مملوءة من معايير نجاح هذه المهمة نفسها. غيّرها إن كان ما فحصته مختلفاً.",
+  "This mission records no success criteria, so there is nothing to fill in. Write what you actually checked.":"هذه المهمة بلا معايير نجاح مسجّلة، فلا شيء يُملأ. اكتب ما فحصته فعلاً.",
+  "Completed steps you can cite:":"خطوات مكتملة يمكنك الاستشهاد بها:",
+  "Add this step to the evidence":"أضف هذه الخطوة إلى الأدلة",
 };
 const ES: Record<string, string> = {
   "Search":"Buscar", "New mission":"Nueva misión", "Business":"Empresa", "Templates":"Plantillas",
@@ -1553,6 +1561,10 @@ const ES: Record<string, string> = {
   "Mission control for goals you have to get right":"Centro de control para objetivos que no admiten error",
   "Write the outcome you want. Get a first plan back, with the weak parts of your own wording pointed out — then keep the evidence that you reached it.":"Escribe el resultado que quieres. Recibes un primer plan, con los puntos débiles de tu propia redacción señalados, y conservas la evidencia de haberlo logrado.",
   "Suggestions come from rules in our source code, not from a model guessing. Nothing you write is sent to an AI provider.":"Las sugerencias vienen de reglas en nuestro código fuente, no de un modelo que adivina. Nada de lo que escribes se envía a un proveedor de IA.",
+  "Filled in from this mission's own success criteria. Change it if what you checked was different.":"Rellenado con los criterios de éxito de esta misión. Cámbialo si lo que comprobaste fue distinto.",
+  "This mission records no success criteria, so there is nothing to fill in. Write what you actually checked.":"Esta misión no registra criterios de éxito, así que no hay nada que rellenar. Escribe qué comprobaste realmente.",
+  "Completed steps you can cite:":"Pasos completados que puedes citar:",
+  "Add this step to the evidence":"Añadir este paso a la evidencia",
 };
 const FR: Record<string, string> = {
   "Search":"Rechercher", "New mission":"Nouvelle mission", "Business":"Entreprise", "Templates":"Modèles",
@@ -2065,6 +2077,10 @@ const FR: Record<string, string> = {
   "Mission control for goals you have to get right":"Centre de contrôle pour les objectifs à ne pas rater",
   "Write the outcome you want. Get a first plan back, with the weak parts of your own wording pointed out — then keep the evidence that you reached it.":"Écrivez le résultat visé. Vous recevez un premier plan, avec les points faibles de votre propre formulation signalés — puis vous gardez la preuve de l'avoir atteint.",
   "Suggestions come from rules in our source code, not from a model guessing. Nothing you write is sent to an AI provider.":"Les suggestions viennent de règles dans notre code source, pas d'un modèle qui devine. Rien de ce que vous écrivez n'est envoyé à un fournisseur d'IA.",
+  "Filled in from this mission's own success criteria. Change it if what you checked was different.":"Rempli à partir des critères de réussite de cette mission. Modifiez-le si vous avez vérifié autre chose.",
+  "This mission records no success criteria, so there is nothing to fill in. Write what you actually checked.":"Cette mission n'enregistre aucun critère de réussite : il n'y a rien à préremplir. Écrivez ce que vous avez vraiment vérifié.",
+  "Completed steps you can cite:":"Étapes terminées que vous pouvez citer :",
+  "Add this step to the evidence":"Ajouter cette étape aux preuves",
 };
 const DE: Record<string, string> = {
   "Search":"Suchen", "New mission":"Neue Mission", "Business":"Unternehmen", "Templates":"Vorlagen",
@@ -2577,6 +2593,10 @@ const DE: Record<string, string> = {
   "Mission control for goals you have to get right":"Kontrollzentrum für Ziele, die sitzen müssen",
   "Write the outcome you want. Get a first plan back, with the weak parts of your own wording pointed out — then keep the evidence that you reached it.":"Schreiben Sie das gewünschte Ergebnis. Sie erhalten einen ersten Plan, mit den schwachen Stellen Ihrer eigenen Formulierung benannt — und behalten den Nachweis, dass Sie es erreicht haben.",
   "Suggestions come from rules in our source code, not from a model guessing. Nothing you write is sent to an AI provider.":"Die Vorschläge stammen aus Regeln in unserem Quellcode, nicht aus einem ratenden Modell. Nichts, was Sie schreiben, geht an einen KI-Anbieter.",
+  "Filled in from this mission's own success criteria. Change it if what you checked was different.":"Aus den Erfolgskriterien dieser Mission übernommen. Ändern Sie es, wenn Sie etwas anderes geprüft haben.",
+  "This mission records no success criteria, so there is nothing to fill in. Write what you actually checked.":"Diese Mission hat keine Erfolgskriterien, also gibt es nichts vorauszufüllen. Schreiben Sie, was Sie tatsächlich geprüft haben.",
+  "Completed steps you can cite:":"Abgeschlossene Schritte, die Sie anführen können:",
+  "Add this step to the evidence":"Diesen Schritt den Nachweisen hinzufügen",
 };
 
 export const DICTIONARIES: Record<AppLanguage, Record<string, string>> = {
