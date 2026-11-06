@@ -111,6 +111,12 @@ export const PURPOSES: PurposeRow[] = [
     retention: "Held by those providers for a limited period under their own retention rules",
   },
   {
+    purpose: "Telling you when a plan you asked about becomes available",
+    data: "The email address you gave on the pricing page, which plan you asked about, and the exact sentence you agreed to",
+    basis: "Article 6(1)(a) — your consent, given by submitting that form. You may withdraw it at any time by writing to us, and we delete the address",
+    retention: "Until we have sent that one message, or you ask us to delete it, or 24 months pass without the plan opening",
+  },
+  {
     purpose: "Counting how many times each page was opened",
     data: "The page path, the date, and the website that linked here. No identifier of any kind, and nothing is stored on your device",
     basis: "Article 6(1)(f) — our legitimate interest in knowing whether the service is used. Because no one is identified, this does not single you out",
