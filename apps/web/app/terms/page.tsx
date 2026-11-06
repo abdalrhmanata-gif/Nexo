@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { LocalizedText } from "../../components/localized-text";
-import { LEGAL } from "../../lib/legal";
+import { LEGAL, legalDetailsPending } from "../../lib/legal";
 
 // English only, for the same reason as the privacy notice.
 //
@@ -24,6 +24,11 @@ export default function TermsPage() {
       you create an account and use ZAVQERA. Please read section 4, which limits what the suggestions in this product
       are, and section 10, which limits our liability.
     </p>
+    {legalDetailsPending() && <p className="legal-pending" role="status">
+      <strong>This document is not yet in force.</strong> The service is not open to users, and the
+      operator&rsquo;s own details below are still unfilled — anything shown in square brackets is a
+      placeholder, not a value. It will be completed, and dated, before anyone is invited to create an account.
+    </p>}
     <p className="legal-meta">Last updated: {LEGAL.lastUpdated} · English only — see section 13</p>
 
     <section>

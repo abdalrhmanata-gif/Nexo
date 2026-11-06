@@ -302,3 +302,19 @@ test("verification is filled in from the mission instead of asked for again", ()
   }
   assert.match(page, /action\.status === "COMPLETED"/, "citable evidence comes from completed steps only");
 });
+
+test("the legal pages announce themselves as unfinished while placeholders remain", () => {
+  // Both pages are published the moment the site is. A visitor who finds
+  // "[CONTROLLER NAME — replace before launch]" sitting in a sentence reads a
+  // broken page; the banner makes it an unfinished one, which is the truth.
+  const legal = read("lib/legal.ts");
+  assert.match(legal, /export function legalDetailsPending/);
+  for (const page of ["app/privacy/page.tsx", "app/terms/page.tsx"]) {
+    const source = read(page);
+    assert.match(source, /legalDetailsPending\(\)/, `${page} must declare itself unfinished while unfilled`);
+    assert.match(source, /not yet in force/, `${page} must say so in words, not only by styling`);
+  }
+  // And the banner must disappear on its own once the details are filled in,
+  // rather than needing someone to remember to delete it.
+  assert.match(legal, /\.some\(isPlaceholder\)/, "the banner must be driven by the values, not by a flag");
+});
