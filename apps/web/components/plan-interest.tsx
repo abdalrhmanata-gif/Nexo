@@ -37,7 +37,15 @@ export function PlanInterest({ plan }: { plan: string }) {
     event.preventDefault();
     setBusy(true);
     setFailed(false);
-    const email = String(new FormData(event.currentTarget).get("email") ?? "");
+    const data = new FormData(event.currentTarget);
+    const email = String(data.get("email") ?? "");
+    // A field no person can see or reach. A script that fills every input
+    // fills this one too, and we drop the submission without saying why.
+    if (String(data.get("company") ?? "").trim() !== "") {
+      setDone(true);
+      setBusy(false);
+      return;
+    }
     try {
       const response = await fetch("/api/plan-interest", {
         method: "POST",
@@ -70,6 +78,15 @@ export function PlanInterest({ plan }: { plan: string }) {
       maxLength={254}
       autoComplete="email"
       placeholder={t("you@example.com")}
+    />
+    <input
+      className="visually-hidden"
+      name="company"
+      type="text"
+      tabIndex={-1}
+      autoComplete="off"
+      aria-hidden="true"
+      defaultValue=""
     />
     <button className="button button-small" type="submit" disabled={busy}>
       {busy ? t("Sending…") : t("Notify me")}
