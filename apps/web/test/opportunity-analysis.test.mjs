@@ -179,11 +179,15 @@ test("AI endpoint requires authentication, explicit opt-in configuration, reques
   assert.match(route, /providerConfig\(\)/);
   assert.match(route, /rateLimit\(/);
   assert.match(route, /readLimitedBody\(/);
-  assert.match(route, /estimateOpenAITextCost/);
+  const run = read("lib/ai/run.ts");
+  assert.match(run, /estimateOpenAITextCost/);
+  assert.match(route, /runGuardedJsonCompletion/);
+  assert.doesNotMatch(route, /fetch\(config\.endpoint/,
+    "the route must not open its own connection to the provider");
   assert.match(route, /ai_brief_usage/);
   assert.match(route, /MAX_ANALYSIS_REQUEST_BYTES/);
-  assert.match(route, /AbortController/);
-  assert.match(route, /max_completion_tokens/);
+  assert.match(run, /AbortController/);
+  assert.match(run, /max_completion_tokens/);
   assert.match(route, /Cache-Control.*no-store|noStoreHeaders/);
   assert.doesNotMatch(route, /console\.(log|error)\(/);
 
@@ -194,18 +198,23 @@ test("AI endpoint requires authentication, explicit opt-in configuration, reques
 });
 
 test("AI endpoint enforces persistent monthly quota before calling the paid provider", () => {
+  // The quota flow moved into lib/ai/run.ts when the mission-plan route
+  // needed the same one. What matters is unchanged and is checked where it
+  // now lives: the generation is consumed before the provider is contacted,
+  // so a timeout or a retry cannot buy a free one, and a failed consume
+  // releases the reservation instead of leaving it held.
+  const run = read("lib/ai/run.ts");
   const route = read("app/api/opportunities/analyze/route.ts");
-  assert.match(route, /createSupabaseServerClient/);
-  assert.match(route, /rpc\("reserve_ai_generation"/);
-  assert.match(route, /rpc\("consume_ai_generation"/);
-  assert.match(route, /AI_MONTHLY_QUOTA_EXCEEDED/);
-  assert.match(route, /AI_USAGE_UNAVAILABLE/);
-  assert.match(route, /AI_USAGE_FINALIZATION_FAILED/);
-  const reserveAt = route.indexOf('rpc("reserve_ai_generation"');
-  const consumeAt = route.indexOf('rpc("consume_ai_generation"');
-  const providerAt = route.indexOf("fetch(config.endpoint,");
-  assert.ok(reserveAt >= 0 && reserveAt < consumeAt && consumeAt < providerAt,
-    "durable quota reservation and consumption must precede the external provider call");
+  assert.match(run, /rpc\("reserve_ai_generation"/);
+  assert.match(run, /rpc\("consume_ai_generation"/);
+  assert.match(run, /rpc\("release_ai_generation"/);
+  const consumeAt = run.indexOf('"consume_ai_generation"');
+  const fetchAt = run.indexOf("fetch(config.endpoint");
+  assert.ok(consumeAt > 0 && fetchAt > consumeAt,
+    "the generation must be consumed before the provider is contacted");
+  assert.match(route, /ai_brief_usage/, "the brief route still names its own cost event");
+  assert.doesNotMatch(route, /reserve_ai_generation/,
+    "the route must not run its own quota flow");
 });
 
 test("Opportunity Intelligence UI calls the server endpoint only on explicit user action and does not persist generated reports", () => {

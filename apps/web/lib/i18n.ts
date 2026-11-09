@@ -740,6 +740,7 @@ const NB: Record<string, string> = {
   "The AI provider returned a plan that was not valid JSON. This attempt used one monthly generation.":"KI-leverandøren returnerte en plan som ikke var gyldig JSON. Forsøket brukte én månedlig generering.",
   "The draft plan stated figures or links it cannot verify, so it was discarded. This attempt used one monthly generation.":"Utkastet oppga tall eller lenker det ikke kan verifisere, og ble derfor forkastet. Forsøket brukte én månedlig generering.",
   "The AI plan timed out. This attempt used one monthly generation; no automatic retry was attempted.":"KI-planen tidsavbrøt. Forsøket brukte én månedlig generering; ingen automatisk nytt forsøk ble gjort.",
+  "The AI provider rejected this deployment's credentials. The API key may have expired, been revoked or been entered incorrectly. This attempt used one monthly generation.":"KI-leverandøren avviste legitimasjonen til denne installasjonen. API-nøkkelen kan ha utløpt, blitt tilbakekalt eller blitt feil skrevet inn. Forsøket brukte én månedlig generering.",
 };
 const AR: Record<string, string> = {
   "MISSION CONTROL":"مركز التحكم", "Search":"بحث", "New mission":"مهمة جديدة",
@@ -1455,6 +1456,7 @@ const AR: Record<string, string> = {
   "The AI provider returned a plan that was not valid JSON. This attempt used one monthly generation.":"أعاد مزوّد الذكاء الاصطناعي خطة ليست JSON صالحاً. استهلكت هذه المحاولة توليدة شهرية واحدة.",
   "The draft plan stated figures or links it cannot verify, so it was discarded. This attempt used one monthly generation.":"ذكرت المسودة أرقاماً أو روابط لا تستطيع التحقق منها، فأُلغيت. استهلكت هذه المحاولة توليدة شهرية واحدة.",
   "The AI plan timed out. This attempt used one monthly generation; no automatic retry was attempted.":"انتهت مهلة خطة الذكاء الاصطناعي. استهلكت هذه المحاولة توليدة شهرية واحدة؛ ولم تُجرَ إعادة محاولة تلقائية.",
+  "The AI provider rejected this deployment's credentials. The API key may have expired, been revoked or been entered incorrectly. This attempt used one monthly generation.":"رفض مزوّد الذكاء الاصطناعي بيانات اعتماد هذا النشر. قد يكون المفتاح منتهي الصلاحية أو مُلغى أو مُدخلاً بشكل خاطئ. استهلكت هذه المحاولة توليدة شهرية واحدة.",
 };
 const ES: Record<string, string> = {
   "Search":"Buscar", "New mission":"Nueva misión", "Business":"Empresa", "Templates":"Plantillas",
@@ -2174,6 +2176,7 @@ const ES: Record<string, string> = {
   "The AI provider returned a plan that was not valid JSON. This attempt used one monthly generation.":"El proveedor de IA devolvió un plan que no era JSON válido. El intento consumió una generación mensual.",
   "The draft plan stated figures or links it cannot verify, so it was discarded. This attempt used one monthly generation.":"El borrador indicaba cifras o enlaces que no puede verificar, así que se descartó. El intento consumió una generación mensual.",
   "The AI plan timed out. This attempt used one monthly generation; no automatic retry was attempted.":"El plan de IA agotó el tiempo de espera. El intento consumió una generación mensual; no hubo reintento automático.",
+  "The AI provider rejected this deployment's credentials. The API key may have expired, been revoked or been entered incorrectly. This attempt used one monthly generation.":"El proveedor de IA rechazó las credenciales de esta instalación. La clave API puede haber caducado, haber sido revocada o estar mal introducida. El intento consumió una generación mensual.",
 };
 const FR: Record<string, string> = {
   "Search":"Rechercher", "New mission":"Nouvelle mission", "Business":"Entreprise", "Templates":"Modèles",
@@ -2893,6 +2896,7 @@ const FR: Record<string, string> = {
   "The AI provider returned a plan that was not valid JSON. This attempt used one monthly generation.":"Le fournisseur d'IA a renvoyé un plan qui n'était pas du JSON valide. Cette tentative a consommé une génération mensuelle.",
   "The draft plan stated figures or links it cannot verify, so it was discarded. This attempt used one monthly generation.":"Le brouillon indiquait des chiffres ou des liens qu'il ne peut pas vérifier ; il a été écarté. Cette tentative a consommé une génération mensuelle.",
   "The AI plan timed out. This attempt used one monthly generation; no automatic retry was attempted.":"Le plan IA a expiré. Cette tentative a consommé une génération mensuelle ; aucune nouvelle tentative automatique n'a eu lieu.",
+  "The AI provider rejected this deployment's credentials. The API key may have expired, been revoked or been entered incorrectly. This attempt used one monthly generation.":"Le fournisseur d'IA a rejeté les identifiants de ce déploiement. La clé API a pu expirer, être révoquée ou être mal saisie. Cette tentative a consommé une génération mensuelle.",
 };
 const DE: Record<string, string> = {
   "Search":"Suchen", "New mission":"Neue Mission", "Business":"Unternehmen", "Templates":"Vorlagen",
@@ -3612,6 +3616,7 @@ const DE: Record<string, string> = {
   "The AI provider returned a plan that was not valid JSON. This attempt used one monthly generation.":"Der KI-Anbieter lieferte einen Plan, der kein gültiges JSON war. Der Versuch verbrauchte eine monatliche Generierung.",
   "The draft plan stated figures or links it cannot verify, so it was discarded. This attempt used one monthly generation.":"Der Entwurf nannte Zahlen oder Links, die er nicht belegen kann, und wurde verworfen. Der Versuch verbrauchte eine monatliche Generierung.",
   "The AI plan timed out. This attempt used one monthly generation; no automatic retry was attempted.":"Beim KI-Plan ist eine Zeitüberschreitung aufgetreten. Der Versuch verbrauchte eine monatliche Generierung; ein automatischer neuer Versuch erfolgte nicht.",
+  "The AI provider rejected this deployment's credentials. The API key may have expired, been revoked or been entered incorrectly. This attempt used one monthly generation.":"Der KI-Anbieter hat die Zugangsdaten dieser Installation abgelehnt. Der API-Schlüssel ist möglicherweise abgelaufen, widerrufen oder falsch eingetragen. Der Versuch verbrauchte eine monatliche Generierung.",
 };
 
 export const DICTIONARIES: Record<AppLanguage, Record<string, string>> = {
