@@ -9,6 +9,7 @@ import { planHeadline, suggestPlanFor } from "../../../../lib/mission-planner.mj
 import { critiqueMission, planIsThin } from "../../../../lib/mission-critique.mjs";
 import { fill } from "../../../../lib/i18n";
 import { SuggestedPlan } from "../../../../components/suggested-plan";
+import { AiMissionPlan } from "../../../../components/ai-mission-plan";
 import { getTranslate } from "../../../../lib/i18n-server";
 import { StatusPill } from "../../../../components/shell";
 import { VerificationControls } from "../../../../components/verification-controls";
@@ -86,6 +87,17 @@ export default async function MissionDetailPage({
           criteria={suggested.criteria}
           licensed={suggested.licensed}
         />}
+
+        {/* The deterministic planner knows six domains by keyword. This is
+            the path for every mission it cannot help with, which is most of
+            them. It renders nothing where no provider is configured. */}
+        <AiMissionPlan
+          missionId={mission.id}
+          name={mission.name}
+          intent={mission.intent}
+          criteria={mission.criteria}
+          actions={mission.actions.map((action) => action.title)}
+        />
 
         <section className="card" aria-labelledby="plan-health-heading">
           <p className="eyebrow"><LocalizedText en="Plan health" /></p>
