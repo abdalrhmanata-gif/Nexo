@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { estimateOpenAITextCost, type AiCostEstimate } from "../opportunity-cost.mjs";
 import { PROVIDER_TIMEOUT_MS, jsonError, noStoreHeaders, type ProviderConfig } from "./gate";
+import type { createSupabaseServerClient } from "../supabase/server";
 
 // One guarded path to a paid provider, used by every route that needs one.
 //
@@ -41,7 +42,11 @@ export type RunMessages = {
   failed: string;
 };
 
-type SupabaseLike = { rpc: (name: string, args: Record<string, unknown>) => Promise<{ data?: unknown; error?: unknown }> };
+// The real client, not a hand-written shape of it. A structural stand-in
+// looked right here and failed the full typecheck in CI, which is the only
+// place the Supabase types are actually present: `import type` is erased at
+// runtime, so this costs nothing and cannot drift from the client again.
+type SupabaseLike = Awaited<ReturnType<typeof createSupabaseServerClient>>;
 
 export type GuardedRun<T> =
   | { ok: true; report: T; quota: AiUsageReservation; costEstimate: AiCostEstimate | null }
