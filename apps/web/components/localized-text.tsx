@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  DICTIONARIES,
   LANGUAGE_COOKIE,
   LANGUAGE_STORAGE_KEY,
   isSupportedLanguage,
@@ -10,6 +9,7 @@ import {
   type AppLanguage,
 } from "../lib/i18n";
 export { fill } from "../lib/i18n";
+import { fill as fillText } from "../lib/i18n";
 
 // The tables live in lib/i18n so server components can translate as well.
 // LocalizedText renders a text node; useLanguage and useTranslate give the same
@@ -52,10 +52,26 @@ export function useTranslate(): (en: string) => string {
   return useCallback((en: string) => translate(en, language), [language]);
 }
 
-export function LocalizedText({ en, nb, ar }: { en: string; nb?: string; ar?: string }) {
+// Inline nb/ar props used to be accepted here and took precedence over the
+// table. They were a second source of truth covering two of the five
+// languages, so a string written only inline was Norwegian and Arabic and
+// silently English in Spanish, French and German — which is how the
+// navigation bar came to be half-translated. The dictionary is now the only
+// path, and a test fails if an inline prop comes back.
+export function LocalizedText({ en }: { en: string }) {
   const language = useLanguage();
-  // nb and ar may still be supplied inline by older call sites; they take
-  // precedence over the table for those two languages only.
-  const inline = language === "nb" ? nb : language === "ar" ? ar : undefined;
-  return <>{inline ?? DICTIONARIES[language][en] ?? en}</>;
+  return <>{translate(en, language)}</>;
+}
+
+/**
+ * The same, for a sentence that carries values: <LocalizedFill en="{done} of
+ * {total} actions complete" values={{ done, total }} />.
+ *
+ * A synchronous server component cannot await getTranslate(), and making it
+ * async is not an option under this React version, so without this the only
+ * way to write such a sentence there was to build it in English.
+ */
+export function LocalizedFill({ en, values }: { en: string; values: Record<string, string | number> }) {
+  const language = useLanguage();
+  return <>{fillText(translate(en, language), values)}</>;
 }

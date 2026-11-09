@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, relative, resolve } from "node:path";
 import test from "node:test";
+import { duplicateKeys, readDictionaries } from "./helpers/dictionaries.mjs";
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (path) => readFileSync(join(webRoot, path), "utf8");
@@ -159,7 +160,14 @@ test("brand link exposes its visible label and landing proof badges meet AA cont
   assert.match(shell, /<Link className="brand" href="\/" prefetch=\{false\}>/);
   assert.doesNotMatch(shell, /aria-label="Zavqera home"/);
   assert.match(shell, /className="visually-hidden"/);
-  assert.match(shell, /LocalizedText en="Home" nb="Hjem" ar="الرئيسية"/);
+  // The label used to carry its Norwegian and Arabic inline. Those props are
+  // gone — they covered two of five languages and left the rest in English —
+  // so the assertion is now that the label is there and wrapped. That it
+  // resolves in every language is enforced for the whole app by
+  // test/i18n-key-resolution.test.mjs.
+  assert.match(shell, /<LocalizedText en="Home"\s*\/>/);
+  assert.doesNotMatch(shell, /<LocalizedText[^>]*\snb="/,
+    "inline nb/ar are a second source of truth; the dictionary is the only path");
   const css = read("app/globals.css");
   assert.match(css, /\.topbar \.brand \.visually-hidden \{ display:block; \}/);
   assert.match(css, /\.landing-proof-icon \{[^}]*background:#e3f5f0; color:#08685f;/);
@@ -346,26 +354,33 @@ test("no dictionary declares the same key twice", () => {
   // A duplicate key is a syntax error under tsc (TS1117) but not to the unit
   // suite, so it used to reach CI. Adding a phrase that already exists is the
   // easy mistake — the later entry silently wins, or the build breaks.
-  const source = read("lib/i18n.ts");
-  for (const name of ["NB", "AR", "ES", "FR", "DE"]) {
-    const start = source.indexOf(`const ${name}: Record<string, string> = {`);
-    assert.ok(start > -1, `dictionary ${name} is missing`);
-    let depth = 1;
-    let index = start + source.slice(start).indexOf("{") + 1;
-    while (depth > 0) {
-      if (source[index] === "{") depth += 1;
-      else if (source[index] === "}") depth -= 1;
-      index += 1;
-    }
-    const body = source.slice(start, index);
-    const seen = new Set();
-    const duplicates = new Set();
-    for (const match of body.matchAll(/^\s*"((?:[^"\\]|\\.)*)"\s*:/gm)) {
-      if (seen.has(match[1])) duplicates.add(match[1]);
-      seen.add(match[1]);
-    }
-    assert.deepEqual([...duplicates], [], `dictionary ${name} declares a key twice`);
+  //
+  // This test used to do its own parsing and matched one key per line. Parts
+  // of lib/i18n.ts pack several pairs onto a line, so every key after the
+  // first was invisible and real duplicates passed it. It now shares the
+  // parser in test/helpers, which reads them all.
+  const duplicates = duplicateKeys();
+  for (const [name, keys] of Object.entries(duplicates)) {
+    assert.deepEqual(keys, [], `dictionary ${name} declares a key twice`);
   }
+});
+
+test("the duplicate-key check reads keys that share a line", () => {
+  // The flaw that let duplicates through, pinned so it cannot come back.
+  const packed = [
+    'const NB: Record<string, string> = {',
+    '  "A":"a", "B":"b", "C":"c",',
+    '  "B":"b again",',
+    '};',
+    'const AR: Record<string, string> = { "A":"أ", "Placeholder":"{count} شيء", };',
+    'const ES: Record<string, string> = { "A":"a" };',
+    'const FR: Record<string, string> = { "A":"a" };',
+    'const DE: Record<string, string> = { "A":"a" };',
+  ].join("\n");
+  assert.deepEqual(duplicateKeys(packed).NB, ["B"],
+    "a duplicate sharing a line with other pairs must still be found");
+  // And a { } inside a value must not be mistaken for the end of the object.
+  assert.equal(readDictionaries(packed).AR.get("Placeholder"), "{count} شيء");
 });
 
 test("the open interest endpoint cannot be used to fill the database", () => {

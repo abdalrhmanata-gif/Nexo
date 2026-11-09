@@ -46,7 +46,7 @@ export function NotificationBell() {
       <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
       <path d="M10 21h4" />
     </svg>
-    <span className="notification-label"><LocalizedText en="Notifications" nb="Varsler" ar="الإشعارات" /></span>
+    <span className="notification-label"><LocalizedText en="Notifications" /></span>
     {count !== null && count > 0 && <span className="notification-count" aria-hidden="true">{count > 99 ? "99+" : count}</span>}
   </Link>;
 }

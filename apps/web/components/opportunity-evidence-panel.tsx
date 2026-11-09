@@ -99,15 +99,15 @@ export function OpportunityEvidencePanel({
     const observation = draft.observation.trim();
 
     if (!isHttpSourceUrl(url)) {
-      setError("Enter a valid public http:// or https:// source URL.");
+      setError(t("Enter a valid public http:// or https:// source URL."));
       return;
     }
     if (!title || !observation) {
-      setError("Add the source title and a concise note describing what the source actually says.");
+      setError(t("Add the source title and a concise note describing what the source actually says."));
       return;
     }
     if (findDuplicateEvidence(opportunity.evidenceItems, url, opportunity.evidenceUrl)) {
-      setError("This source URL is already attached. Revisit the existing entry instead of counting it twice.");
+      setError(t("This source URL is already attached. Revisit the existing entry instead of counting it twice."));
       return;
     }
 
@@ -126,7 +126,7 @@ export function OpportunityEvidencePanel({
     onAddEvidence(item);
     setDraft(EMPTY_DRAFT);
     setExpanded(false);
-    setNotice("Evidence note added. It records your review; Zavqera has not independently verified the source.");
+    setNotice(t("Evidence note added. It records your review; Zavqera has not independently verified the source."));
   }
 
   return (
@@ -142,7 +142,7 @@ export function OpportunityEvidencePanel({
           onClick={() => { setExpanded((current) => !current); setError(""); setNotice(""); }}
           aria-expanded={expanded}
         >
-          {expanded ? "Close research" : "Research & add evidence"}
+          {expanded ? t("Close research") : t("Research & add evidence")}
         </button>
       </div>
 
@@ -160,12 +160,12 @@ export function OpportunityEvidencePanel({
           {opportunity.evidenceItems.map((item) => (
             <details className="evidence-item" key={item.id}>
               <summary>
-                <span className={`evidence-stance evidence-stance-${item.stance}`}>{STANCE_LABELS[item.stance]}</span>
+                <span className={`evidence-stance evidence-stance-${item.stance}`}>{t(STANCE_LABELS[item.stance])}</span>
                 <strong>{item.title}</strong>
               </summary>
               <p className="evidence-observation">{item.observation}</p>
               <div className="evidence-item-meta">
-                <span>{SOURCE_LABELS[item.sourceType]}</span>
+                <span>{t(SOURCE_LABELS[item.sourceType])}</span>
                 <span>Reliability estimate: {item.reliability}/5</span>
                 {item.sourceDate && <span>Published: {item.sourceDate}</span>}
                 <span>Reviewed: {new Date(item.checkedAt).toLocaleDateString()}</span>
@@ -223,13 +223,13 @@ export function OpportunityEvidencePanel({
               <div className="field">
                 <label htmlFor={`evidence-stance-${opportunity.id}`}><LocalizedText en="Effect on the thesis" /></label>
                 <select id={`evidence-stance-${opportunity.id}`} value={draft.stance} onChange={(event) => updateDraft("stance", event.target.value as EvidenceStance)}>
-                  {EVIDENCE_STANCES.map((stance) => <option value={stance} key={stance}>{STANCE_LABELS[stance]}</option>)}
+                  {EVIDENCE_STANCES.map((stance) => <option value={stance} key={stance}>{t(STANCE_LABELS[stance])}</option>)}
                 </select>
               </div>
               <div className="field">
                 <label htmlFor={`evidence-type-${opportunity.id}`}><LocalizedText en="Source type" /></label>
                 <select id={`evidence-type-${opportunity.id}`} value={draft.sourceType} onChange={(event) => updateDraft("sourceType", event.target.value as EvidenceSourceType)}>
-                  {EVIDENCE_SOURCE_TYPES.map((type) => <option value={type} key={type}>{SOURCE_LABELS[type]}</option>)}
+                  {EVIDENCE_SOURCE_TYPES.map((type) => <option value={type} key={type}>{t(SOURCE_LABELS[type])}</option>)}
                 </select>
               </div>
               <div className="field">

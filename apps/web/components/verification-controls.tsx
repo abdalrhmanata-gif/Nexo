@@ -44,13 +44,13 @@ export function VerificationControls({
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        setMessage(payload.error ?? "Verification failed.");
+        setMessage(payload.error ? t(payload.error) : t("Verification failed."));
         return;
       }
-      setMessage("Verification recorded. Refreshing mission state…");
+      setMessage(t("Verification recorded. Refreshing mission state…"));
       router.refresh();
     } catch {
-      setMessage("Verification could not be saved. Check your connection and try again.");
+      setMessage(t("Verification could not be saved. Check your connection and try again."));
     } finally {
       setBusy(false);
     }
@@ -69,13 +69,13 @@ export function VerificationControls({
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        setMessage(payload.error ?? "Outcome could not be committed.");
+        setMessage(payload.error ? t(payload.error) : t("Outcome could not be committed."));
         return;
       }
-      setMessage("Verified outcome committed.");
+      setMessage(t("Verified outcome committed."));
       router.refresh();
     } catch {
-      setMessage("Outcome could not be committed. Check your connection and try again.");
+      setMessage(t("Outcome could not be committed. Check your connection and try again."));
     } finally {
       setBusy(false);
     }

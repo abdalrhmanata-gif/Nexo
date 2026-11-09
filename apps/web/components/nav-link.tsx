@@ -28,7 +28,7 @@ export function WorkspaceNavLink() {
   return (
     <NavLink href="/app" className="nav-link workspace-nav">
       <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3h8v8H3zM13 3h8v5h-8zM13 10h8v11h-8zM3 13h8v8H3z" /></svg>
-      <LocalizedText en="Workspace" nb="Arbeidsområde" ar="مساحة العمل" />
+      <LocalizedText en="Workspace" />
     </NavLink>
   );
 }

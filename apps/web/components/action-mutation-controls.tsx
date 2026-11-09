@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { LocalizedText } from "./localized-text";
+import { LocalizedText, useTranslate } from "./localized-text";
 import { useRouter } from "next/navigation";
 import type { ActionStatus, MissionAction } from "../lib/view-models";
 import {
@@ -13,6 +13,7 @@ import {
 } from "../lib/mission-content.mjs";
 
 export function ActionMutationControls({ missionId, action }: { missionId: string; action: MissionAction }) {
+  const t = useTranslate();
   const router = useRouter();
   const [status, setStatus] = useState<ActionStatus>(action.status);
   const [followUp, setFollowUp] = useState(followUpInputValue(action.followUpAt));
@@ -47,19 +48,19 @@ export function ActionMutationControls({ missionId, action }: { missionId: strin
         }),
       });
       if (response.status === 409) {
-        setMessage("This action changed elsewhere. Showing the latest saved state.");
+        setMessage(t("This action changed elsewhere. Showing the latest saved state."));
         router.refresh();
         return;
       }
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        setMessage(payload.error ?? "Action update was not accepted.");
+        setMessage(payload.error ? t(payload.error) : t("Action update was not accepted."));
         return;
       }
-      setMessage("Action saved.");
+      setMessage(t("Action saved."));
       router.refresh();
     } catch {
-      setMessage("The action could not be saved. Check your connection and try again.");
+      setMessage(t("The action could not be saved. Check your connection and try again."));
     } finally {
       setBusy(false);
     }

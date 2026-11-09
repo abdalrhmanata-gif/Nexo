@@ -29,12 +29,12 @@ type OpportunityAnalysisSubject = {
 
 const MAX_EVIDENCE_ITEMS = 10;
 
-function missionHref(report: OpportunityAnalysisReport, score: number): string {
+function missionHref(report: OpportunityAnalysisReport, score: number, t: (en: string) => string): string {
   const params = new URLSearchParams({
     fromOpportunity: "1",
     name: report.missionDraft.name.slice(0, 100),
     intent: [
-      "AI-generated Opportunity Brief — review all assumptions and sources before acting.",
+      t("AI-generated Opportunity Brief — review all assumptions and sources before acting."),
       `Executive summary: ${report.executiveSummary}`,
       `Decision: ${report.decision}. ${report.decisionRationale}`,
       `Existing local priority score: ${score}/100. This score is not a success probability or revenue forecast.`,
@@ -43,7 +43,7 @@ function missionHref(report: OpportunityAnalysisReport, score: number): string {
       `Failure threshold: ${report.recommendedExperiment.failureThreshold}`,
       `Estimated effort: ${report.recommendedExperiment.estimatedEffort}`,
       `Cost assumptions: ${report.recommendedExperiment.costAssumptions}`,
-      `Critical unknowns: ${report.criticalUnknowns.join("; ") || "None listed; verify the report before proceeding."}`,
+      fill(t("Critical unknowns: {unknowns}"), { unknowns: report.criticalUnknowns.join("; ") || t("None listed; verify the report before proceeding.") }),
     ].join("\n\n").slice(0, 3000),
     criteria: report.missionDraft.successCriteria.join("\n").slice(0, 2000),
     actions: Array.from(new Set([
@@ -54,8 +54,23 @@ function missionHref(report: OpportunityAnalysisReport, score: number): string {
   return `/app/missions/new?${params.toString()}`;
 }
 
-function decisionLabel(decision: OpportunityAnalysisReport["decision"]) {
-  return decision === "INSUFFICIENT_EVIDENCE" ? "Insufficient evidence" : decision.replaceAll("_", " ");
+/**
+ * The decision is an enum, and an enum value is not a label: showing
+ * "INSUFFICIENT_EVIDENCE" to a reader, or a de-underscored version of it, is
+ * not English and translates into nothing. Each value gets a written label,
+ * and test/i18n-indirect-keys.test.mjs keeps every one of them in the
+ * dictionaries because it checks every *LABELS table.
+ */
+const DECISION_LABELS: Record<string, string> = {
+  PURSUE: "Pursue",
+  VALIDATE: "Validate first",
+  DEFER: "Defer for now",
+  HOLD: "Hold on the radar",
+  INSUFFICIENT_EVIDENCE: "Insufficient evidence",
+};
+
+function decisionLabel(decision: OpportunityAnalysisReport["decision"], t: (en: string) => string) {
+  return t(DECISION_LABELS[decision] ?? decision);
 }
 
 export function OpportunityAnalysisPanel({
@@ -106,7 +121,7 @@ export function OpportunityAnalysisPanel({
       };
       if (!response.ok || !payload.report) {
         if (payload.code === "AI_ANALYSIS_NOT_CONFIGURED") {
-          throw new Error("AI analysis is not enabled on this deployment yet. No AI request was sent.");
+          throw new Error("AI analysis is not enabled on this deployment yet. No AI request was sent.");  // translated where it is shown
         }
         if (payload.code === "AUTHENTICATION_REQUIRED") {
           throw new Error("Sign in to generate an AI Opportunity Brief.");
@@ -129,18 +144,22 @@ export function OpportunityAnalysisPanel({
           <p className="action-hint"><LocalizedText en="Challenges assumptions, checks the evidence you recorded, and proposes a measurable test." /></p>
         </div>
         <button className="button button-small" type="button" onClick={generateBrief} disabled={loading} aria-busy={loading}>
-          {loading ? "Analyzing…" : report ? "Regenerate AI brief" : "Generate AI brief"}
+          {loading ? t("Analyzing…") : report ? t("Regenerate AI brief") : t("Generate AI brief")}
         </button>
       </div>
       <p className="analysis-caution">When enabled, this sends the opportunity and up to {MAX_EVIDENCE_ITEMS} of your most recent evidence notes to the configured AI provider. Zavqera does not fetch the cited URLs. Review every conclusion before acting.</p>
       {loading && <p className="analysis-status" role="status"><LocalizedText en="Reviewing the supplied evidence and drafting a validation experiment…" /></p>}
-      {error && <p className="field-error analysis-error" role="alert">{error}</p>}
+      {/* The message may come from our API, which answers in English because it
+          has no view of the reader's language. It is translated here, once, at
+          the only place it is shown; a test keeps every message the route can
+          return present in the dictionaries. */}
+      {error && <p className="field-error analysis-error" role="alert">{t(error)}</p>}
       {report && (
         <div className="analysis-report" aria-live="polite">
           <div className="analysis-report-heading">
             <div>
               <p className="eyebrow"><LocalizedText en="AI Opportunity Brief" /></p>
-              <h3>{decisionLabel(report.decision)}</h3>
+              <h3>{decisionLabel(report.decision, t)}</h3>
             </div>
             <span className="analysis-score-note">Rule-based score: {score}/100</span>
           </div>
@@ -211,7 +230,7 @@ export function OpportunityAnalysisPanel({
             <h4><LocalizedText en="Mission draft" /></h4>
             <p>{report.missionDraft.intent}</p>
             <p className="action-hint"><LocalizedText en="Nothing is created automatically. You can review and edit the draft before submitting it." /></p>
-            <a className="button button-small" href={missionHref(report, score)}><LocalizedText en="Review as Mission" /></a>
+            <a className="button button-small" href={missionHref(report, score, t)}><LocalizedText en="Review as Mission" /></a>
           </div>
         </div>
       )}

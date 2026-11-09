@@ -49,22 +49,22 @@ export default async function TemplatesPage() {
   const t = await getTranslate();
   return <div className="container templates-page">
     <section className="hero template-hero-panel">
-      <p className="eyebrow"><LocalizedText en="Mission templates" nb="Oppdragsmaler" ar="قوالب المهام" /></p>
-      <h1><LocalizedText en="Start with a useful first plan." nb="Start med en nyttig første plan." ar="ابدأ بخطة أولية مفيدة." /></h1>
-      <p><LocalizedText en="Choose a starting point, review every field, and keep control of the mission before you create it." nb="Velg et utgangspunkt, gå gjennom feltene og behold kontrollen før du oppretter oppdraget." ar="اختر نقطة بداية وراجع كل حقل واحتفظ بالتحكم قبل إنشاء المهمة." /></p>
+      <p className="eyebrow"><LocalizedText en="Mission templates" /></p>
+      <h1><LocalizedText en="Start with a useful first plan." /></h1>
+      <p><LocalizedText en="Choose a starting point, review every field, and keep control of the mission before you create it." /></p>
     </section>
     <section className="grid" aria-label={t("Mission templates")}>
       {templates.map((template) => <article className="card template-card" key={template.id}>
         <div className={`template-icon template-icon-${template.id}`}><TemplateIcon id={template.id} /></div>
-        <p className="eyebrow"><LocalizedText en="Mission template" nb="Oppdragsmal" ar="قالب مهمة" /></p>
+        <p className="eyebrow"><LocalizedText en="Mission template" /></p>
         {/* Pass only `en`. Passing the English value as nb/ar overrode the
             dictionary lookup, so these never translated in any language. */}
         <h2><LocalizedText en={template.title} /></h2>
         <p><LocalizedText en={template.description} /></p>
         <ul className="template-criteria">{template.criteria.map((criterion) => <li key={criterion}><LocalizedText en={criterion} /></li>)}</ul>
-        <Link className="button" href={templateHref(template)}><LocalizedText en="Use this template" nb="Bruk denne malen" ar="استخدم هذا القالب" /></Link>
+        <Link className="button" href={templateHref(template)}><LocalizedText en="Use this template" /></Link>
       </article>)}
     </section>
-    <p className="action-hint template-note"><LocalizedText en="A template only pre-fills a draft. Nothing is created until you review it and submit the mission form." nb="En mal fyller bare ut et utkast. Ingenting opprettes før du har gjennomgått og sendt inn skjemaet." ar="القالب يملأ مسودة فقط. لا تُنشأ أي مهمة حتى تراجع النموذج وترسله." /></p>
+    <p className="action-hint template-note"><LocalizedText en="A template only pre-fills a draft. Nothing is created until you review it and submit the mission form." /></p>
   </div>;
 }
