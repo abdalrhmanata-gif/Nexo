@@ -153,23 +153,40 @@ test("report without evidence notes must explicitly say that evidence is insuffi
 });
 
 test("AI endpoint requires authentication, explicit opt-in configuration, request limits and no-store responses", () => {
+  // The gates moved into lib/ai/gate.ts when a second route needed them. A
+  // copy in each route would be a gate fixed in one file and left open in the
+  // other, so this test now reads the gate where it lives and checks that the
+  // route is wired to it — both halves, because either one alone can pass
+  // while the property is gone.
+  const gate = read("lib/ai/gate.ts");
   const route = read("app/api/opportunities/analyze/route.ts");
+
+  assert.match(gate, /ZAVQERA_AI_ENABLED !== "true"/);
+  // Production is reachable, but only behind a switch of its own: the
+  // feature flag alone must not be enough.
+  assert.match(gate, /CONTEXT === "production" && process\.env\.ZAVQERA_AI_ALLOW_PRODUCTION !== "true"/);
+  assert.match(gate, /ZAVQERA_AI_ALLOWED_USER_IDS/);
+  assert.match(gate, /ZAVQERA_AI_API_KEY/);
+  assert.match(gate, /isSupportedCostModel/);
+  assert.match(gate, /MAX_REQUESTS_PER_WINDOW/);
+  assert.match(gate, /api\.openai\.com/, "only the official host, unless running locally");
+  assert.doesNotMatch(gate, /console\.(log|error)\(/);
+
   assert.match(route, /getAuthenticatedUser/);
   assert.match(route, /isSupabaseConfigured\(\)/);
-  assert.match(route, /ZAVQERA_AI_ENABLED !== "true"/);
-  assert.match(route, /CONTEXT === "production"/);
-  assert.match(route, /ZAVQERA_AI_ALLOWED_USER_IDS/);
+  assert.match(route, /from "\.\.\/\.\.\/\.\.\/\.\.\/lib\/ai\/gate"/, "the route must use the shared gates");
   assert.match(route, /isApprovedPreviewTester/);
-  assert.match(route, /isSupportedCostModel/);
+  assert.match(route, /providerConfig\(\)/);
+  assert.match(route, /rateLimit\(/);
+  assert.match(route, /readLimitedBody\(/);
   assert.match(route, /estimateOpenAITextCost/);
   assert.match(route, /ai_brief_usage/);
-  assert.match(route, /ZAVQERA_AI_API_KEY/);
   assert.match(route, /MAX_ANALYSIS_REQUEST_BYTES/);
-  assert.match(route, /MAX_REQUESTS_PER_WINDOW/);
   assert.match(route, /AbortController/);
   assert.match(route, /max_completion_tokens/);
-  assert.match(route, /Cache-Control.*no-store/);
+  assert.match(route, /Cache-Control.*no-store|noStoreHeaders/);
   assert.doesNotMatch(route, /console\.(log|error)\(/);
+
   const allowlistCheckAt = route.indexOf("if (!isApprovedPreviewTester(user.id))");
   const providerConfigAt = route.indexOf("const config = providerConfig()");
   assert.ok(allowlistCheckAt >= 0 && allowlistCheckAt < providerConfigAt,
