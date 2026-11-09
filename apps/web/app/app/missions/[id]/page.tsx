@@ -60,7 +60,9 @@ export default async function MissionDetailPage({
             <span className="next-step-detail">{next.detail}</span>
           </p>
           <div className="progress-row">
-            <span>{mission.actionsTotal ? `${mission.actionsCompleted} of ${mission.actionsTotal} actions complete` : "No actions yet"}</span>
+            <span>{mission.actionsTotal
+              ? fill(t("{done} of {total} actions complete"), { done: mission.actionsCompleted, total: mission.actionsTotal })
+              : t("No actions yet")}</span>
             <strong>{mission.progress}%</strong>
           </div>
           <div className="progress"><span style={{ width: `${mission.progress}%` }} /></div>
@@ -118,7 +120,7 @@ export default async function MissionDetailPage({
                   <span className="action-title">{action.title}</span>
                   <span className={`status status-action-${action.status.toLowerCase()}`}>{actionStatusLabel(action.status)}</span>
                   {followUp && <span className={`follow-up${followUp.overdue ? " follow-up-overdue" : ""}`}>
-                    {followUp.overdue ? "Follow-up was due" : "Follow up"} {followUp.relative} · {followUp.absolute}
+                    {followUp.overdue ? t("Follow-up was due") : t("Follow up")} {followUp.relative} · {followUp.absolute}
                   </span>}
                   <small className="action-hint">{actionStatusHint(action.status)}</small>
                 </div>
@@ -134,7 +136,9 @@ export default async function MissionDetailPage({
 
         <section className="card">
           <p className="eyebrow"><LocalizedText en="Verification" /></p>
-          <h2>{verification ? `Verification ${verification.status.toLowerCase()}` : "Record what you checked"}</h2>
+          <h2>{verification
+            ? fill(t("Verification {status}"), { status: t(verification.status.toLowerCase()) })
+            : t("Record what you checked")}</h2>
           <p><LocalizedText en="A mission is only verified once evidence has been recorded through the authenticated server boundary. Work being reported as finished is not the same as ZAVQERA considering it verified." /></p>
           {readiness.ready
             ? (verification
@@ -151,9 +155,11 @@ export default async function MissionDetailPage({
 
         <section className="card">
           <p className="eyebrow"><LocalizedText en="Outcome" /></p>
-          <h2>{outcome ? `Outcome ${outcome.status.toLowerCase()}` : "No outcome yet"}</h2>
+          <h2>{outcome
+            ? fill(t("Outcome {status}"), { status: t(outcome.status.toLowerCase()) })
+            : t("No outcome yet")}</h2>
           {outcome
-            ? <p>{outcome.status === "COMPLETED" ? "This mission reached its stated outcome." : "This mission closed without reaching its stated outcome."} Recorded confidence {Math.round(outcome.successScore * 100)}%.</p>
+            ? <p>{outcome.status === "COMPLETED" ? t("This mission reached its stated outcome.") : t("This mission closed without reaching its stated outcome.")} Recorded confidence {Math.round(outcome.successScore * 100)}%.</p>
             : <p className="detail-intent"><LocalizedText en="An outcome can only be committed after a verification is recorded." /></p>}
         </section>
 

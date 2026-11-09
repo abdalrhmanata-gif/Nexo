@@ -15,7 +15,7 @@ export function AddActionForm({ missionId }: { missionId: string }) {
     event.preventDefault();
     const trimmed = title.trim();
     if (!trimmed) {
-      setMessage("Describe the work this action covers.");
+      setMessage(t("Describe the work this action covers."));
       return;
     }
     setBusy(true);
@@ -28,14 +28,14 @@ export function AddActionForm({ missionId }: { missionId: string }) {
       });
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        setMessage(payload.error ?? "That action could not be added.");
+        setMessage(payload.error ? t(payload.error) : t("That action could not be added."));
         return;
       }
       setTitle("");
-      setMessage("Action added.");
+      setMessage(t("Action added."));
       router.refresh();
     } catch {
-      setMessage("The action could not be saved. Check your connection and try again.");
+      setMessage(t("The action could not be saved. Check your connection and try again."));
     } finally {
       setBusy(false);
     }
@@ -52,7 +52,7 @@ export function AddActionForm({ missionId }: { missionId: string }) {
         placeholder={t("What needs to happen next?")}
         onChange={(event) => setTitle(event.target.value)}
       />
-      <button className="button button-small" type="submit" disabled={busy}>{busy ? "Adding…" : "Add action"}</button>
+      <button className="button button-small" type="submit" disabled={busy}>{busy ? t("Adding…") : t("Add action")}</button>
     </div>
     <p className="action-hint"><LocalizedText en="Plans change. Add a step whenever you discover one." /></p>
     {message && <p className="field-error" role="alert">{message}</p>}

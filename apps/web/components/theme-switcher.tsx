@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LocalizedText } from "./localized-text";
+import { LocalizedText, useTranslate } from "./localized-text";
 
 export type AppTheme = "light" | "dark";
 
@@ -31,6 +31,7 @@ function applyTheme(theme: AppTheme) {
 }
 
 export function ThemeSwitcher() {
+  const t = useTranslate();
   const [theme, setTheme] = useState<AppTheme>("light");
   const [ready, setReady] = useState(false);
 
@@ -64,16 +65,16 @@ export function ThemeSwitcher() {
       // Render a stable label until the stored preference is known, so the
       // button does not flip on hydration.
       suppressHydrationWarning
-      title={ready && !goingDark ? "Switch to light mode" : "Switch to dark mode"}
+      title={ready && !goingDark ? t("Switch to light mode") : t("Switch to dark mode")}
     >
       <span aria-hidden="true" className="theme-switcher-icon">
         {ready && !goingDark ? (
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <circle cx="12" cy="12" r="4" />
-            <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round">
+            <circle cx="12" cy="12" r="4.6" fill="currentColor" stroke="none" />
+            <path d="M12 1.6v2.6M12 19.8v2.6M3.9 3.9l1.9 1.9M18.2 18.2l1.9 1.9M1.6 12h2.6M19.8 12h2.6M3.9 20.1l1.9-1.9M18.2 5.8l1.9-1.9" />
           </svg>
         ) : (
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg viewBox="0 0 24 24" width="19" height="19" fill="currentColor" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" />
           </svg>
         )}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LocalizedText } from "./localized-text";
+import { LocalizedFill, LocalizedText } from "./localized-text";
 import type { Mission } from "../lib/view-models";
 import { nextStepFor } from "../lib/mission-content.mjs";
 import { StatusPill } from "./shell";
@@ -21,7 +21,9 @@ export function MissionCard({ mission, progressLabel }: { mission: Mission; prog
         <span className="next-step-detail">{next.detail}</span>
       </p>
       <div className="progress-row">
-        <span>{mission.actionsTotal ? `${mission.actionsCompleted} of ${mission.actionsTotal} actions complete` : "No actions yet"}</span>
+        <span>{mission.actionsTotal
+          ? <LocalizedFill en="{done} of {total} actions complete" values={{ done: mission.actionsCompleted, total: mission.actionsTotal }} />
+          : <LocalizedText en="No actions yet" />}</span>
         <strong>{mission.progress}%</strong>
       </div>
       <div className="progress mission-progress" role="progressbar" aria-label={progressLabel ?? `Mission progress for ${mission.name}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={mission.progress}><span style={{ width: `${mission.progress}%` }} /></div>

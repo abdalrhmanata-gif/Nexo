@@ -9,6 +9,7 @@ import {
   type AppLanguage,
 } from "../lib/i18n";
 export { fill } from "../lib/i18n";
+import { fill as fillText } from "../lib/i18n";
 
 // The tables live in lib/i18n so server components can translate as well.
 // LocalizedText renders a text node; useLanguage and useTranslate give the same
@@ -60,4 +61,17 @@ export function useTranslate(): (en: string) => string {
 export function LocalizedText({ en }: { en: string }) {
   const language = useLanguage();
   return <>{translate(en, language)}</>;
+}
+
+/**
+ * The same, for a sentence that carries values: <LocalizedFill en="{done} of
+ * {total} actions complete" values={{ done, total }} />.
+ *
+ * A synchronous server component cannot await getTranslate(), and making it
+ * async is not an option under this React version, so without this the only
+ * way to write such a sentence there was to build it in English.
+ */
+export function LocalizedFill({ en, values }: { en: string; values: Record<string, string | number> }) {
+  const language = useLanguage();
+  return <>{fillText(translate(en, language), values)}</>;
 }

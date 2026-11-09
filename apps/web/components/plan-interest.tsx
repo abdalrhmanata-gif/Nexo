@@ -12,6 +12,9 @@ import { LocalizedText, useTranslate } from "./localized-text";
 // person agreed to is sent with it and stored beside it. A consent you cannot
 // evidence is not a consent, and this wording will change over time.
 
+// The person agrees to the sentence they can read, so it is translated and
+// the translated wording is what gets stored with the row. A consent kept
+// in a language the person was never shown is not evidence of anything.
 const CONSENT = "I asked to be emailed once this plan is available. My address is used for that one message and nothing else.";
 
 export function PlanInterest({ plan }: { plan: string }) {
@@ -54,7 +57,7 @@ export function PlanInterest({ plan }: { plan: string }) {
           email,
           plan,
           locale: document.documentElement.lang || "en",
-          consent: CONSENT,
+          consent: t(CONSENT),
         }),
       });
       if (!response.ok) throw new Error("rejected");

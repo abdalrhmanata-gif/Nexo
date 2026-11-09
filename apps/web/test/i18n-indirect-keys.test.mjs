@@ -58,8 +58,9 @@ const SOURCES = [
     keys: () => [
       ...labelTableValues(read("components/opportunity-evidence-panel.tsx")),
       ...labelTableValues(read("components/opportunity-intelligence.tsx")),
+      ...labelTableValues(read("components/opportunity-analysis-panel.tsx")),
     ],
-    least: 9,
+    least: 14,
   },
   {
     what: "messages the AI brief API can return",

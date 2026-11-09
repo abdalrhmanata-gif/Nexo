@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { LocalizedText } from "./localized-text";
+import { LocalizedText, useTranslate } from "./localized-text";
 import { useRouter } from "next/navigation";
 import type { MissionLifecycleStatus } from "../lib/view-models";
 import {
@@ -26,6 +26,7 @@ export function MissionMutationControls({
   status: MissionLifecycleStatus;
   version: number;
 }) {
+  const t = useTranslate();
   const router = useRouter();
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -40,19 +41,19 @@ export function MissionMutationControls({
         body: JSON.stringify(body),
       });
       if (response.status === 409) {
-        setMessage("This mission changed elsewhere. Showing the latest saved state.");
+        setMessage(t("This mission changed elsewhere. Showing the latest saved state."));
         router.refresh();
         return;
       }
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}));
-        setMessage(payload.error ?? "Mission update was not accepted.");
+        setMessage(payload.error ? t(payload.error) : t("Mission update was not accepted."));
         return;
       }
-      setMessage("Mission saved.");
+      setMessage(t("Mission saved."));
       router.refresh();
     } catch {
-      setMessage("The mission could not be saved. Check your connection and try again.");
+      setMessage(t("The mission could not be saved. Check your connection and try again."));
     } finally {
       setBusy(false);
     }
@@ -71,7 +72,7 @@ export function MissionMutationControls({
       .map((line) => line.trim())
       .filter(Boolean);
     if (!nextName || !nextIntent) {
-      setMessage("A mission needs both a name and an intent.");
+      setMessage(t("A mission needs both a name and an intent."));
       return;
     }
     await send({
