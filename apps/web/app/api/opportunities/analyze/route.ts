@@ -3,7 +3,18 @@ import { NextResponse } from "next/server";
 import { createSupabaseServerClient, getAuthenticatedUser } from "../../../../lib/supabase/server";
 import { isSupabaseConfigured } from "../../../../lib/supabase/config";
 import { isTrustedSameOriginRequest } from "../../../../lib/request-origin.mjs";
-import { estimateOpenAITextCost, isSupportedCostModel, type AiCostEstimate } from "../../../../lib/opportunity-cost.mjs";
+import { estimateOpenAITextCost, type AiCostEstimate } from "../../../../lib/opportunity-cost.mjs";
+// The shared gates: allowlist, provider configuration, rate limit, bounded
+// body and the error shape. One copy, used by every paid-provider route.
+import {
+  PROVIDER_TIMEOUT_MS,
+  isApprovedPreviewTester,
+  jsonError,
+  noStoreHeaders,
+  providerConfig,
+  rateLimit,
+  readLimitedBody,
+} from "../../../../lib/ai/gate";
 import {
   buildOpportunityAnalysisPrompt,
   MAX_ANALYSIS_REPORT_CHARS,
@@ -17,14 +28,8 @@ import {
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const REQUEST_WINDOW_MS = 10 * 60 * 1000;
-const MAX_REQUESTS_PER_WINDOW = 3;
-const PROVIDER_TIMEOUT_MS = 25_000;
-const inMemoryUserRequests = new Map<string, number[]>();
 
-const noStoreHeaders = { "Cache-Control": "no-store, max-age=0", Vary: "Cookie" };
 
-type ProviderConfig = { endpoint: string; apiKey: string; model: string; maxCompletionTokens: number };
 type AiUsageReservation = {
   allowed: boolean;
   reservation_id: string | null;
@@ -34,86 +39,6 @@ type AiUsageReservation = {
   generations_used: number;
   remaining: number;
 };
-
-function isApprovedPreviewTester(userId: string): boolean {
-  const configured = process.env.ZAVQERA_AI_ALLOWED_USER_IDS?.trim();
-  if (!configured) return false;
-  const allowlist = configured.split(",").map((value) => value.trim()).filter(Boolean);
-  return allowlist.includes(userId);
-}
-
-function providerConfig(): ProviderConfig | null {
-  // Keep the paid API path explicitly opt-in. Never allow this route in
-  // Netlify Production, even if someone accidentally changes the feature flag.
-  if (process.env.CONTEXT === "production") return null;
-  if (process.env.ZAVQERA_AI_ENABLED !== "true") return null;
-  const baseUrl = process.env.ZAVQERA_AI_BASE_URL?.trim() || "https://api.openai.com/v1";
-  const apiKey = process.env.ZAVQERA_AI_API_KEY?.trim() || process.env.OPENAI_API_KEY?.trim();
-  const model = process.env.ZAVQERA_AI_MODEL?.trim() || process.env.OPENAI_MODEL?.trim();
-  if (!apiKey || !model || !isSupportedCostModel(model)) return null;
-
-  let url: URL;
-  try { url = new URL(baseUrl); } catch { return null; }
-  const localDevelopmentUrl = process.env.NODE_ENV !== "production"
-    && url.protocol === "http:"
-    && ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
-  if ((url.protocol !== "https:" && !localDevelopmentUrl) || url.username || url.password || url.search || url.hash) return null;
-  // This route currently supports the official OpenAI API host only.
-  if (url.hostname !== "api.openai.com" && !localDevelopmentUrl) return null;
-
-  const rawLimit = Number(process.env.ZAVQERA_AI_MAX_COMPLETION_TOKENS ?? "1200");
-  const maxCompletionTokens = Number.isInteger(rawLimit) ? Math.max(400, Math.min(1400, rawLimit)) : 1200;
-  return { endpoint: `${baseUrl.replace(/\/+$/, "")}/chat/completions`, apiKey, model, maxCompletionTokens };
-}
-
-function rateLimit(userId: string, now = Date.now()): { allowed: boolean; retryAfterSeconds: number } {
-  if (inMemoryUserRequests.size > 5000) {
-    inMemoryUserRequests.forEach((timestamps: number[], key: string) => {
-      const remaining = timestamps.filter((timestamp: number) => now - timestamp < REQUEST_WINDOW_MS);
-      if (remaining.length) inMemoryUserRequests.set(key, remaining);
-      else inMemoryUserRequests.delete(key);
-    });
-  }
-  const active = (inMemoryUserRequests.get(userId) ?? []).filter((timestamp) => now - timestamp < REQUEST_WINDOW_MS);
-  if (active.length >= MAX_REQUESTS_PER_WINDOW) {
-    return { allowed: false, retryAfterSeconds: Math.max(1, Math.ceil((REQUEST_WINDOW_MS - (now - active[0])) / 1000)) };
-  }
-  active.push(now);
-  inMemoryUserRequests.set(userId, active);
-  return { allowed: true, retryAfterSeconds: 0 };
-}
-
-async function readLimitedBody(request: Request, maximumBytes: number): Promise<string> {
-  if (!request.body) return "";
-  const reader = request.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      total += value.byteLength;
-      if (total > maximumBytes) {
-        await reader.cancel();
-        throw new Error("BODY_TOO_LARGE");
-      }
-      chunks.push(value);
-    }
-  } finally {
-    reader.releaseLock();
-  }
-  const joined = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    joined.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return new TextDecoder().decode(joined);
-}
-
-function jsonError(status: number, code: string, error: string, extra: Record<string, unknown> = {}) {
-  return NextResponse.json({ error, code, ...extra }, { status, headers: noStoreHeaders });
-}
 
 export async function POST(request: Request) {
   const fetchSite = request.headers.get("sec-fetch-site");
