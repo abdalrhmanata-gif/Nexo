@@ -741,6 +741,11 @@ const NB: Record<string, string> = {
   "The draft plan stated figures or links it cannot verify, so it was discarded. This attempt used one monthly generation.":"Utkastet oppga tall eller lenker det ikke kan verifisere, og ble derfor forkastet. Forsøket brukte én månedlig generering.",
   "The AI plan timed out. This attempt used one monthly generation; no automatic retry was attempted.":"KI-planen tidsavbrøt. Forsøket brukte én månedlig generering; ingen automatisk nytt forsøk ble gjort.",
   "The AI provider rejected this deployment's credentials. The API key may have expired, been revoked or been entered incorrectly. This attempt used one monthly generation.":"KI-leverandøren avviste legitimasjonen til denne installasjonen. API-nøkkelen kan ha utløpt, blitt tilbakekalt eller blitt feil skrevet inn. Forsøket brukte én månedlig generering.",
+  "AI is enabled but not permitted on production. Set ZAVQERA_AI_ALLOW_PRODUCTION to allow it here.":"KI er aktivert, men ikke tillatt i produksjon. Sett ZAVQERA_AI_ALLOW_PRODUCTION for å tillate det her.",
+  "AI is enabled but no provider key is configured on this deployment.":"KI er aktivert, men ingen leverandørnøkkel er konfigurert i denne installasjonen.",
+  "AI is enabled but no model is configured on this deployment.":"KI er aktivert, men ingen modell er konfigurert i denne installasjonen.",
+  "The configured model has no published price in this application, so it will not be called. Use a model this deployment can cost.":"Den konfigurerte modellen har ingen oppgitt pris i denne applikasjonen og blir derfor ikke kalt. Bruk en modell denne installasjonen kan kostnadsberegne.",
+  "The configured provider address is not accepted. Only the official OpenAI API host is allowed.":"Den konfigurerte leverandøradressen godtas ikke. Bare den offisielle OpenAI-API-verten er tillatt.",
 };
 const AR: Record<string, string> = {
   "MISSION CONTROL":"مركز التحكم", "Search":"بحث", "New mission":"مهمة جديدة",
@@ -1457,6 +1462,11 @@ const AR: Record<string, string> = {
   "The draft plan stated figures or links it cannot verify, so it was discarded. This attempt used one monthly generation.":"ذكرت المسودة أرقاماً أو روابط لا تستطيع التحقق منها، فأُلغيت. استهلكت هذه المحاولة توليدة شهرية واحدة.",
   "The AI plan timed out. This attempt used one monthly generation; no automatic retry was attempted.":"انتهت مهلة خطة الذكاء الاصطناعي. استهلكت هذه المحاولة توليدة شهرية واحدة؛ ولم تُجرَ إعادة محاولة تلقائية.",
   "The AI provider rejected this deployment's credentials. The API key may have expired, been revoked or been entered incorrectly. This attempt used one monthly generation.":"رفض مزوّد الذكاء الاصطناعي بيانات اعتماد هذا النشر. قد يكون المفتاح منتهي الصلاحية أو مُلغى أو مُدخلاً بشكل خاطئ. استهلكت هذه المحاولة توليدة شهرية واحدة.",
+  "AI is enabled but not permitted on production. Set ZAVQERA_AI_ALLOW_PRODUCTION to allow it here.":"الذكاء الاصطناعي مفعّل لكنه غير مسموح به في الإنتاج. اضبط ZAVQERA_AI_ALLOW_PRODUCTION للسماح به هنا.",
+  "AI is enabled but no provider key is configured on this deployment.":"الذكاء الاصطناعي مفعّل لكن لا يوجد مفتاح مزوّد مُهيأ في هذا النشر.",
+  "AI is enabled but no model is configured on this deployment.":"الذكاء الاصطناعي مفعّل لكن لا يوجد موديل مُهيأ في هذا النشر.",
+  "The configured model has no published price in this application, so it will not be called. Use a model this deployment can cost.":"الموديل المُهيأ ليس له سعر معلن في هذا التطبيق، لذا لن يُستدعى. استخدم موديلاً يستطيع هذا النشر حساب تكلفته.",
+  "The configured provider address is not accepted. Only the official OpenAI API host is allowed.":"عنوان المزوّد المُهيأ غير مقبول. لا يُسمح إلا بمضيف OpenAI API الرسمي.",
 };
 const ES: Record<string, string> = {
   "Search":"Buscar", "New mission":"Nueva misión", "Business":"Empresa", "Templates":"Plantillas",
@@ -2177,6 +2187,11 @@ const ES: Record<string, string> = {
   "The draft plan stated figures or links it cannot verify, so it was discarded. This attempt used one monthly generation.":"El borrador indicaba cifras o enlaces que no puede verificar, así que se descartó. El intento consumió una generación mensual.",
   "The AI plan timed out. This attempt used one monthly generation; no automatic retry was attempted.":"El plan de IA agotó el tiempo de espera. El intento consumió una generación mensual; no hubo reintento automático.",
   "The AI provider rejected this deployment's credentials. The API key may have expired, been revoked or been entered incorrectly. This attempt used one monthly generation.":"El proveedor de IA rechazó las credenciales de esta instalación. La clave API puede haber caducado, haber sido revocada o estar mal introducida. El intento consumió una generación mensual.",
+  "AI is enabled but not permitted on production. Set ZAVQERA_AI_ALLOW_PRODUCTION to allow it here.":"La IA está habilitada pero no permitida en producción. Define ZAVQERA_AI_ALLOW_PRODUCTION para permitirla aquí.",
+  "AI is enabled but no provider key is configured on this deployment.":"La IA está habilitada pero no hay ninguna clave de proveedor configurada en esta instalación.",
+  "AI is enabled but no model is configured on this deployment.":"La IA está habilitada pero no hay ningún modelo configurado en esta instalación.",
+  "The configured model has no published price in this application, so it will not be called. Use a model this deployment can cost.":"El modelo configurado no tiene precio publicado en esta aplicación, así que no se llamará. Usa un modelo cuyo coste esta instalación pueda calcular.",
+  "The configured provider address is not accepted. Only the official OpenAI API host is allowed.":"La dirección de proveedor configurada no se acepta. Solo se permite el host oficial de la API de OpenAI.",
 };
 const FR: Record<string, string> = {
   "Search":"Rechercher", "New mission":"Nouvelle mission", "Business":"Entreprise", "Templates":"Modèles",
@@ -2897,6 +2912,11 @@ const FR: Record<string, string> = {
   "The draft plan stated figures or links it cannot verify, so it was discarded. This attempt used one monthly generation.":"Le brouillon indiquait des chiffres ou des liens qu'il ne peut pas vérifier ; il a été écarté. Cette tentative a consommé une génération mensuelle.",
   "The AI plan timed out. This attempt used one monthly generation; no automatic retry was attempted.":"Le plan IA a expiré. Cette tentative a consommé une génération mensuelle ; aucune nouvelle tentative automatique n'a eu lieu.",
   "The AI provider rejected this deployment's credentials. The API key may have expired, been revoked or been entered incorrectly. This attempt used one monthly generation.":"Le fournisseur d'IA a rejeté les identifiants de ce déploiement. La clé API a pu expirer, être révoquée ou être mal saisie. Cette tentative a consommé une génération mensuelle.",
+  "AI is enabled but not permitted on production. Set ZAVQERA_AI_ALLOW_PRODUCTION to allow it here.":"L'IA est activée mais non autorisée en production. Définissez ZAVQERA_AI_ALLOW_PRODUCTION pour l'autoriser ici.",
+  "AI is enabled but no provider key is configured on this deployment.":"L'IA est activée mais aucune clé de fournisseur n'est configurée sur ce déploiement.",
+  "AI is enabled but no model is configured on this deployment.":"L'IA est activée mais aucun modèle n'est configuré sur ce déploiement.",
+  "The configured model has no published price in this application, so it will not be called. Use a model this deployment can cost.":"Le modèle configuré n'a pas de tarif publié dans cette application ; il ne sera donc pas appelé. Utilisez un modèle dont ce déploiement peut chiffrer le coût.",
+  "The configured provider address is not accepted. Only the official OpenAI API host is allowed.":"L'adresse de fournisseur configurée n'est pas acceptée. Seul l'hôte officiel de l'API OpenAI est autorisé.",
 };
 const DE: Record<string, string> = {
   "Search":"Suchen", "New mission":"Neue Mission", "Business":"Unternehmen", "Templates":"Vorlagen",
@@ -3617,6 +3637,11 @@ const DE: Record<string, string> = {
   "The draft plan stated figures or links it cannot verify, so it was discarded. This attempt used one monthly generation.":"Der Entwurf nannte Zahlen oder Links, die er nicht belegen kann, und wurde verworfen. Der Versuch verbrauchte eine monatliche Generierung.",
   "The AI plan timed out. This attempt used one monthly generation; no automatic retry was attempted.":"Beim KI-Plan ist eine Zeitüberschreitung aufgetreten. Der Versuch verbrauchte eine monatliche Generierung; ein automatischer neuer Versuch erfolgte nicht.",
   "The AI provider rejected this deployment's credentials. The API key may have expired, been revoked or been entered incorrectly. This attempt used one monthly generation.":"Der KI-Anbieter hat die Zugangsdaten dieser Installation abgelehnt. Der API-Schlüssel ist möglicherweise abgelaufen, widerrufen oder falsch eingetragen. Der Versuch verbrauchte eine monatliche Generierung.",
+  "AI is enabled but not permitted on production. Set ZAVQERA_AI_ALLOW_PRODUCTION to allow it here.":"Die KI ist aktiviert, aber in der Produktion nicht zugelassen. Setzen Sie ZAVQERA_AI_ALLOW_PRODUCTION, um sie hier zu erlauben.",
+  "AI is enabled but no provider key is configured on this deployment.":"Die KI ist aktiviert, aber in dieser Installation ist kein Anbieterschlüssel hinterlegt.",
+  "AI is enabled but no model is configured on this deployment.":"Die KI ist aktiviert, aber in dieser Installation ist kein Modell hinterlegt.",
+  "The configured model has no published price in this application, so it will not be called. Use a model this deployment can cost.":"Das konfigurierte Modell hat in dieser Anwendung keinen hinterlegten Preis und wird daher nicht aufgerufen. Verwenden Sie ein Modell, dessen Kosten diese Installation berechnen kann.",
+  "The configured provider address is not accepted. Only the official OpenAI API host is allowed.":"Die konfigurierte Anbieteradresse wird nicht akzeptiert. Nur der offizielle OpenAI-API-Host ist zulässig.",
 };
 
 export const DICTIONARIES: Record<AppLanguage, Record<string, string>> = {

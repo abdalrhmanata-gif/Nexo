@@ -18,7 +18,7 @@ test("the plan route passes the same gates as the brief route", () => {
   assert.match(route, /isSupabaseConfigured\(\)/);
   assert.match(route, /getAuthenticatedUser/);
   assert.match(route, /isApprovedPreviewTester/);
-  assert.match(route, /providerConfig\(\)/);
+  assert.match(route, /describeProvider\(\)/);
   assert.match(route, /rateLimit\(/);
   assert.match(route, /readLimitedBody\(request, MAX_PLAN_REQUEST_BYTES\)/);
   assert.match(route, /normalizeMissionPlanRequest/);
@@ -31,7 +31,7 @@ test("an unapproved tester is turned away before provider configuration is read"
   // up on this deployment.
   const route = read("app/api/missions/plan/route.ts");
   const allowlistAt = route.indexOf("if (!isApprovedPreviewTester(user.id))");
-  const configAt = route.indexOf("const config = providerConfig()");
+  const configAt = route.indexOf("const provider = describeProvider()");
   assert.ok(allowlistAt >= 0 && configAt > allowlistAt,
     "the allowlist check must come first");
 });
@@ -89,4 +89,25 @@ test("the interface saves nothing until the person adds it", () => {
   assert.match(panel, /\/api\/missions\/\$\{missionId\}\/actions/);
   assert.match(panel, /onClick=\{addSteps\}/);
   assert.doesNotMatch(panel, /useEffect\([^)]*draft/, "a plan must never be drafted without a click");
+});
+
+test("every reason a provider is refused has its own message", () => {
+  // The point of naming the reasons is that each one reads differently.
+  // A table where two of them collapse back to the same sentence would pass
+  // the type checker and teach the reader nothing.
+  const gate = read("lib/ai/gate.ts");
+  const reasons = [...gate.matchAll(/reason: "([a-z-]+)"/g)].map((m) => m[1]);
+  assert.ok(reasons.length >= 6, `expected every refusal to be named, found ${reasons.length}`);
+
+  for (const file of ["app/api/missions/plan/route.ts", "app/api/opportunities/analyze/route.ts"]) {
+    const body = read(file);
+    const table = /const PROVIDER_REFUSAL: Record<string, string> = \{([\s\S]*?)\n\};/.exec(body);
+    assert.ok(table, `${file} must map every refusal to a message`);
+    const messages = [...table[1].matchAll(/:\s*"((?:[^"\\]|\\.)*)"/g)].map((m) => m[1]);
+    for (const reason of new Set(reasons)) {
+      assert.match(table[1], new RegExp(`"${reason}"`), `${file} does not explain "${reason}"`);
+    }
+    assert.equal(new Set(messages).size, messages.length,
+      `${file} gives two refusals the same wording, which is the problem this replaced`);
+  }
 });

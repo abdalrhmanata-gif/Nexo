@@ -5,7 +5,7 @@ import { isTrustedSameOriginRequest } from "../../../../lib/request-origin.mjs";
 import {
   isApprovedPreviewTester,
   jsonError,
-  providerConfig,
+  describeProvider,
   rateLimit,
   readLimitedBody,
 } from "../../../../lib/ai/gate";
@@ -47,6 +47,17 @@ const MESSAGES: RunMessages = {
   failed: "The AI plan could not be completed. This attempt used one monthly generation; no automatic retry was attempted.",
 };
 
+// Each refusal says what it is. "Not enabled yet" is true for one of these
+// and misleading for the others, and a misleading message costs a day.
+const PROVIDER_REFUSAL: Record<string, string> = {
+  "disabled": "AI analysis is not enabled on this deployment yet. No AI provider was called.",
+  "production-not-allowed": "AI is enabled but not permitted on production. Set ZAVQERA_AI_ALLOW_PRODUCTION to allow it here.",
+  "no-key": "AI is enabled but no provider key is configured on this deployment.",
+  "no-model": "AI is enabled but no model is configured on this deployment.",
+  "unpriced-model": "The configured model has no published price in this application, so it will not be called. Use a model this deployment can cost.",
+  "bad-base-url": "The configured provider address is not accepted. Only the official OpenAI API host is allowed.",
+};
+
 export async function POST(request: Request) {
   const fetchSite = request.headers.get("sec-fetch-site");
   if (fetchSite === "cross-site" || !isTrustedSameOriginRequest(request)) {
@@ -74,10 +85,11 @@ export async function POST(request: Request) {
     return jsonError(403, "AI_ACCESS_RESTRICTED", "AI planning is limited to approved preview testers.");
   }
 
-  const config = providerConfig();
-  if (!config) {
-    return jsonError(503, "AI_ANALYSIS_NOT_CONFIGURED", "AI analysis is not enabled on this deployment yet. No AI provider was called.");
+  const provider = describeProvider();
+  if (!provider.ok) {
+    return jsonError(503, "AI_ANALYSIS_NOT_CONFIGURED", PROVIDER_REFUSAL[provider.reason]);
   }
+  const config = provider.config;
 
   let rawBody: string;
   try {
