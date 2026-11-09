@@ -81,40 +81,57 @@ function normalizeStoredOpportunity(item: Opportunity): Opportunity {
   };
 }
 
-function missionHref(opportunity: Opportunity): string {
+// The draft this builds is not a label: the person reads it, edits it, and
+// saves it as their own mission. So it has to be written in their language at
+// the moment it is generated, not translated later — by then it is their text,
+// not ours. The translator is passed in because this is a plain function and
+// hooks only run inside components.
+function missionHref(opportunity: Opportunity, t: (en: string) => string): string {
   const score = scoreOpportunity(opportunity);
   const priority = opportunityPriority(score);
-  const priorityLabel = priority === "HIGH_SCORE" ? "high score; evidence review required" : priority === "VALIDATE" ? "validate" : "hold";
+  const priorityLabel = priority === "HIGH_SCORE"
+    ? t("high score; evidence review required")
+    : priority === "VALIDATE" ? t("validate") : t("hold");
   const sourceNote = opportunity.evidenceUrl
-    ? `Original source reference provided by the user (not independently verified): ${opportunity.evidenceUrl}`
-    : "No original source reference has been attached.";
+    ? fill(t("Original source reference provided by the user (not independently verified): {url}"), { url: opportunity.evidenceUrl })
+    : t("No original source reference has been attached.");
   const evidenceNotes = opportunity.evidenceItems.slice(0, 2).map((item) =>
-    `[${item.stance.toUpperCase()}] ${item.title} — ${item.url}. User-recorded observation: ${item.observation.slice(0, 140)}`
+    fill(t("[{stance}] {title} — {url}. User-recorded observation: {observation}"), {
+      stance: t(item.stance.toUpperCase()),
+      title: item.title,
+      url: item.url,
+      observation: item.observation.slice(0, 140),
+    })
   ).join("\n");
   const ledgerNote = opportunity.evidenceItems.length
-    ? `User-recorded evidence notes (not independently verified):\n${evidenceNotes}`
-    : "No reviewed evidence notes are recorded yet. Search public sources and test assumptions before deciding.";
+    ? fill(t("User-recorded evidence notes (not independently verified):\n{notes}"), { notes: evidenceNotes })
+    : t("No reviewed evidence notes are recorded yet. Search public sources and test assumptions before deciding.");
   const params = new URLSearchParams({
     fromOpportunity: "1",
-    name: `Evaluate: ${opportunity.title}`.slice(0, 90),
+    name: fill(t("Evaluate: {title}"), { title: opportunity.title }).slice(0, 90),
     intent: [
-      `Assess whether this opportunity is worth pursuing for ${opportunity.target || "the intended audience"}.`,
-      `Opportunity thesis: ${opportunity.thesis}`,
-      `Current rule-based priority: ${score}/100 (${priorityLabel}). This is a prioritization aid, not a forecast.`,
+      fill(t("Assess whether this opportunity is worth pursuing for {audience}."), {
+        audience: opportunity.target || t("the intended audience"),
+      }),
+      fill(t("Opportunity thesis: {thesis}"), { thesis: opportunity.thesis }),
+      fill(t("Current rule-based priority: {score}/100 ({label}). This is a prioritization aid, not a forecast."), {
+        score,
+        label: priorityLabel,
+      }),
       sourceNote,
       ledgerNote,
     ].join("\n\n"),
     criteria: [
-      "Assess the source and verify the key claims",
-      "Test the riskiest assumption with a low-cost experiment",
-      "Estimate likely value, effort, and important risks",
-      "Record a clear pursue, validate, defer, or reject decision",
+      t("Assess the source and verify the key claims"),
+      t("Test the riskiest assumption with a low-cost experiment"),
+      t("Estimate likely value, effort, and important risks"),
+      t("Record a clear pursue, validate, defer, or reject decision"),
     ].join("\n"),
     actions: [
-      "Review the opportunity thesis and available evidence",
-      "Identify the riskiest unproven assumption",
-      "Design the smallest useful validation test",
-      "Record evidence, decision, and next action",
+      t("Review the opportunity thesis and available evidence"),
+      t("Identify the riskiest unproven assumption"),
+      t("Design the smallest useful validation test"),
+      t("Record evidence, decision, and next action"),
     ].join("\n"),
   });
   return `/app/missions/new?${params.toString()}`;
@@ -187,7 +204,7 @@ export function OpportunityIntelligence() {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(opportunities));
     } catch {
-      setError("Browser storage is unavailable. Export or copy important details before leaving this page.");
+      setError(t("Browser storage is unavailable. Export or copy important details before leaving this page."));
     }
   }, [opportunities, storageReady]);
 
@@ -231,9 +248,9 @@ export function OpportunityIntelligence() {
       anchor.click();
       anchor.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setBackupNotice(`Backup exported: ${backup.opportunityCount} opportunities and ${backup.evidenceCount} evidence notes. Store the file securely; it contains the details you recorded.`);
+      setBackupNotice(fill(t("Backup exported: {count} opportunities and {notes} evidence notes. Store the file securely; it contains the details you recorded."), { count: backup.opportunityCount, notes: backup.evidenceCount }));
     } catch (cause) {
-      setBackupError(cause instanceof Error ? cause.message : "The backup could not be exported.");
+      setBackupError(cause instanceof Error ? cause.message : t("The backup could not be exported."));
     }
   }
 
@@ -246,7 +263,7 @@ export function OpportunityIntelligence() {
     setBackupFileName("");
     if (!file) return;
     if (file.size > MAX_OPPORTUNITY_BACKUP_BYTES) {
-      setBackupError("This file is larger than 2 MB. Nothing was imported.");
+      setBackupError(t("This file is larger than 2 MB. Nothing was imported."));
       input.value = "";
       return;
     }
@@ -256,7 +273,7 @@ export function OpportunityIntelligence() {
       setBackupPreview(parsed);
       setBackupFileName(file.name);
     } catch (cause) {
-      setBackupError(cause instanceof Error ? cause.message : "The backup could not be read.");
+      setBackupError(cause instanceof Error ? cause.message : t("The backup could not be read."));
       input.value = "";
     } finally {
       setBackupBusy(false);
@@ -271,8 +288,8 @@ export function OpportunityIntelligence() {
       setOpportunities((current) => mergeOpportunityBackup(current, backupPreview).opportunities);
     }
     setBackupNotice(merge.addedCount
-      ? `Imported ${merge.addedCount} opportunities with ${merge.evidenceCount} evidence notes. ${merge.skippedCount} existing record(s) with matching IDs were skipped; no existing records were overwritten.`
-      : "Nothing was imported because every opportunity ID already exists. Your current records were left unchanged.");
+      ? fill(t("Imported {count} opportunities with {notes} evidence notes. {skipped} existing record(s) with matching IDs were skipped; no existing records were overwritten."), { count: merge.addedCount, notes: merge.evidenceCount, skipped: merge.skippedCount })
+      : t("Nothing was imported because every opportunity ID already exists. Your current records were left unchanged."));
     setBackupPreview(null);
     setBackupFileName("");
     if (backupInputRef.current) backupInputRef.current.value = "";
@@ -289,11 +306,11 @@ export function OpportunityIntelligence() {
     const evidenceUrl = form.evidenceUrl.trim();
 
     if (!title || !thesis) {
-      setError("Add an opportunity name and a concise explanation of why it may matter.");
+      setError(t("Add an opportunity name and a concise explanation of why it may matter."));
       return;
     }
     if (evidenceUrl && !isHttpUrl(evidenceUrl)) {
-      setError("Use a full public http:// or https:// source URL, or leave the field blank.");
+      setError(t("Use a full public http:// or https:// source URL, or leave the field blank."));
       return;
     }
 
@@ -364,7 +381,7 @@ export function OpportunityIntelligence() {
           </div>
         </div>
         <div className="opportunity-portability-actions">
-          <button className="button button-small" type="button" onClick={exportBackup} disabled={!storageReady || opportunities.length === 0} title={opportunities.length === 0 ? "Add an opportunity before exporting a backup" : "Download your opportunity data"}>
+          <button className="button button-small" type="button" onClick={exportBackup} disabled={!storageReady || opportunities.length === 0} title={opportunities.length === 0 ? t("Add an opportunity before exporting a backup") : t("Download your opportunity data")}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v12m-5-5 5 5 5-5M4 20h16" /></svg>
             <LocalizedText en="Export backup" />
           </button>
@@ -472,7 +489,7 @@ export function OpportunityIntelligence() {
                   { value: "HOLD", label: "On hold" },
                 ] as const).map((filter) => (
                   <button key={filter.value} type="button" className={`opportunity-filter${priorityFilter === filter.value ? " is-active" : ""}`} aria-pressed={priorityFilter === filter.value} onClick={() => setPriorityFilter(filter.value)}>
-                    {filter.label}
+                    {t(filter.label)}
                   </button>
                 ))}
               </div>
@@ -503,7 +520,7 @@ export function OpportunityIntelligence() {
                   <article className="card opportunity-card" key={opportunity.id}>
                     <div className="opportunity-card-top">
                       <span className="opportunity-rank">#{index + 1}</span>
-                      <span className={`opportunity-priority opportunity-priority-${priority.toLowerCase()}`}>{priority === "HIGH_SCORE" ? "High score · verify evidence" : priority === "VALIDATE" ? "Validate first" : "Low priority · keep on radar"}</span>
+                      <span className={`opportunity-priority opportunity-priority-${priority.toLowerCase()}`}>{priority === "HIGH_SCORE" ? t("High score · verify evidence") : priority === "VALIDATE" ? t("Validate first") : t("Low priority · keep on radar")}</span>
                     </div>
                     <div className="opportunity-score-row">
                       <div>
@@ -515,7 +532,7 @@ export function OpportunityIntelligence() {
                       </div>
                     </div>
                     <p className="opportunity-thesis">{opportunity.thesis}</p>
-                    <p className="opportunity-reason">{priorityDescription(priority)}</p>
+                    <p className="opportunity-reason">{t(priorityDescription(priority))}</p>
                     <div className="opportunity-factor-list" aria-label={t("Scoring factors")}>
                       <span><LocalizedText en="Fit" /> <b>{opportunity.strategicFit}/5</b></span>
                       <span><LocalizedText en="Value" /> <b>{opportunity.potentialValue}/5</b></span>
@@ -538,7 +555,7 @@ export function OpportunityIntelligence() {
                     />
                     <OpportunityAnalysisPanel opportunity={opportunity} score={score} />
                     <div className="opportunity-card-actions">
-                      <Link className="button button-small" href={missionHref(opportunity)}><LocalizedText en="Turn into Mission" /></Link>
+                      <Link className="button button-small" href={missionHref(opportunity, t)}><LocalizedText en="Turn into Mission" /></Link>
                       <button className="button button-quiet button-small" type="button" onClick={() => setOpportunities((current) => current.filter((item) => item.id !== opportunity.id))} aria-label={fill(t("Remove {opportunity}"), { opportunity: opportunity.title })}><LocalizedText en="Remove" /></button>
                     </div>
                   </article>

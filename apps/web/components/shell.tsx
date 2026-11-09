@@ -48,8 +48,8 @@ export function Shell({ children, signedIn = false, navLabel = "Primary navigati
       <header className="topbar">
         <Link className="brand" href="/" prefetch={false}>
           <span className="brand-wordmark">ZAVQERA</span>
-          <span className="brand-subtitle"><LocalizedText en="MISSION CONTROL" nb="KONTROLLSENTER" ar="مركز التحكم" /></span>
-          <span className="visually-hidden"><LocalizedText en="Home" nb="Hjem" ar="الرئيسية" /></span>
+          <span className="brand-subtitle"><LocalizedText en="MISSION CONTROL" /></span>
+          <span className="visually-hidden"><LocalizedText en="Home" /></span>
         </Link>
         <nav className="primary-nav" aria-label={navLabel}>
           {/* The whole product is on show to a first-time visitor, because a
@@ -57,15 +57,15 @@ export function Shell({ children, signedIn = false, navLabel = "Primary navigati
               workspace links still need a session, so for a signed-out visitor
               they carry ?next= and the sign-in page names where they were
               heading, instead of dropping them on an unexplained form. */}
-          <Link className="nav-link nav-search" href={signedIn ? "/app#mission-search" : "/auth/sign-in?next=%2Fapp"} prefetch={false}><NavIcon name="search" /><LocalizedText en="Search" nb="Søk" ar="بحث" /></Link>
-          <Link className="nav-link nav-new-mission" href={signedIn ? "/app/missions/new" : "/auth/sign-in?next=%2Fapp%2Fmissions%2Fnew"} prefetch={false}><NavIcon name="plus" /><LocalizedText en="New mission" nb="Nytt oppdrag" ar="مهمة جديدة" /></Link>
-          <NavLink className="nav-link nav-business" href={signedIn ? "/app/business" : "/auth/sign-in?next=%2Fapp%2Fbusiness"}><NavIcon name="business" /><LocalizedText en="Business" nb="Bedrift" ar="الأعمال" /></NavLink>
-          <NavLink className="nav-link nav-templates" href="/templates"><NavIcon name="templates" /><LocalizedText en="Templates" nb="Maler" ar="القوالب" /></NavLink>
-          <NavLink className="nav-link nav-pricing" href="/pricing"><NavIcon name="pricing" /><LocalizedText en="Pricing" nb="Priser" ar="الأسعار" /></NavLink>
+          <Link className="nav-link nav-search" href={signedIn ? "/app#mission-search" : "/auth/sign-in?next=%2Fapp"} prefetch={false}><NavIcon name="search" /><LocalizedText en="Search" /></Link>
+          <Link className="nav-link nav-new-mission" href={signedIn ? "/app/missions/new" : "/auth/sign-in?next=%2Fapp%2Fmissions%2Fnew"} prefetch={false}><NavIcon name="plus" /><LocalizedText en="New mission" /></Link>
+          <NavLink className="nav-link nav-business" href={signedIn ? "/app/business" : "/auth/sign-in?next=%2Fapp%2Fbusiness"}><NavIcon name="business" /><LocalizedText en="Business" /></NavLink>
+          <NavLink className="nav-link nav-templates" href="/templates"><NavIcon name="templates" /><LocalizedText en="Templates" /></NavLink>
+          <NavLink className="nav-link nav-pricing" href="/pricing"><NavIcon name="pricing" /><LocalizedText en="Pricing" /></NavLink>
           {signedIn
             ? <WorkspaceNavLink />
-            : <Link className="nav-link workspace-nav" href="/auth/sign-in?next=%2Fapp" prefetch={false}><NavIcon name="workspace" /><LocalizedText en="Workspace" nb="Arbeidsområde" ar="مساحة العمل" /></Link>}
-          <NavLink href={signedIn ? "/app/opportunities" : "/auth/sign-in?next=%2Fapp%2Fopportunities"} className="nav-link nav-opportunities"><NavIcon name="opportunities" /><LocalizedText en="Opportunity Intelligence" nb="Mulighetsanalyse" ar="تحليل الفرص" /></NavLink>
+            : <Link className="nav-link workspace-nav" href="/auth/sign-in?next=%2Fapp" prefetch={false}><NavIcon name="workspace" /><LocalizedText en="Workspace" /></Link>}
+          <NavLink href={signedIn ? "/app/opportunities" : "/auth/sign-in?next=%2Fapp%2Fopportunities"} className="nav-link nav-opportunities"><NavIcon name="opportunities" /><LocalizedText en="Opportunity Intelligence" /></NavLink>
           {signedIn && <NotificationBell />}
           <LanguageSwitcher />
           <ThemeSwitcher />
@@ -79,7 +79,7 @@ export function Shell({ children, signedIn = false, navLabel = "Primary navigati
       </header>
       <main>{children}</main>
       <footer className="footer">
-        <span><LocalizedText en="A calm control plane for bounded AI work." nb="Et oversiktlig kontrollsenter for avgrenset KI-arbeid." ar="مركز تحكم واضح للعمل بالذكاء الاصطناعي ضمن حدود محددة." /></span>
+        <span><LocalizedText en="A calm control plane for bounded AI work." /></span>
         {/* Reachable from every page, which is what makes them findable at the
             moment someone wants them: before they sign up. */}
         <span className="footer-links">
@@ -92,6 +92,12 @@ export function Shell({ children, signedIn = false, navLabel = "Primary navigati
 }
 
 export function StatusPill({ status }: { status: string }) {
-  const label = status === "WAITING" ? <LocalizedText en="Needs input" nb="Trenger avklaring" ar="يتطلب تدخلك" /> : status === "ACTIVE" ? <LocalizedText en="Active" nb="Aktiv" ar="نشطة" /> : status === "COMPLETED" ? <LocalizedText en="Completed" nb="Fullført" ar="مكتملة" /> : status;
+  // This pill describes one mission, so Norwegian wants the singular "Aktiv".
+  // The metric cards count missions and want "Aktive". Same English word, two
+  // Norwegian ones, so the key carries its context; see translate().
+  const label = status === "WAITING" ? <LocalizedText en="Needs input" />
+    : status === "ACTIVE" ? <LocalizedText en="Active|one mission" />
+    : status === "COMPLETED" ? <LocalizedText en="Completed|one mission" />
+    : status;
   return <span className={`status status-${status.toLowerCase()}`}>{label}</span>;
 }

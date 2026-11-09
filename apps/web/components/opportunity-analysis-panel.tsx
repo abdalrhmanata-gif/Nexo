@@ -134,7 +134,11 @@ export function OpportunityAnalysisPanel({
       </div>
       <p className="analysis-caution">When enabled, this sends the opportunity and up to {MAX_EVIDENCE_ITEMS} of your most recent evidence notes to the configured AI provider. Zavqera does not fetch the cited URLs. Review every conclusion before acting.</p>
       {loading && <p className="analysis-status" role="status"><LocalizedText en="Reviewing the supplied evidence and drafting a validation experiment…" /></p>}
-      {error && <p className="field-error analysis-error" role="alert">{error}</p>}
+      {/* The message may come from our API, which answers in English because it
+          has no view of the reader's language. It is translated here, once, at
+          the only place it is shown; a test keeps every message the route can
+          return present in the dictionaries. */}
+      {error && <p className="field-error analysis-error" role="alert">{t(error)}</p>}
       {report && (
         <div className="analysis-report" aria-live="polite">
           <div className="analysis-report-heading">

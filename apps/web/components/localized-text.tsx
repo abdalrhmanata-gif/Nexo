@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  DICTIONARIES,
   LANGUAGE_COOKIE,
   LANGUAGE_STORAGE_KEY,
   isSupportedLanguage,
@@ -52,10 +51,13 @@ export function useTranslate(): (en: string) => string {
   return useCallback((en: string) => translate(en, language), [language]);
 }
 
-export function LocalizedText({ en, nb, ar }: { en: string; nb?: string; ar?: string }) {
+// Inline nb/ar props used to be accepted here and took precedence over the
+// table. They were a second source of truth covering two of the five
+// languages, so a string written only inline was Norwegian and Arabic and
+// silently English in Spanish, French and German — which is how the
+// navigation bar came to be half-translated. The dictionary is now the only
+// path, and a test fails if an inline prop comes back.
+export function LocalizedText({ en }: { en: string }) {
   const language = useLanguage();
-  // nb and ar may still be supplied inline by older call sites; they take
-  // precedence over the table for those two languages only.
-  const inline = language === "nb" ? nb : language === "ar" ? ar : undefined;
-  return <>{inline ?? DICTIONARIES[language][en] ?? en}</>;
+  return <>{translate(en, language)}</>;
 }

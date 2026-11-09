@@ -3,6 +3,7 @@ import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join, relative } from "node:path";
 import test from "node:test";
+import { readDictionaries } from "./helpers/dictionaries.mjs";
 
 // The audits that came before this one looked for <LocalizedText en="…">,
 // t("…"), and HTML attributes. All three missed the same shape twice:
@@ -58,26 +59,16 @@ function sourceFiles() {
     .filter((file) => file.endsWith(".tsx"));
 }
 
-function dictionaryKeys() {
-  const source = readFileSync(join(webRoot, "lib/i18n.ts"), "utf8");
-  const start = source.indexOf("const AR: Record<string, string> = {");
-  let depth = 1;
-  let index = start + source.slice(start).indexOf("{") + 1;
-  while (depth > 0) {
-    if (source[index] === "{") depth += 1;
-    else if (source[index] === "}") depth -= 1;
-    index += 1;
-  }
-  const body = source.slice(start, index);
-  return new Set([...body.matchAll(/^\s*"((?:[^"\\]|\\.)*)"\s*:/gm)].map((match) => match[1]));
-}
 
 /** Prose a reader would notice: more than one word, and begins like a sentence. */
 function isProse(value) {
   return /\s/.test(value) && /^[A-Z]/.test(value) && value.length >= 8 && /[a-z]{3}/.test(value);
 }
 
-const keys = dictionaryKeys();
+// Keys are the same in every dictionary (parity is enforced separately), so
+// reading one is enough. This used to parse lib/i18n.ts here, one key per
+// line, and so missed every key that shares a line with another.
+const keys = readDictionaries().AR;
 const files = sourceFiles();
 
 test("the audit has files and a dictionary to work with", () => {
