@@ -58,6 +58,39 @@ const PROVIDER_REFUSAL: Record<string, string> = {
   "bad-base-url": "The configured provider address is not accepted. Only the official OpenAI API host is allowed.",
 };
 
+/**
+ * Is this deployment ready to draft a plan, and if not, which gate is shut?
+ *
+ * Until now the only way to find out was to press the button, which spends a
+ * monthly generation to learn that the model name has a typo in it. This
+ * answers the same question for nothing: it reads configuration and returns,
+ * touching neither the provider nor the quota.
+ *
+ * It is behind the same allowlist as the POST, so only an approved tester
+ * learns anything about how this deployment is set up. Everyone else gets
+ * the same 403 they would get from the POST, and the panel stays hidden.
+ */
+export async function GET() {
+  if (!isSupabaseConfigured()) {
+    return jsonError(503, "AUTH_NOT_CONFIGURED", "Sign-in is not configured on this deployment.");
+  }
+  let user: Awaited<ReturnType<typeof getAuthenticatedUser>>;
+  try {
+    user = await getAuthenticatedUser();
+  } catch {
+    return jsonError(503, "AUTH_UNAVAILABLE", "Authentication is temporarily unavailable.");
+  }
+  if (!user) return jsonError(401, "AUTH_REQUIRED", "Sign in to draft a plan with AI.");
+  if (!isApprovedPreviewTester(user.id)) {
+    return jsonError(403, "AI_ACCESS_RESTRICTED", "AI planning is limited to approved preview testers.");
+  }
+
+  const provider = describeProvider();
+  return okJson(provider.ok
+    ? { ready: true }
+    : { ready: false, reason: provider.reason, detail: PROVIDER_REFUSAL[provider.reason] });
+}
+
 export async function POST(request: Request) {
   const fetchSite = request.headers.get("sec-fetch-site");
   if (fetchSite === "cross-site" || !isTrustedSameOriginRequest(request)) {

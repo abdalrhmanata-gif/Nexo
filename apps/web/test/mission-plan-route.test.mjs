@@ -111,3 +111,23 @@ test("every reason a provider is refused has its own message", () => {
       `${file} gives two refusals the same wording, which is the problem this replaced`);
   }
 });
+
+test("the readiness check costs nothing and still guards what it reveals", () => {
+  // Its whole point is that an owner can learn a model name is wrong without
+  // paying a generation to find out. If it ever reserves, consumes or calls,
+  // it has become the thing it replaced.
+  const route = read("app/api/missions/plan/route.ts");
+  const get = route.slice(route.indexOf("export async function GET()"), route.indexOf("export async function POST"));
+  assert.ok(get.length > 200, "the GET handler has moved or been removed");
+  assert.doesNotMatch(get, /runGuardedJsonCompletion|reserve_ai_generation|consume_ai_generation|fetch\(/,
+    "the readiness check must not spend a generation or contact the provider");
+  assert.match(get, /describeProvider\(\)/);
+
+  // And it must not hand configuration details to someone who is not allowed
+  // to use the feature: the allowlist comes before the reason is read.
+  const allowlistAt = get.indexOf("isApprovedPreviewTester");
+  const describeAt = get.indexOf("describeProvider()");
+  assert.ok(allowlistAt > 0 && describeAt > allowlistAt,
+    "the allowlist must be checked before the configuration is described");
+  assert.match(get, /AUTH_REQUIRED/, "a signed-out caller is turned away first");
+});
