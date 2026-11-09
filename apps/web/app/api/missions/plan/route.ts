@@ -33,6 +33,7 @@ const MESSAGES: RunMessages = {
   allowanceReached: "You've reached the monthly AI allowance for this plan.",
   reservationInvalid: "Monthly AI usage reservation is invalid. No AI provider was called.",
   reservationUnconfirmed: "The monthly usage reservation could not be confirmed. No AI provider was called.",
+  providerRejectedCredentials: "The AI provider rejected this deployment's credentials. The API key may have expired, been revoked or been entered incorrectly. This attempt used one monthly generation.",
   providerFailed: "The AI provider could not draft this plan. This attempt used one monthly generation; no automatic retry was attempted.",
   providerUnreadable: "The AI provider returned an unreadable response. This attempt used one monthly generation.",
   providerUnsupported: "The AI provider returned an unsupported response. This attempt used one monthly generation.",

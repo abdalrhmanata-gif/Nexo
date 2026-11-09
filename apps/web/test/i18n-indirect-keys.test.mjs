@@ -31,10 +31,21 @@ export function labelTableValues(body) {
   return values;
 }
 
-/** Every message the analyze route can hand back to the browser. */
+/**
+ * Every message a paid-provider route can hand back to the browser.
+ *
+ * Two shapes, because the routes use both: a literal passed to jsonError,
+ * and the RunMessages table each route gives the shared runner. When the
+ * flow moved into that runner, an extractor that knew only the first shape
+ * went from 26 messages to 11 — the count floor below is what caught it.
+ */
 export function apiMessages(body) {
   const out = [...body.matchAll(/jsonError\(\s*\d+\s*,\s*"[A-Z_]+"\s*,\s*"((?:[^"\\]|\\.)*)"/g)].map((m) => m[1]);
   for (const m of body.matchAll(/\berror:\s*"((?:[^"\\]|\\.)*)"/g)) out.push(m[1]);
+  const table = /const MESSAGES: RunMessages = \{([\s\S]*?)\n\};/.exec(body);
+  if (table) {
+    for (const m of table[1].matchAll(/:\s*"((?:[^"\\]|\\.)*)"/g)) out.push(m[1]);
+  }
   return out;
 }
 
@@ -64,8 +75,11 @@ const SOURCES = [
   },
   {
     what: "messages the AI brief API can return",
-    keys: () => apiMessages(read("app/api/opportunities/analyze/route.ts")),
-    least: 20,
+    keys: () => [
+      ...apiMessages(read("app/api/opportunities/analyze/route.ts")),
+      ...apiMessages(read("app/api/missions/plan/route.ts")),
+    ],
+    least: 28,
   },
   {
     what: "verdicts from lib/opportunity-intelligence.mjs",

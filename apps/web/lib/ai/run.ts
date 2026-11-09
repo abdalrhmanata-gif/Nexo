@@ -32,6 +32,8 @@ export type RunMessages = {
   allowanceReached: string;
   reservationInvalid: string;
   reservationUnconfirmed: string;
+  /** The provider rejected our credentials: an expired, revoked or wrong key. */
+  providerRejectedCredentials: string;
   providerFailed: string;
   providerUnreadable: string;
   providerUnsupported: string;
@@ -154,6 +156,13 @@ export async function runGuardedJsonCompletion<T>({
       signal: controller.signal,
       cache: "no-store",
     });
+    if (response.status === 401 || response.status === 403) {
+      // An expired or revoked key fails exactly like a provider outage, and
+      // the generic message sends the owner looking for a bug that is not
+      // there. OpenAI keys can now be created with a lifetime, so this will
+      // happen on a schedule unless someone is told plainly what it is.
+      return fail(502, "AI_PROVIDER_CREDENTIALS_REJECTED", messages.providerRejectedCredentials);
+    }
     if (!response.ok) return fail(502, "AI_PROVIDER_ERROR", messages.providerFailed);
 
     let providerResponse: unknown;
