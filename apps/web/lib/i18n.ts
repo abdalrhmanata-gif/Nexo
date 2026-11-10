@@ -755,6 +755,14 @@ const NB: Record<string, string> = {
   "Compare up to 10 opportunities (planned)":"Sammenlign inntil 10 muligheter (planlagt)",
   "Priority on new Opportunity Intelligence features (planned)":"Prioritet på nye funksjoner i Mulighetsanalyse (planlagt)",
   "Missions work in your private workspace today. Secure invitations, team roles, and shared business access are not enabled yet. If your team needs them, say so and we will tell you when they open.":"Oppdrag fungerer i ditt private arbeidsområde i dag. Sikre invitasjoner, teamroller og delt bedriftstilgang er ikke aktivert ennå. Trenger teamet ditt dem, si fra, så sier vi ifra når de åpner.",
+  "The email or password is not correct.":"E-posten eller passordet er ikke riktig.",
+  "Confirm your email address first. The link is in the message we sent you.":"Bekreft e-postadressen din først. Lenken står i meldingen vi sendte deg.",
+  "An account with this email already exists. Sign in instead.":"Det finnes allerede en konto med denne e-posten. Logg inn i stedet.",
+  "Too many emails were requested. Wait a few minutes and try again.":"For mange e-poster ble bedt om. Vent noen minutter og prøv igjen.",
+  "Too many attempts. Wait a few minutes and try again.":"For mange forsøk. Vent noen minutter og prøv igjen.",
+  "New accounts are not being opened right now.":"Nye kontoer åpnes ikke akkurat nå.",
+  "This account cannot sign in. Contact support.":"Denne kontoen kan ikke logge inn. Kontakt support.",
+  "That did not work. Check your details and try again.":"Det fungerte ikke. Sjekk opplysningene og prøv igjen.",
 };
 const AR: Record<string, string> = {
   "MISSION CONTROL":"مركز التحكم", "Search":"بحث", "New mission":"مهمة جديدة",
@@ -1485,6 +1493,14 @@ const AR: Record<string, string> = {
   "Compare up to 10 opportunities (planned)":"قارن حتى 10 فرص (مخطَّط)",
   "Priority on new Opportunity Intelligence features (planned)":"أولوية في ميزات تحليل الفرص الجديدة (مخطَّط)",
   "Missions work in your private workspace today. Secure invitations, team roles, and shared business access are not enabled yet. If your team needs them, say so and we will tell you when they open.":"المهام تعمل اليوم في مساحة عملك الخاصة. الدعوات الآمنة وأدوار الفريق والوصول المشترك للأعمال غير مفعّلة بعد. إن كان فريقك يحتاجها، أخبرنا وسنُعلمك عند فتحها.",
+  "The email or password is not correct.":"البريد الإلكتروني أو كلمة المرور غير صحيحة.",
+  "Confirm your email address first. The link is in the message we sent you.":"أكّد بريدك الإلكتروني أولاً. الرابط في الرسالة التي أرسلناها إليك.",
+  "An account with this email already exists. Sign in instead.":"يوجد حساب بهذا البريد بالفعل. سجّل الدخول بدلاً من ذلك.",
+  "Too many emails were requested. Wait a few minutes and try again.":"طُلب عدد كبير من الرسائل. انتظر بضع دقائق وحاول مجدداً.",
+  "Too many attempts. Wait a few minutes and try again.":"محاولات كثيرة. انتظر بضع دقائق وحاول مجدداً.",
+  "New accounts are not being opened right now.":"لا تُفتح حسابات جديدة في الوقت الحالي.",
+  "This account cannot sign in. Contact support.":"هذا الحساب لا يستطيع تسجيل الدخول. تواصل مع الدعم.",
+  "That did not work. Check your details and try again.":"لم ينجح ذلك. تحقق من بياناتك وحاول مجدداً.",
 };
 const ES: Record<string, string> = {
   "Search":"Buscar", "New mission":"Nueva misión", "Business":"Empresa", "Templates":"Plantillas",
@@ -2219,6 +2235,14 @@ const ES: Record<string, string> = {
   "Compare up to 10 opportunities (planned)":"Compara hasta 10 oportunidades (previsto)",
   "Priority on new Opportunity Intelligence features (planned)":"Prioridad en las nuevas funciones de Análisis de oportunidades (previsto)",
   "Missions work in your private workspace today. Secure invitations, team roles, and shared business access are not enabled yet. If your team needs them, say so and we will tell you when they open.":"Las misiones funcionan hoy en tu espacio de trabajo privado. Las invitaciones seguras, los roles de equipo y el acceso compartido aún no están habilitados. Si tu equipo los necesita, dínoslo y te avisaremos cuando se abran.",
+  "The email or password is not correct.":"El correo o la contraseña no son correctos.",
+  "Confirm your email address first. The link is in the message we sent you.":"Confirma primero tu correo. El enlace está en el mensaje que te enviamos.",
+  "An account with this email already exists. Sign in instead.":"Ya existe una cuenta con este correo. Inicia sesión.",
+  "Too many emails were requested. Wait a few minutes and try again.":"Se solicitaron demasiados correos. Espera unos minutos e inténtalo de nuevo.",
+  "Too many attempts. Wait a few minutes and try again.":"Demasiados intentos. Espera unos minutos e inténtalo de nuevo.",
+  "New accounts are not being opened right now.":"Ahora mismo no se están abriendo cuentas nuevas.",
+  "This account cannot sign in. Contact support.":"Esta cuenta no puede iniciar sesión. Contacta con soporte.",
+  "That did not work. Check your details and try again.":"No funcionó. Revisa tus datos e inténtalo de nuevo.",
 };
 const FR: Record<string, string> = {
   "Search":"Rechercher", "New mission":"Nouvelle mission", "Business":"Entreprise", "Templates":"Modèles",
@@ -2953,6 +2977,14 @@ const FR: Record<string, string> = {
   "Compare up to 10 opportunities (planned)":"Comparez jusqu'à 10 opportunités (prévu)",
   "Priority on new Opportunity Intelligence features (planned)":"Priorité sur les nouvelles fonctions d'Analyse des opportunités (prévu)",
   "Missions work in your private workspace today. Secure invitations, team roles, and shared business access are not enabled yet. If your team needs them, say so and we will tell you when they open.":"Les missions fonctionnent aujourd'hui dans votre espace de travail privé. Les invitations sécurisées, les rôles d'équipe et l'accès partagé ne sont pas encore activés. Si votre équipe en a besoin, dites-le et nous vous préviendrons à l'ouverture.",
+  "The email or password is not correct.":"L'e-mail ou le mot de passe est incorrect.",
+  "Confirm your email address first. The link is in the message we sent you.":"Confirmez d'abord votre adresse e-mail. Le lien se trouve dans le message que nous vous avons envoyé.",
+  "An account with this email already exists. Sign in instead.":"Un compte existe déjà avec cet e-mail. Connectez-vous plutôt.",
+  "Too many emails were requested. Wait a few minutes and try again.":"Trop d'e-mails ont été demandés. Patientez quelques minutes et réessayez.",
+  "Too many attempts. Wait a few minutes and try again.":"Trop de tentatives. Patientez quelques minutes et réessayez.",
+  "New accounts are not being opened right now.":"Aucun nouveau compte n'est ouvert pour le moment.",
+  "This account cannot sign in. Contact support.":"Ce compte ne peut pas se connecter. Contactez l'assistance.",
+  "That did not work. Check your details and try again.":"Cela n'a pas fonctionné. Vérifiez vos informations et réessayez.",
 };
 const DE: Record<string, string> = {
   "Search":"Suchen", "New mission":"Neue Mission", "Business":"Unternehmen", "Templates":"Vorlagen",
@@ -3687,6 +3719,14 @@ const DE: Record<string, string> = {
   "Compare up to 10 opportunities (planned)":"Bis zu 10 Chancen vergleichen (geplant)",
   "Priority on new Opportunity Intelligence features (planned)":"Vorrang bei neuen Funktionen der Chancenanalyse (geplant)",
   "Missions work in your private workspace today. Secure invitations, team roles, and shared business access are not enabled yet. If your team needs them, say so and we will tell you when they open.":"Missionen funktionieren heute in Ihrem privaten Arbeitsbereich. Sichere Einladungen, Teamrollen und gemeinsamer Unternehmenszugang sind noch nicht aktiviert. Wenn Ihr Team sie braucht, sagen Sie Bescheid — wir melden uns, sobald sie verfügbar sind.",
+  "The email or password is not correct.":"E-Mail oder Passwort ist nicht korrekt.",
+  "Confirm your email address first. The link is in the message we sent you.":"Bestätigen Sie zuerst Ihre E-Mail-Adresse. Der Link steht in der Nachricht, die wir Ihnen geschickt haben.",
+  "An account with this email already exists. Sign in instead.":"Mit dieser E-Mail besteht bereits ein Konto. Melden Sie sich stattdessen an.",
+  "Too many emails were requested. Wait a few minutes and try again.":"Es wurden zu viele E-Mails angefordert. Warten Sie einige Minuten und versuchen Sie es erneut.",
+  "Too many attempts. Wait a few minutes and try again.":"Zu viele Versuche. Warten Sie einige Minuten und versuchen Sie es erneut.",
+  "New accounts are not being opened right now.":"Derzeit werden keine neuen Konten eröffnet.",
+  "This account cannot sign in. Contact support.":"Dieses Konto kann sich nicht anmelden. Wenden Sie sich an den Support.",
+  "That did not work. Check your details and try again.":"Das hat nicht funktioniert. Prüfen Sie Ihre Angaben und versuchen Sie es erneut.",
 };
 
 export const DICTIONARIES: Record<AppLanguage, Record<string, string>> = {

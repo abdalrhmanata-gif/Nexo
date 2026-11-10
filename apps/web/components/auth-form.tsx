@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { safeNextPath } from "../lib/auth/redirect.mjs";
 import { LocalizedText } from "./localized-text";
+import { authErrorMessage } from "../lib/auth-errors.mjs";
 
 // Messages are held in state as their English source text and rendered through
 // LocalizedText, which resolves them against the dictionaries. That keeps the
@@ -55,7 +56,10 @@ export function AuthForm({ mode }: { mode: "sign-in" | "sign-up" }) {
         },
       });
     setLoading(false);
-    if (result.error) return setError(result.error.message);
+    // The provider's sentence is never shown: it is English, written for
+    // developers, and invisible to every translation audit. Its code picks
+    // one of ours.
+    if (result.error) return setError(authErrorMessage(result.error));
     if (mode === "sign-up" && !result.data.session) {
       setMessage("Check your email to confirm your account, then sign in.");
       return;
