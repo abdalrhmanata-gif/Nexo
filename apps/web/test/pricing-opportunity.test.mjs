@@ -14,9 +14,16 @@ test("monthly Opportunity Intelligence prices and report allowances are explicit
   assert.match(pricing, /Paid billing and usage enforcement are not enabled; AI Opportunity Brief access is restricted to an approved preview tester/);
   assert.match(pricing, /\$19/);
   assert.match(pricing, /\$49/);
-  assert.match(pricing, /AI Opportunity Briefs per month \(planned\)/);
-  assert.match(pricing, /10 AI Opportunity Briefs per month \(planned\)/);
-  assert.match(pricing, /30 AI Opportunity Briefs per month \(planned\)/);
+  // The quota is shared: a mission plan and an opportunity brief both spend
+  // one generation, so the allowance must name both or it understates what
+  // the plan buys.
+  assert.match(pricing, /AI briefs or Mission plans per month \(planned\)/);
+  assert.match(pricing, /10 AI briefs or Mission plans per month \(planned\)/);
+  assert.match(pricing, /30 AI briefs or Mission plans per month \(planned\)/);
+  assert.match(pricing, /90 AI briefs or Mission plans per month \(planned\)/);
+  // Every tier stays marked as proposed, the fourth included.
+  assert.match(pricing, /name: "Scale"/);
+  assert.match(pricing, /price: "\$69"/);
   assert.match(pricing, /planned prices and report limits are hypotheses|prices are hypotheses/i);
 });
 
@@ -76,4 +83,16 @@ test("AI Opportunity Intelligence product strategy records evidence rules, phase
   assert.match(strategy, /Phase 1 — useful AI analysis on reviewed evidence/);
   assert.match(strategy, /Release gates/);
   assert.match(strategy, /not a statement that planned AI capabilities are live/i);
+});
+
+test("the pricing grid does not hard-code a column count", () => {
+  // The grid was repeat(3, …). Adding a fourth plan left it alone on a
+  // second row, which looks like a bug rather than a tier. A fixed count has
+  // to be revisited every time the ladder changes, and will not be.
+  const css = readFileSync(join(webRoot, "app/globals.css"), "utf8");
+  const rule = /\.pricing-grid \{[^}]*grid-template-columns:([^;]+);/.exec(css);
+  assert.ok(rule, "the pricing grid rule has moved");
+  assert.doesNotMatch(rule[1], /repeat\(\s*\d/,
+    "the column count must follow the number of plans, not a number in the stylesheet");
+  assert.match(rule[1], /auto-fit|auto-fill/);
 });

@@ -11,7 +11,7 @@ const plans = [
     cta: true,
     features: [
       "Opportunity score and evidence ledger",
-      "1 AI Opportunity Brief per month (planned)",
+      "1 AI brief or Mission plan per month (planned)",
       "Turn a reviewed opportunity into a Mission",
     ],
   },
@@ -23,7 +23,7 @@ const plans = [
     cta: false,
     features: [
       "Everything in Free",
-      "10 AI Opportunity Briefs per month (planned)",
+      "10 AI briefs or Mission plans per month (planned)",
       "Source-linked market and competitor analysis (planned)",
       "Evidence-based validation experiments (planned)",
     ],
@@ -36,10 +36,23 @@ const plans = [
     cta: false,
     features: [
       "Everything in Plus",
-      "30 AI Opportunity Briefs per month (planned)",
+      "30 AI briefs or Mission plans per month (planned)",
       "Compare up to 3 opportunities (planned)",
       "Exportable decision reports (planned)",
       "Market monitoring and alerts (later phase)",
+    ],
+  },
+  {
+    name: "Scale",
+    price: "$69",
+    reports: "90",
+    className: "pricing-card-scale",
+    cta: false,
+    features: [
+      "Everything in Pro",
+      "90 AI briefs or Mission plans per month (planned)",
+      "Compare up to 10 opportunities (planned)",
+      "Priority on new Opportunity Intelligence features (planned)",
     ],
   },
 ];
@@ -59,7 +72,7 @@ export default function PricingPage() {
           <p className="pricing-name"><LocalizedText en={plan.name} /></p>
           <div className="pricing-price"><strong>{plan.price}</strong><span><LocalizedText en="per month (proposed)" /></span></div>
           <p className="pricing-allowance">
-            <strong>{plan.reports}</strong> <LocalizedText en="AI Opportunity Briefs per month (planned)" />
+            <strong>{plan.reports}</strong> <LocalizedText en="AI briefs or Mission plans per month (planned)" />
           </p>
           <ul>
             {plan.features.map((feature) => <li key={feature}><LocalizedText en={feature} /></li>)}

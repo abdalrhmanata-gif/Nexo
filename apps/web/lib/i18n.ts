@@ -746,6 +746,15 @@ const NB: Record<string, string> = {
   "AI is enabled but no model is configured on this deployment.":"KI er aktivert, men ingen modell er konfigurert i denne installasjonen.",
   "The configured model has no published price in this application, so it will not be called. Use a model this deployment can cost.":"Den konfigurerte modellen har ingen oppgitt pris i denne applikasjonen og blir derfor ikke kalt. Bruk en modell denne installasjonen kan kostnadsberegne.",
   "The configured provider address is not accepted. Only the official OpenAI API host is allowed.":"Den konfigurerte leverandøradressen godtas ikke. Bare den offisielle OpenAI-API-verten er tillatt.",
+  "AI briefs or Mission plans per month (planned)":"KI-briefer eller oppdragsplaner per måned (planlagt)",
+  "1 AI brief or Mission plan per month (planned)":"1 KI-brief eller oppdragsplan per måned (planlagt)",
+  "10 AI briefs or Mission plans per month (planned)":"10 KI-briefer eller oppdragsplaner per måned (planlagt)",
+  "30 AI briefs or Mission plans per month (planned)":"30 KI-briefer eller oppdragsplaner per måned (planlagt)",
+  "90 AI briefs or Mission plans per month (planned)":"90 KI-briefer eller oppdragsplaner per måned (planlagt)",
+  "Everything in Pro":"Alt i Pro",
+  "Compare up to 10 opportunities (planned)":"Sammenlign inntil 10 muligheter (planlagt)",
+  "Priority on new Opportunity Intelligence features (planned)":"Prioritet på nye funksjoner i Mulighetsanalyse (planlagt)",
+  "Missions work in your private workspace today. Secure invitations, team roles, and shared business access are not enabled yet. If your team needs them, say so and we will tell you when they open.":"Oppdrag fungerer i ditt private arbeidsområde i dag. Sikre invitasjoner, teamroller og delt bedriftstilgang er ikke aktivert ennå. Trenger teamet ditt dem, si fra, så sier vi ifra når de åpner.",
 };
 const AR: Record<string, string> = {
   "MISSION CONTROL":"مركز التحكم", "Search":"بحث", "New mission":"مهمة جديدة",
@@ -1467,6 +1476,15 @@ const AR: Record<string, string> = {
   "AI is enabled but no model is configured on this deployment.":"الذكاء الاصطناعي مفعّل لكن لا يوجد موديل مُهيأ في هذا النشر.",
   "The configured model has no published price in this application, so it will not be called. Use a model this deployment can cost.":"الموديل المُهيأ ليس له سعر معلن في هذا التطبيق، لذا لن يُستدعى. استخدم موديلاً يستطيع هذا النشر حساب تكلفته.",
   "The configured provider address is not accepted. Only the official OpenAI API host is allowed.":"عنوان المزوّد المُهيأ غير مقبول. لا يُسمح إلا بمضيف OpenAI API الرسمي.",
+  "AI briefs or Mission plans per month (planned)":"موجزات ذكاء اصطناعي أو خطط مهام شهرياً (مخطَّط)",
+  "1 AI brief or Mission plan per month (planned)":"موجز ذكاء اصطناعي أو خطة مهمة واحدة شهرياً (مخطَّط)",
+  "10 AI briefs or Mission plans per month (planned)":"10 موجزات ذكاء اصطناعي أو خطط مهام شهرياً (مخطَّط)",
+  "30 AI briefs or Mission plans per month (planned)":"30 موجز ذكاء اصطناعي أو خطة مهمة شهرياً (مخطَّط)",
+  "90 AI briefs or Mission plans per month (planned)":"90 موجز ذكاء اصطناعي أو خطة مهمة شهرياً (مخطَّط)",
+  "Everything in Pro":"كل ما في Pro",
+  "Compare up to 10 opportunities (planned)":"قارن حتى 10 فرص (مخطَّط)",
+  "Priority on new Opportunity Intelligence features (planned)":"أولوية في ميزات تحليل الفرص الجديدة (مخطَّط)",
+  "Missions work in your private workspace today. Secure invitations, team roles, and shared business access are not enabled yet. If your team needs them, say so and we will tell you when they open.":"المهام تعمل اليوم في مساحة عملك الخاصة. الدعوات الآمنة وأدوار الفريق والوصول المشترك للأعمال غير مفعّلة بعد. إن كان فريقك يحتاجها، أخبرنا وسنُعلمك عند فتحها.",
 };
 const ES: Record<string, string> = {
   "Search":"Buscar", "New mission":"Nueva misión", "Business":"Empresa", "Templates":"Plantillas",
@@ -2192,6 +2210,15 @@ const ES: Record<string, string> = {
   "AI is enabled but no model is configured on this deployment.":"La IA está habilitada pero no hay ningún modelo configurado en esta instalación.",
   "The configured model has no published price in this application, so it will not be called. Use a model this deployment can cost.":"El modelo configurado no tiene precio publicado en esta aplicación, así que no se llamará. Usa un modelo cuyo coste esta instalación pueda calcular.",
   "The configured provider address is not accepted. Only the official OpenAI API host is allowed.":"La dirección de proveedor configurada no se acepta. Solo se permite el host oficial de la API de OpenAI.",
+  "AI briefs or Mission plans per month (planned)":"Informes de IA o planes de misión al mes (previsto)",
+  "1 AI brief or Mission plan per month (planned)":"1 informe de IA o plan de misión al mes (previsto)",
+  "10 AI briefs or Mission plans per month (planned)":"10 informes de IA o planes de misión al mes (previsto)",
+  "30 AI briefs or Mission plans per month (planned)":"30 informes de IA o planes de misión al mes (previsto)",
+  "90 AI briefs or Mission plans per month (planned)":"90 informes de IA o planes de misión al mes (previsto)",
+  "Everything in Pro":"Todo lo de Pro",
+  "Compare up to 10 opportunities (planned)":"Compara hasta 10 oportunidades (previsto)",
+  "Priority on new Opportunity Intelligence features (planned)":"Prioridad en las nuevas funciones de Análisis de oportunidades (previsto)",
+  "Missions work in your private workspace today. Secure invitations, team roles, and shared business access are not enabled yet. If your team needs them, say so and we will tell you when they open.":"Las misiones funcionan hoy en tu espacio de trabajo privado. Las invitaciones seguras, los roles de equipo y el acceso compartido aún no están habilitados. Si tu equipo los necesita, dínoslo y te avisaremos cuando se abran.",
 };
 const FR: Record<string, string> = {
   "Search":"Rechercher", "New mission":"Nouvelle mission", "Business":"Entreprise", "Templates":"Modèles",
@@ -2917,6 +2944,15 @@ const FR: Record<string, string> = {
   "AI is enabled but no model is configured on this deployment.":"L'IA est activée mais aucun modèle n'est configuré sur ce déploiement.",
   "The configured model has no published price in this application, so it will not be called. Use a model this deployment can cost.":"Le modèle configuré n'a pas de tarif publié dans cette application ; il ne sera donc pas appelé. Utilisez un modèle dont ce déploiement peut chiffrer le coût.",
   "The configured provider address is not accepted. Only the official OpenAI API host is allowed.":"L'adresse de fournisseur configurée n'est pas acceptée. Seul l'hôte officiel de l'API OpenAI est autorisé.",
+  "AI briefs or Mission plans per month (planned)":"Briefs IA ou plans de mission par mois (prévu)",
+  "1 AI brief or Mission plan per month (planned)":"1 brief IA ou plan de mission par mois (prévu)",
+  "10 AI briefs or Mission plans per month (planned)":"10 briefs IA ou plans de mission par mois (prévu)",
+  "30 AI briefs or Mission plans per month (planned)":"30 briefs IA ou plans de mission par mois (prévu)",
+  "90 AI briefs or Mission plans per month (planned)":"90 briefs IA ou plans de mission par mois (prévu)",
+  "Everything in Pro":"Tout ce que contient Pro",
+  "Compare up to 10 opportunities (planned)":"Comparez jusqu'à 10 opportunités (prévu)",
+  "Priority on new Opportunity Intelligence features (planned)":"Priorité sur les nouvelles fonctions d'Analyse des opportunités (prévu)",
+  "Missions work in your private workspace today. Secure invitations, team roles, and shared business access are not enabled yet. If your team needs them, say so and we will tell you when they open.":"Les missions fonctionnent aujourd'hui dans votre espace de travail privé. Les invitations sécurisées, les rôles d'équipe et l'accès partagé ne sont pas encore activés. Si votre équipe en a besoin, dites-le et nous vous préviendrons à l'ouverture.",
 };
 const DE: Record<string, string> = {
   "Search":"Suchen", "New mission":"Neue Mission", "Business":"Unternehmen", "Templates":"Vorlagen",
@@ -3642,6 +3678,15 @@ const DE: Record<string, string> = {
   "AI is enabled but no model is configured on this deployment.":"Die KI ist aktiviert, aber in dieser Installation ist kein Modell hinterlegt.",
   "The configured model has no published price in this application, so it will not be called. Use a model this deployment can cost.":"Das konfigurierte Modell hat in dieser Anwendung keinen hinterlegten Preis und wird daher nicht aufgerufen. Verwenden Sie ein Modell, dessen Kosten diese Installation berechnen kann.",
   "The configured provider address is not accepted. Only the official OpenAI API host is allowed.":"Die konfigurierte Anbieteradresse wird nicht akzeptiert. Nur der offizielle OpenAI-API-Host ist zulässig.",
+  "AI briefs or Mission plans per month (planned)":"KI-Briefings oder Missionspläne pro Monat (geplant)",
+  "1 AI brief or Mission plan per month (planned)":"1 KI-Briefing oder Missionsplan pro Monat (geplant)",
+  "10 AI briefs or Mission plans per month (planned)":"10 KI-Briefings oder Missionspläne pro Monat (geplant)",
+  "30 AI briefs or Mission plans per month (planned)":"30 KI-Briefings oder Missionspläne pro Monat (geplant)",
+  "90 AI briefs or Mission plans per month (planned)":"90 KI-Briefings oder Missionspläne pro Monat (geplant)",
+  "Everything in Pro":"Alles aus Pro",
+  "Compare up to 10 opportunities (planned)":"Bis zu 10 Chancen vergleichen (geplant)",
+  "Priority on new Opportunity Intelligence features (planned)":"Vorrang bei neuen Funktionen der Chancenanalyse (geplant)",
+  "Missions work in your private workspace today. Secure invitations, team roles, and shared business access are not enabled yet. If your team needs them, say so and we will tell you when they open.":"Missionen funktionieren heute in Ihrem privaten Arbeitsbereich. Sichere Einladungen, Teamrollen und gemeinsamer Unternehmenszugang sind noch nicht aktiviert. Wenn Ihr Team sie braucht, sagen Sie Bescheid — wir melden uns, sobald sie verfügbar sind.",
 };
 
 export const DICTIONARIES: Record<AppLanguage, Record<string, string>> = {

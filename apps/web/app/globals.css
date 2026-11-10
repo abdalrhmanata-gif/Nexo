@@ -280,7 +280,9 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,te
 .pricing-hero h1 { font-size:clamp(36px,5vw,60px); line-height:1.04; letter-spacing:-.045em; }
 .pricing-hero > p:not(.eyebrow) { color:var(--muted); font-size:18px; }
 .pricing-status { padding:12px 14px; border-left:3px solid var(--teal); background:#edf7f5; font-size:14px !important; }
-.pricing-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+/* auto-fit, not a fixed 3: a fourth plan was stranded alone on a second
+   row the moment one was added, and the next tier would do it again. */
+.pricing-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(224px,1fr)); gap:18px; }
 .pricing-card { display:flex; flex-direction:column; gap:12px; padding:24px; border:1px solid var(--line); border-radius:8px; background:var(--white); }
 .pricing-card-featured { border-color:#b8dcd7; }
 .pricing-name { margin:0; font-weight:700; color:var(--muted); }
@@ -1385,9 +1387,13 @@ a:hover { color:var(--teal); }
   display:inline-flex; align-items:center; justify-content:center;
   width:36px; height:36px; padding:0; cursor:pointer;
   border:1px solid var(--line); border-radius:8px;
-  background:var(--white); color:var(--muted);
+  background:var(--white); color:var(--ink);
   transition:color .15s ease, border-color .15s ease, background .15s ease;
 }
+/* The icon was --muted, which measures 4.99:1 on white: just over the
+   minimum for a block of text and far too little for a 19px line glyph.
+   The owner reported he could not tell there was a sun in the button
+   until he pressed it. --ink measures 16.29:1. */
 .theme-switcher:hover { color:var(--teal); border-color:var(--teal); }
 .theme-switcher-icon { display:inline-flex; }
 

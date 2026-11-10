@@ -49,6 +49,14 @@ export function AiMissionPlan({ missionId, name, intent, criteria, actions }: {
         const response = await fetch("/api/missions/plan", { method: "GET" });
         const payload = await response.json().catch(() => ({}));
         if (cancelled) return;
+        if (response.status === 403) {
+          // Signed in, but not on the preview allowlist. Saying so beats
+          // vanishing: the reader learns the feature exists, and the owner
+          // can tell a mistyped user id from a deployment that never
+          // shipped. Hiding made those two look identical.
+          setNotReady(String(payload.error || ""));
+          return;
+        }
         if (!response.ok) { setUnavailable(true); return; }
         if (payload.ready === false) setNotReady(String(payload.detail || ""));
       } catch {
@@ -79,7 +87,7 @@ export function AiMissionPlan({ missionId, name, intent, criteria, actions }: {
         // A deployment with no provider should stop offering the button
         // rather than inviting the same refusal again.
         if (payload.code === "AI_ANALYSIS_NOT_CONFIGURED" || payload.code === "AI_ACCESS_RESTRICTED") {
-          setUnavailable(true);
+          setNotReady(typeof payload.error === "string" ? payload.error : "");
         }
         setError(typeof payload.error === "string" ? payload.error : t("The AI plan could not be completed. This attempt used one monthly generation; no automatic retry was attempted."));
         return;
