@@ -350,6 +350,20 @@ test("the pricing page can capture intent, and the notice declares why", () => {
   assert.doesNotMatch(route, /status:\s*(4\d\d|5\d\d)/, "the endpoint must not distinguish outcomes by status");
 });
 
+test("the server's language reaches the first render of every client component", () => {
+  // The server set <html lang="ar"> and then sent the page in English: the
+  // client hook started at "en" and corrected itself after hydration. An
+  // Arabic reader saw English flash past on every load, and a crawler never
+  // saw anything else.
+  const layout = read("app/layout.tsx");
+  const text = read("components/localized-text.tsx");
+  assert.match(layout, /<LanguageProvider initial=\{language\}>/);
+  assert.match(text, /const initial = useContext\(InitialLanguage\);/);
+  assert.match(text, /useState<AppLanguage>\(initial\)/);
+  assert.doesNotMatch(text, /useState<AppLanguage>\("en"\)/,
+    "starting at English regardless of the reader is the defect this replaced");
+});
+
 test("no dictionary declares the same key twice", () => {
   // A duplicate key is a syntax error under tsc (TS1117) but not to the unit
   // suite, so it used to reach CI. Adding a phrase that already exists is the

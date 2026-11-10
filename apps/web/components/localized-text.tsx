@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import {
   LANGUAGE_COOKIE,
   LANGUAGE_STORAGE_KEY,
@@ -31,9 +31,25 @@ function readPreferredLanguage(): AppLanguage {
   return resolveLanguage({ saved, cookie, browser: navigator.languages ?? [navigator.language] });
 }
 
+// The language the server already resolved from the cookie, handed to every
+// client component so the first render matches it.
+//
+// useLanguage used to start at "en" and correct itself in an effect. The
+// server knew the reader's language — it set <html lang="ar"> — and then sent
+// the whole page in English anyway, so an Arabic reader saw English flash
+// past on every load and a search engine only ever saw English. Measured on
+// the live site: the Arabic home page arrived with 50 English strings in its
+// HTML and none after hydration.
+const InitialLanguage = createContext<AppLanguage>("en");
+
+export function LanguageProvider({ initial, children }: { initial: AppLanguage; children: ReactNode }) {
+  return <InitialLanguage.Provider value={initial}>{children}</InitialLanguage.Provider>;
+}
+
 /** Current language, kept in step with the switcher's change event. */
 export function useLanguage(): AppLanguage {
-  const [language, setLanguage] = useState<AppLanguage>("en");
+  const initial = useContext(InitialLanguage);
+  const [language, setLanguage] = useState<AppLanguage>(initial);
   useEffect(() => {
     setLanguage(readPreferredLanguage());
     const onLanguageChange = (event: Event) => {
