@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MissionCard } from "../../../components/mission-card";
+import { PlanInterest } from "../../../components/plan-interest";
 import { LocalizedText } from "../../../components/localized-text";
 import { isSupabaseConfigured } from "../../../lib/supabase/config";
 import { createSupabaseMissionRepository } from "../../../lib/supabase/mission-repository";
@@ -105,10 +106,18 @@ export default async function BusinessWorkspacePage() {
       </div>
     </section>
 
+    {/* This said "in development" twice and offered nothing to do about it,
+        which reads as an unfinished product rather than an honest one. The
+        statement is unchanged — it is true, and saying teams work when they
+        do not would be worse — but it now asks the one question whose answer
+        this product most lacks: does anyone actually want it? */}
     <section className="business-team-note">
       <span className="business-team-icon" aria-hidden="true">◎</span>
-      <div><strong><LocalizedText en="Team collaboration is in development" /></strong><p><LocalizedText en="Missions work in your private workspace today. Secure invitations, team roles, and shared business access are not enabled yet." /></p></div>
-      <span className="business-coming-soon"><LocalizedText en="In development" /></span>
+      <div>
+        <strong><LocalizedText en="Team collaboration is in development" /></strong>
+        <p><LocalizedText en="Missions work in your private workspace today. Secure invitations, team roles, and shared business access are not enabled yet. If your team needs them, say so and we will tell you when they open." /></p>
+      </div>
+      <PlanInterest plan="Team" />
     </section>
 
     <section className="business-recent" aria-labelledby="business-recent-heading">
