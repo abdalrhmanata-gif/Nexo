@@ -37,6 +37,7 @@ export function AiMissionPlan({ missionId, name, intent, criteria, actions }: {
   const [error, setError] = useState("");
   const [unavailable, setUnavailable] = useState(false);
   const [notReady, setNotReady] = useState("");
+  const [accountId, setAccountId] = useState("");
 
   // Ask once, on mount, whether this deployment can draft at all. It reads
   // configuration and returns — no provider, no generation — so the owner
@@ -55,6 +56,10 @@ export function AiMissionPlan({ missionId, name, intent, criteria, actions }: {
           // can tell a mistyped user id from a deployment that never
           // shipped. Hiding made those two look identical.
           setNotReady(String(payload.error || ""));
+          // Only ever a UUID: this is rendered, so nothing else is accepted.
+          if (typeof payload.accountId === "string" && /^[0-9a-f-]{36}$/i.test(payload.accountId)) {
+            setAccountId(payload.accountId);
+          }
           return;
         }
         if (!response.ok) { setUnavailable(true); return; }
@@ -134,7 +139,13 @@ export function AiMissionPlan({ missionId, name, intent, criteria, actions }: {
 
       {!plan && <>
         {notReady
-          ? <p className="field-error" role="status">{t(notReady)}</p>
+          ? <>
+            <p className="field-error" role="status">{t(notReady)}</p>
+            {accountId && <p className="account-id-note">
+              <LocalizedText en="Your account ID, which the person running this site needs to approve you:" />{" "}
+              <code dir="ltr">{accountId}</code>
+            </p>}
+          </>
           : <p>
             <LocalizedText en="It will suggest the steps and what each one is for. It will not tell you a fee, a waiting time or a rule: it has looked nothing up, so anything external comes back as where to confirm it." />
           </p>}

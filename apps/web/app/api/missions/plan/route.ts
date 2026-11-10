@@ -68,7 +68,13 @@ const PROVIDER_REFUSAL: Record<string, string> = {
  *
  * It is behind the same allowlist as the POST, so only an approved tester
  * learns anything about how this deployment is set up. Everyone else gets
- * the same 403 they would get from the POST, and the panel stays hidden.
+ * the same 403 they would get from the POST — plus their own account id.
+ *
+ * The id is what the allowlist is made of, and the owner had no reliable
+ * place to read it: the same email has a different id in each Supabase
+ * project, and the dashboard does not say which one the site is using. This
+ * is the one answer that cannot be the wrong project's. It goes only to the
+ * signed-in person it belongs to, and is never cached.
  */
 export async function GET() {
   if (!isSupabaseConfigured()) {
@@ -82,7 +88,7 @@ export async function GET() {
   }
   if (!user) return jsonError(401, "AUTH_REQUIRED", "Sign in to draft a plan with AI.");
   if (!isApprovedPreviewTester(user.id)) {
-    return jsonError(403, "AI_ACCESS_RESTRICTED", "AI planning is limited to approved preview testers.");
+    return jsonError(403, "AI_ACCESS_RESTRICTED", "AI planning is limited to approved preview testers.", { accountId: user.id });
   }
 
   const provider = describeProvider();
@@ -160,6 +166,7 @@ export async function POST(request: Request) {
     config,
     prompt: buildMissionPlanPrompt(input),
     requestId: randomUUID(),
+    generationKind: "planner",
     maxReportChars: MAX_PLAN_REPORT_CHARS,
     validate: validateMissionPlanReport,
     messages: MESSAGES,

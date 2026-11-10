@@ -1509,3 +1509,5 @@ html[dir="rtl"] input, html[dir="rtl"] textarea {
   unicode-bidi: plaintext;
   text-align: start;
 }
+/* The id a refused tester passes on: easy to select whole, and it wraps rather than pushing the card wider. */
+.account-id-note { margin:8px 0 0; color:var(--muted); font-size:13px; }.account-id-note code { color:var(--ink); user-select:all; overflow-wrap:anywhere; }
