@@ -126,3 +126,27 @@ test("the extractors read the shapes they claim to", () => {
     "the neighbouring enum returns must stay out of it",
   );
 });
+
+test("every mission and action state label is present in every dictionary", async () => {
+  // These reach the page as t(LABELS[status]) — a variable, so the call-site
+  // audit cannot see the key. They are imported rather than parsed: the
+  // tables are plain objects in an .mjs file, and the values a reader sees
+  // are exactly the values in them.
+  const content = await import("../lib/mission-content.mjs");
+  const labels = [
+    ...Object.values(content.MISSION_STATUS_LABELS),
+    ...Object.values(content.ACTION_STATUS_LABELS),
+    ...Object.values(content.ACTION_STATUS_HINTS),
+    // The repository's owner label and the brief's confidence levels take
+    // the same route.
+    "You", "low", "medium", "high",
+  ];
+  assert.ok(labels.length >= 20, `expected the state tables, found ${labels.length} labels`);
+  const tables = readDictionaries();
+  const missing = [];
+  for (const label of new Set(labels)) {
+    const absent = LANGUAGES.filter((name) => !tables[name].has(label));
+    if (absent.length) missing.push(`"${label}" is missing from ${absent.join(", ")}`);
+  }
+  assert.deepEqual(missing, []);
+});

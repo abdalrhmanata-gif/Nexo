@@ -10,6 +10,7 @@ import {
 } from "../lib/i18n";
 export { fill } from "../lib/i18n";
 import { fill as fillText } from "../lib/i18n";
+import { resolveLanguage } from "../lib/language-preference.mjs";
 
 // The tables live in lib/i18n so server components can translate as well.
 // LocalizedText renders a text node; useLanguage and useTranslate give the same
@@ -27,8 +28,7 @@ function readPreferredLanguage(): AppLanguage {
     .split("; ")
     .find((part) => part.startsWith(`${LANGUAGE_COOKIE}=`))
     ?.split("=")[1];
-  const candidate = saved || cookie || navigator.language.toLowerCase().split("-")[0];
-  return isSupportedLanguage(candidate) ? candidate : "en";
+  return resolveLanguage({ saved, cookie, browser: navigator.languages ?? [navigator.language] });
 }
 
 // The language the server already resolved from the cookie, handed to every
@@ -90,4 +90,38 @@ export function LocalizedText({ en }: { en: string }) {
 export function LocalizedFill({ en, values }: { en: string; values: Record<string, string | number> }) {
   const language = useLanguage();
   return <>{fillText(translate(en, language), values)}</>;
+}
+
+/**
+ * A timestamp in the reader's own language and time zone.
+ *
+ * The repository used to call toLocaleString() on the server, which formats
+ * in the server's locale and the server's clock: a reader in Oslo with the
+ * interface in Norwegian was shown "11/9/2026, 5:10:20 PM", month first and
+ * hours off. The server now sends the instant and this renders it where the
+ * language and the time zone are both known.
+ *
+ * A value that is not a date — the local mock repository says "8 min ago" —
+ * is shown as it is rather than as "Invalid Date".
+ */
+export function LocalizedDateTime({ value }: { value: string }) {
+  const language = useLanguage();
+  // The first render happens twice — on the server and again in the browser
+  // while React attaches — and the two must produce the same text. The
+  // server's clock is UTC, so both use UTC until this has mounted. Silencing
+  // the mismatch instead would have left the server's hour on the page: React
+  // keeps the text it was sent.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return <>{value}</>;
+  return (
+    <time dateTime={date.toISOString()}>
+      {date.toLocaleString(language, {
+        dateStyle: "medium",
+        timeStyle: "short",
+        ...(mounted ? {} : { timeZone: "UTC" }),
+      })}
+    </time>
+  );
 }

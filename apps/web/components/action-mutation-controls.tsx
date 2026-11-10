@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { LocalizedText, useTranslate } from "./localized-text";
+import { LocalizedText, fill, useTranslate } from "./localized-text";
 import { useRouter } from "next/navigation";
 import type { ActionStatus, MissionAction } from "../lib/view-models";
 import {
@@ -26,7 +26,7 @@ export function ActionMutationControls({ missionId, action }: { missionId: strin
   }, [action.id, action.status, action.followUpAt, action.version]);
 
   if (isTerminalActionStatus(action.status)) {
-    return <p className="action-final">{actionStatusLabel(action.status)} — no further changes.</p>;
+    return <p className="action-final">{fill(t("{state} — no further changes."), { state: actionStatusLabel(action.status, t) })}</p>;
   }
 
   const options: ActionStatus[] = [action.status, ...allowedNextStatuses(action.status)];
@@ -68,7 +68,7 @@ export function ActionMutationControls({ missionId, action }: { missionId: strin
 
   return <form onSubmit={submit} className="action-control-group">
     <div className="action-control">
-      <label className="visually-hidden" htmlFor={`status-${action.id}`}>Status for {action.title}</label>
+      <label className="visually-hidden" htmlFor={`status-${action.id}`}>{fill(t("Status for {title}"), { title: action.title })}</label>
       <select
         id={`status-${action.id}`}
         name="status"
@@ -76,10 +76,10 @@ export function ActionMutationControls({ missionId, action }: { missionId: strin
         disabled={busy}
         onChange={(event) => setStatus(event.target.value as ActionStatus)}
       >
-        {options.map((value) => <option key={value} value={value}>{actionStatusLabel(value)}</option>)}
+        {options.map((value) => <option key={value} value={value}>{actionStatusLabel(value, t)}</option>)}
       </select>
       {wantsFollowUp && <>
-        <label className="visually-hidden" htmlFor={`follow-up-${action.id}`}>Follow up on {action.title}</label>
+        <label className="visually-hidden" htmlFor={`follow-up-${action.id}`}>{fill(t("Follow up on {title}"), { title: action.title })}</label>
         <input
           id={`follow-up-${action.id}`}
           type="date"
@@ -89,7 +89,7 @@ export function ActionMutationControls({ missionId, action }: { missionId: strin
           onChange={(event) => setFollowUp(event.target.value)}
         />
       </>}
-      <button className="button button-small" type="submit" disabled={busy}>{busy ? "Saving…" : "Save"}</button>
+      <button className="button button-small" type="submit" disabled={busy}>{busy ? t("Saving…") : t("Save")}</button>
     </div>
     {wantsFollowUp && <p className="action-hint"><LocalizedText en="Optional: the date you intend to check back. Leave empty for no reminder." /></p>}
     {losesFollowUp && <p className="action-hint"><LocalizedText en="Saving this will remove the follow-up date, because it only applies while Waiting." /></p>}
