@@ -398,3 +398,17 @@ test("the open interest endpoint cannot be used to fill the database", () => {
   assert.match(form, /name="company"/, "a honeypot field catches the scripts that fill every input");
   assert.match(form, /aria-hidden="true"/, "the honeypot must be hidden from assistive technology too");
 });
+
+test("the server's language reaches the first render of every client component", () => {
+  // The server set <html lang="ar"> and then sent the page in English: the
+  // client hook started at "en" and corrected itself after hydration. An
+  // Arabic reader saw English flash past on every load, and a crawler never
+  // saw anything else.
+  const layout = read("app/layout.tsx");
+  const text = read("components/localized-text.tsx");
+  assert.match(layout, /<LanguageProvider initial=\{language\}>/);
+  assert.match(text, /const initial = useContext\(InitialLanguage\);/);
+  assert.match(text, /useState<AppLanguage>\(initial\)/);
+  assert.doesNotMatch(text, /useState<AppLanguage>\("en"\)/,
+    "starting at English regardless of the reader is the defect this replaced");
+});
