@@ -149,3 +149,28 @@ test("a refused tester is told their own account id, and nothing else is", () =>
   assert.match(panel, /\/\^\[0-9a-f-\]\{36\}\$\/i\.test\(payload\.accountId\)/, "only a UUID is ever rendered");
   assert.match(panel, /<code dir="ltr">\{accountId\}<\/code>/, "an id reads left to right in an Arabic page too");
 });
+
+test("an answer cut off at the token ceiling is named as that, and the ceiling has room", async () => {
+  // Measured on the first day of real use: five generations, four of them
+  // stopped at exactly 1200 completion tokens and were discarded as "not
+  // valid JSON" after being counted. The owner read it as a spent allowance.
+  const gate = read("lib/ai/gate.ts");
+  assert.match(gate, /DEFAULT_MAX_COMPLETION_TOKENS = 2000;/);
+  assert.match(gate, /MAX_COMPLETION_TOKENS_CEILING = 2400;/);
+  assert.doesNotMatch(gate, /Math\.min\(1400/);
+
+  const run = read("lib/ai/run.ts");
+  const truncated = run.indexOf('finish_reason === "length"');
+  assert.ok(truncated > -1, "a truncated answer must be recognised");
+  assert.ok(truncated < run.indexOf("JSON.parse(content)"), "and before it is parsed, or it is reported as invalid JSON");
+  assert.match(run, /"AI_REPORT_TRUNCATED", messages\.reportTruncated/);
+  for (const file of ["app/api/missions/plan/route.ts", "app/api/opportunities/analyze/route.ts"]) {
+    assert.match(read(file), /reportTruncated: "The AI answer was cut off/, file);
+  }
+
+  const { buildMissionPlanPrompt, MAX_PLAN_STEPS, REQUESTED_PLAN_STEPS } = await import("../lib/mission-plan-ai.mjs");
+  const { system } = buildMissionPlanPrompt({ name: "n", intent: "something to do", existingCriteria: [], existingActions: [], language: "ar" });
+  assert.match(system, /at most 18 words/);
+  assert.ok(REQUESTED_PLAN_STEPS < MAX_PLAN_STEPS, "ask for fewer than is accepted");
+  assert.ok(system.includes(`steps 3–${REQUESTED_PLAN_STEPS};`));
+});

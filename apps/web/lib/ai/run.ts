@@ -40,6 +40,8 @@ export type RunMessages = {
   providerUnsupported: string;
   reportMissing: string;
   reportInvalidJson: string;
+  /** The provider stopped at the token ceiling, mid-answer. */
+  reportTruncated: string;
   reportRejected: string;
   timedOut: string;
   failed: string;
@@ -213,7 +215,14 @@ export async function runGuardedJsonCompletion<T>({
         generationsUsed: quota.generations_used,
       }));
 
-    const choices = (providerResponse as { choices: Array<{ message?: { content?: unknown } }> }).choices;
+    const choices = (providerResponse as { choices: Array<{ message?: { content?: unknown }; finish_reason?: unknown }> }).choices;
+    // An answer that ran into the token ceiling is half a JSON object. It
+    // used to be reported as "not valid JSON", which reads as the provider
+    // misbehaving; it is our ceiling, and the person should know a second
+    // attempt is worth making.
+    if (choices[0]?.finish_reason === "length") {
+      return fail(502, "AI_REPORT_TRUNCATED", messages.reportTruncated);
+    }
     const content = choices[0]?.message?.content;
     if (typeof content !== "string" || content.length === 0 || content.length > maxReportChars) {
       return fail(502, "AI_REPORT_MISSING", messages.reportMissing);
