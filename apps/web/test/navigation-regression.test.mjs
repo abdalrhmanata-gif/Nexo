@@ -398,3 +398,16 @@ test("the open interest endpoint cannot be used to fill the database", () => {
   assert.match(form, /name="company"/, "a honeypot field catches the scripts that fill every input");
   assert.match(form, /aria-hidden="true"/, "the honeypot must be hidden from assistive technology too");
 });
+
+test("the theme button keeps its own colour inside the dark navigation", () => {
+  // In dark mode the sun was drawn at 1.16:1 and could not be seen. The cause
+  // was specificity, not the colour chosen: the nav's rule for its buttons,
+  // meant for sign-out, outranked `.theme-switcher`. Two earlier fixes changed
+  // the glyph size and the light-mode colour and left this untouched, because
+  // neither looked at what the browser actually computed.
+  const css = read("app/globals.css");
+  assert.match(css, /:root\[data-theme="dark"\] \.primary-nav > button \{[^}]*color:/,
+    "the nav button rule this guards against has moved; re-check the theme button in dark mode");
+  assert.match(css, /:root\[data-theme="dark"\] \.primary-nav > button\.theme-switcher[^{]*\{[^}]*color:var\(--ink\)/,
+    "the theme button must out-rank the nav button rule in dark mode");
+});
