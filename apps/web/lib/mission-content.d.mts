@@ -12,8 +12,11 @@ export declare function composeMissionObjective(input: {
   criteria: string | string[];
 }): string;
 
-export declare function actionStatusLabel(status: ActionStatus | string): string;
-export declare function actionStatusHint(status: ActionStatus | string): string;
+/** Supplied by the caller; the default returns the English unchanged. */
+export type Translate = (en: string) => string;
+
+export declare function actionStatusLabel(status: ActionStatus | string, t?: Translate): string;
+export declare function actionStatusHint(status: ActionStatus | string, t?: Translate): string;
 export declare const ACTION_STATUS_ORDER: ActionStatus[];
 
 export type MissionNextStep = {
@@ -24,6 +27,8 @@ export type MissionNextStep = {
 
 export declare function nextStepFor(
   mission: Pick<Mission, "actions" | "verifications" | "outcomes"> & Partial<Pick<Mission, "lifecycleStatus">>,
+  t?: Translate,
+  locale?: string,
 ): MissionNextStep;
 
 export declare function summariseEventPayload(payload: unknown): string;
@@ -40,10 +45,10 @@ export type FollowUpDisplay = {
   overdue: boolean;
 };
 
-export declare function formatFollowUp(value: string | null | undefined, now?: Date): FollowUpDisplay | null;
+export declare function formatFollowUp(value: string | null | undefined, now?: Date, t?: Translate, locale?: string): FollowUpDisplay | null;
 export declare function followUpInputValue(value: string | null | undefined): string;
 
-export declare function missionStatusLabel(status: MissionLifecycleStatus | string): string;
+export declare function missionStatusLabel(status: MissionLifecycleStatus | string, t?: Translate): string;
 export declare function allowedNextMissionStatuses(from: MissionLifecycleStatus | string): MissionLifecycleStatus[];
 export declare function isMissionTransitionAllowed(from: MissionLifecycleStatus | string, to: MissionLifecycleStatus | string): boolean;
 export declare function isTerminalMissionStatus(status: MissionLifecycleStatus | string): boolean;
@@ -58,4 +63,10 @@ export type VerificationReadiness = {
 
 export declare function verificationReadiness(
   mission: Pick<Mission, "lifecycleStatus" | "actions">,
+  t?: Translate,
 ): VerificationReadiness;
+
+/** Exported so a test can hold every label to the dictionaries. */
+export declare const MISSION_STATUS_LABELS: Record<string, string>;
+export declare const ACTION_STATUS_LABELS: Record<string, string>;
+export declare const ACTION_STATUS_HINTS: Record<string, string>;

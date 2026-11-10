@@ -31,7 +31,10 @@ function sourceFiles() {
   });
   return ["app", "components", "lib"]
     .flatMap((dir) => walk(join(webRoot, dir)))
-    .filter((file) => file.endsWith(".tsx") || file.endsWith(".ts"));
+    // .mjs too: lib/mission-content.mjs and lib/mission-intelligence.mjs write
+    // the sentences of the mission page, and were invisible to this audit
+    // while they were not.
+    .filter((file) => file.endsWith(".tsx") || file.endsWith(".ts") || file.endsWith(".mjs"));
 }
 
 /**

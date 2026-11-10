@@ -395,7 +395,7 @@ export function OpportunityIntelligence() {
         {backupPreview && (
           <div className="opportunity-backup-preview">
             <div>
-              <strong>Backup ready: {backupFileName}</strong>
+              <strong>{fill(t("Backup ready: {file}"), { file: backupFileName })}</strong>
               <p>{fill(t("{count} opportunities · {notes} evidence notes. Exported {date}."), { count: backupPreview.opportunityCount, notes: backupPreview.evidenceCount, date: backupPreview.exportedAt.slice(0, 10) })}</p>
               <small><LocalizedText en="Existing records with matching IDs will be skipped. Nothing currently saved will be overwritten." /></small>
             </div>
@@ -525,7 +525,7 @@ export function OpportunityIntelligence() {
                     <div className="opportunity-score-row">
                       <div>
                         <h3>{opportunity.title}</h3>
-                        {opportunity.target && <p className="opportunity-target">For: {opportunity.target}</p>}
+                        {opportunity.target && <p className="opportunity-target">{fill(t("For: {audience}"), { audience: opportunity.target })}</p>}
                       </div>
                       <div className="opportunity-score" style={{ "--opportunity-score": `${score}%` } as CSSProperties} aria-label={fill(t("Priority score {score} out of 100"), { score })}>
                         <strong>{score}</strong><span>/100</span>

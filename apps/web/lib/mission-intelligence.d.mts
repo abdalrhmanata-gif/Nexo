@@ -17,9 +17,10 @@ export type PlanHealthFinding = {
 };
 export type PlanHealth = { healthy: boolean; findings: PlanHealthFinding[] };
 
-export declare function nextActionFor(mission: Mission, now?: Date): NextAction;
-export declare function planHealthFor(mission: Mission, now?: Date): PlanHealth;
-export declare function missionIntelligenceFor(mission: Mission, now?: Date): {
+type Translate = (en: string) => string;
+export declare function nextActionFor(mission: Mission, now?: Date, t?: Translate, locale?: string): NextAction;
+export declare function planHealthFor(mission: Mission, now?: Date, t?: Translate, locale?: string): PlanHealth;
+export declare function missionIntelligenceFor(mission: Mission, now?: Date, t?: Translate, locale?: string): {
   nextAction: NextAction;
   planHealth: PlanHealth;
 };

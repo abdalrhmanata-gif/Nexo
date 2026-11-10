@@ -204,6 +204,100 @@ test("prose in a user-visible attribute goes through the translator", () => {
   assert.deepEqual(report, [], "wrap these in t(): an attribute is rendered exactly as written");
 });
 
+/**
+ * Blank the contents of every string and template literal, keeping length.
+ * What is left between a ">" or "}" and the next "<" or "{" is either code or
+ * text typed straight into JSX.
+ */
+function blankLiterals(body) {
+  const out = body.split("");
+  let i = 0;
+  while (i < body.length) {
+    const ch = body[i];
+    if (ch === '"' || ch === "'" || ch === "`") {
+      const quote = ch;
+      i += 1;
+      while (i < body.length && body[i] !== quote) {
+        if (body[i] === "\\") { out[i] = " "; i += 1; }
+        if (body[i] !== "\n") out[i] = " ";
+        i += 1;
+      }
+      i += 1;
+    } else i += 1;
+  }
+  return out.join("");
+}
+
+/** Words that sit between a "}" and a "{" in ordinary code, not in JSX. */
+const CODE_WORDS = /^(catch|finally|try|else|do|string|number|boolean|void|null|undefined|unknown|never)$/;
+
+/**
+ * Text typed directly between JSX tags or expressions.
+ *
+ *   <small>Currently {state}. Only states this mission can move to are listed.</small>
+ *   <li>{done} complete of {total}</li>
+ *   <button>Delete Mission</button>
+ *
+ * None of these is a string literal, so the sentence audit above — which
+ * reads literals — walked past every one of them. The owner's screenshots of
+ * a mission page in Arabic and in Norwegian both showed them in English.
+ */
+export function rawJsxText(body) {
+  const prepared = blankLiterals(withoutMetadata(blankComments(body)));
+  const found = [];
+  for (const match of prepared.matchAll(/[>}]([^<>{}=;()]*?[A-Za-z][^<>{}=;()]*?)(?=[<{])/g)) {
+    const text = match[1].trim();
+    if (!/[A-Za-z]{2}/.test(text)) continue;
+    if (CODE_WORDS.test(text)) continue;
+    // `{ label: "English" },\n  nb: {` leaves `, nb:` between two braces once
+    // the literals are blanked. That is an object key, not text.
+    if (/^[,\]]/.test(text)) continue;
+    // The brand is the same in every language.
+    if (/^[A-Z]{3,}$/.test(text)) continue;
+    // Operators and keywords mean this is code between two braces.
+    if (/&&|\|\||=>|\?|\b(const|let|return|import|export|function|if|await|async|new|typeof|extends|as)\b/.test(text)) continue;
+    found.push({ text, line: prepared.slice(0, match.index + 1).split("\n").length });
+  }
+  return found;
+}
+
+test("no text is typed straight into JSX", () => {
+  const report = [];
+  for (const file of sourceFiles()) {
+    const body = readFileSync(file, "utf8");
+    for (const hit of rawJsxText(body)) {
+      report.push(`${relative(webRoot, file)}:${hit.line}  ${hit.text.slice(0, 70)}`);
+    }
+  }
+  assert.deepEqual(report, [],
+    "wrap these in <LocalizedText> or t(): text between tags reaches every reader in English");
+});
+
+test("the raw-text audit reads the shapes it claims to", () => {
+  const sample = [
+    'export function A({ id }: { id: string }) {',
+    '  try { run(); } catch { stop(); } finally { done(); }',
+    '  const label = busy ? "Saving now" : "Save it";',
+    '  const LANGS = { en: { label: "English" },\n    nb: { label: "Norsk" } };',
+    '  return <div>',
+    '    <small>Currently {state}. Only these are listed.</small>',
+    '    <li>{done} complete of {total}</li>',
+    '    <button>Delete Mission</button>',
+    '    <p><LocalizedText en="Already wrapped text" /></p>',
+    '    <strong>ZAVQERA</strong>',
+    '    {/* A comment with Words in it */}',
+    '    {ready && <span>{t("Wrapped in t")}</span>}',
+    '  </div>;',
+    '}',
+  ].join("\n");
+  assert.deepEqual(rawJsxText(sample).map((hit) => hit.text), [
+    "Currently",
+    ". Only these are listed.",
+    "complete of",
+    "Delete Mission",
+  ], "code keywords, literals, wrapped text, the brand and comments must stay out");
+});
+
 test("the audit reads the shapes it claims to", () => {
   // Run the real logic over a sample holding one of each shape, so a quiet
   // regex change cannot turn this guard into decoration.
@@ -241,4 +335,18 @@ test("the audit reads the shapes it claims to", () => {
     "Enter a valid public http:// or https:// source URL.",
     "Record what you checked",
   ], "metadata, a translated key, a class name, a media query and a comment must all stay out");
+});
+
+test("a timestamp ends up in the reader's time zone, not the server's", () => {
+  // suppressHydrationWarning looked like the fix and was the bug: React keeps
+  // the server's text when told not to compare, so a reader in Oslo was shown
+  // the UTC hour. The component now renders UTC on both sides first, then its
+  // own zone once mounted.
+  const body = readFileSync(join(webRoot, "components/localized-text.tsx"), "utf8");
+  const start = body.indexOf("export function LocalizedDateTime");
+  assert.ok(start > -1, "LocalizedDateTime has been renamed; update this test");
+  const span = body.slice(start, body.indexOf("\n}", start));
+  assert.doesNotMatch(span, /suppressHydrationWarning=|suppressHydrationWarning>/);
+  assert.match(span, /mounted \? \{\} : \{ timeZone: "UTC" \}/);
+  assert.match(span, /useEffect\(\(\) => setMounted\(true\), \[\]\)/);
 });

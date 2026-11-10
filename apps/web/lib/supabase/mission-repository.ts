@@ -54,7 +54,7 @@ function toOutcome(row: OutcomeRow): MissionOutcome {
 }
 
 function toActivity(row: EventRow): MissionActivity {
-  return { label: humaniseEventType(row.event_type), detail: summariseEventPayload(row.payload), time: new Date(row.created_at).toLocaleString() };
+  return { label: humaniseEventType(row.event_type), detail: summariseEventPayload(row.payload), time: row.created_at };
 }
 
 function toAction(row: ActionRow): MissionAction {
@@ -76,7 +76,9 @@ function toMission(row: MissionRow, actions: ActionRow[] = [], verifications: Mi
     progress: actions.length ? Math.round((resolved / actions.length) * 100) : status === "COMPLETED" ? 100 : 0,
     actionsTotal: actions.length,
     actionsCompleted: completed,
-    updated: new Date(row.updated_at).toLocaleString(),
+    // The instant, not a formatted string: the server knows neither the
+    // reader's language nor their time zone. LocalizedDateTime formats it.
+    updated: row.updated_at,
     owner: "You",
     criteria,
     actions: actions.map(toAction),

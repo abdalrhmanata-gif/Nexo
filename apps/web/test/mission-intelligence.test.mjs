@@ -138,7 +138,7 @@ test("overdue follow-up precedes running work without fabricating a wait duratio
 
 test("the detail aside never labels failed verification as verified", () => {
   const page = readFileSync(join(webRoot, "app", "app", "missions", "[id]", "page.tsx"), "utf8");
-  assert.match(page, /verification\?\.status === "VERIFIED" \? "Yes" : "Not yet"/);
+  assert.match(page, /verification\?\.status === "VERIFIED" \? t\("Yes"\) : t\("Not yet"\)/);
 });
 
 test("the completion migration excludes cancelled actions but keeps the authoritative guards", () => {
@@ -157,7 +157,7 @@ test("the completion migration excludes cancelled actions but keeps the authorit
 
 test("the mission detail exposes deterministic guidance and plan health", () => {
   const page = readFileSync(join(webRoot, "app", "app", "missions", "[id]", "page.tsx"), "utf8");
-  assert.match(page, /missionIntelligenceFor\(mission\)/);
+  assert.match(page, /missionIntelligenceFor\(mission, new Date\(\), t, language\)/);
   assert.match(page, /What should I do next\?/);
   assert.match(page, /Plan health/);
 });

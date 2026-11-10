@@ -33,7 +33,7 @@ export function composeMissionObjective({ name, intent, criteria }) {
   return `${name}\n\n${intent}${CRITERIA_MARKER}${lines}`;
 }
 
-const MISSION_STATUS_LABELS = {
+export const MISSION_STATUS_LABELS = {
   DRAFT: "Draft",
   PLANNING: "Planning",
   READY: "Ready to start",
@@ -48,8 +48,26 @@ const MISSION_STATUS_LABELS = {
   CANCELLED: "Cancelled",
 };
 
-export function missionStatusLabel(status) {
-  return MISSION_STATUS_LABELS[status] ?? status;
+// Every sentence this module produces is written in English and passed
+// through `t`, which the caller supplies. The default returns the English
+// unchanged, so the logic can be tested without a dictionary and a caller
+// that has no language to hand still gets a correct sentence.
+//
+// The module used to return finished English. The mission page rendered it
+// as it came, so a page whose labels were Arabic said "Start next action",
+// "This work has not begun yet." and "0 complete of 3" in the middle of
+// them — and no audit saw it, because the text was neither in a component
+// nor wrapped in anything.
+const same = (text) => text;
+
+/** Replace {name} placeholders. Kept local so this file imports nothing. */
+function fill(text, values) {
+  return Object.entries(values).reduce(
+    (out, [key, value]) => out.split(`{${key}}`).join(String(value)), text);
+}
+
+export function missionStatusLabel(status, t = same) {
+  return Object.hasOwn(MISSION_STATUS_LABELS, status) ? t(MISSION_STATUS_LABELS[status]) : status;
 }
 
 /**
@@ -115,7 +133,7 @@ export function routeToVerifying(from) {
  * right now. The database enforces both of these rules; surfacing them here
  * stops the interface from presenting a form that is certain to be rejected.
  */
-export function verificationReadiness(mission) {
+export function verificationReadiness(mission, t = same) {
   const status = mission.lifecycleStatus;
   const actions = mission.actions ?? [];
   const unresolved = actions.filter((action) => action.status !== "COMPLETED" && action.status !== "CANCELLED");
@@ -126,26 +144,31 @@ export function verificationReadiness(mission) {
   if (isTerminalMissionStatus(status)) {
     return {
       ready: false,
-      reason: `This mission is ${missionStatusLabel(status).toLowerCase()}, so no further evidence can be recorded.`,
+      reason: fill(t("This mission is {state}, so no further evidence can be recorded."), { state: missionStatusLabel(status, t).toLowerCase() }),
       nextStatus: null,
       unresolved,
     };
   }
   const route = routeToVerifying(status);
   if (!route || !route.length) {
-    return { ready: false, reason: "This mission cannot move to checking the evidence from its current state.", nextStatus: null, unresolved };
+    return { ready: false, reason: t("This mission cannot move to checking the evidence from its current state."), nextStatus: null, unresolved };
   }
   return {
     ready: false,
     reason: route.length === 1
-      ? "Move this mission to checking the evidence before recording verification."
-      : `This mission is ${missionStatusLabel(status).toLowerCase()}. It moves to checking the evidence through ${route.slice(0, -1).map(missionStatusLabel).join(", then ")}.`,
+      ? t("Move this mission to checking the evidence before recording verification.")
+      : fill(t("This mission is {state}. It moves to checking the evidence through {route}."), {
+        state: missionStatusLabel(status, t).toLowerCase(),
+        // An arrow, not .map(missionStatusLabel): map would pass the index as
+        // the translator.
+        route: route.slice(0, -1).map((step) => missionStatusLabel(step, t)).join(t(", then ")),
+      }),
     nextStatus: route[0],
     unresolved,
   };
 }
 
-const ACTION_STATUS_LABELS = {
+export const ACTION_STATUS_LABELS = {
   PENDING: "Not started",
   RUNNING: "In progress",
   COMPLETED: "Complete",
@@ -153,7 +176,7 @@ const ACTION_STATUS_LABELS = {
   CANCELLED: "Cancelled",
 };
 
-const ACTION_STATUS_HINTS = {
+export const ACTION_STATUS_HINTS = {
   PENDING: "This work has not begun yet.",
   RUNNING: "This work is underway now.",
   COMPLETED: "This work is finished.",
@@ -161,12 +184,12 @@ const ACTION_STATUS_HINTS = {
   CANCELLED: "This work will not be done.",
 };
 
-export function actionStatusLabel(status) {
-  return ACTION_STATUS_LABELS[status] ?? status;
+export function actionStatusLabel(status, t = same) {
+  return Object.hasOwn(ACTION_STATUS_LABELS, status) ? t(ACTION_STATUS_LABELS[status]) : status;
 }
 
-export function actionStatusHint(status) {
-  return ACTION_STATUS_HINTS[status] ?? "";
+export function actionStatusHint(status, t = same) {
+  return Object.hasOwn(ACTION_STATUS_HINTS, status) ? t(ACTION_STATUS_HINTS[status]) : "";
 }
 
 export const ACTION_STATUS_ORDER = ["PENDING", "RUNNING", "BLOCKED", "COMPLETED", "CANCELLED"];
@@ -205,18 +228,25 @@ export function supportsFollowUp(status) {
   return status === "BLOCKED";
 }
 
-export function formatFollowUp(value, now = new Date()) {
+/**
+ * `locale` is the reader's language tag. Without it the date is formatted in
+ * whatever locale the server happens to run in, which is how a Norwegian
+ * reader was shown an American month-first date.
+ */
+export function formatFollowUp(value, now = new Date(), t = same, locale = undefined) {
   if (!value) return null;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
   const date0 = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
   const now0 = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
   const days = Math.round((date0 - now0) / 86400000);
-  const absolute = date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
-  if (days < 0) return { absolute, relative: days === -1 ? "yesterday" : `${Math.abs(days)} days ago`, overdue: true };
-  if (days === 0) return { absolute, relative: "today", overdue: false };
-  if (days === 1) return { absolute, relative: "tomorrow", overdue: false };
-  return { absolute, relative: `in ${days} days`, overdue: false };
+  const absolute = date.toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric" });
+  if (days < 0) {
+    return { absolute, relative: days === -1 ? t("yesterday") : fill(t("{days} days ago"), { days: Math.abs(days) }), overdue: true };
+  }
+  if (days === 0) return { absolute, relative: t("today"), overdue: false };
+  if (days === 1) return { absolute, relative: t("tomorrow"), overdue: false };
+  return { absolute, relative: fill(t("in {days} days"), { days }), overdue: false };
 }
 
 /** Converts a stored timestamp into the value a `date` input expects. */
@@ -233,7 +263,8 @@ export function followUpInputValue(value) {
  * persisted data. There is no inference or recommendation here: each branch
  * reports a fact that is already true of the mission.
  */
-export function nextStepFor(mission) {
+export function nextStepFor(mission, t = same, locale = undefined) {
+  const followUp = (value) => formatFollowUp(value, new Date(), t, locale);
   const actions = mission.actions ?? [];
   const outcomes = mission.outcomes ?? [];
   const verifications = mission.verifications ?? [];
@@ -244,55 +275,55 @@ export function nextStepFor(mission) {
   // finished. Without this, a completed mission still asks for verification.
   if (isTerminalMissionStatus(lifecycle)) {
     if (lifecycle === "COMPLETED") {
-      return { label: "Complete", detail: "This mission reached its stated outcome.", tone: "done" };
+      return { label: t("Complete"), detail: t("This mission reached its stated outcome."), tone: "done" };
     }
-    return { label: missionStatusLabel(lifecycle), detail: "This mission is closed. No further work is expected.", tone: "done" };
+    return { label: missionStatusLabel(lifecycle, t), detail: t("This mission is closed. No further work is expected."), tone: "done" };
   }
 
   if (outcomes.length) {
-    return { label: "Outcome recorded", detail: "This mission has a verified outcome.", tone: "done" };
+    return { label: t("Outcome recorded"), detail: t("This mission has a verified outcome."), tone: "done" };
   }
   const blocked = actions.filter((action) => action.status === "BLOCKED");
   const dated = blocked
     .filter((action) => action.followUpAt)
     .sort((a, b) => new Date(a.followUpAt).getTime() - new Date(b.followUpAt).getTime());
-  const due = dated.find((action) => formatFollowUp(action.followUpAt)?.overdue);
+  const due = dated.find((action) => followUp(action.followUpAt)?.overdue);
   if (due) {
-    return { label: "Follow-up due", detail: `${due.title} — due ${formatFollowUp(due.followUpAt).relative}`, tone: "attention" };
+    return { label: t("Follow-up due"), detail: fill(t("{title} — due {when}"), { title: due.title, when: followUp(due.followUpAt).relative }), tone: "attention" };
   }
   const running = actions.find((action) => action.status === "RUNNING");
   if (running) {
-    return { label: "In progress", detail: running.title, tone: "info" };
+    return { label: t("In progress"), detail: running.title, tone: "info" };
   }
 
   const pending = actions.find((action) => action.status === "PENDING");
   if (pending) {
-    return { label: "Start next action", detail: pending.title, tone: "info" };
+    return { label: t("Start next action"), detail: pending.title, tone: "info" };
   }
 
   if (blocked.length) {
     const next = dated[0];
     if (next) {
-      return { label: "Waiting", detail: `${next.title} — check back ${formatFollowUp(next.followUpAt).relative}`, tone: "info" };
+      return { label: t("Waiting"), detail: fill(t("{title} — check back {when}"), { title: next.title, when: followUp(next.followUpAt).relative }), tone: "info" };
     }
-    return { label: "Waiting on you", detail: blocked[0].title, tone: "attention" };
+    return { label: t("Waiting on you"), detail: blocked[0].title, tone: "attention" };
   }
 
   if (!actions.length) {
-    return { label: "No actions yet", detail: "Add the work this mission needs.", tone: "attention" };
+    return { label: t("No actions yet"), detail: t("Add the work this mission needs."), tone: "attention" };
   }
 
   if (lifecycle !== "VERIFYING") {
     return {
-      label: "Ready to check",
-      detail: "Every action is resolved. Move this mission to checking the evidence.",
+      label: t("Ready to check"),
+      detail: t("Every action is resolved. Move this mission to checking the evidence."),
       tone: "attention",
     };
   }
   if (verifications.some((verification) => verification.status === "VERIFIED")) {
-    return { label: "Commit the verified outcome", detail: "Passing verification is recorded but no outcome has been committed.", tone: "attention" };
+    return { label: t("Commit the verified outcome"), detail: t("Passing verification is recorded but no outcome has been committed."), tone: "attention" };
   }
-  return { label: "Record verification", detail: "Every action is resolved. Record the evidence that proves the outcome.", tone: "attention" };
+  return { label: t("Record verification"), detail: t("Every action is resolved. Record the evidence that proves the outcome."), tone: "attention" };
 }
 
 /**

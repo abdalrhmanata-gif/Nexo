@@ -112,7 +112,7 @@ test("every mission state has a human label rather than a raw enum", () => {
     assert.doesNotMatch(label, /_/);
   }
   const page = read("app/app/missions/[id]/page.tsx");
-  assert.match(page, /missionStatusLabel\(mission\.lifecycleStatus\)/);
+  assert.match(page, /missionStatusLabel\(mission\.lifecycleStatus, t\)/);
   // The raw value may still be passed as a prop; it must never be rendered.
   assert.doesNotMatch(page, /<br \/>\{mission\.lifecycleStatus\}/);
 });
@@ -167,7 +167,7 @@ test("unresolved actions are named so the blocker is visible", () => {
 
 test("the detail page gates the verification form on readiness", () => {
   const page = read("app/app/missions/[id]/page.tsx");
-  assert.match(page, /verificationReadiness\(mission\)/);
+  assert.match(page, /verificationReadiness\(mission, t\)/);
   assert.match(page, /readiness\.ready[\s\S]{0,400}VerificationControls/);
 });
 

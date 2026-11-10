@@ -35,14 +35,14 @@ function missionHref(report: OpportunityAnalysisReport, score: number, t: (en: s
     name: report.missionDraft.name.slice(0, 100),
     intent: [
       t("AI-generated Opportunity Brief — review all assumptions and sources before acting."),
-      `Executive summary: ${report.executiveSummary}`,
-      `Decision: ${report.decision}. ${report.decisionRationale}`,
-      `Existing local priority score: ${score}/100. This score is not a success probability or revenue forecast.`,
-      `Experiment hypothesis: ${report.recommendedExperiment.hypothesis}`,
-      `Success threshold: ${report.recommendedExperiment.successThreshold}`,
-      `Failure threshold: ${report.recommendedExperiment.failureThreshold}`,
-      `Estimated effort: ${report.recommendedExperiment.estimatedEffort}`,
-      `Cost assumptions: ${report.recommendedExperiment.costAssumptions}`,
+      fill(t("Executive summary: {text}"), { text: report.executiveSummary }),
+      fill(t("Decision: {decision}. {rationale}"), { decision: decisionLabel(report.decision, t), rationale: report.decisionRationale }),
+      fill(t("Existing local priority score: {score}/100. This score is not a success probability or revenue forecast."), { score }),
+      fill(t("Experiment hypothesis: {text}"), { text: report.recommendedExperiment.hypothesis }),
+      fill(t("Success threshold: {text}"), { text: report.recommendedExperiment.successThreshold }),
+      fill(t("Failure threshold: {text}"), { text: report.recommendedExperiment.failureThreshold }),
+      fill(t("Estimated effort: {text}"), { text: report.recommendedExperiment.estimatedEffort }),
+      fill(t("Cost assumptions: {text}"), { text: report.recommendedExperiment.costAssumptions }),
       fill(t("Critical unknowns: {unknowns}"), { unknowns: report.criticalUnknowns.join("; ") || t("None listed; verify the report before proceeding.") }),
     ].join("\n\n").slice(0, 3000),
     criteria: report.missionDraft.successCriteria.join("\n").slice(0, 2000),
@@ -147,7 +147,7 @@ export function OpportunityAnalysisPanel({
           {loading ? t("Analyzing…") : report ? t("Regenerate AI brief") : t("Generate AI brief")}
         </button>
       </div>
-      <p className="analysis-caution">When enabled, this sends the opportunity and up to {MAX_EVIDENCE_ITEMS} of your most recent evidence notes to the configured AI provider. Zavqera does not fetch the cited URLs. Review every conclusion before acting.</p>
+      <p className="analysis-caution">{fill(t("When enabled, this sends the opportunity and up to {count} of your most recent evidence notes to the configured AI provider. Zavqera does not fetch the cited URLs. Review every conclusion before acting."), { count: MAX_EVIDENCE_ITEMS })}</p>
       {loading && <p className="analysis-status" role="status"><LocalizedText en="Reviewing the supplied evidence and drafting a validation experiment…" /></p>}
       {/* The message may come from our API, which answers in English because it
           has no view of the reader's language. It is translated here, once, at
@@ -161,7 +161,7 @@ export function OpportunityAnalysisPanel({
               <p className="eyebrow"><LocalizedText en="AI Opportunity Brief" /></p>
               <h3>{decisionLabel(report.decision, t)}</h3>
             </div>
-            <span className="analysis-score-note">Rule-based score: {score}/100</span>
+            <span className="analysis-score-note">{fill(t("Rule-based score: {score}/100"), { score })}</span>
           </div>
           <p>{report.executiveSummary}</p>
           <div className="analysis-section">
@@ -176,14 +176,14 @@ export function OpportunityAnalysisPanel({
                   <li key={`${claim.kind}-${index}`}>
                     <span className={`analysis-kind analysis-kind-${claim.kind}`}>{claim.kind}</span>
                     <span className="analysis-claim-text">{claim.claim}</span>
-                    <span className="analysis-confidence">Confidence: {claim.confidence}</span>
+                    <span className="analysis-confidence">{fill(t("Confidence: {level}"), { level: t(claim.confidence) })}</span>
                     {claim.evidenceIds.length > 0 && (
                       <span className="analysis-sources">
                         {claim.evidenceIds.map((id) => {
                           const source = evidenceById.get(id);
                           return source ? (
                             <a key={id} href={source.url} target="_blank" rel="noopener noreferrer" title={t("User-provided source; not fetched by Zavqera")}>
-                              Source: {source.title}
+                              {fill(t("Source: {title}"), { title: source.title })}
                             </a>
                           ) : null;
                         })}
@@ -224,7 +224,7 @@ export function OpportunityAnalysisPanel({
             <p><strong><LocalizedText en="Cost assumptions:" /></strong> {report.recommendedExperiment.costAssumptions}</p>
           </div>
           {opportunity.evidenceItems.length > MAX_EVIDENCE_ITEMS && (
-            <p className="action-hint">The brief used the {MAX_EVIDENCE_ITEMS} most recent notes. {opportunity.evidenceItems.length - MAX_EVIDENCE_ITEMS} older notes were not sent to the provider.</p>
+            <p className="action-hint">{fill(t("The brief used the {count} most recent notes. {older} older notes were not sent to the provider."), { count: MAX_EVIDENCE_ITEMS, older: opportunity.evidenceItems.length - MAX_EVIDENCE_ITEMS })}</p>
           )}
           <div className="analysis-mission-draft">
             <h4><LocalizedText en="Mission draft" /></h4>
