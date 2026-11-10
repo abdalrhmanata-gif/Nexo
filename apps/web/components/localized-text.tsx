@@ -90,11 +90,22 @@ export function LocalizedFill({ en, values }: { en: string; values: Record<strin
  */
 export function LocalizedDateTime({ value }: { value: string }) {
   const language = useLanguage();
+  // The first render happens twice — on the server and again in the browser
+  // while React attaches — and the two must produce the same text. The
+  // server's clock is UTC, so both use UTC until this has mounted. Silencing
+  // the mismatch instead would have left the server's hour on the page: React
+  // keeps the text it was sent.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return <>{value}</>;
   return (
-    <time dateTime={date.toISOString()} suppressHydrationWarning>
-      {date.toLocaleString(language, { dateStyle: "medium", timeStyle: "short" })}
+    <time dateTime={date.toISOString()}>
+      {date.toLocaleString(language, {
+        dateStyle: "medium",
+        timeStyle: "short",
+        ...(mounted ? {} : { timeZone: "UTC" }),
+      })}
     </time>
   );
 }

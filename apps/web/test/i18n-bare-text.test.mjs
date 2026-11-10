@@ -336,3 +336,17 @@ test("the audit reads the shapes it claims to", () => {
     "Record what you checked",
   ], "metadata, a translated key, a class name, a media query and a comment must all stay out");
 });
+
+test("a timestamp ends up in the reader's time zone, not the server's", () => {
+  // suppressHydrationWarning looked like the fix and was the bug: React keeps
+  // the server's text when told not to compare, so a reader in Oslo was shown
+  // the UTC hour. The component now renders UTC on both sides first, then its
+  // own zone once mounted.
+  const body = readFileSync(join(webRoot, "components/localized-text.tsx"), "utf8");
+  const start = body.indexOf("export function LocalizedDateTime");
+  assert.ok(start > -1, "LocalizedDateTime has been renamed; update this test");
+  const span = body.slice(start, body.indexOf("\n}", start));
+  assert.doesNotMatch(span, /suppressHydrationWarning=|suppressHydrationWarning>/);
+  assert.match(span, /mounted \? \{\} : \{ timeZone: "UTC" \}/);
+  assert.match(span, /useEffect\(\(\) => setMounted\(true\), \[\]\)/);
+});
