@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LocalizedText, useTranslate } from "./localized-text";
 import type { MissionPlanReport } from "../lib/mission-plan-ai.d.mts";
@@ -36,6 +36,28 @@ export function AiMissionPlan({ missionId, name, intent, criteria, actions }: {
   const [added, setAdded] = useState(0);
   const [error, setError] = useState("");
   const [unavailable, setUnavailable] = useState(false);
+  const [notReady, setNotReady] = useState("");
+
+  // Ask once, on mount, whether this deployment can draft at all. It reads
+  // configuration and returns — no provider, no generation — so the owner
+  // learns that a model name is wrong without paying to find out, and a
+  // visitor who is not on the allowlist simply never sees the panel.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch("/api/missions/plan", { method: "GET" });
+        const payload = await response.json().catch(() => ({}));
+        if (cancelled) return;
+        if (!response.ok) { setUnavailable(true); return; }
+        if (payload.ready === false) setNotReady(String(payload.detail || ""));
+      } catch {
+        // A failed check is not a reason to hide the button; pressing it
+        // will give a clearer answer than silence.
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   async function draft() {
     setBusy(true);
@@ -103,11 +125,13 @@ export function AiMissionPlan({ missionId, name, intent, criteria, actions }: {
       <h2 id="ai-plan-heading"><LocalizedText en="Let AI draft the shape of this work" /></h2>
 
       {!plan && <>
-        <p>
-          <LocalizedText en="It will suggest the steps and what each one is for. It will not tell you a fee, a waiting time or a rule: it has looked nothing up, so anything external comes back as where to confirm it." />
-        </p>
+        {notReady
+          ? <p className="field-error" role="status">{t(notReady)}</p>
+          : <p>
+            <LocalizedText en="It will suggest the steps and what each one is for. It will not tell you a fee, a waiting time or a rule: it has looked nothing up, so anything external comes back as where to confirm it." />
+          </p>}
         <div className="action-control-group">
-          <button className="button" type="button" onClick={draft} disabled={busy}>
+          <button className="button" type="button" onClick={draft} disabled={busy || notReady !== ""}>
             {busy ? t("Drafting…") : t("Draft a plan")}
           </button>
         </div>
