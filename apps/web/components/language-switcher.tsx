@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { resolveLanguage } from "../lib/language-preference.mjs";
 
 export type AppLanguage = "en" | "nb" | "ar" | "es" | "fr" | "de";
 
@@ -20,25 +22,31 @@ function validLanguage(value: string | undefined): value is AppLanguage {
   return Boolean(value && SUPPORTED_LANGUAGES.includes(value as AppLanguage));
 }
 
-function detectLanguage(): AppLanguage {
-  if (typeof navigator === "undefined") return "en";
-  for (const candidate of navigator.languages ?? [navigator.language]) {
-    const code = candidate.toLowerCase().split("-")[0];
-    if (validLanguage(code)) return code;
+/** The choice the reader saved here, if storage holds one. */
+function readSaved(): AppLanguage | null {
+  try {
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+    return validLanguage(saved ?? undefined) ? (saved as AppLanguage) : null;
+  } catch {
+    // Storage can be blocked; the cookie and the browser's languages still apply.
+    return null;
   }
-  return "en";
+}
+
+function readCookie(): string | undefined {
+  return document.cookie.split("; ").find((part) => part.startsWith(COOKIE_KEY + "="))?.split("=")[1];
+}
+
+function writeCookie(value: AppLanguage) {
+  document.cookie = `${COOKIE_KEY}=${value}; Path=/; Max-Age=31536000; SameSite=Lax; Secure`;
 }
 
 function readPreference(): AppLanguage {
-  try {
-    const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (validLanguage(saved ?? undefined)) return saved as AppLanguage;
-  } catch {
-    // Continue with the cookie or browser language when storage is unavailable.
-  }
-  const cookie = document.cookie.split("; ").find((part) => part.startsWith(COOKIE_KEY + "="))?.split("=")[1];
-  if (validLanguage(cookie)) return cookie;
-  return detectLanguage();
+  return resolveLanguage({
+    saved: readSaved(),
+    cookie: readCookie(),
+    browser: navigator.languages ?? [navigator.language],
+  });
 }
 
 function applyLanguage(language: AppLanguage) {
@@ -48,12 +56,24 @@ function applyLanguage(language: AppLanguage) {
 
 export function LanguageSwitcher() {
   const [language, setLanguage] = useState<AppLanguage>("en");
+  const router = useRouter();
 
   useEffect(() => {
     const preferred = readPreference();
     setLanguage(preferred);
     applyLanguage(preferred);
-  }, []);
+    // The server can only see the cookie. If the reader's saved choice is not
+    // in it — the cookie expired, or was cleared while storage was kept — the
+    // server has just rendered its half of the page in another language. Put
+    // the choice back where the server can read it and ask for that half
+    // again. Only a saved choice is written: a language merely detected from
+    // the browser is not stored on the reader's device without their asking.
+    const saved = readSaved();
+    if (saved && readCookie() !== saved) {
+      writeCookie(saved);
+      router.refresh();
+    }
+  }, [router]);
 
   function changeLanguage(value: string) {
     if (!validLanguage(value)) return;
@@ -64,8 +84,12 @@ export function LanguageSwitcher() {
     } catch {
       // Cookie still preserves the selection.
     }
-    document.cookie = `${COOKIE_KEY}=${value}; Path=/; Max-Age=31536000; SameSite=Lax; Secure`;
+    writeCookie(value);
     window.dispatchEvent(new CustomEvent("zavqera-language-change", { detail: value }));
+    // The event reaches the client components. The sentences the server
+    // rendered — and the draft inside a template link — are still in the old
+    // language until the server is asked again.
+    router.refresh();
   }
 
   const labels = LABELS[language];

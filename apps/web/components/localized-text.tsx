@@ -10,6 +10,7 @@ import {
 } from "../lib/i18n";
 export { fill } from "../lib/i18n";
 import { fill as fillText } from "../lib/i18n";
+import { resolveLanguage } from "../lib/language-preference.mjs";
 
 // The tables live in lib/i18n so server components can translate as well.
 // LocalizedText renders a text node; useLanguage and useTranslate give the same
@@ -27,8 +28,7 @@ function readPreferredLanguage(): AppLanguage {
     .split("; ")
     .find((part) => part.startsWith(`${LANGUAGE_COOKIE}=`))
     ?.split("=")[1];
-  const candidate = saved || cookie || navigator.language.toLowerCase().split("-")[0];
-  return isSupportedLanguage(candidate) ? candidate : "en";
+  return resolveLanguage({ saved, cookie, browser: navigator.languages ?? [navigator.language] });
 }
 
 /** Current language, kept in step with the switcher's change event. */
