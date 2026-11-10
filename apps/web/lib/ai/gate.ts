@@ -22,6 +22,8 @@ export const noStoreHeaders = { "Cache-Control": "no-store, max-age=0", Vary: "C
 
 export type ProviderConfig = { endpoint: string; apiKey: string; model: string; maxCompletionTokens: number };
 
+// The list is read when the function starts, so a change to it in the hosting
+// environment reaches nobody until the next deploy.
 export function isApprovedPreviewTester(userId: string): boolean {
   const configured = process.env.ZAVQERA_AI_ALLOWED_USER_IDS?.trim();
   if (!configured) return false;
