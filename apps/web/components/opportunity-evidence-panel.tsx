@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { LocalizedText, useTranslate, fill } from "./localized-text";
+import { LocalizedDateTime, LocalizedText, useTranslate, fill } from "./localized-text";
 import {
   buildPublicSearchUrls,
   EVIDENCE_SOURCE_TYPES,
@@ -134,7 +134,7 @@ export function OpportunityEvidencePanel({
       <div className="evidence-ledger-head">
         <div>
           <strong><LocalizedText en="Evidence ledger" /></strong>
-          <p>{evidenceCount} reviewed note{evidenceCount === 1 ? "" : "s"} · {summary.supports} support · {summary.challenges} counter-signal</p>
+          <p>{fill(t(evidenceCount === 1 ? "{count} reviewed note · {supports} support · {challenges} counter-signal" : "{count} reviewed notes · {supports} support · {challenges} counter-signal"), { count: evidenceCount, supports: summary.supports, challenges: summary.challenges })}</p>
         </div>
         <button
           className="button button-quiet button-small"
@@ -166,9 +166,9 @@ export function OpportunityEvidencePanel({
               <p className="evidence-observation">{item.observation}</p>
               <div className="evidence-item-meta">
                 <span>{t(SOURCE_LABELS[item.sourceType])}</span>
-                <span>Reliability estimate: {item.reliability}/5</span>
-                {item.sourceDate && <span>Published: {item.sourceDate}</span>}
-                <span>Reviewed: {new Date(item.checkedAt).toLocaleDateString()}</span>
+                <span>{fill(t("Reliability estimate: {score}/5"), { score: item.reliability })}</span>
+                {item.sourceDate && <span>{fill(t("Published: {date}"), { date: item.sourceDate })}</span>}
+                <span>{t("Reviewed:")} <LocalizedDateTime value={item.checkedAt} /></span>
               </div>
               {isHttpSourceUrl(item.url) && (
                 <p className="evidence-source-link"><a href={item.url} target="_blank" rel="noopener noreferrer"><LocalizedText en="Open cited source ↗" /></a></p>
@@ -179,7 +179,7 @@ export function OpportunityEvidencePanel({
                 onClick={() => onRemoveEvidence(item.id)}
                 aria-label={fill(t("Remove evidence note: {title}"), { title: item.title })}
               >
-                Remove note
+                <LocalizedText en="Remove note" />
               </button>
             </details>
           ))}
@@ -188,7 +188,7 @@ export function OpportunityEvidencePanel({
 
       {evidenceCount > 0 && (
         <p className="evidence-caveat">
-          These are user-recorded interpretations, not independently verified findings. Mixed signals should trigger more research, not an automatic conclusion.
+          <LocalizedText en="These are user-recorded interpretations, not independently verified findings. Mixed signals should trigger more research, not an automatic conclusion." />
         </p>
       )}
       {notice && <p className="success-state evidence-notice" role="status">{notice}</p>}
@@ -203,7 +203,7 @@ export function OpportunityEvidencePanel({
             Searches open public results in a new tab. No crawler or search API runs inside Zavqera. Read the source yourself, then record the specific observation and whether it supports or challenges the thesis.
           </p>
           <p className="evidence-search-privacy">
-            If you open a search, Google receives this query text: <code>{search.query || "(empty query)"}</code>. Keep confidential business information and personal data out of the query.
+            {t("If you open a search, Google receives this query text:")} <code>{search.query || t("(empty query)")}</code>. {t("Keep confidential business information and personal data out of the query.")}
           </p>
           <form className="form-grid evidence-form" onSubmit={recordEvidence}>
             <div className="field">

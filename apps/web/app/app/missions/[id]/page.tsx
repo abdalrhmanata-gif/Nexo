@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LocalizedText } from "../../../../components/localized-text";
+import { LocalizedDateTime, LocalizedText } from "../../../../components/localized-text";
 import { DeleteMissionForm } from "../../../../components/delete-mission-form";
 import { localMockMissionRepository } from "../../../../lib/local-mock-repository";
 import { isSupabaseConfigured } from "../../../../lib/supabase/config";
@@ -10,7 +10,7 @@ import { critiqueMission, planIsThin } from "../../../../lib/mission-critique.mj
 import { fill } from "../../../../lib/i18n";
 import { SuggestedPlan } from "../../../../components/suggested-plan";
 import { AiMissionPlan } from "../../../../components/ai-mission-plan";
-import { getTranslate } from "../../../../lib/i18n-server";
+import { getLanguage, getTranslate } from "../../../../lib/i18n-server";
 import { StatusPill } from "../../../../components/shell";
 import { VerificationControls } from "../../../../components/verification-controls";
 import { MissionMutationControls } from "../../../../components/mission-mutation-controls";
@@ -24,15 +24,16 @@ export default async function MissionDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const t = await getTranslate();
+  const language = await getLanguage();
   const repository = isSupabaseConfigured() ? await createSupabaseMissionRepository() : localMockMissionRepository;
   const mission = await repository.getMission((await params).id);
   if (!mission) return <div className="container"><p className="eyebrow"><LocalizedText en="Mission unavailable" /></p><h1 className="detail-title"><LocalizedText en="We could not find that mission." /></h1><p className="detail-intent"><LocalizedText en="It may have been deleted, or it belongs to another workspace." /></p><Link className="button" href="/app"><LocalizedText en="Back to workspace" /></Link></div>;
 
-  const next = nextStepFor(mission);
+  const next = nextStepFor(mission, t, language);
   const verification = mission.verifications.find((item) => item.status === "VERIFIED") ?? mission.verifications[0];
   const outcome = mission.outcomes[0];
-  const readiness = verificationReadiness(mission);
-  const intelligence = missionIntelligenceFor(mission);
+  const readiness = verificationReadiness(mission, t);
+  const intelligence = missionIntelligenceFor(mission, new Date(), t, language);
   // A stated outcome with no work behind it is the moment the product is
   // least useful, so that is where it offers a first plan.
   const suggested = planIsThin(mission) ? suggestPlanFor(mission) : null;
@@ -57,7 +58,7 @@ export default async function MissionDetailPage({
             ? <><p className="eyebrow"><LocalizedText en="Intent" /></p><p className="detail-intent">{mission.intent}</p></>
             : <p className="detail-intent"><LocalizedText en="No intent was recorded for this mission." /></p>}
           <p className={`next-step next-step-${next.tone}`}>
-            <span className="next-step-label">Next: {next.label}</span>
+            <span className="next-step-label">{t("Next:")} {next.label}</span>
             <span className="next-step-detail">{next.detail}</span>
           </p>
           <div className="progress-row">
@@ -125,12 +126,12 @@ export default async function MissionDetailPage({
           <h2><LocalizedText en="The work this mission needs" /></h2>
           {mission.actions.length
             ? <ul className="list">{mission.actions.map((action) => {
-              const followUp = formatFollowUp(action.followUpAt);
+              const followUp = formatFollowUp(action.followUpAt, new Date(), t, language);
               return <li key={action.id}>
               <div className="card-heading">
                 <div>
                   <span className="action-title">{action.title}</span>
-                  <span className={`status status-action-${action.status.toLowerCase()}`}>{actionStatusLabel(action.status)}</span>
+                  <span className={`status status-action-${action.status.toLowerCase()}`}>{actionStatusLabel(action.status, t)}</span>
                   {followUp && <span className={`follow-up${followUp.overdue ? " follow-up-overdue" : ""}`}>
                     {followUp.overdue ? t("Follow-up was due") : t("Follow up")} {followUp.relative} · {followUp.absolute}
                   </span>}
@@ -159,9 +160,12 @@ export default async function MissionDetailPage({
             : <div className="readiness" role="status">
               <p>{readiness.reason}</p>
               {readiness.unresolved.length > 0 && <p className="action-hint">
-                {readiness.unresolved.length === 1 ? "1 action is" : `${readiness.unresolved.length} actions are`} still open: {readiness.unresolved.map((action) => action.title).join(", ")}.
+                {fill(t(readiness.unresolved.length === 1 ? "{count} action is still open: {titles}." : "{count} actions are still open: {titles}."), {
+                  count: readiness.unresolved.length,
+                  titles: readiness.unresolved.map((action) => action.title).join(", "),
+                })}
               </p>}
-              {readiness.nextStatus && <p className="action-hint">Use “Edit this mission” above to move it to {missionStatusLabel(readiness.nextStatus).toLowerCase()}.</p>}
+              {readiness.nextStatus && <p className="action-hint">{fill(t("Use “Edit this mission” above to move it to {state}."), { state: missionStatusLabel(readiness.nextStatus, t).toLowerCase() })}</p>}
             </div>}
         </section>
 
@@ -171,7 +175,7 @@ export default async function MissionDetailPage({
             ? fill(t("Outcome {status}"), { status: t(outcome.status.toLowerCase()) })
             : t("No outcome yet")}</h2>
           {outcome
-            ? <p>{outcome.status === "COMPLETED" ? t("This mission reached its stated outcome.") : t("This mission closed without reaching its stated outcome.")} Recorded confidence {Math.round(outcome.successScore * 100)}%.</p>
+            ? <p>{outcome.status === "COMPLETED" ? t("This mission reached its stated outcome.") : t("This mission closed without reaching its stated outcome.")} {fill(t("Recorded confidence {percent}%."), { percent: Math.round(outcome.successScore * 100) })}</p>
             : <p className="detail-intent"><LocalizedText en="An outcome can only be committed after a verification is recorded." /></p>}
         </section>
 
@@ -179,7 +183,7 @@ export default async function MissionDetailPage({
           <p className="eyebrow"><LocalizedText en="Activity" /></p>
           <h2><LocalizedText en="Recent checkpoints" /></h2>
           {mission.activity.length
-            ? <div className="timeline">{mission.activity.map((item, index) => <div className="timeline-item" key={`${item.label}-${item.time}-${index}`}><strong>{item.label}</strong><span>{item.detail} · {item.time}</span></div>)}</div>
+            ? <div className="timeline">{mission.activity.map((item, index) => <div className="timeline-item" key={`${item.label}-${item.time}-${index}`}><strong>{item.label}</strong><span>{item.detail} · <LocalizedDateTime value={item.time} /></span></div>)}</div>
             : <p className="detail-intent"><LocalizedText en="No history has been recorded for this mission yet." /></p>}
         </section>
       </div>
@@ -188,11 +192,11 @@ export default async function MissionDetailPage({
         <p className="eyebrow"><LocalizedText en="At a glance" /></p>
         <h2><LocalizedText en="Where this mission stands" /></h2>
         <ul className="list">
-          <li><strong><LocalizedText en="Mission state" /></strong><br />{missionStatusLabel(mission.lifecycleStatus)}</li>
-          <li><strong><LocalizedText en="Actions" /></strong><br />{mission.actionsCompleted} complete of {mission.actionsTotal}</li>
-          <li><strong><LocalizedText en="Verified" /></strong><br />{verification?.status === "VERIFIED" ? "Yes" : "Not yet"}</li>
-          <li><strong><LocalizedText en="Last updated" /></strong><br />{mission.updated}</li>
-          <li><strong><LocalizedText en="Owner" /></strong><br />{mission.owner}</li>
+          <li><strong><LocalizedText en="Mission state" /></strong><br />{missionStatusLabel(mission.lifecycleStatus, t)}</li>
+          <li><strong><LocalizedText en="Actions" /></strong><br />{fill(t("{done} complete of {total}"), { done: mission.actionsCompleted, total: mission.actionsTotal })}</li>
+          <li><strong><LocalizedText en="Verified" /></strong><br />{verification?.status === "VERIFIED" ? t("Yes") : t("Not yet")}</li>
+          <li><strong><LocalizedText en="Last updated" /></strong><br /><LocalizedDateTime value={mission.updated} /></li>
+          <li><strong><LocalizedText en="Owner" /></strong><br />{t(mission.owner)}</li>
         </ul>
         <DeleteMissionForm missionId={mission.id} missionName={mission.name} />
       </aside>

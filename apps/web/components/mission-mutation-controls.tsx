@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { LocalizedText, useTranslate } from "./localized-text";
+import { LocalizedText, fill, useTranslate } from "./localized-text";
 import { useRouter } from "next/navigation";
 import type { MissionLifecycleStatus } from "../lib/view-models";
 import {
@@ -102,14 +102,14 @@ export function MissionMutationControls({
     </form>
 
     {isTerminalMissionStatus(status)
-      ? <p className="action-final">{missionStatusLabel(status)} — this mission is closed.</p>
+      ? <p className="action-final">{fill(t("{state} — this mission is closed."), { state: missionStatusLabel(status, t) })}</p>
       : <form key={status} onSubmit={transition}>
         <div className="field">
           <label htmlFor="status"><LocalizedText en="Mission state" /></label>
           <select id="status" name="status" defaultValue={nextStates[0]} disabled={busy}>
-            {nextStates.map((item) => <option key={item} value={item}>{missionStatusLabel(item)}</option>)}
+            {nextStates.map((item) => <option key={item} value={item}>{missionStatusLabel(item, t)}</option>)}
           </select>
-          <small>Currently {missionStatusLabel(status).toLowerCase()}. Only states this mission can legally move to are listed.</small>
+          <small>{fill(t("Currently {state}. Only the states this mission can move to are listed."), { state: missionStatusLabel(status, t).toLowerCase() })}</small>
         </div>
         <button className="button button-small" type="submit" disabled={busy}><LocalizedText en="Move mission" /></button>
       </form>}

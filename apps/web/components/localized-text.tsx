@@ -75,3 +75,26 @@ export function LocalizedFill({ en, values }: { en: string; values: Record<strin
   const language = useLanguage();
   return <>{fillText(translate(en, language), values)}</>;
 }
+
+/**
+ * A timestamp in the reader's own language and time zone.
+ *
+ * The repository used to call toLocaleString() on the server, which formats
+ * in the server's locale and the server's clock: a reader in Oslo with the
+ * interface in Norwegian was shown "11/9/2026, 5:10:20 PM", month first and
+ * hours off. The server now sends the instant and this renders it where the
+ * language and the time zone are both known.
+ *
+ * A value that is not a date — the local mock repository says "8 min ago" —
+ * is shown as it is rather than as "Invalid Date".
+ */
+export function LocalizedDateTime({ value }: { value: string }) {
+  const language = useLanguage();
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return <>{value}</>;
+  return (
+    <time dateTime={date.toISOString()} suppressHydrationWarning>
+      {date.toLocaleString(language, { dateStyle: "medium", timeStyle: "short" })}
+    </time>
+  );
+}

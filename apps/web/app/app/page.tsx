@@ -99,7 +99,7 @@ export default async function WorkspacePage({
         <button className="button" type="submit"><LocalizedText en="Search" /></button>
         {query && <Link className="button button-quiet" href={selectedStatus ? `/app?status=${selectedStatus}#mission-search` : "/app#mission-search"}><LocalizedText en="Clear" /></Link>}
       </form>
-      {query && <p className="mission-search-result" aria-live="polite"><strong>{visibleMissions.length}</strong> {visibleMissions.length === 1 ? "mission" : "missions"} found for “{query}”.</p>}
+      {query && <p className="mission-search-result" aria-live="polite">{fill(t(visibleMissions.length === 1 ? "{count} mission found for “{query}”." : "{count} missions found for “{query}”."), { count: visibleMissions.length, query })}</p>}
     </section>
 
     {missions.length > 0 && <div className="stats workspace-stats" aria-label={t("Mission status filters")}>

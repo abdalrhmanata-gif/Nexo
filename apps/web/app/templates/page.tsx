@@ -35,12 +35,16 @@ function TemplateIcon({ id }: { id: string }) {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h10M4 19h6" /><circle cx="18" cy="12" r="2" /><circle cx="14" cy="19" r="2" /></svg>;
 }
 
-function templateHref(template: typeof templates[number]) {
+// The card showed a translated template and the link handed the form the
+// English one: the owner chose a template on an Arabic page and got a draft
+// in English. What a template fills in becomes the person's own mission, so
+// it is written in their language here, where the link is built.
+function templateHref(template: typeof templates[number], t: (en: string) => string) {
   const params = new URLSearchParams({
-    name: template.title,
-    intent: template.intent,
-    criteria: template.criteria.join("\n"),
-    actions: template.actions.join("\n"),
+    name: t(template.title),
+    intent: t(template.intent),
+    criteria: template.criteria.map((criterion) => t(criterion)).join("\n"),
+    actions: template.actions.map((action) => t(action)).join("\n"),
   });
   return `/app/missions/new?${params.toString()}`;
 }
@@ -62,7 +66,7 @@ export default async function TemplatesPage() {
         <h2><LocalizedText en={template.title} /></h2>
         <p><LocalizedText en={template.description} /></p>
         <ul className="template-criteria">{template.criteria.map((criterion) => <li key={criterion}><LocalizedText en={criterion} /></li>)}</ul>
-        <Link className="button" href={templateHref(template)}><LocalizedText en="Use this template" /></Link>
+        <Link className="button" href={templateHref(template, t)}><LocalizedText en="Use this template" /></Link>
       </article>)}
     </section>
     <p className="action-hint template-note"><LocalizedText en="A template only pre-fills a draft. Nothing is created until you review it and submit the mission form." /></p>
