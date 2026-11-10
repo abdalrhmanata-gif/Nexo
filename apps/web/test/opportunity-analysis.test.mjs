@@ -176,7 +176,7 @@ test("AI endpoint requires authentication, explicit opt-in configuration, reques
   assert.match(route, /isSupabaseConfigured\(\)/);
   assert.match(route, /from "\.\.\/\.\.\/\.\.\/\.\.\/lib\/ai\/gate"/, "the route must use the shared gates");
   assert.match(route, /isApprovedPreviewTester/);
-  assert.match(route, /providerConfig\(\)/);
+  assert.match(route, /describeProvider\(\)/);
   assert.match(route, /rateLimit\(/);
   assert.match(route, /readLimitedBody\(/);
   const run = read("lib/ai/run.ts");
@@ -192,7 +192,7 @@ test("AI endpoint requires authentication, explicit opt-in configuration, reques
   assert.doesNotMatch(route, /console\.(log|error)\(/);
 
   const allowlistCheckAt = route.indexOf("if (!isApprovedPreviewTester(user.id))");
-  const providerConfigAt = route.indexOf("const config = providerConfig()");
+  const providerConfigAt = route.indexOf("const provider = describeProvider()");
   assert.ok(allowlistCheckAt >= 0 && allowlistCheckAt < providerConfigAt,
     "unapproved testers must be rejected before provider configuration is read");
 });

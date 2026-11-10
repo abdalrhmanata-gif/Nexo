@@ -42,8 +42,9 @@ export function labelTableValues(body) {
 export function apiMessages(body) {
   const out = [...body.matchAll(/jsonError\(\s*\d+\s*,\s*"[A-Z_]+"\s*,\s*"((?:[^"\\]|\\.)*)"/g)].map((m) => m[1]);
   for (const m of body.matchAll(/\berror:\s*"((?:[^"\\]|\\.)*)"/g)) out.push(m[1]);
-  const table = /const MESSAGES: RunMessages = \{([\s\S]*?)\n\};/.exec(body);
-  if (table) {
+  for (const name of ["MESSAGES: RunMessages", "PROVIDER_REFUSAL: Record<string, string>"]) {
+    const table = new RegExp(`const ${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")} = \\{([\\s\\S]*?)\\n\\};`).exec(body);
+    if (!table) continue;
     for (const m of table[1].matchAll(/:\s*"((?:[^"\\]|\\.)*)"/g)) out.push(m[1]);
   }
   return out;
@@ -79,7 +80,7 @@ const SOURCES = [
       ...apiMessages(read("app/api/opportunities/analyze/route.ts")),
       ...apiMessages(read("app/api/missions/plan/route.ts")),
     ],
-    least: 28,
+    least: 34,
   },
   {
     what: "verdicts from lib/opportunity-intelligence.mjs",
