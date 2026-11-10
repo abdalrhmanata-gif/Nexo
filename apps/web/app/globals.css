@@ -1462,6 +1462,13 @@ html[data-theme="dark"] { background:var(--paper); }
 :root[data-theme="dark"] .next-step-info { background:#13302d; border-left-color:var(--teal); }
 :root[data-theme="dark"] .next-step-info .next-step-label { color:#5fe0d2; }
 :root[data-theme="dark"] .timeline-item { border-left-color:#245049; }
+/* The selector names the button inside the nav on purpose. A plainer
+   `.theme-switcher` loses to `:root[data-theme="dark"] .primary-nav > button`,
+   which is written for the sign-out button and sets a dark colour for its
+   light background. The theme button kept its own dark background and took
+   that dark colour: measured on the live site, 1.16:1 — an invisible sun.
+   With this selector it measures 14.21:1. */
+:root[data-theme="dark"] .primary-nav > button.theme-switcher,
 :root[data-theme="dark"] .theme-switcher { background:var(--white); color:var(--ink); }
 /* Native form controls fall back to the browser's light chrome unless the
    colours are stated, which left a white language dropdown in the dark bar. */
