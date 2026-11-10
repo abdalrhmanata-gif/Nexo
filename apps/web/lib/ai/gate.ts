@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { isSupportedCostModel } from "../opportunity-cost.mjs";
 
-// The gates every paid-provider route passes through, in one place.
+// The gates every paid-provider route passes through, in one place.\n// Production is intentionally opt-in and remains allowlist-scoped while launch is verified.
 //
 // These were private to the opportunity-brief route. A second route needs the
 // same ones, and a security gate copied into two files is a gate that gets
