@@ -27,6 +27,7 @@ export function isSupportedLanguage(value: string | null | undefined): value is 
 }
 
 const NB: Record<string, string> = {
+  "The AI answer was cut off before it finished, so it was discarded. This attempt used one monthly generation; trying again usually works.":"KI-svaret ble kuttet før det var ferdig, og ble derfor forkastet. Dette forsøket brukte én månedlig generering; et nytt forsøk fungerer som regel.",
   "Your account ID, which the person running this site needs to approve you:":"Konto-ID-en din, som den som drifter nettstedet trenger for å godkjenne deg:",
   "MISSION CONTROL":"KONTROLLSENTER", "Search":"Søk", "New mission":"Nytt oppdrag",
   "Business":"Bedrift", "Templates":"Maler", "Pricing":"Priser", "Workspace":"Arbeidsområde",
@@ -883,6 +884,7 @@ const NB: Record<string, string> = {
   "This work will not be done.":"Dette arbeidet blir ikke gjort.",
 };
 const AR: Record<string, string> = {
+  "The AI answer was cut off before it finished, so it was discarded. This attempt used one monthly generation; trying again usually works.":"انقطع ردّ الذكاء الاصطناعي قبل أن يكتمل، فتم تجاهله. استهلكت هذه المحاولة توليداً شهرياً واحداً؛ وإعادة المحاولة تنجح في الغالب.",
   "Your account ID, which the person running this site needs to approve you:":"معرّف حسابك، ويحتاجه من يدير هذا الموقع ليوافق عليك:",
   "MISSION CONTROL":"مركز التحكم", "Search":"بحث", "New mission":"مهمة جديدة",
   "Business":"الأعمال", "Templates":"القوالب", "Pricing":"الأسعار", "Workspace":"مساحة العمل",
@@ -1739,6 +1741,7 @@ const AR: Record<string, string> = {
   "This work will not be done.":"لن يُنجَز هذا العمل.",
 };
 const ES: Record<string, string> = {
+  "The AI answer was cut off before it finished, so it was discarded. This attempt used one monthly generation; trying again usually works.":"La respuesta de la IA se cortó antes de terminar, así que se descartó. Este intento usó una generación mensual; volver a intentarlo suele funcionar.",
   "Your account ID, which the person running this site needs to approve you:":"Tu ID de cuenta, que la persona que administra este sitio necesita para aprobarte:",
   "Search":"Buscar", "New mission":"Nueva misión", "Business":"Empresa", "Templates":"Plantillas",
   "Pricing":"Precios", "Workspace":"Espacio de trabajo", "Opportunity Intelligence":"Inteligencia de oportunidades",
@@ -2599,6 +2602,7 @@ const ES: Record<string, string> = {
   "This work will not be done.":"Este trabajo no se hará.",
 };
 const FR: Record<string, string> = {
+  "The AI answer was cut off before it finished, so it was discarded. This attempt used one monthly generation; trying again usually works.":"La réponse de l'IA a été coupée avant la fin et a donc été écartée. Cette tentative a utilisé une génération mensuelle ; un nouvel essai fonctionne en général.",
   "Your account ID, which the person running this site needs to approve you:":"Votre identifiant de compte, dont la personne qui gère ce site a besoin pour vous approuver :",
   "Search":"Rechercher", "New mission":"Nouvelle mission", "Business":"Entreprise", "Templates":"Modèles",
   "Pricing":"Tarifs", "Workspace":"Espace de travail", "Opportunity Intelligence":"Analyse des opportunités",
@@ -3459,6 +3463,7 @@ const FR: Record<string, string> = {
   "This work will not be done.":"Ce travail ne sera pas fait.",
 };
 const DE: Record<string, string> = {
+  "The AI answer was cut off before it finished, so it was discarded. This attempt used one monthly generation; trying again usually works.":"Die KI-Antwort wurde abgeschnitten, bevor sie fertig war, und deshalb verworfen. Dieser Versuch hat eine monatliche Generierung verbraucht; ein erneuter Versuch klappt meist.",
   "Your account ID, which the person running this site needs to approve you:":"Ihre Konto-ID, die die Person, die diese Website betreibt, für Ihre Freigabe benötigt:",
   "Search":"Suchen", "New mission":"Neue Mission", "Business":"Unternehmen", "Templates":"Vorlagen",
   "Pricing":"Preise", "Workspace":"Arbeitsbereich", "Opportunity Intelligence":"Chancenanalyse",

@@ -39,6 +39,7 @@ const MESSAGES: RunMessages = {
   providerUnsupported: "The AI provider returned an unsupported response. This attempt used one monthly generation.",
   reportMissing: "The AI provider did not return a complete plan. This attempt used one monthly generation.",
   reportInvalidJson: "The AI provider returned a plan that was not valid JSON. This attempt used one monthly generation.",
+  reportTruncated: "The AI answer was cut off before it finished, so it was discarded. This attempt used one monthly generation; trying again usually works.",
   // The validator rejects a plan that states a fee, a duration or a link.
   // Saying so plainly is better than a vague failure: it tells the person
   // what the product refuses to do, which is the point of the product.

@@ -44,6 +44,7 @@ const MESSAGES: RunMessages = {
   providerUnsupported: "The AI provider returned an unsupported response. This attempt used one monthly generation.",
   reportMissing: "The AI provider did not return a complete report. This attempt used one monthly generation.",
   reportInvalidJson: "The AI provider returned a report that was not valid JSON. This attempt used one monthly generation.",
+  reportTruncated: "The AI answer was cut off before it finished, so it was discarded. This attempt used one monthly generation; trying again usually works.",
   reportRejected: "The report did not pass evidence-reference and structure checks. This attempt used one monthly generation.",
   timedOut: "The AI report timed out. This attempt used one monthly generation; no automatic retry was attempted.",
   failed: "The AI report could not be completed. This attempt used one monthly generation; no automatic retry was attempted.",

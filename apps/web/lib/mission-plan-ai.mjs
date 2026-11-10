@@ -18,6 +18,9 @@
 export const MAX_PLAN_REQUEST_BYTES = 8000;
 export const MAX_PLAN_REPORT_CHARS = 12000;
 export const MAX_PLAN_STEPS = 7;
+// Asked for one fewer than is accepted: a plan with a seventh good step is
+// not worth discarding, and a shorter answer is less likely to be cut off.
+export const REQUESTED_PLAN_STEPS = 6;
 
 function isRecord(value) {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -72,7 +75,10 @@ export function buildMissionPlanPrompt(input) {
     "cautions is for an activity that is regulated, licensed, safety-critical or legally consequential: say that it is and that the rules must be checked with the responsible authority. Say nothing about what those rules are.",
     "Write every string in the language given by `respondInLanguage`. Keep sentences short and plain.",
     "JSON shape: {understanding: string, steps: [{step: string, why: string, checkWith: string|null}], successCriteria: string[], unknowns: string[], cautions: string[]}",
-    `Limits: steps 3–${MAX_PLAN_STEPS}; successCriteria 2–4; unknowns 0–4; cautions 0–3.`,
+    `Limits: steps 3–${REQUESTED_PLAN_STEPS}; successCriteria 2–4; unknowns 0–4; cautions 0–3.`,
+    // An answer that runs past the token ceiling is cut mid-object and thrown
+    // away after it has been counted. Short is not a style preference here.
+    "Be brief. understanding: at most 30 words. Each step, why, checkWith, criterion, unknown and caution: at most 18 words. An answer that runs long is cut off and discarded.",
   ].join("\n");
 
   const user = JSON.stringify({

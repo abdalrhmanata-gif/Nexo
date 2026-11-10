@@ -18,6 +18,8 @@ const MAX_REQUESTS_PER_WINDOW = 3;
 const inMemoryUserRequests = new Map<string, number[]>();
 
 export const PROVIDER_TIMEOUT_MS = 25_000;
+export const DEFAULT_MAX_COMPLETION_TOKENS = 2000;
+export const MAX_COMPLETION_TOKENS_CEILING = 2400;
 export const noStoreHeaders = { "Cache-Control": "no-store, max-age=0", Vary: "Cookie" };
 
 export type ProviderConfig = { endpoint: string; apiKey: string; model: string; maxCompletionTokens: number };
@@ -91,8 +93,15 @@ export function describeProvider(): ProviderResult {
   // The official OpenAI API host only, unless running locally.
   if (url.hostname !== "api.openai.com" && !localDevelopmentUrl) return { ok: false, reason: "bad-base-url" };
 
-  const rawLimit = Number(process.env.ZAVQERA_AI_MAX_COMPLETION_TOKENS ?? "1200");
-  const maxCompletionTokens = Number.isInteger(rawLimit) ? Math.max(400, Math.min(1400, rawLimit)) : 1200;
+  // 1200 was too low, measured on the first day of real use: four of five
+  // plans stopped at exactly 1200 tokens, mid-JSON, and were discarded after
+  // being counted. Arabic and Norwegian cost more tokens per sentence than
+  // the English this was sized against. At the published rate the higher
+  // ceiling is a fraction of a cent.
+  const rawLimit = Number(process.env.ZAVQERA_AI_MAX_COMPLETION_TOKENS ?? String(DEFAULT_MAX_COMPLETION_TOKENS));
+  const maxCompletionTokens = Number.isInteger(rawLimit)
+    ? Math.max(400, Math.min(MAX_COMPLETION_TOKENS_CEILING, rawLimit))
+    : DEFAULT_MAX_COMPLETION_TOKENS;
   return {
     ok: true,
     config: { endpoint: `${baseUrl.replace(/\/+$/, "")}/chat/completions`, apiKey, model, maxCompletionTokens },

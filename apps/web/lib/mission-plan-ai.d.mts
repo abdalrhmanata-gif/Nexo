@@ -28,3 +28,4 @@ export type MissionPlanReport = {
 export function normalizeMissionPlanRequest(value: unknown): MissionPlanRequest;
 export function buildMissionPlanPrompt(input: MissionPlanRequest): { system: string; user: string };
 export function validateMissionPlanReport(value: unknown): MissionPlanReport;
+export declare const REQUESTED_PLAN_STEPS: number;
