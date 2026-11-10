@@ -27,6 +27,7 @@ export function isSupportedLanguage(value: string | null | undefined): value is 
 }
 
 const NB: Record<string, string> = {
+  "Your account ID, which the person running this site needs to approve you:":"Konto-ID-en din, som den som drifter nettstedet trenger for å godkjenne deg:",
   "MISSION CONTROL":"KONTROLLSENTER", "Search":"Søk", "New mission":"Nytt oppdrag",
   "Business":"Bedrift", "Templates":"Maler", "Pricing":"Priser", "Workspace":"Arbeidsområde",
   "Opportunity Intelligence":"Mulighetsanalyse", "Notifications":"Varsler", "Sign out":"Logg ut",
@@ -882,6 +883,7 @@ const NB: Record<string, string> = {
   "This work will not be done.":"Dette arbeidet blir ikke gjort.",
 };
 const AR: Record<string, string> = {
+  "Your account ID, which the person running this site needs to approve you:":"معرّف حسابك، ويحتاجه من يدير هذا الموقع ليوافق عليك:",
   "MISSION CONTROL":"مركز التحكم", "Search":"بحث", "New mission":"مهمة جديدة",
   "Business":"الأعمال", "Templates":"القوالب", "Pricing":"الأسعار", "Workspace":"مساحة العمل",
   "Opportunity Intelligence":"تحليل الفرص", "Notifications":"الإشعارات", "Sign out":"تسجيل الخروج",
@@ -1737,6 +1739,7 @@ const AR: Record<string, string> = {
   "This work will not be done.":"لن يُنجَز هذا العمل.",
 };
 const ES: Record<string, string> = {
+  "Your account ID, which the person running this site needs to approve you:":"Tu ID de cuenta, que la persona que administra este sitio necesita para aprobarte:",
   "Search":"Buscar", "New mission":"Nueva misión", "Business":"Empresa", "Templates":"Plantillas",
   "Pricing":"Precios", "Workspace":"Espacio de trabajo", "Opportunity Intelligence":"Inteligencia de oportunidades",
   "Notifications":"Notificaciones", "Sign out":"Cerrar sesión", "Invite a teammate":"Invitar a un compañero",
@@ -2596,6 +2599,7 @@ const ES: Record<string, string> = {
   "This work will not be done.":"Este trabajo no se hará.",
 };
 const FR: Record<string, string> = {
+  "Your account ID, which the person running this site needs to approve you:":"Votre identifiant de compte, dont la personne qui gère ce site a besoin pour vous approuver :",
   "Search":"Rechercher", "New mission":"Nouvelle mission", "Business":"Entreprise", "Templates":"Modèles",
   "Pricing":"Tarifs", "Workspace":"Espace de travail", "Opportunity Intelligence":"Analyse des opportunités",
   "Notifications":"Notifications", "Sign out":"Se déconnecter", "Invite a teammate":"Inviter un collègue",
@@ -3455,6 +3459,7 @@ const FR: Record<string, string> = {
   "This work will not be done.":"Ce travail ne sera pas fait.",
 };
 const DE: Record<string, string> = {
+  "Your account ID, which the person running this site needs to approve you:":"Ihre Konto-ID, die die Person, die diese Website betreibt, für Ihre Freigabe benötigt:",
   "Search":"Suchen", "New mission":"Neue Mission", "Business":"Unternehmen", "Templates":"Vorlagen",
   "Pricing":"Preise", "Workspace":"Arbeitsbereich", "Opportunity Intelligence":"Chancenanalyse",
   "Notifications":"Benachrichtigungen", "Sign out":"Abmelden", "Invite a teammate":"Teammitglied einladen",

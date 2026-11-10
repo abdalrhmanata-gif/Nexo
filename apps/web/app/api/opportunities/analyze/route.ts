@@ -130,6 +130,7 @@ export async function POST(request: Request) {
     config,
     prompt: buildOpportunityAnalysisPrompt(input),
     requestId: randomUUID(),
+    generationKind: "research",
     maxReportChars: MAX_ANALYSIS_REPORT_CHARS,
     validate: (value) => validateOpportunityAnalysisReport(value, input.evidenceItems),
     messages: MESSAGES,

@@ -131,3 +131,21 @@ test("the readiness check costs nothing and still guards what it reveals", () =>
     "the allowlist must be checked before the configuration is described");
   assert.match(get, /AUTH_REQUIRED/, "a signed-out caller is turned away first");
 });
+
+test("a refused tester is told their own account id, and nothing else is", () => {
+  // The allowlist is a list of account ids, and the owner had no dependable
+  // place to read his: the same email has a different id in each Supabase
+  // project. The readiness check hands back the id of whoever is signed in —
+  // to them, uncached — and only where they are refused.
+  const route = read("app/api/missions/plan/route.ts");
+  const get = route.slice(route.indexOf("export async function GET()"), route.indexOf("export async function POST("));
+  const post = route.slice(route.indexOf("export async function POST("));
+  assert.match(get, /"AI_ACCESS_RESTRICTED", "[^"]+", \{ accountId: user\.id \}/);
+  assert.equal([...get.matchAll(/accountId/g)].length, 1, "the id leaves the server in exactly one place");
+  assert.doesNotMatch(post, /accountId/, "the POST has no reason to echo it");
+  assert.match(read("lib/ai/gate.ts"), /"Cache-Control": "no-store/);
+
+  const panel = read("components/ai-mission-plan.tsx");
+  assert.match(panel, /\/\^\[0-9a-f-\]\{36\}\$\/i\.test\(payload\.accountId\)/, "only a UUID is ever rendered");
+  assert.match(panel, /<code dir="ltr">\{accountId\}<\/code>/, "an id reads left to right in an Arabic page too");
+});

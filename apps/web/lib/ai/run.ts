@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { estimateOpenAITextCost, type AiCostEstimate } from "../opportunity-cost.mjs";
 import { PROVIDER_TIMEOUT_MS, jsonError, noStoreHeaders, type ProviderConfig } from "./gate";
 import type { createSupabaseServerClient } from "../supabase/server";
+import { requestHashFor, type GenerationKind } from "./request-identity.mjs";
 
 // One guarded path to a paid provider, used by every route that needs one.
 //
@@ -59,6 +60,7 @@ export async function runGuardedJsonCompletion<T>({
   config,
   prompt,
   requestId,
+  generationKind,
   maxReportChars,
   validate,
   messages,
@@ -68,6 +70,8 @@ export async function runGuardedJsonCompletion<T>({
   config: ProviderConfig;
   prompt: { system: string; user: string };
   requestId: string;
+  /** Which allowance this draws on, as the database names it. */
+  generationKind: GenerationKind;
   maxReportChars: number;
   validate: (value: unknown) => T;
   messages: RunMessages;
@@ -78,7 +82,14 @@ export async function runGuardedJsonCompletion<T>({
 
   let reservationData: unknown;
   try {
-    const result = await supabase.rpc("reserve_ai_generation", { p_request_id: requestId });
+    // All three, by name: the database has no one-argument form of this
+    // function, and a call that omits two of them is answered "no such
+    // function", which surfaces here as usage being unverifiable.
+    const result = await supabase.rpc("reserve_ai_generation", {
+      p_request_id: requestId,
+      p_generation_kind: generationKind,
+      p_request_hash: requestHashFor({ kind: generationKind, model: config.model, system: prompt.system, user: prompt.user }),
+    });
     if (result.error) return fail(503, "AI_USAGE_UNAVAILABLE", messages.usageUnavailable);
     reservationData = result.data;
   } catch {
