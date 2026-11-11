@@ -135,7 +135,7 @@ export default async function MissionDetailPage({
                   {followUp && <span className={`follow-up${followUp.overdue ? " follow-up-overdue" : ""}`}>
                     {followUp.overdue ? t("Follow-up was due") : t("Follow up")} {followUp.relative} · {followUp.absolute}
                   </span>}
-                  <small className="action-hint">{actionStatusHint(action.status)}</small>
+                  <small className="action-hint">{actionStatusHint(action.status, t)}</small>
                 </div>
                 <ActionMutationControls missionId={mission.id} action={action} />
               </div>

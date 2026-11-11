@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import test from "node:test";
+import { createRequire } from "node:module";
+const require = createRequire(import.meta.url);
 import { LANGUAGES, readDictionaries } from "./helpers/dictionaries.mjs";
 
 // Keys that never appear inside t("…").
@@ -149,4 +151,27 @@ test("every mission and action state label is present in every dictionary", asyn
     if (absent.length) missing.push(`"${label}" is missing from ${absent.join(", ")}`);
   }
   assert.deepEqual(missing, []);
+});
+
+test("no page calls a sentence helper without handing it the translator", () => {
+  // The helpers default to English when no translator is passed, so a call
+  // that forgets it compiles, runs and shows English. One did: the hint
+  // under every action on the mission page.
+  const { readdirSync } = require("node:fs");
+  const walk = (dir) => readdirSync(join(webRoot, dir), { withFileTypes: true }).flatMap((entry) =>
+    entry.isDirectory() ? walk(join(dir, entry.name)) : [join(dir, entry.name)]);
+  const helpers = ["missionStatusLabel", "actionStatusLabel", "actionStatusHint", "verificationReadiness"];
+  const bare = [];
+  let calls = 0;
+  for (const file of [...walk("app"), ...walk("components")].filter((f) => f.endsWith(".tsx"))) {
+    const body = read(file);
+    for (const name of helpers) {
+      for (const match of body.matchAll(new RegExp(`\\b${name}\\(([^()]*)\\)`, "g"))) {
+        calls += 1;
+        if (!/,\s*t\s*$/.test(match[1])) bare.push(`${file}: ${match[0]}`);
+      }
+    }
+  }
+  assert.ok(calls >= 5, `expected the helper calls, found ${calls}`);
+  assert.deepEqual(bare, []);
 });
