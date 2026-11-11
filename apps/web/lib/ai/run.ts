@@ -79,8 +79,12 @@ export async function runGuardedJsonCompletion<T>({
   messages: RunMessages;
   costEvent: string;
 }): Promise<GuardedRun<T>> {
+  // Once the allowance is known it goes out with every answer, failures
+  // included. A failed attempt says "this used one monthly generation", and
+  // without the count beside it the owner read that as the allowance gone.
+  let usageAfter: ReturnType<typeof usageMeta> | undefined;
   const fail = (status: number, code: string, message: string): GuardedRun<T> =>
-    ({ ok: false, response: jsonError(status, code, message) });
+    ({ ok: false, response: jsonError(status, code, message, usageAfter ? { usage: usageAfter } : undefined) });
 
   let reservationData: unknown;
   try {
@@ -112,6 +116,7 @@ export async function runGuardedJsonCompletion<T>({
   ) {
     return fail(503, "AI_USAGE_UNAVAILABLE", messages.usageInvalidResponse);
   }
+  usageAfter = usageMeta(quota);
   if (!quota.allowed) {
     return { ok: false, response: jsonError(429, "AI_MONTHLY_LIMIT_REACHED", messages.allowanceReached, {
       usage: {

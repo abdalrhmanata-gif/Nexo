@@ -1,3 +1,4 @@
+import { getTranslate } from "../../lib/i18n-server";
 import Link from "next/link";
 import { LocalizedText } from "../../components/localized-text";
 import { LEGAL, PROCESSORS, PURPOSES, legalDetailsPending } from "../../lib/legal";
@@ -12,10 +13,13 @@ import { LEGAL, PROCESSORS, PURPOSES, legalDetailsPending } from "../../lib/lega
 // tracker. Tests in test/navigation-regression.test.mjs hold those claims to
 // the source, so the notice cannot quietly drift away from the product.
 
-export const metadata = {
-  title: "Privacy notice — ZAVQERA",
-  description: "What ZAVQERA collects, the legal basis for each use, who processes it, how long it is kept, and your rights.",
-};
+export async function generateMetadata() {
+  const t = await getTranslate();
+  return {
+    title: t("Privacy notice — ZAVQERA"),
+    description: t("What ZAVQERA collects, the legal basis for each use, who processes it, how long it is kept, and your rights."),
+  };
+}
 
 export default function PrivacyPage() {
   return <div className="container legal-page">

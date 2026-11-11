@@ -1,3 +1,4 @@
+import { getTranslate } from "../../lib/i18n-server";
 import Link from "next/link";
 import { LocalizedText } from "../../components/localized-text";
 import { LEGAL, legalDetailsPending } from "../../lib/legal";
@@ -10,10 +11,13 @@ import { LEGAL, legalDetailsPending } from "../../lib/legal";
 // to go and verify, not advice — and a test asserts that the clause is still
 // here.
 
-export const metadata = {
-  title: "Terms of service — ZAVQERA",
-  description: "The agreement between you and ZAVQERA: what the service is, what it is not, and the rights you keep.",
-};
+export async function generateMetadata() {
+  const t = await getTranslate();
+  return {
+    title: t("Terms of service — ZAVQERA"),
+    description: t("The agreement between you and ZAVQERA: what the service is, what it is not, and the rights you keep."),
+  };
+}
 
 export default function TermsPage() {
   return <div className="container legal-page">
