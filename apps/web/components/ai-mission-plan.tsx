@@ -1,5 +1,7 @@
 "use client";
 
+import { fill as fillText } from "../lib/i18n";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LocalizedText, useTranslate } from "./localized-text";
@@ -37,6 +39,7 @@ export function AiMissionPlan({ missionId, name, intent, criteria, actions }: {
   const [error, setError] = useState("");
   const [unavailable, setUnavailable] = useState(false);
   const [notReady, setNotReady] = useState("");
+  const [allowance, setAllowance] = useState<{ left: number; limit: number } | null>(null);
   const [accountId, setAccountId] = useState("");
 
   // Ask once, on mount, whether this deployment can draft at all. It reads
@@ -88,6 +91,12 @@ export function AiMissionPlan({ missionId, name, intent, criteria, actions }: {
         }),
       });
       const payload = await response.json().catch(() => ({}));
+      // Shown after every attempt, failed ones too: "this used one monthly
+      // generation" with no number beside it reads as "none left".
+      const usage = payload?.usage ?? payload?.meta?.usage;
+      if (usage && Number.isInteger(usage.remaining) && Number.isInteger(usage.monthlyLimit)) {
+        setAllowance({ left: Math.max(0, usage.remaining), limit: usage.monthlyLimit });
+      }
       if (!response.ok) {
         // A deployment with no provider should stop offering the button
         // rather than inviting the same refusal again.
@@ -203,6 +212,9 @@ export function AiMissionPlan({ missionId, name, intent, criteria, actions }: {
       </>}
 
       {error && <p className="field-error" role="alert">{t(error)}</p>}
+      {allowance && <p className="account-id-note" role="status">
+        {fillText(t("{left} of {limit} AI drafts left this month."), { left: allowance.left, limit: allowance.limit })}
+      </p>}
     </section>
   );
 }

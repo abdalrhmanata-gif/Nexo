@@ -180,3 +180,19 @@ test("the audit would still catch the shapes it was written for", () => {
   assert.equal(byKey["Pricing"], "ES,FR,DE", "inline nb/ar cover only those two languages");
   assert.equal(byKey["Workspace"], "NB,AR,ES,FR,DE");
 });
+
+test("no dictionary carries a sentence the application no longer says", () => {
+  // The opposite drift to a missing key. A sentence that is removed from a
+  // page leaves five translations behind; twenty-two had gathered, including
+  // the promises of features that were taken off the site.
+  const source = sourceFiles().filter((file) => !file.endsWith("lib/i18n.ts"))
+    .map((file) => readFileSync(file, "utf8")).join("\n")
+    .replace(/\\(["'\\])/g, "$1").replace(/&apos;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, "&");
+  const tables = readDictionaries();
+  const raw = sourceFiles().filter((file) => !file.endsWith("lib/i18n.ts")).map((file) => readFileSync(file, "utf8")).join("\n");
+  // A key holding a line break is written "\\n" in source; look for it both ways.
+  const said = (text) => source.includes(text) || raw.includes(JSON.stringify(text).slice(1, -1));
+  const stale = [...tables.NB.keys()].filter((key) => !said(key.includes("|") ? key.split("|")[0] : key));
+  assert.ok(tables.NB.size > 500, "the dictionary reader has stopped matching");
+  assert.deepEqual(stale, [], "remove these from all five dictionaries, or use them");
+});

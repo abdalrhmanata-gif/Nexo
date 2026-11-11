@@ -5,7 +5,15 @@ import { PageMetrics } from "../components/page-metrics";
 import { LanguageProvider } from "../components/localized-text";
 import { getLanguage, getTranslate } from "../lib/i18n-server";
 
-export const metadata: Metadata = { title: "ZAVQERA Mission Control", description: "Structure AI-assisted work into explicit Missions, track progress, and review evidence before committing to outcomes." };
+// The tab title and the description a search engine shows were English for
+// every reader. They are read from the same dictionary as the page.
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslate();
+  return {
+    title: t("ZAVQERA — turn a goal into steps, evidence and a result"),
+    description: t("Structure AI-assisted work into explicit Missions, track progress, and review evidence before committing to outcomes."),
+  };
+}
 
 // Resolve the theme before first paint so a dark-mode visitor never sees a
 // white flash. Mirrors the precedence in components/theme-switcher.tsx:
