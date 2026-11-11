@@ -106,8 +106,11 @@ test("Supabase browser SDK is loaded only when the user submits an auth action",
 
 test("business workspace emphasizes useful actions and is transparent about unavailable team features", () => {
   const page = read("app/app/business/page.tsx");
-  assert.match(page, /Team collaboration is in development/);
-  assert.match(page, /Secure invitations, team roles, and shared business access are not enabled yet/);
+  // Says what is true and asks who wants more, without calling the product
+  // unfinished: the owner had "in development" removed.
+  assert.doesNotMatch(page, /in development/i);
+  assert.match(page, /Missions are private to you today\./);
+  assert.match(page, /<PlanInterest plan="Team" \/>/);
   for (const route of ["/app/missions/new", "/templates", "/app/opportunities", "/app/notifications"]) {
     assert.ok(page.includes(route), `missing business quick action ${route}`);
   }

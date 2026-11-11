@@ -106,16 +106,15 @@ export default async function BusinessWorkspacePage() {
       </div>
     </section>
 
-    {/* This said "in development" twice and offered nothing to do about it,
-        which reads as an unfinished product rather than an honest one. The
-        statement is unchanged — it is true, and saying teams work when they
-        do not would be worse — but it now asks the one question whose answer
-        this product most lacks: does anyone actually want it? */}
+    {/* The owner asked for "in development" to go: a notice about something
+        that cannot be used reads as an unfinished product. What stays is the
+        fact — missions are private — and the question, because the answer
+        decides whether teams are worth building. */}
     <section className="business-team-note">
       <span className="business-team-icon" aria-hidden="true">◎</span>
       <div>
-        <strong><LocalizedText en="Team collaboration is in development" /></strong>
-        <p><LocalizedText en="Missions work in your private workspace today. Secure invitations, team roles, and shared business access are not enabled yet. If your team needs them, say so and we will tell you when they open." /></p>
+        <strong><LocalizedText en="Working with a team?" /></strong>
+        <p><LocalizedText en="Missions are private to you today. If you want to invite colleagues, tell us and we will let you know when invitations open." /></p>
       </div>
       <PlanInterest plan="Team" />
     </section>
