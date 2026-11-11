@@ -106,7 +106,7 @@ export default async function BusinessWorkspacePage() {
       </div>
     </section>
 
-    {/* The owner asked for "in development" to go: a notice about something
+    {/* The owner asked for the "still being built" wording to go: a notice about something
         that cannot be used reads as an unfinished product. What stays is the
         fact — missions are private — and the question, because the answer
         decides whether teams are worth building. */}
