@@ -448,3 +448,15 @@ test("a page can be taken away as a document, from every workspace surface", () 
   }
   assert.match(css, /\.print-only \{ display:none; \}/, "the paper header must not show on screen");
 });
+
+test("no source file carries a merge conflict marker", () => {
+  // One was committed: a rebase left markers in lib/i18n.ts, the dictionary
+  // reader skipped over them, and every local test passed. Only the type
+  // check in CI refused it.
+  const walk = (dir) => readdirSync(join(webRoot, dir), { withFileTypes: true }).flatMap((entry) =>
+    entry.name === "node_modules" || entry.name === ".next" ? []
+      : entry.isDirectory() ? walk(join(dir, entry.name)) : [join(dir, entry.name)]);
+  const marked = ["app", "components", "lib"].flatMap(walk)
+    .filter((file) => /^(<{7} |>{7} |={7}$)/m.test(read(file)));
+  assert.deepEqual(marked, []);
+});
