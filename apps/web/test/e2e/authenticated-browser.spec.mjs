@@ -415,6 +415,12 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
   }
 });
 
+// The table and backup controls sit in a fold on the opportunity page. A
+// person opens it; so does the test. Reloading the page closes it again.
+async function openBackupFold(page) {
+  await page.locator("details.opportunity-more").evaluate((element) => { element.open = true; });
+}
+
 test("authenticated Opportunity Intelligence backup flow exports, imports, and rejects unsafe files", async ({ browser }) => {
   assertRuntime();
   const blocked = [];
@@ -440,6 +446,7 @@ test("authenticated Opportunity Intelligence backup flow exports, imports, and r
   pageB.setDefaultNavigationTimeout(30_000);
 
   const uploadJson = async (page, value, name = "opportunity-backup.json") => {
+    await openBackupFold(page);
     await page.locator("#opportunity-backup-file").setInputFiles({
       name,
       mimeType: "application/json",
@@ -486,6 +493,7 @@ test("authenticated Opportunity Intelligence backup flow exports, imports, and r
     await test.step("export a real downloaded JSON backup and verify its contents", async () => {
       originalLocalState = await storedOpportunities(pageA);
       expect(originalLocalState).toHaveLength(1);
+      await openBackupFold(pageA);
       const [download] = await Promise.all([
         pageA.waitForEvent("download"),
         pageA.getByRole("button", { name: "Export backup" }).click(),
@@ -538,6 +546,7 @@ test("authenticated Opportunity Intelligence backup flow exports, imports, and r
     });
 
     await test.step("reject a file beyond the 2 MB limit before parsing it", async () => {
+      await openBackupFold(pageA);
       await pageA.locator("#opportunity-backup-file").setInputFiles({
         name: "oversized.json",
         mimeType: "application/json",
