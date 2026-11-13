@@ -1,3 +1,4 @@
+import { SavePdfButton } from "../../../../components/save-pdf-button";
 import Link from "next/link";
 import { LocalizedDateTime, LocalizedText } from "../../../../components/localized-text";
 import { DeleteMissionForm } from "../../../../components/delete-mission-form";
@@ -46,7 +47,8 @@ export default async function MissionDetailPage({
   const healthy = intelligence.planHealth.healthy && critique.length === 0;
 
   return <div className="container">
-    <p className="eyebrow"><Link href="/app"><LocalizedText en="Workspace" /></Link> <LocalizedText en="/ Mission detail" /></p>
+    <p className="eyebrow no-print"><Link href="/app"><LocalizedText en="Workspace" /></Link> <LocalizedText en="/ Mission detail" /></p>
+    <SavePdfButton title={mission.name} subtitle={t("Mission plan")} />
     <div className="detail-layout">
       <div className="detail-stack">
         <section className="card">
@@ -145,7 +147,7 @@ export default async function MissionDetailPage({
           {repository.addAction && <AddActionForm missionId={mission.id} />}
         </section>
 
-        {repository.updateMission && <section className="card"><p className="eyebrow"><LocalizedText en="Mission setup" /></p><h2><LocalizedText en="Edit this mission" /></h2><p><LocalizedText en="Changes are accepted only after the server confirms the current version." /></p><MissionMutationControls missionId={mission.id} name={mission.name} intent={mission.intent} criteria={mission.criteria} status={mission.lifecycleStatus} version={mission.version} /></section>}
+        {repository.updateMission && <section className="card no-print"><p className="eyebrow"><LocalizedText en="Mission setup" /></p><h2><LocalizedText en="Edit this mission" /></h2><p><LocalizedText en="Changes are accepted only after the server confirms the current version." /></p><MissionMutationControls missionId={mission.id} name={mission.name} intent={mission.intent} criteria={mission.criteria} status={mission.lifecycleStatus} version={mission.version} /></section>}
 
         <section className="card">
           <p className="eyebrow"><LocalizedText en="Verification" /></p>

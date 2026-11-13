@@ -428,3 +428,35 @@ test("the theme button keeps its own colour inside the dark navigation", () => {
   assert.match(css, /:root\[data-theme="dark"\] \.primary-nav > button\.theme-switcher[^{]*\{[^}]*color:var\(--ink\)/,
     "the theme button must out-rank the nav button rule in dark mode");
 });
+
+test("a page can be taken away as a document, from every workspace surface", () => {
+  // The owner asked for a readable copy everywhere, not only on the
+  // opportunity page. It is the browser's own Save as PDF over a print
+  // stylesheet: selectable text, correct Arabic, nothing sent anywhere.
+  const button = read("components/save-pdf-button.tsx");
+  assert.match(button, /window\.print\(\)/);
+  assert.match(button, /root\.setAttribute\("data-theme", "light"\)/, "a dark page printed is a page of black ink");
+  assert.match(button, /addEventListener\("afterprint", restore\)/, "the reader's theme and title come back");
+  for (const file of ["app/app/missions/[id]/page.tsx", "app/app/page.tsx", "app/app/business/page.tsx", "components/opportunity-intelligence.tsx"]) {
+    assert.match(read(file), /<SavePdfButton title=/, file);
+  }
+  const css = read("app/globals.css");
+  const print = css.slice(css.indexOf("@media print"));
+  assert.ok(print.length > 200, "the print stylesheet is missing");
+  for (const hidden of [".topbar", ".footer", "form", "button", ".no-print", ".suggested-plan"]) {
+    assert.ok(print.slice(0, print.indexOf("display:none")).includes(hidden), `${hidden} must not reach paper`);
+  }
+  assert.match(css, /\.print-only \{ display:none; \}/, "the paper header must not show on screen");
+});
+
+test("no source file carries a merge conflict marker", () => {
+  // One was committed: a rebase left markers in lib/i18n.ts, the dictionary
+  // reader skipped over them, and every local test passed. Only the type
+  // check in CI refused it.
+  const walk = (dir) => readdirSync(join(webRoot, dir), { withFileTypes: true }).flatMap((entry) =>
+    entry.name === "node_modules" || entry.name === ".next" ? []
+      : entry.isDirectory() ? walk(join(dir, entry.name)) : [join(dir, entry.name)]);
+  const marked = ["app", "components", "lib"].flatMap(walk)
+    .filter((file) => /^(<{7} |>{7} |={7}$)/m.test(read(file)));
+  assert.deepEqual(marked, []);
+});
