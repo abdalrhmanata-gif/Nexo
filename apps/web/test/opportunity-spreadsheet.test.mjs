@@ -38,3 +38,16 @@ test("the page offers the readable file beside the backup, and says which is whi
   assert.match(page, /text\/tab-separated-values/);
   assert.match(page, /The backup is for restoring your data, not for reading\./);
 });
+
+test("the PDF is the export in plain sight; the table and backup are one step back", () => {
+  const page = readFileSync(join(webRoot, "components/opportunity-intelligence.tsx"), "utf8");
+  const more = page.indexOf('<details className="opportunity-more">');
+  assert.ok(more > -1);
+  assert.ok(page.indexOf("<SavePdfButton") < more, "the PDF button stays outside the fold");
+  const folded = page.slice(more, page.indexOf("</details>", more));
+  for (const control of ["exportBackup", "exportSpreadsheet", "opportunity-backup-file"]) {
+    assert.ok(folded.includes(control), `${control} belongs inside the fold`);
+  }
+  // The backup stays reachable: this data lives only in the browser.
+  assert.match(folded, /<LocalizedText en="Export backup" \/>/);
+});

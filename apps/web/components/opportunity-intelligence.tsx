@@ -250,7 +250,7 @@ export function OpportunityIntelligence() {
       anchor.click();
       anchor.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-      setBackupNotice(fill(t("Backup exported: {count} opportunities and {notes} evidence notes. Store the file securely; it contains the details you recorded."), { count: backup.opportunityCount, notes: backup.evidenceCount }));
+      setBackupNotice(fill(t("Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded."), { count: backup.opportunityCount, notes: backup.evidenceCount }));
     } catch (cause) {
       setBackupError(cause instanceof Error ? cause.message : t("The backup could not be exported."));
     }
@@ -402,6 +402,13 @@ export function OpportunityIntelligence() {
         </div>
       </div>
 
+      {/* The owner found three export controls side by side unclear, and was
+          right: the one most people want is the PDF, which sits beside the
+          title. The table and the backup are still here — the data lives only
+          in this browser, so the backup is the only way to move or keep it —
+          but one step back. */}
+      <details className="opportunity-more">
+        <summary><LocalizedText en="Excel table and backup" /></summary>
       <section className="opportunity-portability" aria-label={t("Opportunity data backup")}>
         <div className="opportunity-portability-copy">
           <span className="opportunity-portability-icon" aria-hidden="true">
@@ -445,6 +452,7 @@ export function OpportunityIntelligence() {
         {backupError && <p className="field-error opportunity-backup-status" role="alert">{backupError}</p>}
         {backupNotice && <p className="success-state opportunity-backup-status" role="status">{backupNotice}</p>}
       </section>
+      </details>
 
       <section className="opportunity-metrics" aria-label={t("Opportunity overview")}>
         <div className="opportunity-metric">
