@@ -1551,3 +1551,9 @@ html[dir="rtl"] input, html[dir="rtl"] textarea {
   .progress > * { background:#555 !important; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
   * { animation:none !important; transition:none !important; }
 }
+/* The table and backup controls, one step back from the page. */
+.opportunity-more { margin:0 0 14px; }
+.opportunity-more > summary { display:inline-block; cursor:pointer; padding:6px 2px; color:var(--muted); font-size:12px; font-weight:700; }
+.opportunity-more > summary:hover, .opportunity-more[open] > summary { color:var(--ink); }
+.opportunity-more[open] > summary { margin-bottom:8px; }
+@media print { .opportunity-more { display:none !important; } }

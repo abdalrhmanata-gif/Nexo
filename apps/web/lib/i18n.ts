@@ -27,6 +27,8 @@ export function isSupportedLanguage(value: string | null | undefined): value is 
 }
 
 const NB: Record<string, string> = {
+  "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"Sikkerhetskopi eksportert. Muligheter: {count}. Dokumentasjonsnotater: {notes}. Oppbevar filen trygt; den inneholder det du har registrert.",
+  "Excel table and backup":"Excel-tabell og sikkerhetskopi",
   "Added":"Lagt til",
   "Evidence notes":"Dokumentasjonsnotater",
   "Assessment":"Vurdering",
@@ -627,7 +629,6 @@ const NB: Record<string, string> = {
   "This source URL is already attached. Revisit the existing entry instead of counting it twice.":"Denne kildeadressen er allerede lagt ved. Gå til den eksisterende oppføringen i stedet for å telle den to ganger.",
   "Evidence note added. It records your review; Zavqera has not independently verified the source.":"Dokumentasjonsnotat lagt til. Det registrerer din gjennomgang; Zavqera har ikke verifisert kilden uavhengig.",
   "Browser storage is unavailable. Export or copy important details before leaving this page.":"Nettleserlagring er utilgjengelig. Eksporter eller kopier viktige detaljer før du forlater siden.",
-  "Backup exported: {count} opportunities and {notes} evidence notes. Store the file securely; it contains the details you recorded.":"Sikkerhetskopi eksportert: {count} muligheter og {notes} dokumentasjonsnotater. Oppbevar filen trygt; den inneholder det du har registrert.",
   "The backup could not be exported.":"Sikkerhetskopien kunne ikke eksporteres.",
   "This file is larger than 2 MB. Nothing was imported.":"Denne filen er større enn 2 MB. Ingenting ble importert.",
   "The backup could not be read.":"Sikkerhetskopien kunne ikke leses.",
@@ -892,6 +893,8 @@ const NB: Record<string, string> = {
   "This work will not be done.":"Dette arbeidet blir ikke gjort.",
 };
 const AR: Record<string, string> = {
+  "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"تم تصدير النسخة الاحتياطية. الفرص: {count}. ملاحظات الأدلة: {notes}. احفظ الملف في مكان آمن؛ فهو يحتوي على ما سجّلته.",
+  "Excel table and backup":"جدول Excel والنسخة الاحتياطية",
   "Added":"أُضيفت",
   "Evidence notes":"ملاحظات الأدلة",
   "Assessment":"التقييم",
@@ -1492,7 +1495,6 @@ const AR: Record<string, string> = {
   "This source URL is already attached. Revisit the existing entry instead of counting it twice.":"هذا الرابط مُرفق بالفعل. راجع المدخل الموجود بدل احتسابه مرتين.",
   "Evidence note added. It records your review; Zavqera has not independently verified the source.":"أُضيفت ملاحظة الدليل. هي تسجّل مراجعتك؛ ولم تتحقق Zavqera من المصدر بشكل مستقل.",
   "Browser storage is unavailable. Export or copy important details before leaving this page.":"تخزين المتصفح غير متاح. صدّر أو انسخ التفاصيل المهمة قبل مغادرة الصفحة.",
-  "Backup exported: {count} opportunities and {notes} evidence notes. Store the file securely; it contains the details you recorded.":"تم تصدير النسخة الاحتياطية: {count} فرصة و{notes} ملاحظة دليل. احفظ الملف بأمان؛ فهو يحتوي التفاصيل التي سجّلتها.",
   "The backup could not be exported.":"تعذّر تصدير النسخة الاحتياطية.",
   "This file is larger than 2 MB. Nothing was imported.":"هذا الملف أكبر من 2 ميغابايت. لم يُستورد شيء.",
   "The backup could not be read.":"تعذّرت قراءة النسخة الاحتياطية.",
@@ -1757,6 +1759,8 @@ const AR: Record<string, string> = {
   "This work will not be done.":"لن يُنجَز هذا العمل.",
 };
 const ES: Record<string, string> = {
+  "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"Copia de seguridad exportada. Oportunidades: {count}. Notas de evidencia: {notes}. Guarda el archivo en un lugar seguro; contiene lo que registraste.",
+  "Excel table and backup":"Tabla de Excel y copia de seguridad",
   "Added":"Añadida",
   "Evidence notes":"Notas de evidencia",
   "Assessment":"Valoración",
@@ -2360,7 +2364,6 @@ const ES: Record<string, string> = {
   "This source URL is already attached. Revisit the existing entry instead of counting it twice.":"Esta URL ya está adjunta. Revisa la entrada existente en lugar de contarla dos veces.",
   "Evidence note added. It records your review; Zavqera has not independently verified the source.":"Nota de evidencia añadida. Registra tu revisión; Zavqera no ha verificado la fuente de forma independiente.",
   "Browser storage is unavailable. Export or copy important details before leaving this page.":"El almacenamiento del navegador no está disponible. Exporta o copia los datos importantes antes de salir.",
-  "Backup exported: {count} opportunities and {notes} evidence notes. Store the file securely; it contains the details you recorded.":"Copia de seguridad exportada: {count} oportunidades y {notes} notas de evidencia. Guarda el archivo de forma segura; contiene lo que registraste.",
   "The backup could not be exported.":"No se pudo exportar la copia de seguridad.",
   "This file is larger than 2 MB. Nothing was imported.":"Este archivo supera los 2 MB. No se importó nada.",
   "The backup could not be read.":"No se pudo leer la copia de seguridad.",
@@ -2625,6 +2628,8 @@ const ES: Record<string, string> = {
   "This work will not be done.":"Este trabajo no se hará.",
 };
 const FR: Record<string, string> = {
+  "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"Sauvegarde exportée. Opportunités : {count}. Notes de preuve : {notes}. Conservez le fichier en lieu sûr ; il contient ce que vous avez enregistré.",
+  "Excel table and backup":"Tableau Excel et sauvegarde",
   "Added":"Ajoutée",
   "Evidence notes":"Notes de preuve",
   "Assessment":"Évaluation",
@@ -3228,7 +3233,6 @@ const FR: Record<string, string> = {
   "This source URL is already attached. Revisit the existing entry instead of counting it twice.":"Cette URL est déjà jointe. Reprenez l'entrée existante au lieu de la compter deux fois.",
   "Evidence note added. It records your review; Zavqera has not independently verified the source.":"Note de preuve ajoutée. Elle consigne votre examen ; Zavqera n'a pas vérifié la source de manière indépendante.",
   "Browser storage is unavailable. Export or copy important details before leaving this page.":"Le stockage du navigateur est indisponible. Exportez ou copiez les informations importantes avant de quitter la page.",
-  "Backup exported: {count} opportunities and {notes} evidence notes. Store the file securely; it contains the details you recorded.":"Sauvegarde exportée : {count} opportunités et {notes} notes de preuve. Conservez le fichier en lieu sûr ; il contient ce que vous avez enregistré.",
   "The backup could not be exported.":"La sauvegarde n'a pas pu être exportée.",
   "This file is larger than 2 MB. Nothing was imported.":"Ce fichier dépasse 2 Mo. Rien n'a été importé.",
   "The backup could not be read.":"La sauvegarde n'a pas pu être lue.",
@@ -3493,6 +3497,8 @@ const FR: Record<string, string> = {
   "This work will not be done.":"Ce travail ne sera pas fait.",
 };
 const DE: Record<string, string> = {
+  "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"Sicherung exportiert. Chancen: {count}. Nachweisnotizen: {notes}. Bewahren Sie die Datei sicher auf; sie enthält, was Sie erfasst haben.",
+  "Excel table and backup":"Excel-Tabelle und Sicherung",
   "Added":"Hinzugefügt",
   "Evidence notes":"Nachweisnotizen",
   "Assessment":"Einschätzung",
@@ -4096,7 +4102,6 @@ const DE: Record<string, string> = {
   "This source URL is already attached. Revisit the existing entry instead of counting it twice.":"Diese URL ist bereits angehängt. Prüfen Sie den vorhandenen Eintrag, statt ihn doppelt zu zählen.",
   "Evidence note added. It records your review; Zavqera has not independently verified the source.":"Belegnotiz hinzugefügt. Sie hält Ihre Prüfung fest; Zavqera hat die Quelle nicht unabhängig überprüft.",
   "Browser storage is unavailable. Export or copy important details before leaving this page.":"Der Browser-Speicher ist nicht verfügbar. Exportieren oder kopieren Sie wichtige Angaben, bevor Sie die Seite verlassen.",
-  "Backup exported: {count} opportunities and {notes} evidence notes. Store the file securely; it contains the details you recorded.":"Sicherung exportiert: {count} Chancen und {notes} Belegnotizen. Bewahren Sie die Datei sicher auf; sie enthält Ihre Aufzeichnungen.",
   "The backup could not be exported.":"Die Sicherung konnte nicht exportiert werden.",
   "This file is larger than 2 MB. Nothing was imported.":"Diese Datei ist größer als 2 MB. Es wurde nichts importiert.",
   "The backup could not be read.":"Die Sicherung konnte nicht gelesen werden.",
