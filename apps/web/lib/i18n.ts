@@ -27,6 +27,7 @@ export function isSupportedLanguage(value: string | null | undefined): value is 
 }
 
 const NB: Record<string, string> = {
+<<<<<<< HEAD
   "Added":"Lagt til",
   "Evidence notes":"Dokumentasjonsnotater",
   "Assessment":"Vurdering",
@@ -40,6 +41,14 @@ const NB: Record<string, string> = {
   "The backup is for restoring your data, not for reading. For a table you can read, use “Open in Excel”.":"Sikkerhetskopien er for å gjenopprette dataene dine, ikke for å lese dem. Bruk «Åpne i Excel» for en tabell du kan lese.",
   "Download a table you can read in Excel or another spreadsheet":"Last ned en tabell du kan lese i Excel eller et annet regneark",
   "Open in Excel":"Åpne i Excel",
+=======
+  "Opportunity analysis":"Mulighetsanalyse",
+  "Business overview":"Bedriftsoversikt",
+  "Workspace overview":"Oversikt over arbeidsområdet",
+  "Mission plan":"Oppdragsplan",
+  "Opens your browser's print window. Choose “Save as PDF” as the printer.":"Åpner nettleserens utskriftsvindu. Velg «Lagre som PDF» som skriver.",
+  "Save as PDF":"Lagre som PDF",
+>>>>>>> a6e4fe1 (save any workspace page as a PDF document)
   "User-recorded evidence notes (not independently verified):\n{notes}":"Dokumentasjonsnotater registrert av brukeren (ikke uavhengig verifisert):\n{notes}",
   "What ZAVQERA collects, the legal basis for each use, who processes it, how long it is kept, and your rights.":"Hva ZAVQERA samler inn, det rettslige grunnlaget for hver bruk, hvem som behandler det, hvor lenge det lagres, og rettighetene dine.",
   "Privacy notice — ZAVQERA":"Personvernerklæring – ZAVQERA",
@@ -886,6 +895,7 @@ const NB: Record<string, string> = {
   "This work will not be done.":"Dette arbeidet blir ikke gjort.",
 };
 const AR: Record<string, string> = {
+<<<<<<< HEAD
   "Added":"أُضيفت",
   "Evidence notes":"ملاحظات الأدلة",
   "Assessment":"التقييم",
@@ -899,6 +909,14 @@ const AR: Record<string, string> = {
   "The backup is for restoring your data, not for reading. For a table you can read, use “Open in Excel”.":"النسخة الاحتياطية لاستعادة بياناتك وليست للقراءة. للحصول على جدول مقروء استخدم «افتح في Excel».",
   "Download a table you can read in Excel or another spreadsheet":"نزّل جدولاً تقرؤه في Excel أو أي برنامج جداول",
   "Open in Excel":"افتح في Excel",
+=======
+  "Opportunity analysis":"تحليل الفرص",
+  "Business overview":"نظرة عامة على الأعمال",
+  "Workspace overview":"نظرة عامة على مساحة العمل",
+  "Mission plan":"خطة المهمة",
+  "Opens your browser's print window. Choose “Save as PDF” as the printer.":"يفتح نافذة الطباعة في متصفحك. اختر «حفظ كملف PDF» بدل الطابعة.",
+  "Save as PDF":"احفظ كملف PDF",
+>>>>>>> a6e4fe1 (save any workspace page as a PDF document)
   "User-recorded evidence notes (not independently verified):\n{notes}":"ملاحظات أدلة سجّلها المستخدم (غير مُتحقَّق منها بشكل مستقل):\n{notes}",
   "What ZAVQERA collects, the legal basis for each use, who processes it, how long it is kept, and your rights.":"ما الذي تجمعه ZAVQERA، والأساس القانوني لكل استخدام، ومن يعالجه، ومدة حفظه، وحقوقك.",
   "Privacy notice — ZAVQERA":"إشعار الخصوصية — ZAVQERA",
@@ -1745,6 +1763,7 @@ const AR: Record<string, string> = {
   "This work will not be done.":"لن يُنجَز هذا العمل.",
 };
 const ES: Record<string, string> = {
+<<<<<<< HEAD
   "Added":"Añadida",
   "Evidence notes":"Notas de evidencia",
   "Assessment":"Valoración",
@@ -1758,6 +1777,14 @@ const ES: Record<string, string> = {
   "The backup is for restoring your data, not for reading. For a table you can read, use “Open in Excel”.":"La copia de seguridad sirve para restaurar tus datos, no para leerlos. Para una tabla legible, usa «Abrir en Excel».",
   "Download a table you can read in Excel or another spreadsheet":"Descarga una tabla que puedes leer en Excel u otra hoja de cálculo",
   "Open in Excel":"Abrir en Excel",
+=======
+  "Opportunity analysis":"Análisis de oportunidades",
+  "Business overview":"Resumen de empresa",
+  "Workspace overview":"Resumen del espacio de trabajo",
+  "Mission plan":"Plan de la misión",
+  "Opens your browser's print window. Choose “Save as PDF” as the printer.":"Abre la ventana de impresión del navegador. Elige «Guardar como PDF» como impresora.",
+  "Save as PDF":"Guardar como PDF",
+>>>>>>> a6e4fe1 (save any workspace page as a PDF document)
   "User-recorded evidence notes (not independently verified):\n{notes}":"Notas de evidencia registradas por el usuario (no verificadas de forma independiente):\n{notes}",
   "What ZAVQERA collects, the legal basis for each use, who processes it, how long it is kept, and your rights.":"Qué recopila ZAVQERA, la base legal de cada uso, quién lo trata, cuánto tiempo se conserva y tus derechos.",
   "Privacy notice — ZAVQERA":"Aviso de privacidad — ZAVQERA",
@@ -2607,6 +2634,7 @@ const ES: Record<string, string> = {
   "This work will not be done.":"Este trabajo no se hará.",
 };
 const FR: Record<string, string> = {
+<<<<<<< HEAD
   "Added":"Ajoutée",
   "Evidence notes":"Notes de preuve",
   "Assessment":"Évaluation",
@@ -2620,6 +2648,14 @@ const FR: Record<string, string> = {
   "The backup is for restoring your data, not for reading. For a table you can read, use “Open in Excel”.":"La sauvegarde sert à restaurer vos données, pas à les lire. Pour un tableau lisible, utilisez « Ouvrir dans Excel ».",
   "Download a table you can read in Excel or another spreadsheet":"Téléchargez un tableau lisible dans Excel ou un autre tableur",
   "Open in Excel":"Ouvrir dans Excel",
+=======
+  "Opportunity analysis":"Analyse des opportunités",
+  "Business overview":"Vue d'ensemble de l'activité",
+  "Workspace overview":"Vue d'ensemble de l'espace de travail",
+  "Mission plan":"Plan de mission",
+  "Opens your browser's print window. Choose “Save as PDF” as the printer.":"Ouvre la fenêtre d'impression du navigateur. Choisissez « Enregistrer au format PDF » comme imprimante.",
+  "Save as PDF":"Enregistrer en PDF",
+>>>>>>> a6e4fe1 (save any workspace page as a PDF document)
   "User-recorded evidence notes (not independently verified):\n{notes}":"Notes de preuve enregistrées par l'utilisateur (non vérifiées de manière indépendante) :\n{notes}",
   "What ZAVQERA collects, the legal basis for each use, who processes it, how long it is kept, and your rights.":"Ce que ZAVQERA collecte, la base légale de chaque usage, qui le traite, combien de temps c'est conservé, et vos droits.",
   "Privacy notice — ZAVQERA":"Avis de confidentialité — ZAVQERA",
@@ -3469,6 +3505,7 @@ const FR: Record<string, string> = {
   "This work will not be done.":"Ce travail ne sera pas fait.",
 };
 const DE: Record<string, string> = {
+<<<<<<< HEAD
   "Added":"Hinzugefügt",
   "Evidence notes":"Nachweisnotizen",
   "Assessment":"Einschätzung",
@@ -3482,6 +3519,14 @@ const DE: Record<string, string> = {
   "The backup is for restoring your data, not for reading. For a table you can read, use “Open in Excel”.":"Die Sicherung dient der Wiederherstellung Ihrer Daten, nicht dem Lesen. Für eine lesbare Tabelle nutzen Sie „In Excel öffnen“.",
   "Download a table you can read in Excel or another spreadsheet":"Eine Tabelle herunterladen, die Sie in Excel oder einer anderen Tabellenkalkulation lesen können",
   "Open in Excel":"In Excel öffnen",
+=======
+  "Opportunity analysis":"Chancenanalyse",
+  "Business overview":"Geschäftsübersicht",
+  "Workspace overview":"Übersicht des Arbeitsbereichs",
+  "Mission plan":"Missionsplan",
+  "Opens your browser's print window. Choose “Save as PDF” as the printer.":"Öffnet das Druckfenster Ihres Browsers. Wählen Sie „Als PDF speichern“ als Drucker.",
+  "Save as PDF":"Als PDF speichern",
+>>>>>>> a6e4fe1 (save any workspace page as a PDF document)
   "User-recorded evidence notes (not independently verified):\n{notes}":"Vom Nutzer erfasste Belegnotizen (nicht unabhängig überprüft):\n{notes}",
   "What ZAVQERA collects, the legal basis for each use, who processes it, how long it is kept, and your rights.":"Was ZAVQERA erhebt, die Rechtsgrundlage jeder Nutzung, wer es verarbeitet, wie lange es gespeichert wird und Ihre Rechte.",
   "Privacy notice — ZAVQERA":"Datenschutzhinweis – ZAVQERA",

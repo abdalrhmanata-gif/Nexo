@@ -1518,3 +1518,36 @@ html[dir="rtl"] input, html[dir="rtl"] textarea {
 }
 /* The id a refused tester passes on: easy to select whole, and it wraps rather than pushing the card wider. */
 .account-id-note { margin:8px 0 0; color:var(--muted); font-size:13px; }.account-id-note code { color:var(--ink); user-select:all; overflow-wrap:anywhere; }
+
+/* ---- Save as PDF -------------------------------------------------------
+   A page printed as a document: no navigation, no controls, one column,
+   black on white. The on-paper header comes from SavePdfButton. */
+.print-only { display:none; }
+.save-pdf-button svg { width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+@media print {
+  @page { size:A4; margin:16mm 15mm 18mm; }
+  html, body { background:#fff !important; color:#111 !important; }
+  .topbar, .footer, .no-print, nav, form, button, .button, select, input, textarea, label,
+  .suggested-plan, .language-switcher, .theme-switcher, [role="alert"], .opportunity-portability,
+  .business-shortcut-arrow, .visually-hidden { display:none !important; }
+  .print-only { display:block !important; }
+  .print-header { border-bottom:2px solid #111; padding-bottom:9px; margin:0 0 16px; }
+  .print-brand { font-size:11px; font-weight:800; letter-spacing:.18em; text-align:start; unicode-bidi:plaintext; }
+  .print-title { font-size:22px; font-weight:800; line-height:1.2; margin-top:6px; }
+  .print-subtitle { font-size:12px; color:#444; margin-top:3px; }
+  .print-date { font-size:10.5px; color:#555; margin-top:5px; }
+  .container, .site-shell, main { max-width:none !important; width:auto !important; margin:0 !important; padding:0 !important; }
+  .detail-layout, .detail-stack, .grid, .business-grid, .business-recent-grid, .stats { display:block !important; }
+  .card, section, aside, li { box-shadow:none !important; background:#fff !important; color:#111 !important; }
+  .card { border:1px solid #c9d1d8 !important; border-radius:6px !important; padding:11px 13px !important; margin:0 0 9px !important; break-inside:avoid; }
+  h1, h2, h3 { color:#111 !important; break-after:avoid; }
+  h1, .detail-title { font-size:20px !important; line-height:1.2 !important; }
+  h2 { font-size:14.5px !important; }
+  p, li, span, small, dd, dt, strong { color:#111 !important; font-size:11.5px; }
+  .eyebrow { color:#555 !important; font-size:9.5px !important; }
+  a { color:inherit !important; text-decoration:none !important; }
+  .status, .follow-up { border:1px solid #999 !important; background:#fff !important; padding:0 5px; border-radius:3px; }
+  .progress { border:1px solid #999; background:#fff !important; }
+  .progress > * { background:#555 !important; print-color-adjust:exact; -webkit-print-color-adjust:exact; }
+  * { animation:none !important; transition:none !important; }
+}

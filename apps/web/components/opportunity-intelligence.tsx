@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent, type CSSPropert
 import { MAX_OPPORTUNITY_BACKUP_BYTES, createOpportunityBackup, mergeOpportunityBackup, parseOpportunityBackup, type OpportunityBackup } from "../lib/opportunity-portability.mjs";
 import { opportunityPriority, priorityDescription, scoreOpportunity } from "../lib/opportunity-intelligence.mjs";
 import { spreadsheetText, utf16leWithBom } from "../lib/opportunity-spreadsheet.mjs";
+import { SavePdfButton } from "./save-pdf-button";
 import { isOpportunityEvidenceItem, type OpportunityEvidenceItem } from "../lib/evidence-ledger.mjs";
 import { OpportunityEvidencePanel } from "./opportunity-evidence-panel";
 import { OpportunityAnalysisPanel } from "./opportunity-analysis-panel";
@@ -377,6 +378,7 @@ export function OpportunityIntelligence() {
           <div>
             <p className="eyebrow"><LocalizedText en="Opportunity Intelligence" /> <span className="opportunity-early-access"><LocalizedText en="Early access" /></span></p>
             <h1 className="detail-title"><LocalizedText en="Find the next move worth making." /></h1>
+            <SavePdfButton title={t("Opportunity analysis")} />
           </div>
         </div>
         <p className="detail-intent">

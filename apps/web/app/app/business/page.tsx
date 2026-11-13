@@ -1,3 +1,4 @@
+import { SavePdfButton } from "../../../components/save-pdf-button";
 import Link from "next/link";
 import { MissionCard } from "../../../components/mission-card";
 import { PlanInterest } from "../../../components/plan-interest";
@@ -28,6 +29,7 @@ export default async function BusinessWorkspacePage() {
         <p className="eyebrow"><LocalizedText en="Business workspace" /></p>
         <h1><LocalizedText en="Run AI work with clear boundaries." /></h1>
         <p><LocalizedText en="A clear view of active work, decisions that need you, and the next best action." /></p>
+        <SavePdfButton title={t("Business overview")} />
       </div>
       <Link className="button business-primary-cta" href="/app/missions/new"><span aria-hidden="true">＋</span> <LocalizedText en="New mission" /></Link>
     </section>

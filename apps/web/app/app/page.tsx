@@ -1,3 +1,4 @@
+import { SavePdfButton } from "../../components/save-pdf-button";
 import Link from "next/link";
 import { LocalizedText } from "../../components/localized-text";
 import { getTranslate } from "../../lib/i18n-server";
@@ -47,6 +48,7 @@ export default async function WorkspacePage({
         <p className="eyebrow"><LocalizedText en="Workspace" /></p>
         <h1><LocalizedText en="What needs your attention" /></h1>
         <p><LocalizedText en="Every mission below is a stated outcome and the work required to reach it." /></p>
+        <SavePdfButton title={t("Workspace overview")} />
       </div>
       <Link className="button" href="/app/missions/new"><LocalizedText en="New mission" /></Link>
     </div>
