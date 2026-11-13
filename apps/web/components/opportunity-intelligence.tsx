@@ -5,6 +5,7 @@ import { LocalizedText, useTranslate, fill } from "./localized-text";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type CSSProperties, type FormEvent } from "react";
 import { MAX_OPPORTUNITY_BACKUP_BYTES, createOpportunityBackup, mergeOpportunityBackup, parseOpportunityBackup, type OpportunityBackup } from "../lib/opportunity-portability.mjs";
 import { opportunityPriority, priorityDescription, scoreOpportunity } from "../lib/opportunity-intelligence.mjs";
+import { spreadsheetText, utf16leWithBom } from "../lib/opportunity-spreadsheet.mjs";
 import { isOpportunityEvidenceItem, type OpportunityEvidenceItem } from "../lib/evidence-ledger.mjs";
 import { OpportunityEvidencePanel } from "./opportunity-evidence-panel";
 import { OpportunityAnalysisPanel } from "./opportunity-analysis-panel";
@@ -254,6 +255,35 @@ export function OpportunityIntelligence() {
     }
   }
 
+  function exportSpreadsheet() {
+    setBackupError("");
+    setBackupNotice("");
+    try {
+      const headers = [t("Rank"), t("Opportunity"), t("Who it is for"), t("Thesis"), t("Score (of 100)"), t("Assessment"),
+        t("Fit"), t("Value"), t("Timing"), t("Evidence"), t("Effort"), t("Evidence notes"), t("Added")];
+      const rows = ranked.map(({ opportunity, score }, index) => [
+        index + 1, opportunity.title, opportunity.target, opportunity.thesis, score,
+        t(priorityDescription(opportunityPriority(score))),
+        opportunity.strategicFit, opportunity.potentialValue, opportunity.urgency, opportunity.evidenceStrength, opportunity.effort,
+        opportunity.evidenceItems.length, new Date(opportunity.createdAt).toISOString().slice(0, 10),
+      ]);
+      const blob = new Blob([utf16leWithBom(spreadsheetText(headers, rows))], { type: "text/tab-separated-values;charset=utf-16le" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      // .csv: Excel opens a UTF-16 tab-separated .csv straight into columns.
+      // Naming it .xls makes Excel warn that the file is not what it claims.
+      anchor.download = `zavqera-opportunities-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setBackupNotice(fill(t("Spreadsheet downloaded: {count} rows, ranked by score."), { count: rows.length }));
+    } catch {
+      setBackupError(t("The spreadsheet could not be created."));
+    }
+  }
+
   async function selectBackup(event: ChangeEvent<HTMLInputElement>) {
     const input = event.currentTarget;
     const file = input.files?.[0];
@@ -385,12 +415,17 @@ export function OpportunityIntelligence() {
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v12m-5-5 5 5 5-5M4 20h16" /></svg>
             <LocalizedText en="Export backup" />
           </button>
+          <button className="button button-quiet button-small" type="button" onClick={exportSpreadsheet} disabled={!storageReady || opportunities.length === 0} title={t("Download a table you can read in Excel or another spreadsheet")}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4zM4 10h16M4 15h16M10 5v14" /></svg>
+            <LocalizedText en="Open in Excel" />
+          </button>
           <label className="button button-quiet button-small opportunity-import-label" htmlFor="opportunity-backup-file">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" /></svg>
             <LocalizedText en="Choose backup" />
           </label>
           <input ref={backupInputRef} id="opportunity-backup-file" className="visually-hidden" type="file" accept=".json,application/json" aria-label={t("Choose a Zavqera opportunity backup file")} onChange={selectBackup} disabled={!storageReady || backupBusy} />
         </div>
+        <p className="opportunity-backup-status"><LocalizedText en="The backup is for restoring your data, not for reading. For a table you can read, use “Open in Excel”." /></p>
         {backupBusy && <p className="opportunity-backup-status" role="status"><LocalizedText en="Checking backup file…" /></p>}
         {backupPreview && (
           <div className="opportunity-backup-preview">
