@@ -17,7 +17,7 @@ The defensible difference should be the connected journey from user context and 
 
 The present Opportunity Intelligence MVP:
 - Uses a deterministic weighted score from user-entered ratings.
-- Stores opportunities and their evidence notes in browser localStorage.
+- Stores opportunities and their evidence notes in the signed-in user's account (row level security; one account cannot read another's). Records left in a browser from the earlier browser-only version are copied to the account once.
 - Allows user-provided source URLs and browser-led search links; it does not run a crawler or an in-feature search API.
 - Records supporting, challenging, and contextual evidence entered by the user.
 - Converts an opportunity into a prefilled Mission for the user to review.

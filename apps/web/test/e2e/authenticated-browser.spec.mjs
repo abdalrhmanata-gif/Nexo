@@ -453,15 +453,29 @@ test("authenticated Opportunity Intelligence backup flow exports, imports, and r
       buffer: Buffer.from(typeof value === "string" ? value : JSON.stringify(value)),
     });
   };
-  const storedOpportunities = (page) => page.evaluate(() => {
-    const raw = window.localStorage.getItem("zavqera.opportunity-intelligence.v1");
-    return raw ? JSON.parse(raw) : [];
-  });
+  // What the account really holds, read with that person's own session and
+  // nothing else — the same access the page has. user_id is selected so the
+  // test can assert whose rows came back, not only how many.
+  const accountOpportunities = async (session) => {
+    const { data: opportunities, error } = await session.client
+      .from("opportunities")
+      .select("user_id, id, title")
+      .order("id");
+    if (error) throw error;
+    const { data: evidence, error: evidenceError } = await session.client
+      .from("opportunity_evidence_items")
+      .select("user_id, opportunity_id, id, title")
+      .order("id");
+    if (evidenceError) throw evidenceError;
+    return { opportunities, evidence };
+  };
+  let ownerA;
+  let ownerB;
 
   try {
     await test.step("sign in and record an opportunity with one evidence note", async () => {
       await signUp(pageA, userA);
-      const ownerA = await ownerSession(userA);
+      ownerA = await ownerSession(userA);
       ledger.record("user", ownerA.userId);
       await assertOwnedWorkspaceMembership(ownerA.client, ownerA.userId);
       await pageA.getByRole("link", { name: "Evaluate an idea" }).click();
@@ -488,11 +502,23 @@ test("authenticated Opportunity Intelligence backup flow exports, imports, and r
       await expect(pageA.getByText("Backup evidence report", { exact: true })).toBeVisible();
     });
 
+    await test.step("the opportunity and its evidence are in the account, not in the browser", async () => {
+      const stored = await accountOpportunities(ownerA);
+      expect(stored.opportunities.map((row) => [row.user_id, row.title])).toEqual([[ownerA.userId, "Backup regression opportunity"]]);
+      expect(stored.evidence.map((row) => [row.user_id, row.title])).toEqual([[ownerA.userId, "Backup evidence report"]]);
+      expect(await pageA.evaluate(() => window.localStorage.getItem("zavqera.opportunity-intelligence.v1"))).toBeNull();
+
+      // A reload reads it back from the account.
+      await pageA.reload();
+      await expect(pageA.getByRole("heading", { name: "Backup regression opportunity" })).toBeVisible();
+      await expect(pageA.getByText("Backup evidence report", { exact: true })).toBeVisible();
+    });
+
     let exportedBackup;
     let originalLocalState;
     await test.step("export a real downloaded JSON backup and verify its contents", async () => {
-      originalLocalState = await storedOpportunities(pageA);
-      expect(originalLocalState).toHaveLength(1);
+      originalLocalState = await accountOpportunities(ownerA);
+      expect(originalLocalState.opportunities).toHaveLength(1);
       await openBackupFold(pageA);
       const [download] = await Promise.all([
         pageA.waitForEvent("download"),
@@ -522,19 +548,19 @@ test("authenticated Opportunity Intelligence backup flow exports, imports, and r
       await expect(pageA.locator(".opportunity-portability .opportunity-backup-status[role=\"status\"]")).toContainText("Nothing was imported because every opportunity ID already exists");
       await expect(pageA.getByRole("heading", { name: "Backup regression opportunity" })).toBeVisible();
       await expect(pageA.getByRole("heading", { name: "Stale imported copy" })).toHaveCount(0);
-      expect(await storedOpportunities(pageA)).toEqual(originalLocalState);
+      expect(await accountOpportunities(ownerA)).toEqual(originalLocalState);
     });
 
     await test.step("reject malformed JSON, unsafe record data, and duplicate IDs inside one file atomically", async () => {
       await uploadJson(pageA, "{", "malformed.json");
       await expect(pageA.locator(".opportunity-backup-status[role=\"alert\"]")).toContainText("This file is not valid JSON");
-      expect(await storedOpportunities(pageA)).toEqual(originalLocalState);
+      expect(await accountOpportunities(ownerA)).toEqual(originalLocalState);
 
       const unsafeRecord = structuredClone(exportedBackup);
       unsafeRecord.opportunities[0].evidenceUrl = "javascript:alert(1)";
       await uploadJson(pageA, unsafeRecord, "unsafe-url.json");
       await expect(pageA.locator(".opportunity-backup-status[role=\"alert\"]")).toContainText("invalid opportunity or evidence data");
-      expect(await storedOpportunities(pageA)).toEqual(originalLocalState);
+      expect(await accountOpportunities(ownerA)).toEqual(originalLocalState);
 
       const duplicateIds = structuredClone(exportedBackup);
       duplicateIds.opportunities.push(structuredClone(duplicateIds.opportunities[0]));
@@ -542,7 +568,7 @@ test("authenticated Opportunity Intelligence backup flow exports, imports, and r
       duplicateIds.evidenceCount = duplicateIds.opportunities.reduce((sum, item) => sum + item.evidenceItems.length, 0);
       await uploadJson(pageA, duplicateIds, "duplicate-ids.json");
       await expect(pageA.locator(".opportunity-backup-status[role=\"alert\"]")).toContainText("duplicate opportunity IDs");
-      expect(await storedOpportunities(pageA)).toEqual(originalLocalState);
+      expect(await accountOpportunities(ownerA)).toEqual(originalLocalState);
     });
 
     await test.step("reject a file beyond the 2 MB limit before parsing it", async () => {
@@ -553,17 +579,21 @@ test("authenticated Opportunity Intelligence backup flow exports, imports, and r
         buffer: Buffer.alloc(2 * 1024 * 1024 + 1, 0x20),
       });
       await expect(pageA.locator(".opportunity-backup-status[role=\"alert\"]")).toContainText("larger than 2 MB");
-      expect(await storedOpportunities(pageA)).toEqual(originalLocalState);
+      expect(await accountOpportunities(ownerA)).toEqual(originalLocalState);
     });
 
     await test.step("import into a separate authenticated browser context with no matching IDs", async () => {
       await signUp(pageB, userB);
-      const ownerB = await ownerSession(userB);
+      ownerB = await ownerSession(userB);
       ledger.record("user", ownerB.userId);
       await assertOwnedWorkspaceMembership(ownerB.client, ownerB.userId);
       await pageB.goto("/app/opportunities");
       await expect(pageB.getByRole("heading", { name: "Find the next move worth making." })).toBeVisible();
-      expect(await storedOpportunities(pageB)).toEqual([]);
+      // A has an opportunity in the database at this moment. B sees none of
+      // it, on the page or through the API with B's own session.
+      await expect(pageB.getByRole("heading", { name: "Your radar starts here" })).toBeVisible();
+      await expect(pageB.getByRole("heading", { name: "Backup regression opportunity" })).toHaveCount(0);
+      expect(await accountOpportunities(ownerB)).toEqual({ opportunities: [], evidence: [] });
 
       await uploadJson(pageB, exportedBackup, "valid-exported-backup.json");
       await expect(pageB.getByText(/Backup ready: valid-exported-backup\.json/)).toBeVisible();
@@ -571,11 +601,59 @@ test("authenticated Opportunity Intelligence backup flow exports, imports, and r
       await expect(pageB.locator(".opportunity-portability .opportunity-backup-status[role=\"status\"]")).toContainText("Imported 1 opportunities with 1 evidence notes");
       await expect(pageB.getByRole("heading", { name: "Backup regression opportunity" })).toBeVisible();
       await expect(pageB.getByText("Backup evidence report", { exact: true })).toBeVisible();
-      expect(await storedOpportunities(pageB)).toEqual(exportedBackup.opportunities);
+      // The same ids now exist in both accounts. Each session still reads
+      // only its own row, and A's is untouched by B's import.
+      const inB = await accountOpportunities(ownerB);
+      expect(inB.opportunities.map((row) => [row.user_id, row.id])).toEqual([[ownerB.userId, exportedBackup.opportunities[0].id]]);
+      expect(inB.evidence.map((row) => row.user_id)).toEqual([ownerB.userId]);
+      expect(await accountOpportunities(ownerA)).toEqual(originalLocalState);
+    });
+
+    await test.step("neither account can write into, or remove from, the other", async () => {
+      const sharedId = exportedBackup.opportunities[0].id;
+      const forged = await ownerB.client.from("opportunities").insert({
+        user_id: ownerA.userId, id: "forged-by-b", title: "Forged", thesis: "Forged",
+        strategic_fit: 3, potential_value: 3, urgency: 3, evidence_strength: 2, effort: 3, created_at_ms: 1,
+      });
+      expect(forged.error, "B must not be able to insert a row owned by A").toBeTruthy();
+      // B names A's row outright. The statement succeeds and removes nothing:
+      // B's session cannot see a row of A's to delete.
+      const removed = await ownerB.client.from("opportunities").delete().eq("user_id", ownerA.userId).eq("id", sharedId);
+      expect(removed.error).toBeNull();
+      expect(await accountOpportunities(ownerA)).toEqual(originalLocalState);
+      expect((await accountOpportunities(ownerB)).opportunities).toHaveLength(1);
+    });
+
+    await test.step("records left in a browser from before the move are sent to the account once", async () => {
+      const leftover = {
+        ...structuredClone(exportedBackup.opportunities[0]),
+        id: "left-in-the-browser",
+        title: "Recorded before the move",
+        evidenceItems: [],
+      };
+      await pageB.evaluate((items) => {
+        window.localStorage.setItem("zavqera.opportunity-intelligence.v1", JSON.stringify(items));
+      }, [leftover]);
+      await pageB.reload();
+      await expect(pageB.getByRole("heading", { name: "Recorded before the move" })).toBeVisible();
+      await expect(pageB.getByText(/were added to your account: 1\./)).toBeVisible();
+      expect((await accountOpportunities(ownerB)).opportunities.map((row) => row.id)).toContain("left-in-the-browser");
+      // The browser's own copy is left exactly as it was.
+      expect(await pageB.evaluate(() => JSON.parse(window.localStorage.getItem("zavqera.opportunity-intelligence.v1")))).toEqual([leftover]);
+
+      // Removed from the account, it must not come back from the browser's
+      // old copy on the next visit.
+      await pageB.getByRole("button", { name: "Remove Recorded before the move" }).click();
+      await expect(pageB.getByRole("heading", { name: "Recorded before the move" })).toHaveCount(0);
+      await pageB.reload();
+      await expect(pageB.getByRole("heading", { name: "Backup regression opportunity" })).toBeVisible();
+      await expect(pageB.getByRole("heading", { name: "Recorded before the move" })).toHaveCount(0);
+      expect((await accountOpportunities(ownerB)).opportunities.map((row) => row.id)).not.toContain("left-in-the-browser");
     });
 
     await test.step("confirm the backup controls remain reachable on a mobile-width viewport", async () => {
       await pageB.setViewportSize({ width: 390, height: 844 });
+      await openBackupFold(pageB);
       await expect(pageB.getByRole("button", { name: "Export backup" })).toBeVisible();
       await expect(pageB.locator('label[for="opportunity-backup-file"]')).toBeVisible();
     });

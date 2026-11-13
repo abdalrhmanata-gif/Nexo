@@ -29,6 +29,8 @@ export declare const OPPORTUNITY_BACKUP_VERSION: 1;
 export declare const MAX_OPPORTUNITY_BACKUP_BYTES: number;
 export declare const MAX_IMPORTED_OPPORTUNITIES: number;
 export declare const MAX_EVIDENCE_ITEMS_PER_OPPORTUNITY: number;
+export declare function isPortableEvidence(value: unknown): value is OpportunityEvidenceItem;
+export declare function isPortableOpportunity(value: unknown): value is PortableOpportunity;
 export declare function createOpportunityBackup(opportunities: PortableOpportunity[], exportedAt?: string): OpportunityBackup;
 export declare function parseOpportunityBackup(raw: string): OpportunityBackup;
 export declare function mergeOpportunityBackup(

@@ -36,17 +36,56 @@ test("pricing positions Opportunity Intelligence as part of the monthly plan wit
   assert.match(pricing, /Market monitoring and alerts/i);
 });
 
-test("current Opportunity Intelligence remains local-first and does not call an AI-generation API", () => {
+test("Opportunity Intelligence keeps its records in the account and does not call an AI-generation API", () => {
   const feature = read("components/opportunity-intelligence.tsx");
+  const repository = read("lib/supabase/opportunity-repository.ts");
   assert.match(feature, /scoreOpportunity\(/);
-  assert.match(feature, /localStorage\.getItem\(STORAGE_KEY\)/);
-  assert.match(feature, /localStorage\.setItem\(STORAGE_KEY/);
+  assert.match(feature, /await listAccountOpportunities\(\)/);
+  assert.match(feature, /await addAccountOpportunity\(opportunity\)/);
+  assert.match(feature, /await removeAccountOpportunity\(opportunityId\)/);
   assert.doesNotMatch(feature, /\bfetch\s*\(/);
-  assert.doesNotMatch(feature, /createSupabase|openai|anthropic/i);
+  assert.doesNotMatch(feature, /openai|anthropic/i);
+  // The person's own session, and nothing else, decides whose rows these are.
+  assert.match(repository, /createSupabaseBrowserClient\(\)/);
+  assert.doesNotMatch(repository, /service_role|\.update\(|\.rpc\(/);
+  assert.doesNotMatch(repository, /user_id\s*:|\.eq\("user_id"/, "no call names a user; the database takes the owner from the session");
 });
 
+test("the browser's old copy is read once for the move and never written or erased", () => {
+  const feature = read("components/opportunity-intelligence.tsx");
+  assert.match(feature, /localStorage\.getItem\(BROWSER_OPPORTUNITY_KEY\)/);
+  assert.doesNotMatch(feature, /localStorage\.setItem\(BROWSER_OPPORTUNITY_KEY/);
+  assert.doesNotMatch(feature, /localStorage\.(removeItem|clear)\(/, "what was recorded before the move stays where it was");
+  // The marker is written after the upload, so a failed upload is retried.
+  const upload = feature.indexOf("await addAccountOpportunities(plan.opportunityRows, plan.evidenceRows)");
+  const marker = feature.indexOf("localStorage.setItem(BROWSER_UPLOAD_MARKER_KEY");
+  assert.ok(upload > -1 && marker > upload, "the marker must be set only after the upload succeeded");
+  assert.match(feature, /if \(window\.localStorage\.getItem\(BROWSER_UPLOAD_MARKER_KEY\)\) return NOTHING_UPLOADED/);
+});
 
-test("Opportunity Intelligence exposes safe local backup and non-overwriting import controls", () => {
+test("the migration that stores opportunities only adds, and closes both tables by default", () => {
+  const migration = readFileSync(join(repoRoot, "supabase", "migrations", "20261113160000_opportunities_account_storage.sql"), "utf8");
+  const statements = migration.replace(/--.*$/gm, "");
+  for (const table of ["opportunities", "opportunity_evidence_items"]) {
+    assert.match(statements, new RegExp(`alter table public\\.${table} enable row level security`));
+    assert.match(statements, new RegExp(`revoke all on table public\\.${table} from public, anon, authenticated`));
+    assert.match(statements, new RegExp(`grant select, insert, delete on table public\\.${table} to authenticated`));
+  }
+  assert.doesNotMatch(statements, /\bto anon\b|\bto public\b/);
+  assert.doesNotMatch(statements, /drop table|truncate|delete from|drop column|drop schema/i, "nothing existing is removed");
+  for (const [, table] of statements.matchAll(/alter table public\.(\w+)/g)) {
+    assert.ok(["opportunities", "opportunity_evidence_items"].includes(table), `the migration alters an existing table: ${table}`);
+  }
+  // Every policy is scoped to the session's own user.
+  const policies = [...statements.matchAll(/create policy[^;]+;/g)].map((match) => match[0]);
+  assert.equal(policies.length, 6);
+  for (const policy of policies) {
+    assert.match(policy, /to authenticated/);
+    assert.match(policy, /user_id = \(select auth\.uid\(\)\)/);
+  }
+});
+
+test("Opportunity Intelligence exposes a safe backup and non-overwriting import controls", () => {
   const feature = read("components/opportunity-intelligence.tsx");
   const portability = read("lib/opportunity-portability.mjs");
   assert.match(feature, /createOpportunityBackup\(opportunities\)/);
@@ -56,7 +95,8 @@ test("Opportunity Intelligence exposes safe local backup and non-overwriting imp
   assert.match(portability, /existingIds = new Set\(currentOpportunities/);
   assert.match(portability, /skippedCount: backup\.opportunities\.length - additions\.length/);
   assert.match(feature, /no existing records were overwritten/i);
-  assert.match(feature, /Cloud sync, live discovery.*not connected yet/i);
+  assert.match(feature, /saved to your account, visible only to you/);
+  assert.match(feature, /Live discovery.*not connected yet/);
   assert.match(portability, /MAX_OPPORTUNITY_BACKUP_BYTES/);
   assert.match(portability, /item\.evidenceUrl && !isHttpSourceUrl/);
 });
