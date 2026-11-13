@@ -7,7 +7,9 @@ import { MAX_OPPORTUNITY_BACKUP_BYTES, createOpportunityBackup, mergeOpportunity
 import { opportunityPriority, priorityDescription, scoreOpportunity } from "../lib/opportunity-intelligence.mjs";
 import { spreadsheetText, utf16leWithBom } from "../lib/opportunity-spreadsheet.mjs";
 import { SavePdfButton } from "./save-pdf-button";
-import { isOpportunityEvidenceItem, type OpportunityEvidenceItem } from "../lib/evidence-ledger.mjs";
+import type { OpportunityEvidenceItem } from "../lib/evidence-ledger.mjs";
+import { BROWSER_OPPORTUNITY_KEY, BROWSER_UPLOAD_MARKER_KEY, evidenceToRow, opportunityToRow, planBrowserUpload, readBrowserOpportunities } from "../lib/opportunity-account.mjs";
+import { addAccountEvidence, addAccountOpportunities, addAccountOpportunity, listAccountOpportunities, removeAccountEvidence, removeAccountOpportunity } from "../lib/supabase/opportunity-repository";
 import { OpportunityEvidencePanel } from "./opportunity-evidence-panel";
 import { OpportunityAnalysisPanel } from "./opportunity-analysis-panel";
 
@@ -38,7 +40,6 @@ type OpportunityForm = {
   effort: string;
 };
 
-const STORAGE_KEY = "zavqera.opportunity-intelligence.v1";
 const EMPTY_FORM: OpportunityForm = {
   title: "",
   target: "",
@@ -60,27 +61,42 @@ function isHttpUrl(value: string): boolean {
   }
 }
 
-function isOpportunity(value: unknown): value is Opportunity {
-  if (!value || typeof value !== "object") return false;
-  const item = value as Partial<Opportunity>;
-  return typeof item.id === "string"
-    && typeof item.title === "string"
-    && typeof item.target === "string"
-    && typeof item.thesis === "string"
-    && typeof item.evidenceUrl === "string"
-    && ["strategicFit", "potentialValue", "urgency", "evidenceStrength", "effort"]
-      .every((key) => typeof item[key as keyof Opportunity] === "number")
-    && typeof item.createdAt === "number";
-}
+type BrowserUpload = { opportunityCount: number; evidenceCount: number };
+const NOTHING_UPLOADED: BrowserUpload = { opportunityCount: 0, evidenceCount: 0 };
 
-function normalizeStoredOpportunity(item: Opportunity): Opportunity {
-  const legacy = item as Opportunity & { evidenceItems?: unknown };
-  return {
-    ...legacy,
-    evidenceItems: Array.isArray(legacy.evidenceItems)
-      ? legacy.evidenceItems.filter(isOpportunityEvidenceItem)
-      : [],
-  };
+/**
+ * Opportunities used to be kept only in this browser. The first time the page
+ * opens after they moved to the account, whatever this browser still holds is
+ * sent there, so nothing recorded before the move is lost.
+ *
+ * It is safe to repeat: rows the account already holds are skipped by the
+ * database, not replaced. The marker is written only after the upload
+ * succeeded, so a failed attempt is tried again on the next visit; once it is
+ * written, the browser's old copy is never sent again — otherwise an
+ * opportunity removed from the account later would come back from it. The
+ * browser's copy itself is left exactly as it was.
+ */
+async function sendBrowserOpportunitiesOnce(account: Opportunity[]): Promise<BrowserUpload> {
+  let raw: string | null;
+  try {
+    if (window.localStorage.getItem(BROWSER_UPLOAD_MARKER_KEY)) return NOTHING_UPLOADED;
+    raw = window.localStorage.getItem(BROWSER_OPPORTUNITY_KEY);
+  } catch {
+    // A blocked local store holds nothing we could move.
+    return NOTHING_UPLOADED;
+  }
+  if (!raw) return NOTHING_UPLOADED;
+  const plan = planBrowserUpload(readBrowserOpportunities(raw), account);
+  if (plan.opportunityRows.length > 0 || plan.evidenceRows.length > 0) {
+    await addAccountOpportunities(plan.opportunityRows, plan.evidenceRows);
+  }
+  try {
+    window.localStorage.setItem(BROWSER_UPLOAD_MARKER_KEY, new Date().toISOString());
+  } catch {
+    // Without the marker the upload is simply planned again next time, and
+    // finds nothing left to send.
+  }
+  return { opportunityCount: plan.opportunityRows.length, evidenceCount: plan.evidenceRows.length };
 }
 
 // The draft this builds is not a label: the person reads it, edits it, and
@@ -176,6 +192,11 @@ export function OpportunityIntelligence() {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [form, setForm] = useState<OpportunityForm>(EMPTY_FORM);
   const [storageReady, setStorageReady] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [browserUpload, setBrowserUpload] = useState<BrowserUpload | null>(null);
+  const [browserUploadFailed, setBrowserUploadFailed] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [saving, setSaving] = useState(false);
   const [isOpportunityFormOpen, setIsOpportunityFormOpen] = useState(true);
   const [error, setError] = useState("");
   const [opportunityQuery, setOpportunityQuery] = useState("");
@@ -188,27 +209,34 @@ export function OpportunityIntelligence() {
   const [backupBusy, setBackupBusy] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed: unknown = JSON.parse(raw);
-        if (Array.isArray(parsed)) setOpportunities(parsed.filter(isOpportunity).map(normalizeStoredOpportunity));
+    let cancelled = false;
+    async function load() {
+      let account: Opportunity[];
+      try {
+        account = await listAccountOpportunities();
+      } catch {
+        if (!cancelled) setLoadFailed(true);
+        return;
       }
-    } catch {
-      // A blocked or malformed local store should not prevent the feature from opening.
-    } finally {
+      try {
+        const sent = await sendBrowserOpportunitiesOnce(account);
+        if (sent.opportunityCount > 0 || sent.evidenceCount > 0) {
+          // Read back what the account now holds rather than assuming it.
+          account = await listAccountOpportunities();
+          if (!cancelled) setBrowserUpload(sent);
+        }
+      } catch {
+        // The account's own records still open. The browser keeps its copy
+        // and the next visit tries again.
+        if (!cancelled) setBrowserUploadFailed(true);
+      }
+      if (cancelled) return;
+      setOpportunities(account);
       setStorageReady(true);
     }
+    void load();
+    return () => { cancelled = true; };
   }, []);
-
-  useEffect(() => {
-    if (!storageReady) return;
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(opportunities));
-    } catch {
-      setError(t("Browser storage is unavailable. Export or copy important details before leaving this page."));
-    }
-  }, [opportunities, storageReady]);
 
   useEffect(() => {
     if (storageReady) setIsOpportunityFormOpen(opportunities.length === 0);
@@ -311,11 +339,24 @@ export function OpportunityIntelligence() {
     }
   }
 
-  function importBackup() {
+  async function importBackup() {
     if (!backupPreview) return;
     const merge = mergeOpportunityBackup(opportunities, backupPreview);
+    const additions = merge.opportunities.slice(0, merge.addedCount);
 
-    if (merge.addedCount > 0) {
+    if (additions.length > 0) {
+      setBackupBusy(true);
+      try {
+        await addAccountOpportunities(
+          additions.map(opportunityToRow),
+          additions.flatMap((item) => item.evidenceItems.map((evidence) => evidenceToRow(item.id, evidence))),
+        );
+      } catch {
+        setBackupError(t("The change could not be saved to your account. Check your connection and try again."));
+        return;
+      } finally {
+        setBackupBusy(false);
+      }
       setOpportunities((current) => mergeOpportunityBackup(current, backupPreview).opportunities);
     }
     setBackupNotice(merge.addedCount
@@ -325,12 +366,14 @@ export function OpportunityIntelligence() {
     setBackupFileName("");
     if (backupInputRef.current) backupInputRef.current.value = "";
   }
+
   function updateForm<K extends keyof OpportunityForm>(key: K, value: OpportunityForm[K]) {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
-  function addOpportunity(event: FormEvent<HTMLFormElement>) {
+  async function addOpportunity(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (saving) return;
     setError("");
     const title = form.title.trim();
     const thesis = form.thesis.trim();
@@ -349,7 +392,7 @@ export function OpportunityIntelligence() {
       ? crypto.randomUUID()
       : `opp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
-    setOpportunities((current) => [{
+    const opportunity: Opportunity = {
       id,
       title,
       target: form.target.trim(),
@@ -362,8 +405,60 @@ export function OpportunityIntelligence() {
       evidenceStrength: Number(form.evidenceStrength),
       effort: Number(form.effort),
       createdAt: Date.now(),
-    }, ...current]);
+    };
+    // Shown only once the account has it: a card on screen means it is saved.
+    setSaving(true);
+    try {
+      await addAccountOpportunity(opportunity);
+    } catch {
+      setError(t("The change could not be saved to your account. Check your connection and try again."));
+      return;
+    } finally {
+      setSaving(false);
+    }
+    setOpportunities((current) => [opportunity, ...current]);
     setForm(EMPTY_FORM);
+  }
+
+  async function removeOpportunity(opportunityId: string) {
+    setSaveError("");
+    try {
+      await removeAccountOpportunity(opportunityId);
+    } catch {
+      setSaveError(t("The change could not be saved to your account. Check your connection and try again."));
+      return;
+    }
+    setOpportunities((current) => current.filter((item) => item.id !== opportunityId));
+  }
+
+  /** Resolves to whether the note was saved, so the panel reports what happened. */
+  async function addEvidence(opportunityId: string, item: OpportunityEvidenceItem): Promise<boolean> {
+    try {
+      await addAccountEvidence(opportunityId, item);
+    } catch {
+      return false;
+    }
+    setOpportunities((current) => current.map((candidate) =>
+      candidate.id === opportunityId
+        ? { ...candidate, evidenceItems: [...candidate.evidenceItems, item] }
+        : candidate
+    ));
+    return true;
+  }
+
+  async function removeEvidence(opportunityId: string, itemId: string) {
+    setSaveError("");
+    try {
+      await removeAccountEvidence(opportunityId, itemId);
+    } catch {
+      setSaveError(t("The change could not be saved to your account. Check your connection and try again."));
+      return;
+    }
+    setOpportunities((current) => current.map((candidate) =>
+      candidate.id === opportunityId
+        ? { ...candidate, evidenceItems: candidate.evidenceItems.filter((item) => item.id !== itemId) }
+        : candidate
+    ));
   }
 
   return (
@@ -404,9 +499,9 @@ export function OpportunityIntelligence() {
 
       {/* The owner found three export controls side by side unclear, and was
           right: the one most people want is the PDF, which sits beside the
-          title. The table and the backup are still here — the data lives only
-          in this browser, so the backup is the only way to move or keep it —
-          but one step back. */}
+          title. The table and the backup are still here, one step back. The
+          data is in the account now, so the backup is no longer the only way
+          to keep it — it is a copy the person holds themselves. */}
       <details className="opportunity-more">
         <summary><LocalizedText en="Excel table and backup" /></summary>
       <section className="opportunity-portability" aria-label={t("Opportunity data backup")}>
@@ -416,7 +511,7 @@ export function OpportunityIntelligence() {
           </span>
           <div>
             <strong><LocalizedText en="Keep your opportunity data portable" /></strong>
-            <p><LocalizedText en="Export your opportunities and evidence notes to a backup file, or merge a backup from another device. Data stays in this browser unless you move it yourself." /></p>
+            <p><LocalizedText en="Export your opportunities and evidence notes to a backup file, or merge a backup file into your account." /></p>
           </div>
         </div>
         <div className="opportunity-portability-actions">
@@ -505,7 +600,7 @@ export function OpportunityIntelligence() {
             <RatingField id="opportunity-evidence" label="Evidence strength" help="How strong is the evidence behind the main claim? (20%)" value={form.evidenceStrength} onChange={(value) => updateForm("evidenceStrength", value)} />
             <RatingField id="opportunity-effort" label="Effort to test or deliver" help="Estimate the work required. Lower effort receives a higher score (15%)." value={form.effort} onChange={(value) => updateForm("effort", value)} />
             {error && <p className="field-error opportunity-error" role="alert">{error}</p>}
-            <button className="button" type="submit"><LocalizedText en="Score and add opportunity" /></button>
+            <button className="button" type="submit" disabled={!storageReady || saving}><LocalizedText en="Score and add opportunity" /></button>
           </form>
         </section>
 
@@ -541,7 +636,11 @@ export function OpportunityIntelligence() {
             </div>
           )}
 
-          {!storageReady && <div className="empty-state"><p><LocalizedText en="Loading opportunities saved in this browser…" /></p></div>}
+          {!storageReady && !loadFailed && <div className="empty-state"><p><LocalizedText en="Loading your opportunities…" /></p></div>}
+          {loadFailed && <p className="field-error" role="alert"><LocalizedText en="Your opportunities could not be loaded. Check your connection and reload the page." /></p>}
+          {browserUpload && <p className="success-state" role="status">{fill(t("Opportunities recorded in this browser were added to your account: {count}. Evidence notes: {notes}."), { count: browserUpload.opportunityCount, notes: browserUpload.evidenceCount })}</p>}
+          {browserUploadFailed && <p className="field-error" role="alert"><LocalizedText en="Opportunities recorded in this browser could not be added to your account. They are still in this browser; reload the page to try again." /></p>}
+          {saveError && <p className="field-error" role="alert">{saveError}</p>}
           {storageReady && ranked.length === 0 && (
             <div className="empty-state opportunity-empty">
               <h3><LocalizedText en="Your radar starts here" /></h3>
@@ -587,21 +686,13 @@ export function OpportunityIntelligence() {
                     </div>
                     <OpportunityEvidencePanel
                       opportunity={opportunity}
-                      onAddEvidence={(item) => setOpportunities((current) => current.map((candidate) =>
-                        candidate.id === opportunity.id
-                          ? { ...candidate, evidenceItems: [...candidate.evidenceItems, item] }
-                          : candidate
-                      ))}
-                      onRemoveEvidence={(itemId) => setOpportunities((current) => current.map((candidate) =>
-                        candidate.id === opportunity.id
-                          ? { ...candidate, evidenceItems: candidate.evidenceItems.filter((item) => item.id !== itemId) }
-                          : candidate
-                      ))}
+                      onAddEvidence={(item) => addEvidence(opportunity.id, item)}
+                      onRemoveEvidence={(itemId) => { void removeEvidence(opportunity.id, itemId); }}
                     />
                     <OpportunityAnalysisPanel opportunity={opportunity} score={score} />
                     <div className="opportunity-card-actions">
                       <Link className="button button-small" href={missionHref(opportunity, t)}><LocalizedText en="Turn into Mission" /></Link>
-                      <button className="button button-quiet button-small" type="button" onClick={() => setOpportunities((current) => current.filter((item) => item.id !== opportunity.id))} aria-label={fill(t("Remove {opportunity}"), { opportunity: opportunity.title })}><LocalizedText en="Remove" /></button>
+                      <button className="button button-quiet button-small" type="button" onClick={() => { void removeOpportunity(opportunity.id); }} aria-label={fill(t("Remove {opportunity}"), { opportunity: opportunity.title })}><LocalizedText en="Remove" /></button>
                     </div>
                   </article>
                 );
@@ -619,7 +710,7 @@ export function OpportunityIntelligence() {
           <span><b>60–79</b> <LocalizedText en="Validate — test the weakest assumption first." /></span>
           <span><b>20–59</b> <LocalizedText en="Keep on radar — improve evidence or reduce effort." /></span>
         </div>
-        <p className="opportunity-storage-note"><LocalizedText en="Privacy and portability: opportunities and evidence notes are stored only in this browser. Export a backup to move them to another device; the file may contain sensitive business information, so store it securely. Import merges records and skips matching IDs without overwriting existing data. Cloud sync, live discovery, automatic source verification, recurring monitoring, and outcome-based learning are not connected yet." /></p>
+        <p className="opportunity-storage-note"><LocalizedText en="Privacy and portability: opportunities and evidence notes are saved to your account, visible only to you, and available on any device where you sign in. A backup file may contain sensitive business information, so store it securely. Import merges records and skips matching IDs without overwriting existing data. Live discovery, automatic source verification, recurring monitoring, and outcome-based learning are not connected yet." /></p>
       </section>
     </div>
   );

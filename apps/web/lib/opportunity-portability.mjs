@@ -24,7 +24,7 @@ function isRating(value) {
   return Number.isInteger(value) && value >= 1 && value <= 5;
 }
 
-function isPortableEvidence(value) {
+export function isPortableEvidence(value) {
   return isOpportunityEvidenceItem(value)
     && isText(value.id, 128, { required: true })
     && isText(value.url, 500, { required: true })
@@ -35,6 +35,11 @@ function isPortableEvidence(value) {
     && Number.isFinite(Date.parse(value.checkedAt))
     && Number.isFinite(value.addedAt)
     && value.addedAt >= 0;
+}
+
+/** The same test for a backup file and for a row headed to the account. */
+export function isPortableOpportunity(value) {
+  return portableOpportunity(value);
 }
 
 function portableOpportunity(value) {

@@ -33,6 +33,9 @@ type Draft = {
   reliability: string;
 };
 
+/** Resolves to whether the note was saved, so the panel reports what happened. */
+type SaveEvidence = { (item: OpportunityEvidenceItem): Promise<boolean> };
+
 const EMPTY_DRAFT: Draft = {
   url: "",
   title: "",
@@ -70,7 +73,7 @@ export function OpportunityEvidencePanel({
   onRemoveEvidence,
 }: {
   opportunity: EvidenceOpportunity;
-  onAddEvidence: (item: OpportunityEvidenceItem) => void;
+  onAddEvidence: SaveEvidence;
   onRemoveEvidence: (itemId: string) => void;
 }) {
   const t = useTranslate();
@@ -78,6 +81,7 @@ export function OpportunityEvidencePanel({
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const search = buildPublicSearchUrls(opportunity);
   const summary = summariseEvidence(opportunity.evidenceItems);
@@ -89,8 +93,9 @@ export function OpportunityEvidencePanel({
     setNotice("");
   }
 
-  function recordEvidence(event: FormEvent<HTMLFormElement>) {
+  async function recordEvidence(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (saving) return;
     setError("");
     setNotice("");
 
@@ -123,7 +128,14 @@ export function OpportunityEvidencePanel({
       checkedAt: new Date().toISOString(),
       addedAt: Date.now(),
     };
-    onAddEvidence(item);
+    // Say "added" only once it is: the draft stays in the form if saving fails.
+    setSaving(true);
+    const saved = await onAddEvidence(item).catch(() => false);
+    setSaving(false);
+    if (!saved) {
+      setError(t("The change could not be saved to your account. Check your connection and try again."));
+      return;
+    }
     setDraft(EMPTY_DRAFT);
     setExpanded(false);
     setNotice(t("Evidence note added. It records your review; Zavqera has not independently verified the source."));

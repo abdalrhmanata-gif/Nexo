@@ -79,7 +79,7 @@ export default function PrivacyPage() {
       <p>
         <strong>What we do not do.</strong> We do not sell personal data. We do not share it for anyone else&rsquo;s
         own purposes. We do not profile you, build an advertising audience, or combine your data with data bought from
-        elsewhere. We do not use your Missions to train machine-learning models.
+        elsewhere. We do not use your Missions or your opportunities to train machine-learning models.
       </p>
     </section>
 
@@ -109,13 +109,20 @@ export default function PrivacyPage() {
     </section>
 
     <section>
-      <h2>4. What never reaches us</h2>
+      <h2>4. Opportunity Intelligence</h2>
       <p>
-        <strong>Opportunity Intelligence</strong> — the opportunities you score and the evidence notes you attach —
-        is held in your own browser under the key <code>zavqera.opportunity-intelligence.v1</code>. It is not
-        transmitted to our servers, not included in any backup we hold, and not visible to us. It does not follow you
-        to another device, and clearing your browser data erases it. Export a backup file if you want a copy you
-        control.
+        The opportunities you score and the evidence notes you attach are stored in your account, in the same
+        database as your Missions and under the same row-level restriction: only your own signed-in session can read
+        them. They are available on any device where you sign in, and they are deleted when you remove them or close
+        your account. What you write there is your choice; do not enter confidential or sensitive personal
+        information.
+      </p>
+      <p>
+        Earlier versions kept this data only in your browser, under the key{" "}
+        <code>zavqera.opportunity-intelligence.v1</code>, and it never reached us. The first time you open
+        Opportunity Intelligence after this change, whatever that browser still holds is copied to the account you
+        are signed in to, so that nothing you recorded is lost. We do not alter or erase the copy in your browser;
+        clearing your browser data removes it. You can still export a backup file if you want a copy you control.
       </p>
     </section>
 
@@ -124,7 +131,7 @@ export default function PrivacyPage() {
       <p>
         Norwegian law (ekomloven § 2-7b, implementing the ePrivacy Directive) requires consent before storing or
         reading information on your device, unless it is strictly necessary for a service you asked for. We store
-        three things, and all three are strictly necessary or set by your own choice:
+        the following, and each is strictly necessary or set by your own choice:
       </p>
       <ul className="list">
         <li>
@@ -136,6 +143,11 @@ export default function PrivacyPage() {
         </li>
         <li>
           <strong><code>zavqera-theme</code></strong> — the light or dark setting you selected. One year.
+        </li>
+        <li>
+          <strong><code>zavqera.opportunity-intelligence.v1.uploaded</code></strong> — written once, in a browser
+          that held opportunities from before they moved to your account, to record that they have been copied so
+          they are not copied again. It holds a date and nothing else.
         </li>
       </ul>
       <p>
@@ -182,7 +194,7 @@ export default function PrivacyPage() {
       <h2>8. How long we keep it</h2>
       <p>
         The retention period for each purpose is in the table in section 2. In addition: closing your account deletes
-        your account record and your Missions within 30 days. Copies may persist in our database provider&rsquo;s
+        your account record, your Missions and your opportunities within 30 days. Copies may persist in our database provider&rsquo;s
         backups for a limited further period before being overwritten, and we cannot selectively erase a backup.
         Server logs held by our providers follow their own retention rules.
       </p>

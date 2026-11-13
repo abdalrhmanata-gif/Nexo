@@ -242,7 +242,13 @@ test("privacy and terms exist, are reachable from every page, and say what the c
   const privacy = read("app/privacy/page.tsx") + read("lib/legal.ts");
   // Each of these is a fact the reader can check against this repository.
   // If one stops being true, the notice has to change with it.
-  assert.match(privacy, /zavqera\.opportunity-intelligence\.v1/, "names the browser key it claims never leaves the device");
+  assert.match(privacy, /zavqera\.opportunity-intelligence\.v1/, "names the browser key the opportunities used to live under");
+  // Opportunities are stored in the account. The notice said for a long time
+  // that they never reached the server; it must not go on saying so.
+  assert.match(privacy, /opportunities you score and the evidence notes you attach are stored in your account/);
+  assert.doesNotMatch(privacy, /What never reaches us|not\s+transmitted to our servers/);
+  assert.match(privacy, /zavqera\.opportunity-intelligence\.v1\.uploaded/, "names the marker the one-time upload writes to the device");
+  assert.match(privacy, /Storing and showing you your opportunities/, "the purposes table has a row for opportunity data");
   assert.match(privacy, /zavqera-language/, "names the preference cookies it sets");
   assert.match(privacy, /zavqera-theme/);
   assert.match(privacy, /eu-west-1/, "names the region the database actually runs in");

@@ -48,6 +48,6 @@ test("the PDF is the export in plain sight; the table and backup are one step ba
   for (const control of ["exportBackup", "exportSpreadsheet", "opportunity-backup-file"]) {
     assert.ok(folded.includes(control), `${control} belongs inside the fold`);
   }
-  // The backup stays reachable: this data lives only in the browser.
+  // The backup stays reachable: a copy the person holds themselves.
   assert.match(folded, /<LocalizedText en="Export backup" \/>/);
 });

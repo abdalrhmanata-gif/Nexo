@@ -13,7 +13,7 @@ export const LEGAL = {
   supportEmail: "[support@zavqera.com — replace before launch]",
 
   /** Updated whenever either document changes materially. */
-  lastUpdated: "6 November 2026",
+  lastUpdated: "13 November 2026",
 
   /** Supervisory authority for a controller established in Norway. */
   authority: {
@@ -61,7 +61,7 @@ export type Processor = {
 export const PROCESSORS: Processor[] = [
   {
     name: "Supabase",
-    role: "Database and authentication: your email address, your password hash, and everything you write into a Mission.",
+    role: "Database and authentication: your email address, your password hash, everything you write into a Mission, and the opportunities and evidence notes you record.",
     location: "eu-west-1 (Ireland) — inside the EEA",
     transfer: "No transfer outside the EEA for stored data.",
   },
@@ -97,6 +97,12 @@ export const PURPOSES: PurposeRow[] = [
     data: "Mission name, intent, success criteria, steps, follow-up dates, verification notes and outcomes",
     basis: "Article 6(1)(b) — this is the service itself",
     retention: "Until you delete the Mission or close the account",
+  },
+  {
+    purpose: "Storing and showing you your opportunities in Opportunity Intelligence",
+    data: "Opportunity name, who it is for, thesis, source link, your five ratings, and the evidence notes you attach (source link, title, your observation, source type, dates and your reliability rating)",
+    basis: "Article 6(1)(b) — this is the service itself",
+    retention: "Until you remove the opportunity or close the account",
   },
   {
     purpose: "Sending a password reset link when you ask for one",

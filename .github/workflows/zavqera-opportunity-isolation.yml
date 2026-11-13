@@ -1,0 +1,64 @@
+name: ZAVQERA Opportunity Isolation Proof
+
+# Runs on main and on pull requests into main. The existing database-security
+# workflows trigger only on zavqera/alternative-web-deployment, so nothing was
+# proving these properties on the branch that is actually deployed.
+#
+# No secrets are referenced by this workflow, and nothing it runs reaches a
+# hosted environment. The database is a throwaway service container built from
+# the repository's own migrations.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  opportunity-isolation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: zavqera_opportunities
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d zavqera_opportunities"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify PostgreSQL readiness
+        run: |
+          set -euo pipefail
+          for _ in $(seq 1 30); do
+            if pg_isready -h 127.0.0.1 -p 5432 -U postgres -d zavqera_opportunities; then
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1
+
+      - name: Prove one account cannot reach another account's opportunities
+        env:
+          PGPASSWORD: postgres
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/zavqera_opportunities
+        run: |
+          set -euo pipefail
+          chmod +x tool/opportunity_isolation_proof.sh
+          ./tool/opportunity_isolation_proof.sh
