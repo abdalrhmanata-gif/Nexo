@@ -9,8 +9,8 @@ import { LEGAL, PROCESSORS, PURPOSES, legalDetailsPending } from "../../lib/lega
 // enough.
 //
 // Every factual claim here is drawn from the code: the cookie names, the
-// browser storage key, the region the database runs in, the absence of any
-// tracker. Tests in test/navigation-regression.test.mjs hold those claims to
+// browser storage key, the region the database runs in, the one outside
+// analytics script and what it is sent. Tests in test/navigation-regression.test.mjs hold those claims to
 // the source, so the notice cannot quietly drift away from the product.
 
 export async function generateMetadata() {
@@ -151,9 +151,12 @@ export default function PrivacyPage() {
         </li>
       </ul>
       <p>
-        There are no advertising cookies, no third-party trackers, and no analytics script of any kind. Our page
-        counting is described below and touches nothing on your device, which is why this site shows no cookie banner:
-        there is no consent to ask for.
+        There are no advertising cookies and no advertising trackers. One analytics script is loaded from another
+        company, Umami (<code>cloud.umami.is</code>); section 6 describes it. Your browser requests that script only
+        when you open a public page, and it is never sent anything from the signed-in workspace. It sets no cookie
+        and writes nothing to your device. It reads one entry from your browser&apos;s storage,{" "}
+        <code>umami.disabled</code>: if that entry is set, the script sends nothing. Our own page counting touches
+        nothing on your device.
       </p>
     </section>
 
@@ -169,6 +172,16 @@ export default function PrivacyPage() {
         We do this to know whether anyone is using the service and which parts are reached, on the basis of our
         legitimate interest under Article 6(1)(f). Because no one is identified, this processing does not affect your
         rights and freedoms; you may still object using the contact address above.
+      </p>
+      <p>
+        On the public pages we also use Umami, a visitor-statistics service run by Umami Software, Inc. When you
+        open one of those pages, your browser loads a script from <code>cloud.umami.is</code> and sends Umami the
+        address of the page (without anything after a <code>?</code> or <code>#</code>), the domain of the website
+        that linked you here, your screen size, your browser language and the page title. As with any request your
+        browser makes, Umami&apos;s servers also receive your IP address and browser details in order to answer it.
+        We do not send Umami your email address, an account identifier, or anything you write in the service. If
+        your browser sends a Do Not Track signal, the script sends nothing. We use Umami for the same purpose and on
+        the same basis as our own counter, and you may object in the same way.
       </p>
     </section>
 

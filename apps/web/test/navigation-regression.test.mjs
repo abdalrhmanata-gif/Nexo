@@ -263,7 +263,22 @@ test("privacy and terms exist, are reachable from every page, and say what the c
     "the product proposes steps for regulated activities; this clause is the one that must not go missing");
 });
 
-test("the privacy notice's claim of no analytics is true of the code", () => {
+test("the privacy notice names the one outside analytics script, and says what it is sent", () => {
+  const privacy = read("app/privacy/page.tsx");
+  const legal = read("lib/legal.ts");
+  // The notice said for a long time that there was no analytics script of
+  // any kind. Umami is one; the notice must say so, and say where.
+  assert.doesNotMatch(privacy, /no analytics script of any kind|no third-party trackers/);
+  assert.match(privacy, /Umami/);
+  assert.match(privacy, /cloud\.umami\.is/, "names the address the script is loaded from");
+  assert.match(privacy, /not loaded[^.]*signed-in workspace|never[^.]*signed-in workspace/i,
+    "says the workspace is not reported");
+  assert.match(privacy, /umami\.disabled/, "names the one thing the script reads from the device");
+  assert.match(legal, /name: "Umami"/, "Umami is listed as a processor, as Article 13(1)(e) requires");
+  assert.match(legal, /Umami Software, Inc\./);
+});
+
+test("no tracker other than the one the privacy notice names is in the code", () => {
   const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     if (entry.name === "node_modules" || entry.name === ".next") return [];
     const full = join(dir, entry.name);
@@ -275,7 +290,7 @@ test("the privacy notice's claim of no analytics is true of the code", () => {
   const trackers = /googletagmanager|google-analytics|gtag\(|posthog|mixpanel|segment\.com|hotjar|fullstory|plausible|amplitude/i;
   const offenders = sources.filter((file) => trackers.test(readFileSync(file, "utf8")));
   assert.deepEqual(offenders.map((file) => relative(webRoot, file)), [],
-    "the privacy notice promises no analytics; adding one means changing the notice too");
+    "the privacy notice names Umami and nothing else; adding another means changing the notice too");
 });
 
 test("the page counter stores nothing that could identify a visitor", () => {
