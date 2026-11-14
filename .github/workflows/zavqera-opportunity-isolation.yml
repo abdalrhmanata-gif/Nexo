@@ -62,3 +62,13 @@ jobs:
           set -euo pipefail
           chmod +x tool/opportunity_isolation_proof.sh
           ./tool/opportunity_isolation_proof.sh
+
+      - name: Prove a customer cannot read the site's visitor figures
+        env:
+          PGPASSWORD: postgres
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/zavqera_site_metrics
+        run: |
+          set -euo pipefail
+          psql "postgresql://postgres:postgres@127.0.0.1:5432/postgres" -v ON_ERROR_STOP=1 --quiet -c "create database zavqera_site_metrics"
+          chmod +x tool/site_metrics_admin_proof.sh
+          ./tool/site_metrics_admin_proof.sh
