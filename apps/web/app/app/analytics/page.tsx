@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "../../../lib/supabase/server";
 import { isSupabaseConfigured } from "../../../lib/supabase/config";
 import { LocalizedText } from "../../../components/localized-text";
+import { getTranslate } from "../../../lib/i18n-server";
+import { fill } from "../../../lib/i18n";
 
 type PageMetric = { path: string; views: number; days_seen: number; last_seen: string };
 type SourceMetric = { source: string; views: number; percent: number };
@@ -36,6 +38,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AnalyticsPage() {
   if (!isSupabaseConfigured()) redirect("/app");
+  const t = await getTranslate();
 
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -63,7 +66,7 @@ export default async function AnalyticsPage() {
         </div>
       </section>
 
-      <section className="business-metrics" aria-label="Website analytics metrics">
+      <section className="business-metrics" aria-label={t("Website analytics metrics")}>
         <div className="business-metric business-metric-total">
           <span className="business-metric-copy"><strong>{number(totalViews)}</strong><span><LocalizedText en="Page views" /></span></span>
         </div>
@@ -90,9 +93,14 @@ export default async function AnalyticsPage() {
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 680 }}>
             <thead>
               <tr>
-                {["Day", "Landing", "Pricing", "Sign-up", "Landing → pricing", "Pricing → sign-up"].map((label) => (
-                  <th key={label} style={{ textAlign: "left", padding: "10px 12px", borderBottom: "1px solid var(--border-color, #ddd)", fontSize: 13 }}>{label}</th>
-                ))}
+                {/* Each heading is written out so that it is a dictionary key the
+                    translation guards can see; a list of bare strings is not. */}
+                <th style={{ textAlign: "left", padding: "10px 12px", borderBottom: "1px solid var(--border-color, #ddd)", fontSize: 13 }}><LocalizedText en="Day" /></th>
+                <th style={{ textAlign: "left", padding: "10px 12px", borderBottom: "1px solid var(--border-color, #ddd)", fontSize: 13 }}><LocalizedText en="Landing" /></th>
+                <th style={{ textAlign: "left", padding: "10px 12px", borderBottom: "1px solid var(--border-color, #ddd)", fontSize: 13 }}><LocalizedText en="Pricing" /></th>
+                <th style={{ textAlign: "left", padding: "10px 12px", borderBottom: "1px solid var(--border-color, #ddd)", fontSize: 13 }}><LocalizedText en="Sign-up" /></th>
+                <th style={{ textAlign: "left", padding: "10px 12px", borderBottom: "1px solid var(--border-color, #ddd)", fontSize: 13 }}><LocalizedText en="Landing → pricing" /></th>
+                <th style={{ textAlign: "left", padding: "10px 12px", borderBottom: "1px solid var(--border-color, #ddd)", fontSize: 13 }}><LocalizedText en="Pricing → sign-up" /></th>
               </tr>
             </thead>
             <tbody>
@@ -122,7 +130,7 @@ export default async function AnalyticsPage() {
           {metrics.by_page.slice(0, 8).map((item) => (
             <div className="business-shortcut" key={item.path}>
               <span className="business-shortcut-icon shortcut-navy" aria-hidden="true">↗</span>
-              <span><strong>{item.path}</strong><small>{number(item.views)} views · {item.days_seen} days seen</small></span>
+              <span><strong>{item.path}</strong><small>{fill(t("{views} views · {days} days seen"), { views: number(item.views), days: item.days_seen })}</small></span>
               <span className="business-shortcut-arrow">{date(item.last_seen)}</span>
             </div>
           ))}
