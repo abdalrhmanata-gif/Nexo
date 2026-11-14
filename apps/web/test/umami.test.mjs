@@ -106,11 +106,14 @@ test("the tracker is loaded once, with its own automatic tracking switched off",
   assert.match(UMAMI_WEBSITE_ID, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
 });
 
-test("the script is not requested until a public page is opened", () => {
+test("the script is requested only on the production site, and only once a public page is opened", () => {
   // Loading a script is itself a request to another company. Someone who
-  // opens the workspace directly, and stays there, never makes it.
+  // opens the workspace directly, and stays there, never makes it — and
+  // neither does a preview build, a local run or the browser test, whose
+  // network guard fails on any request that leaves the machine.
   const component = read("components/umami-analytics.tsx");
-  assert.match(component, /useState\(\(\) => umamiPageFor\(pathname\) !== null\)/);
+  assert.match(component, /useState\(false\)/, "nothing is rendered until the browser has checked where it is");
+  assert.match(component, /if \(isUmamiHost\(window\.location\.hostname\) && umamiPageFor\(pathname\) !== null\) setWanted\(true\);/);
   assert.match(component, /if \(!wanted\) return null;/);
 });
 
