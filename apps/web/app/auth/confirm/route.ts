@@ -23,6 +23,12 @@ export async function GET(request: NextRequest) {
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
   if (error) {
+    // A reset link that no longer works belongs on the reset page, which
+    // explains it and offers a new one. The sign-in page's message is about
+    // confirmation links and tells the person to sign up again.
+    if (type === "recovery") {
+      return NextResponse.redirect(new URL("/auth/reset-password?error_code=otp_expired", origin));
+    }
     return NextResponse.redirect(new URL(authErrorPath("confirmation-link"), origin));
   }
 
