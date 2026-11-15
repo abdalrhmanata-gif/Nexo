@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { isSupportedCostModel } from "../opportunity-cost.mjs";
+import { aiAccessMode } from "../billing-plans.mjs";
 
 // The gates every paid-provider route passes through, in one place.
 // Production is intentionally opt-in and remains allowlist-scoped while launch is verified.
@@ -31,6 +32,34 @@ export function isApprovedPreviewTester(userId: string): boolean {
   if (!configured) return false;
   const allowlist = configured.split(",").map((value) => value.trim()).filter(Boolean);
   return allowlist.includes(userId);
+}
+
+/**
+ * Whether this person may ask for an AI generation at all.
+ *
+ * With ZAVQERA_AI_ACCESS=plans every signed-in person may, and their plan's
+ * monthly quota (reserve_ai_generation) decides how many. Otherwise only the
+ * allowlist above, as before billing. Production keeps the allowlist until
+ * the owner switches it.
+ */
+export function hasAiAccess(userId: string): boolean {
+  return aiAccessMode(process.env) === "plans" || isApprovedPreviewTester(userId);
+}
+
+export const PROVIDER_UNAVAILABLE = "AI is not available right now. Try again later.";
+
+/**
+ * The reason a provider is not usable is for the people who run the site.
+ * Everyone else, who can reach this point once AI opens by plan, gets one
+ * sentence that says nothing about how the deployment is configured.
+ */
+export function visibleProviderRefusal(userId: string, message: string): string {
+  return isApprovedPreviewTester(userId) ? message : PROVIDER_UNAVAILABLE;
+}
+
+/** The refusal code, under the same rule. */
+export function visibleProviderReason(userId: string, reason: ProviderRefusal): ProviderRefusal | "unavailable" {
+  return isApprovedPreviewTester(userId) ? reason : "unavailable";
 }
 
 /** Why a provider is not usable, when it is not. */
