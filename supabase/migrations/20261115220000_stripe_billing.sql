@@ -374,7 +374,7 @@ begin
         v_period_end := coalesce(
           nullif(v_object->'items'->'data'->0->>'current_period_end', '')::bigint,
           nullif(v_object->>'current_period_end', '')::bigint);
-        insert into private.billing_subscriptions as s (
+        insert into private.billing_subscriptions (
           subscription_id, user_id, customer_id, price_id, plan, status,
           cancel_at_period_end, current_period_end, livemode, last_event_created, updated_at)
         values (
