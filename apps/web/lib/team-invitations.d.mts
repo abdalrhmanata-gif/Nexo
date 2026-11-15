@@ -1,0 +1,13 @@
+export declare const INVITATION_TTL_DAYS: number;
+export declare const MAX_PENDING_INVITATIONS: number;
+export declare const INVITE_ROLES: readonly ["member", "viewer"];
+export declare const INVITE_ERROR_FALLBACK: string;
+export declare const ACCEPT_ERROR_FALLBACK: string;
+export declare function hashInvitationToken(token: unknown): string | null;
+export declare function newInvitationToken(): { token: string; tokenHash: string };
+export declare function invitationExpiry(now?: number): string;
+export declare function invitationLink(origin: string, token: string): string;
+export declare function normaliseInviteEmail(value: unknown): string | null;
+export declare function inviteErrorMessage(message: unknown): string;
+export declare function acceptErrorMessage(message: unknown): string;
+export declare function invitationEmail(input: { inviterEmail: string; link: string; role: string }): { subject: string; text: string; html: string };

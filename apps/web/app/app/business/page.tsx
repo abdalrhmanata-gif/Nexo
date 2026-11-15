@@ -1,7 +1,6 @@
 import { SavePdfButton } from "../../../components/save-pdf-button";
 import Link from "next/link";
 import { MissionCard } from "../../../components/mission-card";
-import { PlanInterest } from "../../../components/plan-interest";
 import { LocalizedText } from "../../../components/localized-text";
 import { isSupabaseConfigured } from "../../../lib/supabase/config";
 import { createSupabaseMissionRepository } from "../../../lib/supabase/mission-repository";
@@ -108,17 +107,13 @@ export default async function BusinessWorkspacePage() {
       </div>
     </section>
 
-    {/* The owner asked for the "still being built" wording to go: a notice about something
-        that cannot be used reads as an unfinished product. What stays is the
-        fact — missions are private — and the question, because the answer
-        decides whether teams are worth building. */}
     <section className="business-team-note">
       <span className="business-team-icon" aria-hidden="true">◎</span>
       <div>
         <strong><LocalizedText en="Working with a team?" /></strong>
-        <p><LocalizedText en="Missions are private to you today. If you want to invite colleagues, tell us and we will let you know when invitations open." /></p>
+        <p><LocalizedText en="Invite colleagues by email to work on your missions with you." /></p>
       </div>
-      <PlanInterest plan="Team" />
+      <Link className="button button-small" href="/app/team"><LocalizedText en="Manage team" /></Link>
     </section>
 
     <section className="business-recent" aria-labelledby="business-recent-heading">

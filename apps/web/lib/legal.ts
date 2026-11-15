@@ -77,6 +77,12 @@ export const PROCESSORS: Processor[] = [
     location: "Umami Software, Inc. is established in the United States",
     transfer: "A transfer outside the EEA, under Umami's data processing agreement.",
   },
+  {
+    name: "Resend",
+    role: "Sends the emails ZAVQERA sends: account confirmation, password reset and workspace invitations. Receives the address the email goes to and what the email says, which for an invitation includes the email address of the person who sent it.",
+    location: "Sending from eu-west-1 (Ireland); Resend, Inc. is established in the United States",
+    transfer: "A transfer outside the EEA is possible, under Resend's data processing agreement.",
+  },
 ];
 
 export type PurposeRow = {
@@ -115,6 +121,12 @@ export const PURPOSES: PurposeRow[] = [
     data: "Email address",
     basis: "Article 6(1)(b) — part of operating your account",
     retention: "Reset links expire; no separate record is kept",
+  },
+  {
+    purpose: "Inviting someone to work in your workspace",
+    data: "The invited email address, the access you chose, who sent the invitation and when, and whether it was accepted, revoked or expired. Everyone in a workspace can see the email addresses of the others in it",
+    basis: "Article 6(1)(f) — the legitimate interest of the person inviting, and ours, in letting a team work together. The invited person can ignore the email; nothing further is sent",
+    retention: "Kept with the workspace until its owner closes their account",
   },
   {
     purpose: "Keeping the service available and investigating faults",

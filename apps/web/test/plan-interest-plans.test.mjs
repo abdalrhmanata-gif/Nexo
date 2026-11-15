@@ -83,7 +83,11 @@ test("the database accepts no plan the page does not offer", () => {
   // removed and the function was left behind, which is how the two drift.
   const page = plansTheAppOffers();
   const database = plansTheDatabaseAccepts();
-  const orphaned = database.filter((name) => !page.includes(name));
+  // Team was asked about on the business page until invitations shipped.
+  // People registered interest under that name, so the database keeps
+  // accepting it rather than rejecting rows it already holds.
+  const RETIRED = new Set(["Team"]);
+  const orphaned = database.filter((name) => !page.includes(name) && !RETIRED.has(name));
   assert.deepEqual(orphaned, [], "these are accepted by the database but offered nowhere in the app");
 });
 

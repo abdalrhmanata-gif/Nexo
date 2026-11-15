@@ -1557,3 +1557,29 @@ html[dir="rtl"] input, html[dir="rtl"] textarea {
 .opportunity-more > summary:hover, .opportunity-more[open] > summary { color:var(--ink); }
 .opportunity-more[open] > summary { margin-bottom:8px; }
 @media print { .opportunity-more { display:none !important; } }
+
+/* Team invitations */
+.team-page .team-manager { display:grid; gap:18px; margin-bottom:34px; }
+.team-panel h2 { margin:0 0 6px; }
+.team-panel h3 { margin:22px 0 8px; font-size:15px; }
+.team-invite-form { display:flex; flex-wrap:wrap; align-items:end; gap:12px; margin-top:14px; }
+.team-invite-form .field { flex:1 1 220px; margin:0; }
+.team-invite-form select { width:100%; border:1px solid #c9d3da; border-radius:5px; padding:10px; font:inherit; color:var(--ink); background:var(--white); }
+.team-list { list-style:none; margin:10px 0 0; padding:0; }
+.team-list li { display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; padding:11px 0; border-top:1px solid var(--line); }
+.team-list li:first-child { border-top:0; }
+.team-person { flex:1 1 220px; min-width:0; overflow-wrap:anywhere; }
+.team-person small { display:block; color:var(--muted); }
+.team-role { color:var(--muted); font-size:14px; }
+.team-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.team-open { font-size:13px; font-weight:700; color:#315d59; }
+.team-link-row { display:flex; gap:8px; flex-wrap:wrap; }
+.team-link-row input { flex:1 1 260px; min-width:0; border:1px solid #c9d3da; border-radius:5px; padding:8px; font:inherit; font-size:13px; }
+.invite-page { max-width:640px; }
+.invite-page .team-panel h1 { margin:6px 0 12px; font-size:clamp(24px,4vw,32px); }
+.team-accept { margin-top:18px; }
+.shared-workspace-band { display:flex; flex-wrap:wrap; justify-content:center; gap:6px 14px; padding:9px 16px; font-size:14px; color:#315d59; background:#e5f4f1; text-align:center; }
+.shared-workspace-band a { font-weight:700; color:inherit; }
+:root[data-theme="dark"] .shared-workspace-band { color:#bfe5de; background:#1d3533; }
+:root[data-theme="dark"] .team-open { color:#8fd3c7; }
+:root[data-theme="dark"] .team-invite-form select, :root[data-theme="dark"] .team-link-row input { background:#1b2229; color:inherit; border-color:#33404b; }
