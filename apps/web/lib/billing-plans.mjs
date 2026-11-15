@@ -32,17 +32,17 @@ export function aiAccessMode(env) {
  * comes back on the completed session, the metadata on the subscription.
  */
 export function checkoutSessionParams({ priceId, customerId, email, userId, origin }) {
-  const params = new URLSearchParams();
-  params.set("mode", "subscription");
-  params.set("line_items[0][price]", priceId);
-  params.set("line_items[0][quantity]", "1");
-  if (customerId) params.set("customer", customerId);
-  else if (email) params.set("customer_email", email);
-  params.set("client_reference_id", userId);
-  params.set("subscription_data[metadata][user_id]", userId);
-  params.set("success_url", `${origin}/app/billing?checkout=success`);
-  params.set("cancel_url", `${origin}/app/billing?checkout=cancelled`);
-  params.set("adaptive_pricing[enabled]", "true");
-  params.set("integration_identifier", CHECKOUT_LABEL);
-  return params;
+  const fields = new URLSearchParams();
+  fields.set("mode", "subscription");
+  fields.set("line_items[0][price]", priceId);
+  fields.set("line_items[0][quantity]", "1");
+  if (customerId) fields.set("customer", customerId);
+  else if (email) fields.set("customer_email", email);
+  fields.set("client_reference_id", userId);
+  fields.set("subscription_data[metadata][user_id]", userId);
+  fields.set("success_url", `${origin}/app/billing?checkout=success`);
+  fields.set("cancel_url", `${origin}/app/billing?checkout=cancelled`);
+  fields.set("adaptive_pricing[enabled]", "true");
+  fields.set("integration_identifier", CHECKOUT_LABEL);
+  return fields;
 }
