@@ -148,6 +148,18 @@ else
   fail "the customer can read the figures once any operator exists"
 fi
 
+printf '\n== the menu link asks only whether the caller is an operator ==\n'
+[ "$(as_user "$USER_S" "select public.is_site_operator();" | answer)" = "t" ] \
+  && pass "the operator is told they are one" || fail "the operator is not recognised"
+[ "$(as_user "$USER_A" "select public.is_site_operator();" | answer)" = "f" ] \
+  && pass "a customer is told they are not, without an error and without the list" \
+  || fail "a customer is not answered 'false'"
+if as_anon "select public.is_site_operator();" | grep -q 'permission denied'; then
+  pass "a visitor who is not signed in cannot ask"
+else
+  fail "anon can call is_site_operator()"
+fi
+
 printf '\n'
 if [ "$failures" -eq 0 ]; then
   printf 'Site metrics operator proof: all checks passed\n'

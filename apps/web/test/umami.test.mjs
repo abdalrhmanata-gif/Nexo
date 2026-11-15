@@ -134,3 +134,17 @@ test("the Umami script is loaded from one file only", () => {
     .filter((path) => /umami\.is|script\.js/.test(read(path)));
   assert.deepEqual(offenders, []);
 });
+
+test("the analytics link is in the menu only for the people who run the site", () => {
+  const shell = read("components/shell.tsx");
+  const layout = read("app/layout.tsx");
+  // The link is a convenience. What keeps the figures private is the database
+  // function behind the page; the menu merely does not advertise a page that
+  // would turn a customer away.
+  assert.match(shell, /\{siteOperator && <NavLink className="nav-link nav-analytics" href="\/app\/analytics">/);
+  assert.match(shell, /siteOperator = false/, "hidden unless the layout says otherwise");
+  assert.match(shell, /\.rpc\("is_site_operator"\)/);
+  assert.match(shell, /return data === true;/, "anything but a plain yes — an error, a missing function — hides the link");
+  assert.match(layout, /const siteOperator = signedIn \? await readSiteOperator\(\) : false;/, "a visitor who is not signed in is never asked about");
+  assert.match(layout, /<Shell signedIn=\{signedIn\} siteOperator=\{siteOperator\}/);
+});
