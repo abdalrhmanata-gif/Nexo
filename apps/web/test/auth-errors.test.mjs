@@ -38,3 +38,22 @@ test("the sign-in form no longer shows a provider's own message", () => {
   assert.doesNotMatch(form, /setError\([^)]*\.message\)/, "a provider message is being shown as written");
   assert.match(form, /setError\(authErrorMessage\(result\.error\)\)/);
 });
+
+test("choosing the same password again says so, instead of blaming the reset link", async () => {
+  // Seen on production 2026-11-15: the reset link worked, the person typed
+  // their current password, and the form told them to request a new link.
+  const { PASSWORD_UPDATE_FALLBACK, passwordUpdateErrorMessage } = await import("../lib/auth-errors.mjs");
+  assert.equal(passwordUpdateErrorMessage({ code: "same_password", message: "New password should be different from the old password." }),
+    "Choose a password that is different from your current one.");
+  assert.equal(passwordUpdateErrorMessage({ code: "weak_password" }), "Password must be at least 8 characters.");
+  for (const error of [{ code: "session_not_found" }, { message: "Auth session missing!" }, null]) {
+    assert.equal(passwordUpdateErrorMessage(error), PASSWORD_UPDATE_FALLBACK);
+  }
+  assert.equal(PASSWORD_UPDATE_FALLBACK, "We couldn't update your password. Request a new reset link and try again.");
+  const tables = readDictionaries();
+  for (const name of LANGUAGES) {
+    assert.ok(tables[name].has("Choose a password that is different from your current one."), name);
+  }
+  const form = readFileSync(join(webRoot, "components", "auth-form.tsx"), "utf8");
+  assert.match(form, /if \(updateError\) return setError\(passwordUpdateErrorMessage\(updateError\)\);/);
+});

@@ -35,3 +35,21 @@ export function authErrorMessage(error) {
   const code = error && typeof error === "object" && typeof error.code === "string" ? error.code : "";
   return Object.hasOwn(AUTH_ERROR_MESSAGES, code) ? AUTH_ERROR_MESSAGES[code] : AUTH_ERROR_FALLBACK;
 }
+
+export const PASSWORD_UPDATE_FALLBACK = "We couldn't update your password. Request a new reset link and try again.";
+
+const PASSWORD_UPDATE_MESSAGES = Object.freeze({
+  same_password: "Choose a password that is different from your current one.",
+  weak_password: "Password must be at least 8 characters.",
+});
+
+/**
+ * What the new-password form says when saving fails. Only an expired or
+ * missing session is a reason to ask for a new link; a password the provider
+ * refused is not, and saying so sent people to request links they did not
+ * need.
+ */
+export function passwordUpdateErrorMessage(error) {
+  const code = error && typeof error === "object" && typeof error.code === "string" ? error.code : "";
+  return Object.hasOwn(PASSWORD_UPDATE_MESSAGES, code) ? PASSWORD_UPDATE_MESSAGES[code] : PASSWORD_UPDATE_FALLBACK;
+}
