@@ -4,7 +4,7 @@ import { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { safeNextPath } from "../lib/auth/redirect.mjs";
 import { LocalizedText } from "./localized-text";
-import { authErrorMessage } from "../lib/auth-errors.mjs";
+import { authErrorMessage, passwordUpdateErrorMessage } from "../lib/auth-errors.mjs";
 
 // Messages are held in state as their English source text and rendered through
 // LocalizedText, which resolves them against the dictionaries. That keeps the
@@ -144,7 +144,7 @@ export function ResetPasswordForm() {
     const { createSupabaseBrowserClient } = await import("../lib/supabase/browser");
     const { error: updateError } = await createSupabaseBrowserClient().auth.updateUser({ password });
     setLoading(false);
-    if (updateError) return setError("We couldn't update your password. Request a new reset link and try again.");
+    if (updateError) return setError(passwordUpdateErrorMessage(updateError));
     setMessage("Password updated. Redirecting to your workspace…");
     router.replace("/app");
     router.refresh();
