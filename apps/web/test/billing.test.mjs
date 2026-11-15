@@ -82,3 +82,21 @@ test("the AI routes ask the plan-aware gate, and a non-tester never learns the p
     assert.match(body, /visibleProviderRefusal\(user\.id, PROVIDER_REFUSAL\[provider\.reason\]\)/, route);
   }
 });
+
+test("every sentence billing can show is translated, including the routes' refusals", async () => {
+  const { readDictionaries, LANGUAGES } = await import("./helpers/dictionaries.mjs");
+  const gate = read("lib/ai/gate.ts");
+  const sentences = new Set([/PROVIDER_UNAVAILABLE = "([^"]+)"/.exec(gate)[1]]);
+  for (const route of ["app/api/billing/checkout/route.ts", "app/api/billing/portal/route.ts"]) {
+    for (const match of read(route).matchAll(/error:\s*"((?:[^"\\]|\\.)*)"/g)) sentences.add(match[1]);
+  }
+  for (const match of read("app/app/billing/page.tsx").matchAll(/^\s+[a-z_]+: "([^"]+)",$/gm)) sentences.add(match[1]);
+  assert.ok(sentences.size >= 17, `expected the billing sentences, found ${sentences.size}`);
+  const tables = readDictionaries();
+  const missing = [];
+  for (const sentence of sentences) {
+    const absent = LANGUAGES.filter((name) => !tables[name].has(sentence));
+    if (absent.length) missing.push(`"${sentence}" is missing from ${absent.join(", ")}`);
+  }
+  assert.deepEqual(missing, []);
+});

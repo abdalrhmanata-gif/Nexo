@@ -83,6 +83,12 @@ export const PROCESSORS: Processor[] = [
     location: "Sending from eu-west-1 (Ireland); Resend, Inc. is established in the United States",
     transfer: "A transfer outside the EEA is possible, under Resend's data processing agreement.",
   },
+  {
+    name: "Stripe",
+    role: "Takes payment for paid plans and keeps the subscription. Receives your email address, the plan you choose, the name and billing address you give it, and the card or other payment details you enter on Stripe's own checkout page. ZAVQERA never receives your card number.",
+    location: "Stripe Payments Europe, Ltd. (Ireland), part of Stripe, Inc. (United States)",
+    transfer: "A transfer outside the EEA is possible, under Stripe's data processing agreement.",
+  },
 ];
 
 export type PurposeRow = {
@@ -121,6 +127,12 @@ export const PURPOSES: PurposeRow[] = [
     data: "Email address",
     basis: "Article 6(1)(b) — part of operating your account",
     retention: "Reset links expire; no separate record is kept",
+  },
+  {
+    purpose: "Charging for a paid plan",
+    data: "Email address, the plan, Stripe's customer and subscription references, whether each payment succeeded, and the invoices Stripe keeps",
+    basis: "Article 6(1)(b) — necessary for the subscription you buy. Payment records are also kept because bookkeeping law requires it (Article 6(1)(c))",
+    retention: "While the subscription runs, and payment records for as long as bookkeeping law requires",
   },
   {
     purpose: "Inviting someone to work in your workspace",

@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { LocalizedText } from "../../components/localized-text";
 import { PlanInterest } from "../../components/plan-interest";
+import { billingConfigured } from "../../lib/stripe-client";
+
+// Read per request: whether billing is open depends on the deployment's key.
+export const dynamic = "force-dynamic";
 
 const plans = [
   {
@@ -58,28 +62,33 @@ const plans = [
 ];
 
 export default function PricingPage() {
+  const billing = billingConfigured();
   return <div className="container">
     <section className="pricing-hero">
       <p className="eyebrow"><LocalizedText en="Pricing" /></p>
       <h1><LocalizedText en="Find the opportunity. Prove it. Turn it into action." /></h1>
       <p><LocalizedText en="One monthly plan should take you from an early idea to evidence, a clear decision, and a governed Mission." /></p>
-      <p className="pricing-status"><LocalizedText en="Proposed launch pricing, not active offers. Paid billing and usage enforcement are not enabled; AI Opportunity Brief access is restricted to an approved preview tester." /></p>
+      {billing
+        ? <p className="pricing-status"><LocalizedText en="Plans are billed monthly through Stripe. You can cancel at any time, and your plan lasts until the end of the period you paid for." /></p>
+        : <p className="pricing-status"><LocalizedText en="Proposed launch pricing, not active offers. Paid billing and usage enforcement are not enabled; AI Opportunity Brief access is restricted to an approved preview tester." /></p>}
     </section>
     <section className="pricing" aria-labelledby="pricing-heading">
       <h2 id="pricing-heading" className="visually-hidden"><LocalizedText en="Proposed monthly plans" /></h2>
       <div className="pricing-grid">
         {plans.map((plan) => <article key={plan.name} className={`pricing-card ${plan.className}`}>
           <p className="pricing-name"><LocalizedText en={plan.name} /></p>
-          <div className="pricing-price"><strong>{plan.price}</strong><span><LocalizedText en="per month (proposed)" /></span></div>
+          <div className="pricing-price"><strong>{plan.price}</strong><span><LocalizedText en={billing ? "per month" : "per month (proposed)"} /></span></div>
           <p className="pricing-allowance">
-            <strong>{plan.reports}</strong> <LocalizedText en="AI briefs or Mission plans per month (planned)" />
+            <strong>{plan.reports}</strong> <LocalizedText en={billing ? "AI briefs or Mission plans per month" : "AI briefs or Mission plans per month (planned)"} />
           </p>
           <ul>
             {plan.features.map((feature) => <li key={feature}><LocalizedText en={feature} /></li>)}
           </ul>
           {plan.cta
             ? <Link className="button pricing-cta" href="/auth/sign-up"><LocalizedText en="Start free" /></Link>
-            : <PlanInterest plan={plan.name} />}
+            : billing
+              ? <Link className="button pricing-cta" href="/app/billing"><LocalizedText en="Choose" /> <LocalizedText en={plan.name} /></Link>
+              : <PlanInterest plan={plan.name} />}
         </article>)}
       </div>
     </section>
