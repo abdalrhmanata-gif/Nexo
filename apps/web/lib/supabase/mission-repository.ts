@@ -1,5 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { cookies } from "next/headers";
 import { createSupabaseServerClient } from "./server";
+import { WORKSPACE_COOKIE, workspaceCookieValue } from "../team-workspace.mjs";
 import { MissionMutationConflictError, MissionMutationRejectedError, type MissionRepository, type NewMission, type NewOutcome, type NewVerification, type UpdateMission } from "../mission-repository";import type { ActionStatus, Mission, MissionAction, MissionActivity, MissionOutcome, MissionVerification, MissionLifecycleStatus } from "../view-models";
 import { humaniseEventType, parseMissionObjective, summariseEventPayload } from "../mission-content.mjs";
 
@@ -100,6 +102,24 @@ async function ownedWorkspace(supabase: SupabaseClient) {
   return result.data;
 }
 
+/**
+ * The workspace chosen on the team page, if the person is still a member of
+ * it; otherwise their own. The cookie is a preference, not a permission.
+ */
+async function currentWorkspace(supabase: SupabaseClient, userId: string) {
+  let chosen: string | null = null;
+  try {
+    chosen = workspaceCookieValue((await cookies()).get(WORKSPACE_COOKIE)?.value);
+  } catch {
+    chosen = null;
+  }
+  if (chosen) {
+    const membership = await supabase.from("workspace_members").select("workspace_id").eq("workspace_id", chosen).eq("user_id", userId).maybeSingle();
+    if (!membership.error && membership.data) return chosen;
+  }
+  return ownedWorkspace(supabase);
+}
+
 async function actionsFor(supabase: SupabaseClient, missionId: string) {
   const result = await supabase
     .from("mission_actions")
@@ -130,7 +150,7 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
   const supabase = await createSupabaseServerClient();
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) throw new Error("Authentication required.");
-  const workspaceId = await ownedWorkspace(supabase);
+  const workspaceId = await currentWorkspace(supabase, user.id);
   const missionSelect = "id, objective, status, version, updated_at";
 
   async function completeMission(row: MissionRow) {

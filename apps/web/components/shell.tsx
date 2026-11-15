@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { SignOutButton } from "./auth-form";
 import { LanguageSwitcher } from "./language-switcher";
-import { LocalizedText } from "./localized-text";
+import { LocalizedFill, LocalizedText } from "./localized-text";
 import { NavLink, WorkspaceNavLink } from "./nav-link";
 import { NotificationBell } from "./notification-bell";
 import { ThemeSwitcher } from "./theme-switcher";
@@ -60,7 +60,7 @@ export async function readSiteOperator(): Promise<boolean> {
   }
 }
 
-export function Shell({ children, signedIn = false, siteOperator = false, navLabel = "Primary navigation" }: { children: React.ReactNode; signedIn?: boolean; siteOperator?: boolean; navLabel?: string }) {
+export function Shell({ children, signedIn = false, siteOperator = false, sharedWorkspace = null, navLabel = "Primary navigation" }: { children: React.ReactNode; signedIn?: boolean; siteOperator?: boolean; sharedWorkspace?: { ownerEmail: string; role: string } | null; navLabel?: string }) {
   return (
     <div className="site-shell">
       <header className="topbar">
@@ -96,6 +96,13 @@ export function Shell({ children, signedIn = false, siteOperator = false, navLab
             </>}
         </nav>
       </header>
+      {/* Someone who accepted an invitation sees another person's missions in
+          place of their own. Without this band that reads as their own work
+          having gone. */}
+      {sharedWorkspace && <div className="shared-workspace-band" role="status">
+        <span><LocalizedFill en="You are in the workspace shared by {email}." values={{ email: sharedWorkspace.ownerEmail }} />{sharedWorkspace.role === "viewer" && <> <LocalizedText en="You can view it but not change it." /></>}</span>
+        <Link href="/app/team" prefetch={false}><LocalizedText en="Switch workspace" /></Link>
+      </div>}
       <main>{children}</main>
       <footer className="footer">
         <span><LocalizedText en="A calm control plane for bounded AI work." /></span>

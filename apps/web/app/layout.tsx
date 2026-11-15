@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Shell, readSignedIn, readSiteOperator } from "../components/shell";
+import { readOpenSharedWorkspace } from "../lib/supabase/team-repository";
 import { PageMetrics } from "../components/page-metrics";
 import { UmamiAnalytics } from "../components/umami-analytics";
 import { LanguageProvider } from "../components/localized-text";
@@ -30,6 +31,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // to the sign-in page and read as a dead button.
   const signedIn = await readSignedIn();
   const siteOperator = signedIn ? await readSiteOperator() : false;
+  const sharedWorkspace = signedIn ? await readOpenSharedWorkspace() : null;
   // Render lang and dir from the saved language rather than hardcoding
   // English: an Arabic visitor otherwise gets a left-to-right first paint,
   // and assistive technology is told the wrong language for the whole page.
@@ -44,7 +46,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* The language resolved above reaches every client component, so
             the HTML that leaves the server is already in it. */}
         <LanguageProvider initial={language}>
-          <Shell signedIn={signedIn} siteOperator={siteOperator} navLabel={t("Primary navigation")}>{children}</Shell>
+          <Shell signedIn={signedIn} siteOperator={siteOperator} sharedWorkspace={sharedWorkspace} navLabel={t("Primary navigation")}>{children}</Shell>
         </LanguageProvider>
         <PageMetrics />
         <UmamiAnalytics />
