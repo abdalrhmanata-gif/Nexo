@@ -8,7 +8,7 @@ import { ThemeSwitcher } from "./theme-switcher";
 import { isSupabaseConfigured } from "../lib/supabase/config";
 import { createSupabaseServerClient } from "../lib/supabase/server";
 
-function NavIcon({ name }: { name: "search" | "plus" | "business" | "templates" | "pricing" | "workspace" | "opportunities" }) {
+function NavIcon({ name }: { name: "search" | "plus" | "business" | "templates" | "pricing" | "workspace" | "opportunities" | "analytics" }) {
   const common = { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true as const };
   switch (name) {
     case "search": return <svg {...common}><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 4.5 4.5" /></svg>;
@@ -18,6 +18,7 @@ function NavIcon({ name }: { name: "search" | "plus" | "business" | "templates" 
     case "pricing": return <svg {...common}><path d="M12 3v18M17 7.5c0-1.7-2.1-3-5-3s-5 1.2-5 3 1.7 2.6 5 3 5 1.3 5 3.1-2 3.4-5 3.4-5-1.3-5-3" /></svg>;
     case "workspace": return <svg {...common}><path d="M3 3h8v8H3zM13 3h8v5h-8zM13 10h8v11h-8zM3 13h8v8H3z" /></svg>;
     case "opportunities": return <svg {...common}><path d="M4 19V12M10 19V5M16 19V9M22 19V3" /></svg>;
+    case "analytics": return <svg {...common}><path d="M3 3v18h18M7 15l4-5 3 3 5-7" /></svg>;
   }
 }
 
@@ -42,7 +43,24 @@ export async function readSignedIn(): Promise<boolean> {
   }
 }
 
-export function Shell({ children, signedIn = false, navLabel = "Primary navigation" }: { children: React.ReactNode; signedIn?: boolean; navLabel?: string }) {
+/**
+ * Whether the signed-in account is one of the people who run the site. Only
+ * decides whether the menu offers the analytics page; the page's data is
+ * guarded in the database whatever this returns. Anything but a plain yes —
+ * an error, a database that does not have the function yet — hides the link.
+ */
+export async function readSiteOperator(): Promise<boolean> {
+  if (!isSupabaseConfigured()) return false;
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase.rpc("is_site_operator");
+    return data === true;
+  } catch {
+    return false;
+  }
+}
+
+export function Shell({ children, signedIn = false, siteOperator = false, navLabel = "Primary navigation" }: { children: React.ReactNode; signedIn?: boolean; siteOperator?: boolean; navLabel?: string }) {
   return (
     <div className="site-shell">
       <header className="topbar">
@@ -66,6 +84,7 @@ export function Shell({ children, signedIn = false, navLabel = "Primary navigati
             ? <WorkspaceNavLink />
             : <Link className="nav-link workspace-nav" href="/auth/sign-in?next=%2Fapp" prefetch={false}><NavIcon name="workspace" /><LocalizedText en="Workspace" /></Link>}
           <NavLink href={signedIn ? "/app/opportunities" : "/auth/sign-in?next=%2Fapp%2Fopportunities"} className="nav-link nav-opportunities"><NavIcon name="opportunities" /><LocalizedText en="Opportunity Intelligence" /></NavLink>
+          {siteOperator && <NavLink className="nav-link nav-analytics" href="/app/analytics"><NavIcon name="analytics" /><LocalizedText en="Website analytics" /></NavLink>}
           {signedIn && <NotificationBell />}
           <LanguageSwitcher />
           <ThemeSwitcher />
