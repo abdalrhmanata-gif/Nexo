@@ -45,7 +45,19 @@ test("middleware does not bounce signed-in users away from confirmation endpoint
   assert.match(middleware, /isConfirmationEndpoint/);
   assert.match(middleware, /"\/auth\/callback"/);
   assert.match(middleware, /"\/auth\/confirm"/);
-  assert.match(middleware, /startsWith\("\/auth\/"\) && user && !isConfirmationEndpoint/);
+  assert.match(middleware, /startsWith\("\/auth\/"\) && user && !isConfirmationEndpoint && !isPasswordReset/);
+});
+
+test("a reset link reaches the page where the new password is chosen", async () => {
+  // The link in the email is exchanged for a session at /auth/callback, which
+  // then sends the person to /auth/reset-password. At that moment they are
+  // signed in — that is what the link does — so a rule that sends every
+  // signed-in person away from /auth/* sent them to the workspace instead,
+  // with the old password still in place and no way to change it.
+  const middleware = await source("middleware.ts");
+  assert.match(middleware, /const isPasswordReset = request\.nextUrl\.pathname === "\/auth\/reset-password";/);
+  const form = await source("components/auth-form.tsx");
+  assert.match(form, /\/auth\/callback\?next=\$\{encodeURIComponent\("\/auth\/reset-password"\)\}/);
 });
 
 test("the /app route fails closed when deployment middleware is unavailable", async () => {
