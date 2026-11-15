@@ -13,7 +13,7 @@ export const LEGAL = {
   supportEmail: "[support@zavqera.com — replace before launch]",
 
   /** Updated whenever either document changes materially. */
-  lastUpdated: "13 November 2026",
+  lastUpdated: "14 November 2026",
 
   /** Supervisory authority for a controller established in Norway. */
   authority: {
@@ -71,6 +71,12 @@ export const PROCESSORS: Processor[] = [
     location: "United States, with a global delivery network",
     transfer: "Covered by the EU Standard Contractual Clauses in Netlify's data processing agreement.",
   },
+  {
+    name: "Umami",
+    role: "Visitor statistics for the public pages (Umami Cloud). Receives the address of the public page you opened, the domain of the website that linked you here, your screen size, your browser language and the page title, and, as with any request your browser makes, your IP address and browser details in transit.",
+    location: "Umami Software, Inc. is established in the United States",
+    transfer: "A transfer outside the EEA, under Umami's data processing agreement.",
+  },
 ];
 
 export type PurposeRow = {
@@ -127,5 +133,11 @@ export const PURPOSES: PurposeRow[] = [
     data: "The page path, the date, and the website that linked here. No identifier of any kind, and nothing is stored on your device",
     basis: "Article 6(1)(f) — our legitimate interest in knowing whether the service is used. Because no one is identified, this does not single you out",
     retention: "Daily totals only, kept for 24 months",
+  },
+  {
+    purpose: "Seeing how the public pages are found and used, with Umami",
+    data: "Address of the public page, domain of the referring website, screen size, browser language, page title; IP address and browser details in transit. Nothing from the signed-in workspace",
+    basis: "Article 6(1)(f) — our legitimate interest in knowing whether the public pages are found and used",
+    retention: "Until we delete the statistics from Umami or close that account",
   },
 ];

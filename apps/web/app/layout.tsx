@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Shell, readSignedIn } from "../components/shell";
 import { PageMetrics } from "../components/page-metrics";
+import { UmamiAnalytics } from "../components/umami-analytics";
 import { LanguageProvider } from "../components/localized-text";
 import { getLanguage, getTranslate } from "../lib/i18n-server";
 
@@ -45,6 +46,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <Shell signedIn={signedIn} navLabel={t("Primary navigation")}>{children}</Shell>
         </LanguageProvider>
         <PageMetrics />
+        <UmamiAnalytics />
       </body>
     </html>
   );
