@@ -48,6 +48,16 @@ test("middleware does not bounce signed-in users away from confirmation endpoint
   assert.match(middleware, /startsWith\("\/auth\/"\) && user && !isConfirmationEndpoint && !isPasswordReset/);
 });
 
+test("a reset link that has expired lands on the reset page, not on the sign-up advice", async () => {
+  // The sign-in page's message for a bad link says to sign up again, which is
+  // right for a confirmation link and wrong for a reset link. The reset page
+  // already explains an expired link and offers a new one.
+  const confirm = await source("app/auth/confirm/route.ts");
+  assert.match(confirm, /if \(type === "recovery"\) \{\s*return NextResponse\.redirect\(new URL\("\/auth\/reset-password\?error_code=otp_expired", origin\)\);/);
+  const page = await source("app/auth/reset-password/page.tsx");
+  assert.match(page, /code === "otp_expired"/);
+});
+
 test("a reset link reaches the page where the new password is chosen", async () => {
   // The link in the email is exchanged for a session at /auth/callback, which
   // then sends the person to /auth/reset-password. At that moment they are
