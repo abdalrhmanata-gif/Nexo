@@ -26,22 +26,22 @@ export default async function TemplatesPage() {
     <section className="hero template-hero-panel">
       <p className="eyebrow"><LocalizedText en="Mission templates" /></p>
       <h1><LocalizedText en="Start with a useful first plan." /></h1>
-      <p><LocalizedText en="Choose a starting point, review every field, and keep control of the Mission before you create it." /></p>
-      <p className="action-hint"><LocalizedText en="Featured: a real business Mission designed to show how Zavqera works with goals, boundaries, and reviewable execution." /></p>
+      <p><LocalizedText en="Choose a starting point, review every field, and keep control of the mission before you create it." /></p>
+      <p className="action-hint"><LocalizedText en="Start with a useful first plan." /></p>
     </section>
     <section className="grid" aria-label={t("Mission templates")}>
       {missionTemplates.map((template) => <article className={`card template-card${template.featured ? " template-card-featured" : ""}`} key={template.id}>
         <div className={`template-icon template-icon-${template.id}`}><TemplateIcon id={template.id} /></div>
-        <p className="eyebrow">{template.featured ? <LocalizedText en="Featured Mission" /> : <LocalizedText en="Mission template" />}</p>
+        <p className="eyebrow">{template.featured ? <LocalizedText en="Mission template" /> : <LocalizedText en="Mission template" />}</p>
         <h2><LocalizedText en={template.title} /></h2>
         <p><LocalizedText en={template.description} /></p>
         <ul className="template-criteria">{template.criteria.map((criterion) => <li key={criterion}><LocalizedText en={criterion} /></li>)}</ul>
         <div className="template-card-actions">
-          <Link className="button" href={`/templates/${template.id}`}><LocalizedText en="View Mission" /></Link>
-          <Link className="button button-quiet" href={templateHref(template, t)}><LocalizedText en="Use template" /></Link>
+          <Link className="button" href={`/templates/${template.id}`}><LocalizedText en="Open mission" /></Link>
+          <Link className="button button-quiet" href={templateHref(template, t)}><LocalizedText en="Use this template" /></Link>
         </div>
       </article>)}
     </section>
-    <p className="action-hint template-note"><LocalizedText en="A template only pre-fills a draft. Nothing is created until you review it and submit the Mission form." /></p>
+    <p className="action-hint template-note"><LocalizedText en="A template only pre-fills a draft. Nothing is created until you review it and submit the mission form." /></p>
   </div>;
 }
