@@ -24,7 +24,7 @@ export function ShareTemplateButton({ title }: { title: string }) {
 
   return (
     <button className="button button-quiet" type="button" onClick={share}>
-      {copied ? <LocalizedText en="Link copied" /> : <LocalizedText en="Share this Mission" />}
+      {copied ? <LocalizedText en="Copied" /> : <LocalizedText en="Share this Mission" />}
     </button>
   );
 }
