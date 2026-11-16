@@ -2,6 +2,7 @@ import Link from "next/link";
 import { LocalizedText } from "../../components/localized-text";
 import { PlanInterest } from "../../components/plan-interest";
 import { billingConfigured } from "../../lib/stripe-client";
+import { aiAccessMode } from "../../lib/billing-plans.mjs";
 
 // Read per request: whether billing is open depends on the deployment's key.
 export const dynamic = "force-dynamic";
@@ -63,6 +64,8 @@ const plans = [
 
 export default function PricingPage() {
   const billing = billingConfigured();
+  // AI can be open by plan before paid plans can be bought: everyone is on Free.
+  const aiOpen = aiAccessMode(process.env) === "plans";
   return <div className="container">
     <section className="pricing-hero">
       <p className="eyebrow"><LocalizedText en="Pricing" /></p>
@@ -70,7 +73,9 @@ export default function PricingPage() {
       <p><LocalizedText en="One monthly plan should take you from an early idea to evidence, a clear decision, and a governed Mission." /></p>
       {billing
         ? <p className="pricing-status"><LocalizedText en="Plans are billed monthly through Stripe. You can cancel at any time, and your plan lasts until the end of the period you paid for." /></p>
-        : <p className="pricing-status"><LocalizedText en="Proposed launch pricing, not active offers. Paid billing and usage enforcement are not enabled; AI Opportunity Brief access is restricted to an approved preview tester." /></p>}
+        : aiOpen
+          ? <p className="pricing-status"><LocalizedText en="Free is open now, with 1 AI brief or Mission plan a month. The paid plans show proposed prices and cannot be bought yet." /></p>
+          : <p className="pricing-status"><LocalizedText en="Proposed launch pricing, not active offers. Paid billing and usage enforcement are not enabled; AI Opportunity Brief access is restricted to an approved preview tester." /></p>}
     </section>
     <section className="pricing" aria-labelledby="pricing-heading">
       <h2 id="pricing-heading" className="visually-hidden"><LocalizedText en="Proposed monthly plans" /></h2>
@@ -79,7 +84,7 @@ export default function PricingPage() {
           <p className="pricing-name"><LocalizedText en={plan.name} /></p>
           <div className="pricing-price"><strong>{plan.price}</strong><span><LocalizedText en={billing ? "per month" : "per month (proposed)"} /></span></div>
           <p className="pricing-allowance">
-            <strong>{plan.reports}</strong> <LocalizedText en={billing ? "AI briefs or Mission plans per month" : "AI briefs or Mission plans per month (planned)"} />
+            <strong>{plan.reports}</strong> <LocalizedText en={billing || (aiOpen && plan.cta) ? "AI briefs or Mission plans per month" : "AI briefs or Mission plans per month (planned)"} />
           </p>
           <ul>
             {plan.features.map((feature) => <li key={feature}><LocalizedText en={feature} /></li>)}
