@@ -1013,6 +1013,16 @@ const NB: Record<string, string> = {
   "Sign in to manage billing.":"Logg inn for å administrere fakturering.",
   "There is no billing account yet. Choose a plan first.":"Det finnes ingen faktureringskonto ennå. Velg et abonnement først.",
   "Billing could not be opened. Try again.":"Faktureringen kunne ikke åpnes. Prøv igjen.",
+
+  "Try a real Mission":"Prøv et ekte oppdrag",
+  "Shared Mission":"Delt oppdrag",
+  "Remix this Mission":"Lag din egen versjon av dette oppdraget",
+  "Give AI a Mission.":"Gi KI et oppdrag.",
+  "Change the goal and steps to make this Mission your own.":"Endre målet og stegene slik at oppdraget blir ditt eget.",
+  "Success score:":"Suksesspoeng:",
+  "Completed actions: {count}":"Fullførte handlinger: {count}",
+  "Share result":"Del resultatet",
+  "Share this Mission":"Del dette oppdraget",
 };
 const AR: Record<string, string> = {
   "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"تم تصدير النسخة الاحتياطية. الفرص: {count}. ملاحظات الأدلة: {notes}. احفظ الملف في مكان آمن؛ فهو يحتوي على ما سجّلته.",
@@ -2001,6 +2011,16 @@ const AR: Record<string, string> = {
   "Sign in to manage billing.":"سجّل الدخول لإدارة الفوترة.",
   "There is no billing account yet. Choose a plan first.":"لا يوجد حساب فوترة بعد. اختر خطة أولًا.",
   "Billing could not be opened. Try again.":"تعذّر فتح الفوترة. حاول مرة أخرى.",
+
+  "Try a real Mission":"جرّب مهمة حقيقية",
+  "Shared Mission":"المهمة المشتركة",
+  "Remix this Mission":"أنشئ نسختك من هذه المهمة",
+  "Give AI a Mission.":"امنح الذكاء الاصطناعي مهمة.",
+  "Change the goal and steps to make this Mission your own.":"غيّر الهدف والخطوات لتجعل هذه المهمة خاصة بك.",
+  "Success score:":"درجة النجاح:",
+  "Completed actions: {count}":"الإجراءات المكتملة: {count}",
+  "Share result":"مشاركة النتيجة",
+  "Share this Mission":"مشاركة هذه المهمة",
 };
 const ES: Record<string, string> = {
   "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"Copia de seguridad exportada. Oportunidades: {count}. Notas de evidencia: {notes}. Guarda el archivo en un lugar seguro; contiene lo que registraste.",
@@ -2992,6 +3012,16 @@ const ES: Record<string, string> = {
   "Sign in to manage billing.":"Inicia sesión para gestionar la facturación.",
   "There is no billing account yet. Choose a plan first.":"Aún no hay cuenta de facturación. Elige primero un plan.",
   "Billing could not be opened. Try again.":"No se pudo abrir la facturación. Inténtalo de nuevo.",
+
+  "Try a real Mission":"Prueba una misión real",
+  "Shared Mission":"Misión compartida",
+  "Remix this Mission":"Crea tu versión de esta misión",
+  "Give AI a Mission.":"Dale una misión a la IA.",
+  "Change the goal and steps to make this Mission your own.":"Cambia el objetivo y los pasos para hacer tuya esta misión.",
+  "Success score:":"Puntuación de éxito:",
+  "Completed actions: {count}":"Acciones completadas: {count}",
+  "Share result":"Compartir resultado",
+  "Share this Mission":"Compartir esta misión",
 };
 const FR: Record<string, string> = {
   "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"Sauvegarde exportée. Opportunités : {count}. Notes de preuve : {notes}. Conservez le fichier en lieu sûr ; il contient ce que vous avez enregistré.",
@@ -3983,6 +4013,16 @@ const FR: Record<string, string> = {
   "Sign in to manage billing.":"Connectez-vous pour gérer la facturation.",
   "There is no billing account yet. Choose a plan first.":"Il n'y a pas encore de compte de facturation. Choisissez d'abord une formule.",
   "Billing could not be opened. Try again.":"La facturation n'a pas pu s'ouvrir. Réessayez.",
+
+  "Try a real Mission":"Essayez une vraie mission",
+  "Shared Mission":"Mission partagée",
+  "Remix this Mission":"Créez votre version de cette mission",
+  "Give AI a Mission.":"Donnez une mission à l’IA.",
+  "Change the goal and steps to make this Mission your own.":"Modifiez l’objectif et les étapes pour vous approprier cette mission.",
+  "Success score:":"Score de réussite :",
+  "Completed actions: {count}":"Actions terminées : {count}",
+  "Share result":"Partager le résultat",
+  "Share this Mission":"Partager cette mission",
 };
 const DE: Record<string, string> = {
   "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"Sicherung exportiert. Chancen: {count}. Nachweisnotizen: {notes}. Bewahren Sie die Datei sicher auf; sie enthält, was Sie erfasst haben.",
@@ -4974,6 +5014,16 @@ const DE: Record<string, string> = {
   "Sign in to manage billing.":"Melden Sie sich an, um die Abrechnung zu verwalten.",
   "There is no billing account yet. Choose a plan first.":"Es gibt noch kein Abrechnungskonto. Wählen Sie zuerst einen Tarif.",
   "Billing could not be opened. Try again.":"Die Abrechnung konnte nicht geöffnet werden. Versuchen Sie es erneut.",
+
+  "Try a real Mission":"Eine echte Mission ausprobieren",
+  "Shared Mission":"Geteilte Mission",
+  "Remix this Mission":"Erstelle deine eigene Version dieser Mission",
+  "Give AI a Mission.":"Gib der KI eine Mission.",
+  "Change the goal and steps to make this Mission your own.":"Ändere das Ziel und die Schritte, um diese Mission zu deiner eigenen zu machen.",
+  "Success score:":"Erfolgsbewertung:",
+  "Completed actions: {count}":"Abgeschlossene Aktionen: {count}",
+  "Share result":"Ergebnis teilen",
+  "Share this Mission":"Diese Mission teilen",
 };
 
 export const DICTIONARIES: Record<AppLanguage, Record<string, string>> = {
