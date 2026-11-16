@@ -18,7 +18,21 @@ import { MissionMutationControls } from "../../../../components/mission-mutation
 import { ActionMutationControls } from "../../../../components/action-mutation-controls";
 import { AddActionForm } from "../../../../components/add-action-form";
 import { missionIntelligenceFor } from "../../../../lib/mission-intelligence.mjs";
-import { ShareMissionButton } from "../../../../components/share-mission-button";
+import { ShareMissionButton, type MissionShareStatus } from "../../../../components/share-mission-button";
+import { createSupabaseServerClient } from "../../../../lib/supabase/server";
+
+/** The live share link's counters, if this mission is shared. */
+async function readMissionShareStatus(missionId: string): Promise<MissionShareStatus> {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const supabase = await createSupabaseServerClient();
+    const found = await supabase.rpc("mission_share_status", { p_mission_id: missionId });
+    const row = (found.data as { views: number; remixes: number }[] | null)?.[0];
+    return found.error || !row ? null : { views: row.views, remixes: row.remixes };
+  } catch {
+    return null;
+  }
+}
 
 export default async function MissionDetailPage({
   params,
@@ -34,6 +48,7 @@ export default async function MissionDetailPage({
   const next = nextStepFor(mission, t, language);
   const verification = mission.verifications.find((item) => item.status === "VERIFIED") ?? mission.verifications[0];
   const outcome = mission.outcomes[0];
+  const shareStatus = await readMissionShareStatus(mission.id);
   const readiness = verificationReadiness(mission, t);
   const intelligence = missionIntelligenceFor(mission, new Date(), t, language);
   // A stated outcome with no work behind it is the moment the product is
@@ -51,19 +66,7 @@ export default async function MissionDetailPage({
     <p className="eyebrow no-print"><Link href="/app"><LocalizedText en="Workspace" /></Link> <LocalizedText en="/ Mission detail" /></p>
     <div className="landing-final-actions no-print">
       <SavePdfButton title={mission.name} subtitle={t("Mission plan")} />
-      <ShareMissionButton snapshot={{
-        name: mission.name,
-        intent: mission.intent,
-        criteria: mission.criteria,
-        completedSteps,
-        status: mission.lifecycleStatus,
-        progress: mission.progress,
-        outcome: outcome ? {
-          status: outcome.status,
-          successScore: outcome.successScore,
-          result: outcome.result,
-        } : undefined,
-      }} />
+      <ShareMissionButton missionId={mission.id} shared={shareStatus} />
     </div>
     <div className="detail-layout">
       <div className="detail-stack">

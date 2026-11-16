@@ -1024,6 +1024,14 @@ const NB: Record<string, string> = {
   "Share result":"Del resultatet",
   "Share this Mission":"Del dette oppdraget",
   "Free is open now, with 1 AI brief or Mission plan a month. The paid plans show proposed prices and cannot be bought yet.":"Free er åpent nå, med 1 KI-analyse eller oppdragsplan per måned. De betalte abonnementene viser foreslåtte priser og kan ikke kjøpes ennå.",
+  "This shared Mission is not available.":"Dette delte oppdraget er ikke tilgjengelig.",
+  "The link may be wrong, or the person who shared it has stopped sharing.":"Lenken kan være feil, eller personen som delte det, har sluttet å dele.",
+  "Not achieved":"Ikke oppnådd",
+  "The link could not be created. Try again.":"Lenken kunne ikke opprettes. Prøv igjen.",
+  "Sharing could not be stopped. Try again.":"Delingen kunne ikke stoppes. Prøv igjen.",
+  "Shared: opened {views} times, remixed {remixes} times.":"Delt: åpnet {views} ganger, gjenbrukt {remixes} ganger.",
+  "Stop sharing":"Slutt å dele",
+  "Sharing stopped. The link no longer works.":"Delingen er stoppet. Lenken virker ikke lenger.",
 };
 const AR: Record<string, string> = {
   "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"تم تصدير النسخة الاحتياطية. الفرص: {count}. ملاحظات الأدلة: {notes}. احفظ الملف في مكان آمن؛ فهو يحتوي على ما سجّلته.",
@@ -2023,6 +2031,14 @@ const AR: Record<string, string> = {
   "Share result":"مشاركة النتيجة",
   "Share this Mission":"مشاركة هذه المهمة",
   "Free is open now, with 1 AI brief or Mission plan a month. The paid plans show proposed prices and cannot be bought yet.":"الخطة المجانية متاحة الآن، مع ملخص ذكاء اصطناعي واحد أو خطة مهمة واحدة شهريًا. الخطط المدفوعة تعرض أسعارًا مقترحة ولا يمكن شراؤها بعد.",
+  "This shared Mission is not available.":"هذه المهمة المشتركة غير متاحة.",
+  "The link may be wrong, or the person who shared it has stopped sharing.":"قد يكون الرابط خاطئًا، أو أن من شاركها أوقف المشاركة.",
+  "Not achieved":"لم تتحقق",
+  "The link could not be created. Try again.":"تعذّر إنشاء الرابط. حاول مرة أخرى.",
+  "Sharing could not be stopped. Try again.":"تعذّر إيقاف المشاركة. حاول مرة أخرى.",
+  "Shared: opened {views} times, remixed {remixes} times.":"مشتركة: فُتحت {views} مرة، وأُعيد استخدامها {remixes} مرة.",
+  "Stop sharing":"إيقاف المشاركة",
+  "Sharing stopped. The link no longer works.":"أُوقفت المشاركة. الرابط لم يعد يعمل.",
 };
 const ES: Record<string, string> = {
   "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"Copia de seguridad exportada. Oportunidades: {count}. Notas de evidencia: {notes}. Guarda el archivo en un lugar seguro; contiene lo que registraste.",
@@ -3025,6 +3041,14 @@ const ES: Record<string, string> = {
   "Share result":"Compartir resultado",
   "Share this Mission":"Compartir esta misión",
   "Free is open now, with 1 AI brief or Mission plan a month. The paid plans show proposed prices and cannot be bought yet.":"Free ya está disponible, con 1 informe de IA o plan de misión al mes. Los planes de pago muestran precios propuestos y aún no se pueden comprar.",
+  "This shared Mission is not available.":"Esta misión compartida no está disponible.",
+  "The link may be wrong, or the person who shared it has stopped sharing.":"Puede que el enlace sea incorrecto o que la persona que la compartió haya dejado de compartirla.",
+  "Not achieved":"No logrado",
+  "The link could not be created. Try again.":"No se pudo crear el enlace. Inténtalo de nuevo.",
+  "Sharing could not be stopped. Try again.":"No se pudo dejar de compartir. Inténtalo de nuevo.",
+  "Shared: opened {views} times, remixed {remixes} times.":"Compartida: abierta {views} veces, reutilizada {remixes} veces.",
+  "Stop sharing":"Dejar de compartir",
+  "Sharing stopped. The link no longer works.":"Se dejó de compartir. El enlace ya no funciona.",
 };
 const FR: Record<string, string> = {
   "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"Sauvegarde exportée. Opportunités : {count}. Notes de preuve : {notes}. Conservez le fichier en lieu sûr ; il contient ce que vous avez enregistré.",
@@ -4027,6 +4051,14 @@ const FR: Record<string, string> = {
   "Share result":"Partager le résultat",
   "Share this Mission":"Partager cette mission",
   "Free is open now, with 1 AI brief or Mission plan a month. The paid plans show proposed prices and cannot be bought yet.":"Free est ouvert dès maintenant, avec 1 synthèse IA ou plan de mission par mois. Les formules payantes affichent des prix proposés et ne peuvent pas encore être achetées.",
+  "This shared Mission is not available.":"Cette mission partagée n'est pas disponible.",
+  "The link may be wrong, or the person who shared it has stopped sharing.":"Le lien est peut-être incorrect, ou la personne qui l'a partagée a arrêté le partage.",
+  "Not achieved":"Non atteint",
+  "The link could not be created. Try again.":"Le lien n'a pas pu être créé. Réessayez.",
+  "Sharing could not be stopped. Try again.":"Le partage n'a pas pu être arrêté. Réessayez.",
+  "Shared: opened {views} times, remixed {remixes} times.":"Partagée : ouverte {views} fois, réutilisée {remixes} fois.",
+  "Stop sharing":"Arrêter le partage",
+  "Sharing stopped. The link no longer works.":"Partage arrêté. Le lien ne fonctionne plus.",
 };
 const DE: Record<string, string> = {
   "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"Sicherung exportiert. Chancen: {count}. Nachweisnotizen: {notes}. Bewahren Sie die Datei sicher auf; sie enthält, was Sie erfasst haben.",
@@ -5029,6 +5061,14 @@ const DE: Record<string, string> = {
   "Share result":"Ergebnis teilen",
   "Share this Mission":"Diese Mission teilen",
   "Free is open now, with 1 AI brief or Mission plan a month. The paid plans show proposed prices and cannot be bought yet.":"Free ist jetzt verfügbar, mit 1 KI-Briefing oder Missionsplan pro Monat. Die bezahlten Tarife zeigen vorgeschlagene Preise und können noch nicht gekauft werden.",
+  "This shared Mission is not available.":"Diese geteilte Mission ist nicht verfügbar.",
+  "The link may be wrong, or the person who shared it has stopped sharing.":"Der Link ist vielleicht falsch, oder die Person hat das Teilen beendet.",
+  "Not achieved":"Nicht erreicht",
+  "The link could not be created. Try again.":"Der Link konnte nicht erstellt werden. Versuchen Sie es erneut.",
+  "Sharing could not be stopped. Try again.":"Das Teilen konnte nicht beendet werden. Versuchen Sie es erneut.",
+  "Shared: opened {views} times, remixed {remixes} times.":"Geteilt: {views}-mal geöffnet, {remixes}-mal übernommen.",
+  "Stop sharing":"Teilen beenden",
+  "Sharing stopped. The link no longer works.":"Teilen beendet. Der Link funktioniert nicht mehr.",
 };
 
 export const DICTIONARIES: Record<AppLanguage, Record<string, string>> = {

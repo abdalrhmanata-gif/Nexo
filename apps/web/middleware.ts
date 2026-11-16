@@ -29,6 +29,9 @@ export async function middleware(request: NextRequest) {
   }
   const isConfirmationEndpoint = request.nextUrl.pathname === "/auth/callback"
     || request.nextUrl.pathname === "/auth/confirm";
+  // A reset link signs the person in and then lands here to choose the new
+  // password. Sending signed-in people away from this page, as the other
+  // /auth pages do, would make the reset impossible to finish.
   const isPasswordReset = request.nextUrl.pathname === "/auth/reset-password";
   if (request.nextUrl.pathname.startsWith("/auth/") && user && !isConfirmationEndpoint && !isPasswordReset) {
     return NextResponse.redirect(new URL("/app", request.url));
