@@ -21,16 +21,22 @@ function publicSnapshot(snapshot: ShareMissionSnapshot): ShareMissionSnapshot {
   const primitiveResult = snapshot.outcome
     ? Object.fromEntries(
         Object.entries(snapshot.outcome.result)
-          .filter(([, value]) => ["string", "number", "boolean"].includes(typeof value))
-          .slice(0, 8)
-          .map(([key, value]) => [key, typeof value === "string" ? value.slice(0, 500) : value]),
+          .filter(([key, value]) =>
+            /^[a-zA-Z0-9 _-]{1,50}$/.test(key) &&
+            !/(email|token|secret|password|credential|owner|workspace|user|phone|address|authorization|session|customer.?id)/i.test(key) &&
+            ["string", "number", "boolean"].includes(typeof value),
+          )
+          .slice(0, 4)
+          .map(([key, value]) => [key, typeof value === "string" ? value.slice(0, 240) : value]),
       )
     : undefined;
 
   return {
     ...snapshot,
-    criteria: snapshot.criteria.slice(0, 8),
-    completedSteps: snapshot.completedSteps.slice(0, 8),
+    name: snapshot.name.slice(0, 100),
+    intent: snapshot.intent.slice(0, 700),
+    criteria: snapshot.criteria.slice(0, 6).map((item) => item.slice(0, 180)),
+    completedSteps: snapshot.completedSteps.slice(0, 6).map((item) => item.slice(0, 140)),
     outcome: snapshot.outcome
       ? { ...snapshot.outcome, result: primitiveResult ?? {} }
       : undefined,
@@ -57,7 +63,6 @@ export function ShareMissionButton({ snapshot }: { snapshot: ShareMissionSnapsho
       if (navigator.share) {
         await navigator.share({
           title: snapshot.name,
-          text: snapshot.outcome ? "See what this AI Mission produced." : "See this AI Mission.",
           url: url.toString(),
         });
         return;
@@ -72,7 +77,7 @@ export function ShareMissionButton({ snapshot }: { snapshot: ShareMissionSnapsho
 
   return (
     <button className="button button-quiet no-print" type="button" onClick={share}>
-      {copied ? <LocalizedText en="Link copied" /> : <LocalizedText en="Share result" />}
+      {copied ? <LocalizedText en="Copied" /> : <LocalizedText en="Share result" />}
     </button>
   );
 }
