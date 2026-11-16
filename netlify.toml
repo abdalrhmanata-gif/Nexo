@@ -15,6 +15,11 @@
 [build.environment]
   NODE_VERSION = "20"
   NEXT_DISABLE_NETLIFY_EDGE = "true"
+  # ZAVQERA_AI_ACCESS holds the word "plans", which appears all through the
+  # source. If the variable is marked secret in the UI, Netlify's secret scan
+  # matches every occurrence and fails the build (deploy-preview-126,
+  # 2026-11-16). It is a switch, not a secret.
+  SECRETS_SCAN_OMIT_KEYS = "ZAVQERA_AI_ACCESS"
 
 # Framework auto-detection does not run for this site, so the deploy published
 # raw .next assets with no Functions or Edge Functions. Declaring the adapter
