@@ -42,7 +42,7 @@ export default async function HomePage() {
         <p className="landing-lede"><LocalizedText en="Write the outcome you want. Get a first plan back, with the weak parts of your own wording pointed out — then keep the evidence that you reached it." /></p>
         <div className="landing-hero-actions">
           <Link className="button" href="/app"><LocalizedText en="Open workspace" /> <span aria-hidden="true">→</span></Link>
-          <Link className="button button-quiet" href="/app/opportunities"><LocalizedText en="Explore Opportunity Intelligence" /></Link>
+          <Link className="button button-quiet" href="/templates/business-opportunity-scan"><LocalizedText en="Try a real Mission" /></Link>
         </div>
         <div className="landing-trust-line"><span aria-hidden="true">✓</span> <LocalizedText en="Review before action. Clear boundaries. No false certainty." /></div>
         <p className="landing-honesty"><LocalizedText en="Suggestions come from rules in our source code, not from a model guessing. Nothing you write is sent to an AI provider." /></p>
