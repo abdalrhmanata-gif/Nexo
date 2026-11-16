@@ -3,10 +3,34 @@ import Link from "next/link";
 import { LocalizedFill, LocalizedText } from "../../../components/localized-text";
 import { getTranslate } from "../../../lib/i18n-server";
 
-export const metadata: Metadata = {
-  title: "Shared Mission · Zavqera",
-  description: "A public snapshot shared from Zavqera.",
-};
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ data?: string }>;
+}): Promise<Metadata> {
+  const snapshot = decodeSnapshot((await searchParams).data ?? "");
+  if (!snapshot) {
+    return { title: "Zavqera", robots: { index: false, follow: false } };
+  }
+
+  const title = `${snapshot.name} · Zavqera`;
+  const description = snapshot.intent.slice(0, 180);
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "article",
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
+    robots: { index: false, follow: false },
+  };
+}
 
 type Snapshot = {
   name: string;
