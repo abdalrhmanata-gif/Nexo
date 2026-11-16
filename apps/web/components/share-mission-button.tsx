@@ -17,13 +17,26 @@ type ShareMissionSnapshot = {
   };
 };
 
+function isSafeResultKey(key: string) {
+  if (key.length < 1 || key.length > 50) return false;
+  const lower = key.toLowerCase();
+  const forbidden = ["email", "token", "secret", "password", "credential", "owner", "workspace", "user", "phone", "address", "authorization", "session", "customerid"];
+  if (forbidden.some((word) => lower.includes(word))) return false;
+  return key.split("").every((char) => {
+    const code = char.charCodeAt(0);
+    return (code >= 48 && code <= 57) ||
+      (code >= 65 && code <= 90) ||
+      (code >= 97 && code <= 122) ||
+      char === " " || char === "_" || char === "-";
+  });
+}
+
 function publicSnapshot(snapshot: ShareMissionSnapshot): ShareMissionSnapshot {
   const primitiveResult = snapshot.outcome
     ? Object.fromEntries(
         Object.entries(snapshot.outcome.result)
           .filter(([key, value]) =>
-            /^[a-zA-Z0-9 _-]{1,50}$/.test(key) &&
-            !/(email|token|secret|password|credential|owner|workspace|user|phone|address|authorization|session|customer.?id)/i.test(key) &&
+            isSafeResultKey(key) &&
             ["string", "number", "boolean"].includes(typeof value),
           )
           .slice(0, 4)
