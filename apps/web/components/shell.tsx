@@ -60,7 +60,7 @@ export async function readSiteOperator(): Promise<boolean> {
   }
 }
 
-export function Shell({ children, signedIn = false, siteOperator = false, sharedWorkspace = null, navLabel = "Primary navigation" }: { children: React.ReactNode; signedIn?: boolean; siteOperator?: boolean; sharedWorkspace?: { ownerEmail: string; role: string } | null; navLabel?: string }) {
+export function Shell({ children, signedIn = false, siteOperator = false, billing = false, sharedWorkspace = null, navLabel = "Primary navigation" }: { children: React.ReactNode; signedIn?: boolean; siteOperator?: boolean; billing?: boolean; sharedWorkspace?: { ownerEmail: string; role: string } | null; navLabel?: string }) {
   return (
     <div className="site-shell">
       <header className="topbar">
@@ -84,6 +84,7 @@ export function Shell({ children, signedIn = false, siteOperator = false, shared
             ? <WorkspaceNavLink />
             : <Link className="nav-link workspace-nav" href="/auth/sign-in?next=%2Fapp" prefetch={false}><NavIcon name="workspace" /><LocalizedText en="Workspace" /></Link>}
           <NavLink href={signedIn ? "/app/opportunities" : "/auth/sign-in?next=%2Fapp%2Fopportunities"} className="nav-link nav-opportunities"><NavIcon name="opportunities" /><LocalizedText en="Opportunity Intelligence" /></NavLink>
+          {signedIn && billing && <NavLink className="nav-link nav-billing" href="/app/billing"><NavIcon name="pricing" /><LocalizedText en="Billing" /></NavLink>}
           {siteOperator && <NavLink className="nav-link nav-analytics" href="/app/analytics"><NavIcon name="analytics" /><LocalizedText en="Website analytics" /></NavLink>}
           {signedIn && <NotificationBell />}
           <LanguageSwitcher />

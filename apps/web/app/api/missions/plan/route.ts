@@ -3,7 +3,9 @@ import { createSupabaseServerClient, getAuthenticatedUser } from "../../../../li
 import { isSupabaseConfigured } from "../../../../lib/supabase/config";
 import { isTrustedSameOriginRequest } from "../../../../lib/request-origin.mjs";
 import {
-  isApprovedPreviewTester,
+  hasAiAccess,
+  visibleProviderReason,
+  visibleProviderRefusal,
   jsonError,
   describeProvider,
   rateLimit,
@@ -88,14 +90,14 @@ export async function GET() {
     return jsonError(503, "AUTH_UNAVAILABLE", "Authentication is temporarily unavailable.");
   }
   if (!user) return jsonError(401, "AUTH_REQUIRED", "Sign in to draft a plan with AI.");
-  if (!isApprovedPreviewTester(user.id)) {
+  if (!hasAiAccess(user.id)) {
     return jsonError(403, "AI_ACCESS_RESTRICTED", "AI planning is limited to approved preview testers.", { accountId: user.id });
   }
 
   const provider = describeProvider();
   return okJson(provider.ok
     ? { ready: true }
-    : { ready: false, reason: provider.reason, detail: PROVIDER_REFUSAL[provider.reason] });
+    : { ready: false, reason: visibleProviderReason(user.id, provider.reason), detail: visibleProviderRefusal(user.id, PROVIDER_REFUSAL[provider.reason]) });
 }
 
 export async function POST(request: Request) {
@@ -121,13 +123,13 @@ export async function POST(request: Request) {
   }
   // Unapproved testers are turned away before any provider configuration is
   // read, so an allowlist mistake cannot leak which providers are set up.
-  if (!isApprovedPreviewTester(user.id)) {
+  if (!hasAiAccess(user.id)) {
     return jsonError(403, "AI_ACCESS_RESTRICTED", "AI planning is limited to approved preview testers.");
   }
 
   const provider = describeProvider();
   if (!provider.ok) {
-    return jsonError(503, "AI_ANALYSIS_NOT_CONFIGURED", PROVIDER_REFUSAL[provider.reason]);
+    return jsonError(503, "AI_ANALYSIS_NOT_CONFIGURED", visibleProviderRefusal(user.id, PROVIDER_REFUSAL[provider.reason]));
   }
   const config = provider.config;
 

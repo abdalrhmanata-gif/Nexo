@@ -17,7 +17,7 @@ test("the plan route passes the same gates as the brief route", () => {
   assert.match(route, /isTrustedSameOriginRequest/);
   assert.match(route, /isSupabaseConfigured\(\)/);
   assert.match(route, /getAuthenticatedUser/);
-  assert.match(route, /isApprovedPreviewTester/);
+  assert.match(route, /hasAiAccess\(user\.id\)/);
   assert.match(route, /describeProvider\(\)/);
   assert.match(route, /rateLimit\(/);
   assert.match(route, /readLimitedBody\(request, MAX_PLAN_REQUEST_BYTES\)/);
@@ -26,11 +26,13 @@ test("the plan route passes the same gates as the brief route", () => {
   assert.doesNotMatch(route, /console\.(log|error)\(/);
 });
 
-test("an unapproved tester is turned away before provider configuration is read", () => {
+test("a person without AI access is turned away before provider configuration is read", () => {
   // Otherwise the refusal itself tells a stranger whether a provider is set
-  // up on this deployment.
+  // up on this deployment. hasAiAccess is the allowlist, or every signed-in
+  // person once AI opens by plan; in that mode the reason itself is hidden
+  // from anyone not on the allowlist (visibleProviderRefusal).
   const route = read("app/api/missions/plan/route.ts");
-  const allowlistAt = route.indexOf("if (!isApprovedPreviewTester(user.id))");
+  const allowlistAt = route.indexOf("if (!hasAiAccess(user.id))");
   const configAt = route.indexOf("const provider = describeProvider()");
   assert.ok(allowlistAt >= 0 && configAt > allowlistAt,
     "the allowlist check must come first");
@@ -125,10 +127,11 @@ test("the readiness check costs nothing and still guards what it reveals", () =>
 
   // And it must not hand configuration details to someone who is not allowed
   // to use the feature: the allowlist comes before the reason is read.
-  const allowlistAt = get.indexOf("isApprovedPreviewTester");
+  const allowlistAt = get.indexOf("hasAiAccess");
   const describeAt = get.indexOf("describeProvider()");
   assert.ok(allowlistAt > 0 && describeAt > allowlistAt,
-    "the allowlist must be checked before the configuration is described");
+    "access must be checked before the configuration is described");
+  assert.match(get, /visibleProviderReason\(user\.id, provider\.reason\)/, "the reason is for the people who run the site");
   assert.match(get, /AUTH_REQUIRED/, "a signed-out caller is turned away first");
 });
 

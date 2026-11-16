@@ -6,7 +6,8 @@ import { isTrustedSameOriginRequest } from "../../../../lib/request-origin.mjs";
 // body and the error shape. One copy, used by every paid-provider route.
 import {
   PROVIDER_TIMEOUT_MS,
-  isApprovedPreviewTester,
+  hasAiAccess,
+  visibleProviderRefusal,
   jsonError,
   noStoreHeaders,
   describeProvider,
@@ -81,13 +82,13 @@ export async function POST(request: Request) {
     return jsonError(503, "AUTH_UNAVAILABLE", "Authentication is temporarily unavailable.");
   }
   if (!user) return jsonError(401, "AUTHENTICATION_REQUIRED", "Sign in to generate an AI Opportunity Brief.");
-  if (!isApprovedPreviewTester(user.id)) {
+  if (!hasAiAccess(user.id)) {
     return jsonError(403, "AI_ACCESS_RESTRICTED", "AI Opportunity Brief is limited to approved preview testers.");
   }
 
   const provider = describeProvider();
   if (!provider.ok) {
-    return jsonError(503, "AI_ANALYSIS_NOT_CONFIGURED", PROVIDER_REFUSAL[provider.reason]);
+    return jsonError(503, "AI_ANALYSIS_NOT_CONFIGURED", visibleProviderRefusal(user.id, PROVIDER_REFUSAL[provider.reason]));
   }
   const config = provider.config;
 

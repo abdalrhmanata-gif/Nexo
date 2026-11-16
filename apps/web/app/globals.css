@@ -1583,3 +1583,15 @@ html[dir="rtl"] input, html[dir="rtl"] textarea {
 :root[data-theme="dark"] .shared-workspace-band { color:#bfe5de; background:#1d3533; }
 :root[data-theme="dark"] .team-open { color:#8fd3c7; }
 :root[data-theme="dark"] .team-invite-form select, :root[data-theme="dark"] .team-link-row input { background:#1b2229; color:inherit; border-color:#33404b; }
+
+/* Billing */
+.billing-page { max-width:860px; }
+.billing-summary h2 { margin:4px 0 8px; font-size:28px; }
+.billing-status { font-weight:700; color:#315d59; }
+.billing-usage { margin-bottom:0; }
+.billing-actions { margin-top:18px; }
+.billing-plan-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:12px; margin-top:12px; }
+.billing-plan { display:flex; flex-direction:column; gap:6px; padding:14px; border:1px solid var(--line); border-radius:8px; }
+.billing-plan small { color:var(--muted); }
+.billing-plan .button { margin-top:6px; align-self:flex-start; }
+:root[data-theme="dark"] .billing-status { color:#8fd3c7; }
