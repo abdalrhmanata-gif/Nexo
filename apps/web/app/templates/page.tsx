@@ -1,45 +1,16 @@
 import Link from "next/link";
 import { LocalizedText } from "../../components/localized-text";
 import { getTranslate } from "../../lib/i18n-server";
-
-const templates = [
-  {
-    id: "launch-plan",
-    title: "Launch a small project",
-    description: "Turn an idea into a bounded launch plan with clear milestones.",
-    intent: "Prepare and validate a small project launch while keeping cost, timing, and risk visible.",
-    criteria: ["Define the target audience and outcome", "Validate demand with credible evidence", "Create a milestone plan and budget"],
-    actions: ["Describe the target user and problem", "Collect evidence for demand", "Draft milestones, costs, and risks"],
-  },
-  {
-    id: "research-decision",
-    title: "Make an evidence-based decision",
-    description: "Compare options, preserve uncertainty, and document the decision.",
-    intent: "Compare realistic options using trustworthy evidence and make a decision with assumptions and uncertainties clearly stated.",
-    criteria: ["Identify at least two realistic options", "Record supporting and contradictory evidence", "Document a decision and remaining unknowns"],
-    actions: ["Define the decision and constraints", "Collect primary or authoritative sources", "Compare options and record open questions"],
-  },
-  {
-    id: "weekly-operations",
-    title: "Improve a weekly workflow",
-    description: "Find friction in recurring work and measure a safe improvement.",
-    intent: "Improve one recurring workflow without disrupting critical operations, and confirm whether the change helped.",
-    criteria: ["Describe the current workflow and baseline", "Test one reversible improvement", "Compare the outcome with the baseline"],
-    actions: ["Map the current steps and bottlenecks", "Choose a small reversible change", "Review results and decide whether to keep it"],
-  },
-];
+import { missionTemplates } from "../../lib/mission-templates";
 
 function TemplateIcon({ id }: { id: string }) {
+  if (id === "business-opportunity-scan") return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m16.5 16.5 4 4M8 11h6M11 8v6" /></svg>;
   if (id === "launch-plan") return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20 10 4l4 7 6 2-16 7Z" /><path d="m10 4 4 7" /></svg>;
   if (id === "research-decision") return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m15.5 15.5 5 5M8 10.5h5M10.5 8v5" /></svg>;
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h10M4 19h6" /><circle cx="18" cy="12" r="2" /><circle cx="14" cy="19" r="2" /></svg>;
 }
 
-// The card showed a translated template and the link handed the form the
-// English one: the owner chose a template on an Arabic page and got a draft
-// in English. What a template fills in becomes the person's own mission, so
-// it is written in their language here, where the link is built.
-function templateHref(template: typeof templates[number], t: (en: string) => string) {
+function templateHref(template: typeof missionTemplates[number], t: (en: string) => string) {
   const params = new URLSearchParams({
     name: t(template.title),
     intent: t(template.intent),
@@ -55,20 +26,22 @@ export default async function TemplatesPage() {
     <section className="hero template-hero-panel">
       <p className="eyebrow"><LocalizedText en="Mission templates" /></p>
       <h1><LocalizedText en="Start with a useful first plan." /></h1>
-      <p><LocalizedText en="Choose a starting point, review every field, and keep control of the mission before you create it." /></p>
+      <p><LocalizedText en="Choose a starting point, review every field, and keep control of the Mission before you create it." /></p>
+      <p className="action-hint"><LocalizedText en="Featured: a real business Mission designed to show how Zavqera works with goals, boundaries, and reviewable execution." /></p>
     </section>
     <section className="grid" aria-label={t("Mission templates")}>
-      {templates.map((template) => <article className="card template-card" key={template.id}>
+      {missionTemplates.map((template) => <article className={`card template-card${template.featured ? " template-card-featured" : ""}`} key={template.id}>
         <div className={`template-icon template-icon-${template.id}`}><TemplateIcon id={template.id} /></div>
-        <p className="eyebrow"><LocalizedText en="Mission template" /></p>
-        {/* Pass only `en`. Passing the English value as nb/ar overrode the
-            dictionary lookup, so these never translated in any language. */}
+        <p className="eyebrow">{template.featured ? <LocalizedText en="Featured Mission" /> : <LocalizedText en="Mission template" />}</p>
         <h2><LocalizedText en={template.title} /></h2>
         <p><LocalizedText en={template.description} /></p>
         <ul className="template-criteria">{template.criteria.map((criterion) => <li key={criterion}><LocalizedText en={criterion} /></li>)}</ul>
-        <Link className="button" href={templateHref(template, t)}><LocalizedText en="Use this template" /></Link>
+        <div className="template-card-actions">
+          <Link className="button" href={`/templates/${template.id}`}><LocalizedText en="View Mission" /></Link>
+          <Link className="button button-quiet" href={templateHref(template, t)}><LocalizedText en="Use template" /></Link>
+        </div>
       </article>)}
     </section>
-    <p className="action-hint template-note"><LocalizedText en="A template only pre-fills a draft. Nothing is created until you review it and submit the mission form." /></p>
+    <p className="action-hint template-note"><LocalizedText en="A template only pre-fills a draft. Nothing is created until you review it and submit the Mission form." /></p>
   </div>;
 }
