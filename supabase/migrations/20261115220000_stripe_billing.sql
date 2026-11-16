@@ -276,9 +276,17 @@ begin
   if v_existing_customer is not null and v_existing_customer <> p_customer_id then
     return 'user is linked to another customer';
   end if;
+  -- checkout.session.completed and customer.subscription.created arrive
+  -- together and both link the same pair; whichever is second must not fail
+  -- on either unique index (measured 2026-11-16: the second got a 500 and
+  -- only succeeded on Stripe's retry). Then confirm what is stored.
   insert into private.billing_customers (user_id, customer_id, livemode)
   values (p_user_id, p_customer_id, p_livemode)
-  on conflict (user_id) do nothing;
+  on conflict do nothing;
+  if not exists (select 1 from private.billing_customers c
+                  where c.user_id = p_user_id and c.customer_id = p_customer_id) then
+    return 'customer is linked to another user';
+  end if;
   return null;
 end;
 $function$;
@@ -380,8 +388,13 @@ begin
         values (
           v_subscription_id, v_user_id, v_customer_id, v_price_id, coalesce(v_plan, 'free'),
           coalesce(v_object->>'status', 'incomplete'),
-          coalesce((v_object->>'cancel_at_period_end')::boolean, false),
-          case when v_period_end is null then null else to_timestamp(v_period_end) end,
+          -- The Customer Portal on this API version cancels by setting
+          -- cancel_at to the period end and leaves cancel_at_period_end
+          -- false (measured 2026-11-16). Either means "ends then".
+          coalesce((v_object->>'cancel_at_period_end')::boolean, false) or nullif(v_object->>'cancel_at', '') is not null,
+          case when nullif(v_object->>'cancel_at', '') is not null then to_timestamp((v_object->>'cancel_at')::bigint)
+               when v_period_end is null then null
+               else to_timestamp(v_period_end) end,
           v_livemode, v_created, timezone('utc', now()))
         on conflict (subscription_id) do update
           set price_id = excluded.price_id,
@@ -394,7 +407,8 @@ begin
           where private.billing_subscriptions.last_event_created <= excluded.last_event_created
             and private.billing_subscriptions.user_id = excluded.user_id;
         v_plan := private.refresh_billing_plan(v_user_id);
-        v_detail := jsonb_build_object('subscription', v_subscription_id, 'status', v_object->>'status', 'plan', v_plan);
+        v_detail := jsonb_build_object('subscription', v_subscription_id, 'status', v_object->>'status', 'plan', v_plan,
+          'ends', nullif(v_object->>'cancel_at', ''));
       end if;
 
     elsif v_type in ('invoice.paid', 'invoice.payment_failed', 'charge.refunded', 'charge.dispute.created', 'radar.early_fraud_warning.created') then
