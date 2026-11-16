@@ -8,7 +8,7 @@ import { missionTemplateById } from "../../../lib/mission-templates";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const template = missionTemplateById((await params).id);
-  if (!template) return { title: "Mission template · Zavqera" };
+  if (!template) return { title: "Zavqera" };
   return {
     title: `${template.title} · Zavqera`,
     description: template.shareDescription ?? template.description,
@@ -85,7 +85,7 @@ export default async function MissionTemplatePage({ params }: { params: Promise<
           <p><LocalizedText en="A template only pre-fills a draft. Nothing is created until you review it and submit the mission form." /></p>
         </div>
         <div className="landing-final-actions">
-          <Link className="button" href={templateHref(template, t)}><LocalizedText en="Use this Mission" /> <span aria-hidden="true">→</span></Link>
+          <Link className="button" href={templateHref(template, t)}><LocalizedText en="Use this template" /> <span aria-hidden="true">→</span></Link>
           <ShareTemplateButton title={t(template.shareTitle ?? template.title)} />
         </div>
       </section>
