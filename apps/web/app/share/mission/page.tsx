@@ -22,6 +22,20 @@ type Snapshot = {
   };
 };
 
+function isSafeResultKey(key: string) {
+  if (key.length < 1 || key.length > 50) return false;
+  const lower = key.toLowerCase();
+  const forbidden = ["email", "token", "secret", "password", "credential", "owner", "workspace", "user", "phone", "address", "authorization", "session", "customerid"];
+  if (forbidden.some((word) => lower.includes(word))) return false;
+  return key.split("").every((char) => {
+    const code = char.charCodeAt(0);
+    return (code >= 48 && code <= 57) ||
+      (code >= 65 && code <= 90) ||
+      (code >= 97 && code <= 122) ||
+      char === " " || char === "_" || char === "-";
+  });
+}
+
 function decodeSnapshot(value: string): Snapshot | null {
   if (!value || value.length > 9500) return null;
   try {
@@ -56,8 +70,7 @@ function decodeSnapshot(value: string): Snapshot | null {
         const result = Object.fromEntries(
           Object.entries(candidate.result as Record<string, unknown>)
             .filter(([key, item]) =>
-              /^[a-zA-Z0-9 _-]{1,50}$/.test(key) &&
-              !/(email|token|secret|password|credential|owner|workspace|user|phone|address|authorization|session|customer.?id)/i.test(key) &&
+              isSafeResultKey(key) &&
               ["string", "number", "boolean"].includes(typeof item),
             )
             .slice(0, 4)
@@ -139,7 +152,7 @@ export default async function SharedMissionPage({
           <p className="eyebrow"><LocalizedText en="Outcome" /></p>
           <h2>{snapshot.outcome.status === "COMPLETED"
             ? <LocalizedText en="Completed" />
-            : <LocalizedText en="Failed" />}</h2>
+            : <LocalizedText en="Mission unavailable" />}</h2>
           <p className="detail-intent">
             <strong>{t("Success score:")}</strong> {Math.round(snapshot.outcome.successScore * 100)}%
           </p>
