@@ -69,7 +69,7 @@ export function BillingActions({ hasSubscription, plan, checkout }: { hasSubscri
         <button className="button" type="button" disabled={busy !== null} onClick={() => go("/api/billing/portal")}><LocalizedText en="Manage billing" /></button>
       </div>
       : <div className="billing-plans">
-        <p><LocalizedText en="Prices are in US dollars. Checkout can show and charge the amount in your own currency, such as NOK or EUR." /></p>
+        <p><LocalizedText en="Prices are in US dollars. In some countries, checkout shows and charges the amount in the local currency." /></p>
         <div className="billing-plan-grid">
           {PLANS.map((option) => <div className="billing-plan" key={option.id}>
             <strong><LocalizedText en={option.label} /></strong>

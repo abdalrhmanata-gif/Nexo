@@ -31,3 +31,16 @@ test("only an active or trialing subscription with a known price grants a paid p
   assert.match(migration, /status in \('active', 'trialing'\)/);
   assert.match(migration, /from private\.billing_prices p where p\.price_id = v_price_id/);
 });
+
+test("a cancellation from the Customer Portal keeps the plan until the end it names", () => {
+  // On this API version the Portal sets cancel_at and leaves
+  // cancel_at_period_end false (measured in the Sandbox, 2026-11-16).
+  assert.match(migration, /or nullif\(v_object->>'cancel_at', ''\) is not null/);
+  assert.match(migration, /when nullif\(v_object->>'cancel_at', ''\) is not null then to_timestamp\(\(v_object->>'cancel_at'\)::bigint\)/);
+});
+
+test("two events linking the same customer at once do not fail each other", () => {
+  // checkout.session.completed and customer.subscription.created arrive
+  // together; the second one used to fail and wait for Stripe's retry.
+  assert.match(migration, /insert into private\.billing_customers \(user_id, customer_id, livemode\)\s+values \(p_user_id, p_customer_id, p_livemode\)\s+on conflict do nothing;/);
+});

@@ -1003,7 +1003,7 @@ const NB: Record<string, string> = {
   "Checkout was cancelled. Nothing was charged.":"Betalingen ble avbrutt. Ingenting ble trukket.",
   "Change your payment method, see invoices or cancel in the Stripe customer portal.":"Endre betalingsmåte, se fakturaer eller si opp i Stripes kundeportal.",
   "Manage billing":"Administrer fakturering",
-  "Prices are in US dollars. Checkout can show and charge the amount in your own currency, such as NOK or EUR.":"Prisene er i amerikanske dollar. Betalingssiden kan vise og belaste beløpet i din egen valuta, for eksempel NOK eller EUR.",
+  "Prices are in US dollars. In some countries, checkout shows and charges the amount in the local currency.":"Prisene er i amerikanske dollar. I noen land viser og belaster betalingssiden beløpet i lokal valuta.",
   "AI is not available right now. Try again later.":"KI er ikke tilgjengelig akkurat nå. Prøv igjen senere.",
   "Billing is not available yet.":"Fakturering er ikke tilgjengelig ennå.",
   "Sign in to choose a plan.":"Logg inn for å velge et abonnement.",
@@ -1023,6 +1023,7 @@ const NB: Record<string, string> = {
   "Completed actions: {count}":"Fullførte handlinger: {count}",
   "Share result":"Del resultatet",
   "Share this Mission":"Del dette oppdraget",
+  "Free is open now, with 1 AI brief or Mission plan a month. The paid plans show proposed prices and cannot be bought yet.":"Free er åpent nå, med 1 KI-analyse eller oppdragsplan per måned. De betalte abonnementene viser foreslåtte priser og kan ikke kjøpes ennå.",
 };
 const AR: Record<string, string> = {
   "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"تم تصدير النسخة الاحتياطية. الفرص: {count}. ملاحظات الأدلة: {notes}. احفظ الملف في مكان آمن؛ فهو يحتوي على ما سجّلته.",
@@ -2001,7 +2002,7 @@ const AR: Record<string, string> = {
   "Checkout was cancelled. Nothing was charged.":"أُلغي الدفع. لم يُخصم أي مبلغ.",
   "Change your payment method, see invoices or cancel in the Stripe customer portal.":"غيّر وسيلة الدفع أو اطّلع على الفواتير أو ألغِ الاشتراك من بوابة عملاء Stripe.",
   "Manage billing":"إدارة الفوترة",
-  "Prices are in US dollars. Checkout can show and charge the amount in your own currency, such as NOK or EUR.":"الأسعار بالدولار الأمريكي. يمكن لصفحة الدفع عرض المبلغ وخصمه بعملتك، مثل الكرونة النرويجية أو اليورو.",
+  "Prices are in US dollars. In some countries, checkout shows and charges the amount in the local currency.":"الأسعار بالدولار الأمريكي. في بعض البلدان تعرض صفحة الدفع المبلغ وتخصمه بالعملة المحلية.",
   "AI is not available right now. Try again later.":"الذكاء الاصطناعي غير متاح الآن. حاول لاحقًا.",
   "Billing is not available yet.":"الفوترة غير متاحة بعد.",
   "Sign in to choose a plan.":"سجّل الدخول لاختيار خطة.",
@@ -2021,6 +2022,7 @@ const AR: Record<string, string> = {
   "Completed actions: {count}":"الإجراءات المكتملة: {count}",
   "Share result":"مشاركة النتيجة",
   "Share this Mission":"مشاركة هذه المهمة",
+  "Free is open now, with 1 AI brief or Mission plan a month. The paid plans show proposed prices and cannot be bought yet.":"الخطة المجانية متاحة الآن، مع ملخص ذكاء اصطناعي واحد أو خطة مهمة واحدة شهريًا. الخطط المدفوعة تعرض أسعارًا مقترحة ولا يمكن شراؤها بعد.",
 };
 const ES: Record<string, string> = {
   "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"Copia de seguridad exportada. Oportunidades: {count}. Notas de evidencia: {notes}. Guarda el archivo en un lugar seguro; contiene lo que registraste.",
@@ -3002,7 +3004,7 @@ const ES: Record<string, string> = {
   "Checkout was cancelled. Nothing was charged.":"Se canceló el pago. No se ha cobrado nada.",
   "Change your payment method, see invoices or cancel in the Stripe customer portal.":"Cambia tu método de pago, consulta tus facturas o cancela en el portal de clientes de Stripe.",
   "Manage billing":"Gestionar facturación",
-  "Prices are in US dollars. Checkout can show and charge the amount in your own currency, such as NOK or EUR.":"Los precios están en dólares estadounidenses. El pago puede mostrar y cobrar el importe en tu moneda, como NOK o EUR.",
+  "Prices are in US dollars. In some countries, checkout shows and charges the amount in the local currency.":"Los precios están en dólares estadounidenses. En algunos países, el pago muestra y cobra el importe en la moneda local.",
   "AI is not available right now. Try again later.":"La IA no está disponible ahora mismo. Inténtalo más tarde.",
   "Billing is not available yet.":"La facturación aún no está disponible.",
   "Sign in to choose a plan.":"Inicia sesión para elegir un plan.",
@@ -3022,6 +3024,7 @@ const ES: Record<string, string> = {
   "Completed actions: {count}":"Acciones completadas: {count}",
   "Share result":"Compartir resultado",
   "Share this Mission":"Compartir esta misión",
+  "Free is open now, with 1 AI brief or Mission plan a month. The paid plans show proposed prices and cannot be bought yet.":"Free ya está disponible, con 1 informe de IA o plan de misión al mes. Los planes de pago muestran precios propuestos y aún no se pueden comprar.",
 };
 const FR: Record<string, string> = {
   "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"Sauvegarde exportée. Opportunités : {count}. Notes de preuve : {notes}. Conservez le fichier en lieu sûr ; il contient ce que vous avez enregistré.",
@@ -4003,7 +4006,7 @@ const FR: Record<string, string> = {
   "Checkout was cancelled. Nothing was charged.":"Le paiement a été annulé. Rien n'a été débité.",
   "Change your payment method, see invoices or cancel in the Stripe customer portal.":"Modifiez votre moyen de paiement, consultez vos factures ou résiliez dans le portail client Stripe.",
   "Manage billing":"Gérer la facturation",
-  "Prices are in US dollars. Checkout can show and charge the amount in your own currency, such as NOK or EUR.":"Les prix sont en dollars américains. La page de paiement peut afficher et débiter le montant dans votre devise, comme la NOK ou l'EUR.",
+  "Prices are in US dollars. In some countries, checkout shows and charges the amount in the local currency.":"Les prix sont en dollars américains. Dans certains pays, la page de paiement affiche et débite le montant dans la devise locale.",
   "AI is not available right now. Try again later.":"L'IA n'est pas disponible pour le moment. Réessayez plus tard.",
   "Billing is not available yet.":"La facturation n'est pas encore disponible.",
   "Sign in to choose a plan.":"Connectez-vous pour choisir une formule.",
@@ -4023,6 +4026,7 @@ const FR: Record<string, string> = {
   "Completed actions: {count}":"Actions terminées : {count}",
   "Share result":"Partager le résultat",
   "Share this Mission":"Partager cette mission",
+  "Free is open now, with 1 AI brief or Mission plan a month. The paid plans show proposed prices and cannot be bought yet.":"Free est ouvert dès maintenant, avec 1 synthèse IA ou plan de mission par mois. Les formules payantes affichent des prix proposés et ne peuvent pas encore être achetées.",
 };
 const DE: Record<string, string> = {
   "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"Sicherung exportiert. Chancen: {count}. Nachweisnotizen: {notes}. Bewahren Sie die Datei sicher auf; sie enthält, was Sie erfasst haben.",
@@ -5004,7 +5008,7 @@ const DE: Record<string, string> = {
   "Checkout was cancelled. Nothing was charged.":"Der Bezahlvorgang wurde abgebrochen. Es wurde nichts berechnet.",
   "Change your payment method, see invoices or cancel in the Stripe customer portal.":"Ändern Sie Ihre Zahlungsmethode, sehen Sie Rechnungen ein oder kündigen Sie im Stripe-Kundenportal.",
   "Manage billing":"Abrechnung verwalten",
-  "Prices are in US dollars. Checkout can show and charge the amount in your own currency, such as NOK or EUR.":"Die Preise sind in US-Dollar. Die Bezahlseite kann den Betrag in Ihrer Währung anzeigen und abbuchen, etwa in NOK oder EUR.",
+  "Prices are in US dollars. In some countries, checkout shows and charges the amount in the local currency.":"Die Preise sind in US-Dollar. In einigen Ländern zeigt die Bezahlseite den Betrag in der Landeswährung an und bucht ihn so ab.",
   "AI is not available right now. Try again later.":"KI ist gerade nicht verfügbar. Versuchen Sie es später erneut.",
   "Billing is not available yet.":"Die Abrechnung ist noch nicht verfügbar.",
   "Sign in to choose a plan.":"Melden Sie sich an, um einen Tarif zu wählen.",
@@ -5024,6 +5028,7 @@ const DE: Record<string, string> = {
   "Completed actions: {count}":"Abgeschlossene Aktionen: {count}",
   "Share result":"Ergebnis teilen",
   "Share this Mission":"Diese Mission teilen",
+  "Free is open now, with 1 AI brief or Mission plan a month. The paid plans show proposed prices and cannot be bought yet.":"Free ist jetzt verfügbar, mit 1 KI-Briefing oder Missionsplan pro Monat. Die bezahlten Tarife zeigen vorgeschlagene Preise und können noch nicht gekauft werden.",
 };
 
 export const DICTIONARIES: Record<AppLanguage, Record<string, string>> = {

@@ -100,3 +100,11 @@ test("every sentence billing can show is translated, including the routes' refus
   }
   assert.deepEqual(missing, []);
 });
+
+test("the pricing page says what is true when AI is open by plan but paid plans cannot be bought yet", () => {
+  const pricing = read("app/pricing/page.tsx");
+  assert.match(pricing, /aiAccessMode\(process\.env\) === "plans"/);
+  assert.match(pricing, /Free is open now, with 1 AI brief or Mission plan a month\. The paid plans show proposed prices and cannot be bought yet\./);
+  // The sentence about an approved preview tester stays only for the allowlist.
+  assert.match(pricing, /aiOpen\s*\?[\s\S]*Free is open now[\s\S]*:[\s\S]*Proposed launch pricing, not active offers/);
+});
