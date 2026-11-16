@@ -47,20 +47,20 @@ export default async function MissionTemplatePage({ params }: { params: Promise<
 
       <section className="hero template-hero-panel">
         <div>
-          <p className="eyebrow">{template.featured ? <LocalizedText en="Featured Mission" /> : <LocalizedText en="Mission template" />}</p>
+          <p className="eyebrow">{template.featured ? <LocalizedText en="Mission template" /> : <LocalizedText en="Mission template" />}</p>
           <h1>{t(template.title)}</h1>
           <p>{t(template.description)}</p>
         </div>
         <div className="landing-final-actions">
-          <Link className="button" href={templateHref(template, t)}><LocalizedText en="Use this Mission" /> <span aria-hidden="true">→</span></Link>
+          <Link className="button" href={templateHref(template, t)}><LocalizedText en="Use this template" /> <span aria-hidden="true">→</span></Link>
           <ShareTemplateButton title={t(template.shareTitle ?? template.title)} />
         </div>
       </section>
 
-      <section className="grid" aria-label={t("Mission details")}>
+      <section className="grid" aria-label={t("Mission templates")}>
         <article className="card">
           <p className="eyebrow"><LocalizedText en="Intent" /></p>
-          <h2><LocalizedText en="What this Mission is trying to achieve" /></h2>
+          <h2><LocalizedText en="Intent" /></h2>
           <p>{t(template.intent)}</p>
         </article>
         <article className="card">
@@ -69,21 +69,20 @@ export default async function MissionTemplatePage({ params }: { params: Promise<
           <ul className="template-criteria">{template.criteria.map((criterion) => <li key={criterion}>{t(criterion)}</li>)}</ul>
         </article>
         <article className="card">
-          <p className="eyebrow"><LocalizedText en="Bounded work" /></p>
-          <h2><LocalizedText en="What Zavqera asks the Mission to do" /></h2>
+          <p className="eyebrow"><LocalizedText en="Actions" /></p>
+          <h2><LocalizedText en="Actions" /></h2>
           <ol className="list">{template.actions.map((action) => <li key={action}>{t(action)}</li>)}</ol>
           <div className="form-note">
-            <strong><LocalizedText en="The point is not unlimited autonomy." /></strong>{" "}
-            <LocalizedText en="The Mission starts with a visible goal and bounded work so the person responsible can review what happens next." />
+            <LocalizedText en="Review before action. Clear boundaries. No false certainty." />
           </div>
         </article>
       </section>
 
       <section className="landing-final-cta">
         <div>
-          <p className="eyebrow"><LocalizedText en="Ready to try it?" /></p>
-          <h2><LocalizedText en="Turn this template into your own Mission." /></h2>
-          <p><LocalizedText en="Review the fields before anything is created. The template only prepares the draft." /></p>
+          <p className="eyebrow"><LocalizedText en="Start with one Mission" /></p>
+          <h2><LocalizedText en="Start with a useful first plan." /></h2>
+          <p><LocalizedText en="A template only pre-fills a draft. Nothing is created until you review it and submit the mission form." /></p>
         </div>
         <div className="landing-final-actions">
           <Link className="button" href={templateHref(template, t)}><LocalizedText en="Use this Mission" /> <span aria-hidden="true">→</span></Link>
