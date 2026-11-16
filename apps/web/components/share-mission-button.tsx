@@ -17,6 +17,26 @@ type ShareMissionSnapshot = {
   };
 };
 
+function publicSnapshot(snapshot: ShareMissionSnapshot): ShareMissionSnapshot {
+  const primitiveResult = snapshot.outcome
+    ? Object.fromEntries(
+        Object.entries(snapshot.outcome.result)
+          .filter(([, value]) => ["string", "number", "boolean"].includes(typeof value))
+          .slice(0, 8)
+          .map(([key, value]) => [key, typeof value === "string" ? value.slice(0, 500) : value]),
+      )
+    : undefined;
+
+  return {
+    ...snapshot,
+    criteria: snapshot.criteria.slice(0, 8),
+    completedSteps: snapshot.completedSteps.slice(0, 8),
+    outcome: snapshot.outcome
+      ? { ...snapshot.outcome, result: primitiveResult ?? {} }
+      : undefined,
+  };
+}
+
 function encodeSnapshot(snapshot: ShareMissionSnapshot) {
   const json = JSON.stringify(snapshot);
   const bytes = new TextEncoder().encode(json);
@@ -29,7 +49,7 @@ export function ShareMissionButton({ snapshot }: { snapshot: ShareMissionSnapsho
   const [copied, setCopied] = useState(false);
 
   async function share() {
-    const encoded = encodeSnapshot(snapshot);
+    const encoded = encodeSnapshot(publicSnapshot(snapshot));
     const url = new URL("/share/mission", window.location.origin);
     url.searchParams.set("data", encoded);
 
