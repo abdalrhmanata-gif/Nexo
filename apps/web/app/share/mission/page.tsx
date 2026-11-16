@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LocalizedText } from "../../../components/localized-text";
+import { LocalizedFill, LocalizedText } from "../../../components/localized-text";
+import { getTranslate } from "../../../lib/i18n-server";
 
 export const metadata: Metadata = {
   title: "Shared Mission · Zavqera",
-  description: "See a public Zavqera Mission result.",
+  description: "A public snapshot shared from Zavqera.",
 };
 
 type Snapshot = {
@@ -15,33 +16,78 @@ type Snapshot = {
   status: string;
   progress: number;
   outcome?: {
-    status: string;
+    status: "COMPLETED" | "FAILED";
     successScore: number;
-    result: Record<string, unknown>;
+    result: Record<string, string | number | boolean>;
   };
 };
 
 function decodeSnapshot(value: string): Snapshot | null {
+  if (!value || value.length > 9500) return null;
   try {
     const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
     const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
     const binary = atob(padded);
     const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
-    const decoded = new TextDecoder().decode(bytes);
-    const parsed = JSON.parse(decoded) as Snapshot;
-    if (!parsed || typeof parsed.name !== "string" || typeof parsed.intent !== "string") return null;
-    return parsed;
+    const raw = JSON.parse(new TextDecoder().decode(bytes)) as Record<string, unknown>;
+
+    if (typeof raw.name !== "string" || typeof raw.intent !== "string") return null;
+
+    const boundedStrings = (input: unknown, limit: number, maxLength: number) =>
+      Array.isArray(input)
+        ? input.filter((item): item is string => typeof item === "string")
+            .slice(0, limit).map((item) => item.slice(0, maxLength))
+        : [];
+
+    const progress = typeof raw.progress === "number" && Number.isFinite(raw.progress)
+      ? Math.max(0, Math.min(100, Math.round(raw.progress)))
+      : 0;
+
+    let outcome: Snapshot["outcome"];
+    if (raw.outcome && typeof raw.outcome === "object") {
+      const candidate = raw.outcome as Record<string, unknown>;
+      if (
+        (candidate.status === "COMPLETED" || candidate.status === "FAILED") &&
+        typeof candidate.successScore === "number" &&
+        Number.isFinite(candidate.successScore) &&
+        candidate.result && typeof candidate.result === "object" &&
+        !Array.isArray(candidate.result)
+      ) {
+        const result = Object.fromEntries(
+          Object.entries(candidate.result as Record<string, unknown>)
+            .filter(([key, item]) =>
+              /^[a-zA-Z0-9 _-]{1,50}$/.test(key) &&
+              !/(email|token|secret|password|credential|owner|workspace|user|phone|address|authorization|session|customer.?id)/i.test(key) &&
+              ["string", "number", "boolean"].includes(typeof item),
+            )
+            .slice(0, 4)
+            .map(([key, item]) => [key, typeof item === "string" ? item.slice(0, 240) : item]),
+        ) as Record<string, string | number | boolean>;
+
+        outcome = {
+          status: candidate.status,
+          successScore: Math.max(0, Math.min(1, candidate.successScore)),
+          result,
+        };
+      }
+    }
+
+    return {
+      name: raw.name.slice(0, 100),
+      intent: raw.intent.slice(0, 700),
+      criteria: boundedStrings(raw.criteria, 6, 180),
+      completedSteps: boundedStrings(raw.completedSteps, 6, 140),
+      status: typeof raw.status === "string" ? raw.status.slice(0, 30) : "DRAFT",
+      progress,
+      outcome,
+    };
   } catch {
     return null;
   }
 }
 
-function displayResult(result: Record<string, unknown>) {
-  const entries = Object.entries(result).filter(([, value]) =>
-    ["string", "number", "boolean"].includes(typeof value),
-  );
-  if (!entries.length) return null;
-  return entries.slice(0, 8);
+function displayResult(result: Record<string, string | number | boolean>) {
+  return Object.entries(result).slice(0, 4);
 }
 
 export default async function SharedMissionPage({
@@ -49,25 +95,26 @@ export default async function SharedMissionPage({
 }: {
   searchParams: Promise<{ data?: string }>;
 }) {
+  const t = await getTranslate();
   const snapshot = decodeSnapshot((await searchParams).data ?? "");
 
   if (!snapshot) {
     return (
       <div className="container">
-        <p className="eyebrow"><LocalizedText en="Shared Mission" /></p>
-        <h1 className="detail-title"><LocalizedText en="This Mission link is unavailable." /></h1>
-        <p className="detail-intent"><LocalizedText en="The link may have expired, been truncated, or contain an invalid snapshot." /></p>
-        <Link className="button" href="/templates"><LocalizedText en="Explore Missions" /></Link>
+        <p className="eyebrow"><LocalizedText en="Mission unavailable" /></p>
+        <h1 className="detail-title"><LocalizedText en="Mission unavailable" /></h1>
+        <p className="detail-intent"><LocalizedText en="It may have been deleted, or it belongs to another workspace." /></p>
+        <Link className="button" href="/templates"><LocalizedText en="Mission templates" /></Link>
       </div>
     );
   }
 
-  const resultEntries = snapshot.outcome ? displayResult(snapshot.outcome.result) : null;
+  const resultEntries = snapshot.outcome ? displayResult(snapshot.outcome.result) : [];
   const remix = new URLSearchParams({
     name: snapshot.name,
     intent: snapshot.intent,
-    criteria: snapshot.criteria.join("\n"),
-    actions: snapshot.completedSteps.join("\n"),
+    criteria: snapshot.criteria.join("\\n"),
+    actions: snapshot.completedSteps.join("\\n"),
   }).toString();
 
   return (
@@ -76,7 +123,6 @@ export default async function SharedMissionPage({
 
       <section className="hero template-hero-panel">
         <div>
-          <p className="eyebrow"><LocalizedText en="A real Mission result" /></p>
           <h1>{snapshot.name}</h1>
           <p>{snapshot.intent}</p>
         </div>
@@ -84,18 +130,20 @@ export default async function SharedMissionPage({
           <Link className="button" href={`/app/missions/new?${remix}`}>
             <LocalizedText en="Remix this Mission" /> <span aria-hidden="true">→</span>
           </Link>
-          <Link className="button button-quiet" href="/templates"><LocalizedText en="Explore Missions" /></Link>
+          <Link className="button button-quiet" href="/templates"><LocalizedText en="Mission templates" /></Link>
         </div>
       </section>
 
       {snapshot.outcome && (
         <section className="card">
-          <p className="eyebrow"><LocalizedText en="Result" /></p>
-          <h2>{snapshot.outcome.status === "COMPLETED" ? "Mission completed" : "Mission result"}</h2>
+          <p className="eyebrow"><LocalizedText en="Outcome" /></p>
+          <h2>{snapshot.outcome.status === "COMPLETED"
+            ? <LocalizedText en="Completed" />
+            : <LocalizedText en="Failed" />}</h2>
           <p className="detail-intent">
-            Success score: {Math.round(snapshot.outcome.successScore * 100)}%
+            <strong>{t("Success score:")}</strong> {Math.round(snapshot.outcome.successScore * 100)}%
           </p>
-          {resultEntries && (
+          {resultEntries.length > 0 && (
             <div className="grid">
               {resultEntries.map(([key, value]) => (
                 <article className="card" key={key}>
@@ -108,33 +156,35 @@ export default async function SharedMissionPage({
         </section>
       )}
 
-      <section className="grid" aria-label="Mission snapshot">
+      <section className="grid" aria-label={t("Mission templates")}>
         <article className="card">
           <p className="eyebrow"><LocalizedText en="Success criteria" /></p>
-          <h2><LocalizedText en="What good looked like" /></h2>
-          <ul className="list criteria-list">{snapshot.criteria.map((criterion) => <li key={criterion}>{criterion}</li>)}</ul>
+          <h2><LocalizedText en="What good looks like" /></h2>
+          {snapshot.criteria.length
+            ? <ul className="list criteria-list">{snapshot.criteria.map((criterion) => <li key={criterion}>{criterion}</li>)}</ul>
+            : <p className="detail-intent"><LocalizedText en="No success criteria were recorded for this mission." /></p>}
         </article>
 
         <article className="card">
-          <p className="eyebrow"><LocalizedText en="Progress" /></p>
+          <p className="eyebrow"><LocalizedText en="Mission plan" /></p>
           <h2>{snapshot.progress}%</h2>
-          <p className="detail-intent">{snapshot.completedSteps.length} completed step{snapshot.completedSteps.length === 1 ? "" : "s"}.</p>
+          <p className="detail-intent"><LocalizedFill en="Completed actions: {count}" values={{ count: snapshot.completedSteps.length }} /></p>
         </article>
 
         <article className="card">
-          <p className="eyebrow"><LocalizedText en="The work" /></p>
-          <h2><LocalizedText en="What the Mission did" /></h2>
+          <p className="eyebrow"><LocalizedText en="Actions" /></p>
+          <h2><LocalizedText en="Actions" /></h2>
           {snapshot.completedSteps.length
             ? <ol className="list">{snapshot.completedSteps.map((step) => <li key={step}>{step}</li>)}</ol>
-            : <p className="detail-intent"><LocalizedText en="No completed steps were shared in this snapshot." /></p>}
+            : <p className="detail-intent"><LocalizedText en="No actions yet" /></p>}
         </article>
       </section>
 
       <section className="landing-final-cta">
         <div>
-          <p className="eyebrow"><LocalizedText en="Try the idea yourself" /></p>
-          <h2><LocalizedText en="Don’t just read the result. Give AI a Mission." /></h2>
-          <p><LocalizedText en="Remix the Mission, change the goal and limits, and run your own version in Zavqera." /></p>
+          <p className="eyebrow"><LocalizedText en="Start with one Mission" /></p>
+          <h2><LocalizedText en="Give AI a Mission." /></h2>
+          <p><LocalizedText en="Change the goal and steps to make this Mission your own." /></p>
         </div>
         <Link className="button" href={`/app/missions/new?${remix}`}>
           <LocalizedText en="Remix this Mission" /> <span aria-hidden="true">→</span>
