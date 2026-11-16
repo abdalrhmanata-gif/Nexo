@@ -47,6 +47,7 @@ export default async function HomePage() {
         <div className="landing-trust-line"><span aria-hidden="true">✓</span> <LocalizedText en="Review before action. Clear boundaries. No false certainty." /></div>
         <p className="landing-honesty"><LocalizedText en="Suggestions come from rules in our source code, not from a model guessing. Nothing you write is sent to an AI provider." /></p>
         <Link className="landing-template-link" href="/templates"><LocalizedText en="Browse mission templates" /> <span aria-hidden="true">→</span></Link>
+        <Link className="landing-template-link" href="/app/opportunities"><LocalizedText en="Explore Opportunity Intelligence" /> <span aria-hidden="true">→</span></Link>
       </div>
       <div className="landing-visual" role="group" aria-label={t("Illustrative view of a governed Mission")}>
         <div className="landing-visual-top"><span className="landing-window-dots"><i/><i/><i/></span><span><LocalizedText en="MISSION CONTROL" /></span><span className="landing-preview-tag"><LocalizedText en="Illustrative view" /></span></div>
