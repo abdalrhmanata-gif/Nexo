@@ -18,6 +18,7 @@ import { MissionMutationControls } from "../../../../components/mission-mutation
 import { ActionMutationControls } from "../../../../components/action-mutation-controls";
 import { AddActionForm } from "../../../../components/add-action-form";
 import { missionIntelligenceFor } from "../../../../lib/mission-intelligence.mjs";
+import { ShareMissionButton } from "../../../../components/share-mission-button";
 
 export default async function MissionDetailPage({
   params,
@@ -48,7 +49,22 @@ export default async function MissionDetailPage({
 
   return <div className="container">
     <p className="eyebrow no-print"><Link href="/app"><LocalizedText en="Workspace" /></Link> <LocalizedText en="/ Mission detail" /></p>
-    <SavePdfButton title={mission.name} subtitle={t("Mission plan")} />
+    <div className="landing-final-actions no-print">
+      <SavePdfButton title={mission.name} subtitle={t("Mission plan")} />
+      <ShareMissionButton snapshot={{
+        name: mission.name,
+        intent: mission.intent,
+        criteria: mission.criteria,
+        completedSteps,
+        status: mission.lifecycleStatus,
+        progress: mission.progress,
+        outcome: outcome ? {
+          status: outcome.status,
+          successScore: outcome.successScore,
+          result: outcome.result,
+        } : undefined,
+      }} />
+    </div>
     <div className="detail-layout">
       <div className="detail-stack">
         <section className="card">
