@@ -170,6 +170,7 @@ export async function runGuardedJsonCompletion<T>({
         ],
         response_format: { type: "json_object" },
         max_completion_tokens: config.maxCompletionTokens,
+        reasoning_effort: config.reasoningEffort,
       }),
       signal: controller.signal,
       cache: "no-store",

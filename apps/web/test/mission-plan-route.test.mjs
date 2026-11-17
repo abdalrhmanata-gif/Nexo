@@ -177,3 +177,12 @@ test("an answer cut off at the token ceiling is named as that, and the ceiling h
   assert.ok(REQUESTED_PLAN_STEPS < MAX_PLAN_STEPS, "ask for fewer than is accepted");
   assert.ok(system.includes(`steps 3–${REQUESTED_PLAN_STEPS};`));
 });
+
+test("the provider is asked for low reasoning effort unless the deployment says otherwise", () => {
+  const gate = read("lib/ai/gate.ts");
+  const run = read("lib/ai/run.ts");
+  assert.match(gate, /ZAVQERA_AI_REASONING_EFFORT/, "the effort can be changed without a deploy of code");
+  assert.match(gate, /\["none", "low", "medium", "high"\]/, "only efforts the model accepts are passed on");
+  assert.match(gate, /\?\? "low";/, "low is the default: plans and briefs need speed more than depth");
+  assert.match(run, /reasoning_effort: config\.reasoningEffort/);
+});

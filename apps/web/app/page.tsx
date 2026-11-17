@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LocalizedText } from "../components/localized-text";
 import { getTranslate } from "../lib/i18n-server";
+import { readSignedIn } from "../components/shell";
 
 const capabilities = [
   {
@@ -34,6 +35,7 @@ function CapabilityIcon({ kind }: { kind: string }) {
 
 export default async function HomePage() {
   const t = await getTranslate();
+  const signedIn = await readSignedIn();
   return <div className="landing-page">
     <section className="landing-hero">
       <div className="landing-hero-copy">
@@ -41,11 +43,13 @@ export default async function HomePage() {
         <h1><LocalizedText en="From intent to action." /> <span><LocalizedText en="With control at every step." /></span></h1>
         <p className="landing-lede"><LocalizedText en="Write the outcome you want. Get a first plan back, with the weak parts of your own wording pointed out — then keep the evidence that you reached it." /></p>
         <div className="landing-hero-actions">
-          <Link className="button" href="/app"><LocalizedText en="Open workspace" /> <span aria-hidden="true">→</span></Link>
+          {signedIn
+            ? <Link className="button" href="/app"><LocalizedText en="Open workspace" /> <span aria-hidden="true">→</span></Link>
+            : <Link className="button" href="/auth/sign-up"><LocalizedText en="Start free" /> <span aria-hidden="true">→</span></Link>}
           <Link className="button button-quiet" href="/templates/business-opportunity-scan"><LocalizedText en="Try a real Mission" /></Link>
         </div>
         <div className="landing-trust-line"><span aria-hidden="true">✓</span> <LocalizedText en="Review before action. Clear boundaries. No false certainty." /></div>
-        <p className="landing-honesty"><LocalizedText en="Suggestions come from rules in our source code, not from a model guessing. Nothing you write is sent to an AI provider." /></p>
+        <p className="landing-honesty"><LocalizedText en="AI drafts only when you ask, and never acts for you. You review every step before it counts." /></p>
         <Link className="landing-template-link" href="/templates"><LocalizedText en="Browse mission templates" /> <span aria-hidden="true">→</span></Link>
         <Link className="landing-template-link" href="/app/opportunities"><LocalizedText en="Explore Opportunity Intelligence" /> <span aria-hidden="true">→</span></Link>
       </div>

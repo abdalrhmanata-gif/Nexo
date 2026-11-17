@@ -8,32 +8,22 @@ const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const repoRoot = join(webRoot, "..", "..");
 const read = (path) => readFileSync(join(webRoot, path), "utf8");
 
-test("monthly Opportunity Intelligence prices and report allowances are explicitly proposed, not live", () => {
+test("the pricing page lists the live prices, the shared allowance and only features that exist", () => {
   const pricing = read("app/pricing/page.tsx");
-  assert.match(pricing, /Proposed launch pricing, not active offers/);
-  assert.match(pricing, /Paid billing and usage enforcement are not enabled; AI Opportunity Brief access is restricted to an approved preview tester/);
-  assert.match(pricing, /\$19/);
-  assert.match(pricing, /\$49/);
+  for (const price of ['price: "$0"', 'price: "$19"', 'price: "$49"', 'price: "$69"']) assert.ok(pricing.includes(price), price);
   // The quota is shared: a mission plan and an opportunity brief both spend
   // one generation, so the allowance must name both or it understates what
   // the plan buys.
-  assert.match(pricing, /AI briefs or Mission plans per month \(planned\)/);
-  assert.match(pricing, /10 AI briefs or Mission plans per month \(planned\)/);
-  assert.match(pricing, /30 AI briefs or Mission plans per month \(planned\)/);
-  assert.match(pricing, /90 AI briefs or Mission plans per month \(planned\)/);
-  // Every tier stays marked as proposed, the fourth included.
-  assert.match(pricing, /name: "Scale"/);
-  assert.match(pricing, /price: "\$69"/);
-  assert.match(pricing, /planned prices and report limits are hypotheses|prices are hypotheses/i);
+  assert.match(pricing, /AI briefs or Mission plans per month/);
+  assert.match(pricing, /What counts as an AI generation\?/);
+  for (const unbuilt of [/Market monitoring/i, /Compare up to/i, /Exportable decision reports/i, /source-linked/i]) {
+    assert.doesNotMatch(pricing, unbuilt, "a feature that does not exist is not sold");
+  }
 });
 
-test("pricing positions Opportunity Intelligence as part of the monthly plan without pretending AI is live", () => {
+test("the pricing page says plainly that the AI drafts and the person decides", () => {
   const pricing = read("app/pricing/page.tsx");
-  assert.match(pricing, /inside the monthly plan—not as a surprise add-on/);
-  assert.match(pricing, /guarded server-side AI analyst route exists for restricted preview access only\. It is not generally available/i);
-  assert.match(pricing, /each factual claim must cite a source or be clearly labeled as an inference or unknown/);
-  assert.match(pricing, /href="\/app\/opportunities"/);
-  assert.match(pricing, /Market monitoring and alerts/i);
+  assert.match(pricing, /The AI drafts and you decide\. Nothing is added to a Mission until you choose to add it\./);
 });
 
 test("Opportunity Intelligence keeps its records in the account and does not call an AI-generation API", () => {

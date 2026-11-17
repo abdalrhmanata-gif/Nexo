@@ -1601,3 +1601,10 @@ html[dir="rtl"] input, html[dir="rtl"] textarea {
 .share-mission-status { color:var(--muted); }
 .share-panel { display:flex; flex-wrap:wrap; align-items:center; gap:6px; width:100%; padding:10px; border:1px solid var(--line, rgba(255,255,255,.12)); border-radius:10px; }
 .share-panel-url { flex:1 1 260px; min-width:0; font:inherit; font-size:.85rem; padding:6px 8px; border-radius:8px; border:1px solid var(--line, rgba(255,255,255,.12)); background:transparent; color:inherit; direction:ltr; }
+
+/* Logo: the mark beside the wordmark; alone on narrow screens, where the
+   words are hidden. The whole block is the link home. */
+.topbar .brand { display:grid; grid-template-columns:auto 1fr; column-gap:10px; align-items:center; }
+.topbar .brand .brand-mark { grid-row:span 2; display:block; transition:transform .15s ease; }
+.topbar .brand:hover .brand-mark { transform:rotate(-6deg) scale(1.04); }
+@media (max-width:700px) { .topbar .brand { grid-template-columns:auto; min-width:0; } }

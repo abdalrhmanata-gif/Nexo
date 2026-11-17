@@ -188,13 +188,15 @@ export default function PrivacyPage() {
     <section>
       <h2>7. Artificial intelligence and automated decisions</h2>
       <p>
-        The plan suggestions and the review of what you have written are produced by rules in our own source code,
-        running on our own servers. Nothing you type is sent to an AI provider to generate them.
+        Some suggestions, such as the review of what you have written and the starter plans, come from rules in our
+        own source code and send nothing to anyone.
       </p>
       <p>
-        A separate server-side AI analyst exists in the codebase for the Opportunity Brief. It is switched off and
-        restricted to approved testers. If it is ever enabled for your account, the text you submit would be sent to
-        the AI provider named at that time, and this notice will be updated and you will be told before that happens.
+        When you ask for an AI Mission plan or an AI opportunity brief, the text needed for that request — the
+        Mission or opportunity you are working on — is sent to OpenAI, which generates the draft and returns it. This
+        happens only when you press the button for it, and the result is shown to you as a draft: nothing is added to
+        your Mission until you choose to add it. We do not send OpenAI your email address or your name. Under
+        OpenAI&apos;s API terms, data sent through the API is not used to train its models by default.
       </p>
       <p>
         <strong>No automated decision-making.</strong> Nothing here produces a decision with legal or similarly

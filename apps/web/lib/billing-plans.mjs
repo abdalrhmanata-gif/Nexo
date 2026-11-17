@@ -4,7 +4,7 @@
 
 export const PAID_PLANS = Object.freeze(["plus", "pro", "scale"]);
 /** Monthly AI briefs or Mission plans. Mirrors the database constraint. */
-export const PLAN_LIMITS = Object.freeze({ free: 1, plus: 10, pro: 30, scale: 90 });
+export const PLAN_LIMITS = Object.freeze({ free: 2, plus: 10, pro: 30, scale: 90 });
 /** Tags our Checkout Sessions in the Stripe Dashboard. */
 export const CHECKOUT_LABEL = "zavqera-subscriptions-qkvbmwhr";
 

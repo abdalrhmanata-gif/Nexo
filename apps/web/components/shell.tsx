@@ -4,6 +4,7 @@ import { LanguageSwitcher } from "./language-switcher";
 import { LocalizedFill, LocalizedText } from "./localized-text";
 import { NavLink, WorkspaceNavLink } from "./nav-link";
 import { NotificationBell } from "./notification-bell";
+import { BrandMark } from "./brand-mark";
 import { ThemeSwitcher } from "./theme-switcher";
 import { isSupabaseConfigured } from "../lib/supabase/config";
 import { createSupabaseServerClient } from "../lib/supabase/server";
@@ -65,6 +66,7 @@ export function Shell({ children, signedIn = false, siteOperator = false, billin
     <div className="site-shell">
       <header className="topbar">
         <Link className="brand" href="/" prefetch={false}>
+          <BrandMark />
           <span className="brand-wordmark">ZAVQERA</span>
           <span className="brand-subtitle"><LocalizedText en="MISSION CONTROL" /></span>
           <span className="visually-hidden"><LocalizedText en="Home" /></span>

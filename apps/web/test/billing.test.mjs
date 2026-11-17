@@ -15,7 +15,7 @@ const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf
 
 test("the plans and their monthly AI limits are the approved ones", () => {
   assert.deepEqual(PAID_PLANS, ["plus", "pro", "scale"]);
-  assert.deepEqual(PLAN_LIMITS, { free: 1, plus: 10, pro: 30, scale: 90 });
+  assert.deepEqual(PLAN_LIMITS, { free: 2, plus: 10, pro: 30, scale: 90 });
   for (const plan of PAID_PLANS) assert.equal(isPaidPlan(plan), true);
   for (const value of ["free", "PLUS", "price_123", "", null, undefined, 3, { plan: "pro" }]) assert.equal(isPaidPlan(value), false, String(value));
 });
@@ -101,12 +101,11 @@ test("every sentence billing can show is translated, including the routes' refus
   assert.deepEqual(missing, []);
 });
 
-test("the pricing page says what is true when AI is open by plan but paid plans cannot be bought yet", () => {
+test("the pricing page states the live plans and takes the allowances from the code", () => {
   const pricing = read("app/pricing/page.tsx");
-  assert.match(pricing, /aiAccessMode\(process\.env\) === "plans"/);
-  assert.match(pricing, /Free is open now, with 1 AI brief or Mission plan a month\. The paid plans show proposed prices and cannot be bought yet\./);
-  // The sentence about an approved preview tester stays only for the allowlist.
-  assert.match(pricing, /aiOpen\s*\?[\s\S]*Free is open now[\s\S]*:[\s\S]*Proposed launch pricing, not active offers/);
+  for (const plan of ["free", "plus", "pro", "scale"]) assert.match(pricing, new RegExp(`reports: PLAN_LIMITS\\.${plan}`), plan);
+  assert.doesNotMatch(pricing, /\(planned\)|\(proposed\)|Proposed launch pricing|preview tester/, "no live feature is described as planned");
+  assert.match(pricing, /billing && <p className="pricing-status">/, "the billing sentence only where billing is on");
 });
 
 test("the payment page says that subscribing starts the service at once", () => {
