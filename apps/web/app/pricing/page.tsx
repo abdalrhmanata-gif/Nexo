@@ -76,6 +76,7 @@ export default function PricingPage() {
       <h2 id="pricing-heading" className="visually-hidden"><LocalizedText en="Compare plans" /></h2>
       <div className="pricing-grid">
         {plans.map((plan) => <article key={plan.name} className={`pricing-card ${plan.className}`}>
+          {plan.name === "Plus" && <span className="pricing-badge"><LocalizedText en="Best for regular use" /></span>}
           <p className="pricing-name"><LocalizedText en={plan.name} /></p>
           <div className="pricing-price"><strong>{plan.price}</strong><span><LocalizedText en="per month" /></span></div>
           <p className="pricing-allowance">

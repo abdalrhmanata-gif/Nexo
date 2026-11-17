@@ -1018,6 +1018,7 @@ const NB: Record<string, string> = {
   "Does the AI act on my behalf?":"Handler KI-en på mine vegne?",
   "No. The AI drafts and you decide. Nothing is added to a Mission until you choose to add it.":"Nei. KI-en lager utkast, og du bestemmer. Ingenting legges til i et oppdrag før du velger det.",
   "AI drafts only when you ask, and never acts for you. You review every step before it counts.":"KI lager bare utkast når du ber om det, og handler aldri for deg. Du går gjennom hvert steg før det teller.",
+  "Best for regular use":"Best til jevnlig bruk",
 };
 const AR: Record<string, string> = {
   "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"تم تصدير النسخة الاحتياطية. الفرص: {count}. ملاحظات الأدلة: {notes}. احفظ الملف في مكان آمن؛ فهو يحتوي على ما سجّلته.",
@@ -2011,6 +2012,7 @@ const AR: Record<string, string> = {
   "Does the AI act on my behalf?":"هل يتصرف الذكاء الاصطناعي نيابةً عني؟",
   "No. The AI drafts and you decide. Nothing is added to a Mission until you choose to add it.":"لا. الذكاء الاصطناعي يقترح مسودة وأنت تقرر. لا يُضاف شيء إلى مهمة حتى تختار إضافته.",
   "AI drafts only when you ask, and never acts for you. You review every step before it counts.":"الذكاء الاصطناعي يكتب مسودة فقط عندما تطلب، ولا يتصرف نيابةً عنك. أنت تراجع كل خطوة قبل أن تُعتمد.",
+  "Best for regular use":"الأنسب للاستخدام المنتظم",
 };
 const ES: Record<string, string> = {
   "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"Copia de seguridad exportada. Oportunidades: {count}. Notas de evidencia: {notes}. Guarda el archivo en un lugar seguro; contiene lo que registraste.",
@@ -3007,6 +3009,7 @@ const ES: Record<string, string> = {
   "Does the AI act on my behalf?":"¿La IA actúa en mi nombre?",
   "No. The AI drafts and you decide. Nothing is added to a Mission until you choose to add it.":"No. La IA propone un borrador y tú decides. No se añade nada a una misión hasta que tú lo eliges.",
   "AI drafts only when you ask, and never acts for you. You review every step before it counts.":"La IA solo propone borradores cuando se lo pides y nunca actúa por ti. Revisas cada paso antes de que cuente.",
+  "Best for regular use":"Ideal para uso habitual",
 };
 const FR: Record<string, string> = {
   "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"Sauvegarde exportée. Opportunités : {count}. Notes de preuve : {notes}. Conservez le fichier en lieu sûr ; il contient ce que vous avez enregistré.",
@@ -4003,6 +4006,7 @@ const FR: Record<string, string> = {
   "Does the AI act on my behalf?":"L'IA agit-elle à ma place ?",
   "No. The AI drafts and you decide. Nothing is added to a Mission until you choose to add it.":"Non. L'IA propose un brouillon et vous décidez. Rien n'est ajouté à une mission tant que vous ne l'avez pas choisi.",
   "AI drafts only when you ask, and never acts for you. You review every step before it counts.":"L'IA ne propose un brouillon que lorsque vous le demandez et n'agit jamais à votre place. Vous validez chaque étape avant qu'elle compte.",
+  "Best for regular use":"Idéale pour un usage régulier",
 };
 const DE: Record<string, string> = {
   "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"Sicherung exportiert. Chancen: {count}. Nachweisnotizen: {notes}. Bewahren Sie die Datei sicher auf; sie enthält, was Sie erfasst haben.",
@@ -4999,6 +5003,7 @@ const DE: Record<string, string> = {
   "Does the AI act on my behalf?":"Handelt die KI in meinem Namen?",
   "No. The AI drafts and you decide. Nothing is added to a Mission until you choose to add it.":"Nein. Die KI erstellt einen Entwurf, und Sie entscheiden. Nichts wird einer Mission hinzugefügt, bevor Sie es wählen.",
   "AI drafts only when you ask, and never acts for you. You review every step before it counts.":"Die KI erstellt nur dann Entwürfe, wenn Sie darum bitten, und handelt nie für Sie. Sie prüfen jeden Schritt, bevor er zählt.",
+  "Best for regular use":"Ideal für regelmäßige Nutzung",
 };
 
 export const DICTIONARIES: Record<AppLanguage, Record<string, string>> = {
