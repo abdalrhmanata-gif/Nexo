@@ -44,5 +44,8 @@ export function checkoutSessionParams({ priceId, customerId, email, userId, orig
   fields.set("cancel_url", `${origin}/app/billing?checkout=cancelled`);
   fields.set("adaptive_pricing[enabled]", "true");
   fields.set("integration_identifier", CHECKOUT_LABEL);
+  // Shown above the pay button: the request to start at once is what the
+  // terms' withdrawal clause relies on.
+  fields.set("custom_text[submit][message]", `By subscribing you ask ZAVQERA to start the service immediately. Terms: ${origin}/terms`);
   return fields;
 }

@@ -147,10 +147,10 @@ export default function TermsPage() {
         the start of each calendar month; unused generations do not carry over.
       </p>
       <p>
-        <strong>14-day right of withdrawal.</strong> If you are a consumer, you may withdraw from your first purchase of
-        a paid plan within 14 days, as the Norwegian Right of Withdrawal Act (angrerettloven) provides. Write to{" "}
-        {LEGAL.supportEmail} within that period and we will refund that first payment in full, even if you have used
-        the plan in the meantime.
+        If you are a consumer, you have the right of withdrawal that the Norwegian Right of Withdrawal Act
+        (angrerettloven) gives you. By subscribing you ask us to start the service immediately; if you then withdraw
+        within 14 days, the part of the period you have already used is deducted from any amount refunded. To
+        withdraw, write to {LEGAL.supportEmail}.
       </p>
       <p>
         If we change the price of a plan, we will tell you at least 30 days before the new price applies to you, and
