@@ -6,14 +6,15 @@
 /** Replace every PLACEHOLDER before launch. They are marked so they cannot be missed. */
 export const LEGAL = {
   /** The controller. Norwegian sole traders use their own name until a company exists. */
-  controllerName: "[CONTROLLER NAME — replace before launch]",
-  controllerAddress: "[POSTAL ADDRESS, NORWAY — replace before launch]",
-  organisationNumber: "[ORGANISATION NUMBER, if registered — otherwise remove this line]",
-  privacyEmail: "[privacy@zavqera.com — replace before launch]",
-  supportEmail: "[support@zavqera.com — replace before launch]",
+  controllerName: "Abdul Rahman Ataia, trading as ZAVQERA",
+  controllerAddress: "Norway",
+  /** Empty until a business is registered; the line is then left out. */
+  organisationNumber: "",
+  privacyEmail: "hello@zavqera.com",
+  supportEmail: "hello@zavqera.com",
 
   /** Updated whenever either document changes materially. */
-  lastUpdated: "14 November 2026",
+  lastUpdated: "17 November 2026",
 
   /** Supervisory authority for a controller established in Norway. */
   authority: {
