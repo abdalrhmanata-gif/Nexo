@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { shareMessage } from "../lib/mission-share.mjs";
 import { LocalizedFill, LocalizedText } from "./localized-text";
 
 export type MissionShareStatus = { views: number; remixes: number } | null;
@@ -21,19 +22,21 @@ export function ShareMissionButton({ missionId, shared }: { missionId: string; s
     setError(""); setState("busy");
     try {
       const response = await fetch(`/api/missions/${missionId}/share`, { method: "POST" });
-      const data = await response.json().catch(() => ({})) as { url?: unknown; error?: unknown };
+      const data = await response.json().catch(() => ({})) as { url?: unknown; name?: unknown; error?: unknown };
       if (!response.ok || typeof data.url !== "string") {
         setState("idle");
         setError(typeof data.error === "string" ? data.error : "The link could not be created. Try again.");
         return;
       }
       router.refresh();
+      // The name travels with the link, so an email or a chat shows what it is.
+      const title = typeof data.name === "string" ? data.name : "";
       if (navigator.share) {
         setState("idle");
-        await navigator.share({ url: data.url }).catch(() => undefined);
+        await navigator.share({ title, text: title, url: data.url }).catch(() => undefined);
         return;
       }
-      await navigator.clipboard.writeText(data.url);
+      await navigator.clipboard.writeText(shareMessage(title, data.url));
       setState("copied");
       window.setTimeout(() => setState("idle"), 1800);
     } catch {
