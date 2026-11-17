@@ -31,7 +31,10 @@ export function ShareMissionButton({ missionId, shared }: { missionId: string; s
       router.refresh();
       // The name travels with the link, so an email or a chat shows what it is.
       const title = typeof data.name === "string" ? data.name : "";
-      if (navigator.share) {
+      // A phone's share sheet passes the name on to the app that is picked. A
+      // computer's often keeps only the address, so there the name and the
+      // link are copied together instead.
+      if (navigator.share && window.matchMedia("(pointer: coarse)").matches) {
         setState("idle");
         await navigator.share({ title, text: title, url: data.url }).catch(() => undefined);
         return;
