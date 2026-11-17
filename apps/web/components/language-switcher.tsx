@@ -98,11 +98,12 @@ export function LanguageSwitcher() {
       <span className="visually-hidden">{labels.language}</span>
       <select aria-label={labels.language} value={language} onChange={(event) => changeLanguage(event.target.value)}>
         <option value="en">{labels.english}</option>
-        <option value="nb">{labels.norwegian}</option>
+        {/* Ordered by how many readers each language reaches; Norwegian last. */}
         <option value="ar">{labels.arabic}</option>
         <option value="es">{labels.spanish}</option>
         <option value="fr">{labels.french}</option>
         <option value="de">{labels.german}</option>
+        <option value="nb">{labels.norwegian}</option>
       </select>
     </label>
   );
