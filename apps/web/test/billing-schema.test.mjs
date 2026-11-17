@@ -44,3 +44,13 @@ test("two events linking the same customer at once do not fail each other", () =
   // together; the second one used to fail and wait for Stripe's retry.
   assert.match(migration, /insert into private\.billing_customers \(user_id, customer_id, livemode\)\s+values \(p_user_id, p_customer_id, p_livemode\)\s+on conflict do nothing;/);
 });
+
+test("Free has 2 AI generations a month from the allowance migration on", () => {
+  const two = readFileSync(new URL("../../../supabase/migrations/20261117160000_free_allowance_two.sql", import.meta.url), "utf8");
+  const limits = /\(plan = 'free' and monthly_limit = 2\)\s+or \(plan = 'plus' and monthly_limit = 10\)\s+or \(plan = 'pro' and monthly_limit = 30\)\s+or \(plan = 'scale' and monthly_limit = 90\)/g;
+  assert.equal((two.match(limits) ?? []).length, 2, "both ai_entitlements and ai_usage_monthly");
+  assert.match(two, /v_limit := coalesce\(v_limit, 2\);/, "a person with no entitlement row gets 2");
+  assert.match(two, /when 'plus' then 10 else 2 end/, "a cancelled plan falls back to 2");
+  assert.match(two, /coalesce\(e\.monthly_limit, 2\)/, "the billing page shows 2 for a person with no row");
+  assert.doesNotMatch(two, /monthly_limit = 1\)/, "no constraint still allows 1");
+});

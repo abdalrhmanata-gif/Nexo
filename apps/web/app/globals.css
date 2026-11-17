@@ -769,7 +769,7 @@ a:hover { color:var(--teal); }
 .pricing-grid { gap:16px; }
 .pricing-card { padding:26px; border-radius:14px; border-color:#dce5ec; box-shadow:0 7px 23px rgba(18,50,79,.045); }
 .pricing-card-featured { border:2px solid #0b8f86; box-shadow:0 12px 29px rgba(11,143,134,.09); }
-.pricing-card-featured::before { content:"Best for regular use"; align-self:flex-start; margin:-8px 0 0; padding:5px 9px; border-radius:999px; background:#dff5f0; color:#08766d; font-size:10px; font-weight:750; }
+.pricing-badge { align-self:flex-start; margin:-8px 0 0; padding:5px 9px; border-radius:999px; background:#dff5f0; color:#08766d; font-size:10px; font-weight:750; }
 .pricing-price strong { font-size:42px; color:#142c42; }
 .pricing-card ul { line-height:1.65; font-size:13px; }
 .pricing-card li { margin:7px 0; }
@@ -959,7 +959,6 @@ a:hover { color:var(--teal); }
 .template-card .eyebrow { margin-bottom:6px; }
 .template-card h2 { min-height:54px; }
 .template-card .button { border-radius:9px; }
-.pricing-card-featured::before { content:"Proposed starting point"; }
 
 @media (max-width:1000px) {
   .landing-hero { grid-template-columns:minmax(0,1fr); gap:32px; padding-top:16px; }
@@ -1295,7 +1294,7 @@ a:hover { color:var(--teal); }
 :root[data-theme="dark"] .template-criteria li::marker { color:#8fd5d0; }
 :root[data-theme="dark"] .pricing-card { border-color:#181d21; box-shadow:0 7px 23px rgba(0,0,0,0.108); }
 :root[data-theme="dark"] .pricing-card-featured { border:2px solid #8fd5d0; box-shadow:0 12px 29px rgba(0,0,0,0.216); }
-:root[data-theme="dark"] .pricing-card-featured::before { background:#172925; color:#a4dcd8; }
+:root[data-theme="dark"] .pricing-badge { background:#172925; color:#a4dcd8; }
 :root[data-theme="dark"] .pricing-price strong { color:#c1d5e7; }
 :root[data-theme="dark"] .detail-stack > .card h2 { color:#b9d0e4; }
 :root[data-theme="dark"] .detail-title { color:#c1d5e7; }
@@ -1601,3 +1600,10 @@ html[dir="rtl"] input, html[dir="rtl"] textarea {
 .share-mission-status { color:var(--muted); }
 .share-panel { display:flex; flex-wrap:wrap; align-items:center; gap:6px; width:100%; padding:10px; border:1px solid var(--line, rgba(255,255,255,.12)); border-radius:10px; }
 .share-panel-url { flex:1 1 260px; min-width:0; font:inherit; font-size:.85rem; padding:6px 8px; border-radius:8px; border:1px solid var(--line, rgba(255,255,255,.12)); background:transparent; color:inherit; direction:ltr; }
+
+/* Logo: the mark beside the wordmark; alone on narrow screens, where the
+   words are hidden. The whole block is the link home. */
+.topbar .brand { display:grid; grid-template-columns:auto 1fr; column-gap:10px; align-items:center; }
+.topbar .brand .brand-mark { grid-row:span 2; display:block; transition:transform .15s ease; }
+.topbar .brand:hover .brand-mark { transform:rotate(-6deg) scale(1.04); }
+@media (max-width:700px) { .topbar .brand { grid-template-columns:auto; min-width:0; } }

@@ -23,7 +23,9 @@ export const DEFAULT_MAX_COMPLETION_TOKENS = 2000;
 export const MAX_COMPLETION_TOKENS_CEILING = 2400;
 export const noStoreHeaders = { "Cache-Control": "no-store, max-age=0", Vary: "Cookie" };
 
-export type ProviderConfig = { endpoint: string; apiKey: string; model: string; maxCompletionTokens: number };
+export type ProviderConfig = { endpoint: string; apiKey: string; model: string; maxCompletionTokens: number; reasoningEffort: ReasoningEffort };
+
+export type ReasoningEffort = "none" | "low" | "medium" | "high";
 
 // The list is read when the function starts, so a change to it in the hosting
 // environment reaches nobody until the next deploy.
@@ -131,9 +133,15 @@ export function describeProvider(): ProviderResult {
   const maxCompletionTokens = Number.isInteger(rawLimit)
     ? Math.max(400, Math.min(MAX_COMPLETION_TOKENS_CEILING, rawLimit))
     : DEFAULT_MAX_COMPLETION_TOKENS;
+  // gpt-6-luna reasons at "medium" unless told otherwise, and the thinking is
+  // most of the wait. A plan or a brief is short structured text, so "low"
+  // answers markedly faster and leaves more of the token ceiling for the
+  // answer itself. Anything unrecognised falls back to "low".
+  const effortSetting = process.env.ZAVQERA_AI_REASONING_EFFORT?.trim() ?? "";
+  const reasoningEffort: ReasoningEffort = (["none", "low", "medium", "high"] as const).find((value) => value === effortSetting) ?? "low";
   return {
     ok: true,
-    config: { endpoint: `${baseUrl.replace(/\/+$/, "")}/chat/completions`, apiKey, model, maxCompletionTokens },
+    config: { endpoint: `${baseUrl.replace(/\/+$/, "")}/chat/completions`, apiKey, model, maxCompletionTokens, reasoningEffort },
   };
 }
 

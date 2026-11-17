@@ -85,6 +85,12 @@ export const PROCESSORS: Processor[] = [
     transfer: "A transfer outside the EEA is possible, under Resend's data processing agreement.",
   },
   {
+    name: "OpenAI",
+    role: "Generates AI Mission plans and AI opportunity briefs when you ask for one. Receives the text of the Mission or opportunity the request is about, not your email address or name.",
+    location: "OpenAI is established in the United States",
+    transfer: "A transfer outside the EEA, under OpenAI's data processing addendum.",
+  },
+  {
     name: "Stripe",
     role: "Takes payment for paid plans and keeps the subscription. Receives your email address, the plan you choose, the name and billing address you give it, and the card or other payment details you enter on Stripe's own checkout page. ZAVQERA never receives your card number.",
     location: "Stripe Payments Europe, Ltd. (Ireland), part of Stripe, Inc. (United States)",

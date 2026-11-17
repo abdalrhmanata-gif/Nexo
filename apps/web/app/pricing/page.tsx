@@ -2,89 +2,85 @@ import Link from "next/link";
 import { LocalizedText } from "../../components/localized-text";
 import { PlanInterest } from "../../components/plan-interest";
 import { billingConfigured } from "../../lib/stripe-client";
-import { aiAccessMode } from "../../lib/billing-plans.mjs";
+import { PLAN_LIMITS } from "../../lib/billing-plans.mjs";
 
 // Read per request: whether billing is open depends on the deployment's key.
 export const dynamic = "force-dynamic";
 
+// Every plan has the whole workspace; what grows is the monthly AI allowance.
+// Only features that exist today are listed here.
 const plans = [
   {
     name: "Free",
     price: "$0",
-    reports: "1",
+    reports: PLAN_LIMITS.free,
     className: "",
     cta: true,
     features: [
+      "Missions with steps, evidence and results",
       "Opportunity score and evidence ledger",
-      "1 AI brief or Mission plan per month (planned)",
-      "Turn a reviewed opportunity into a Mission",
+      "Share results and invite your team",
     ],
   },
   {
     name: "Plus",
     price: "$19",
-    reports: "10",
+    reports: PLAN_LIMITS.plus,
     className: "pricing-card-featured",
     cta: false,
-    features: [
-      "Everything in Free",
-      "10 AI briefs or Mission plans per month (planned)",
-      "Source-linked market and competitor analysis (planned)",
-      "Evidence-based validation experiments (planned)",
-    ],
+    features: ["Everything in Free", "For steady personal use"],
   },
   {
     name: "Pro",
     price: "$49",
-    reports: "30",
+    reports: PLAN_LIMITS.pro,
     className: "pricing-card-pro",
     cta: false,
-    features: [
-      "Everything in Plus",
-      "30 AI briefs or Mission plans per month (planned)",
-      "Compare up to 3 opportunities (planned)",
-      "Exportable decision reports (planned)",
-      "Market monitoring and alerts (later phase)",
-    ],
+    features: ["Everything in Plus", "For freelancers and small teams"],
   },
   {
     name: "Scale",
     price: "$69",
-    reports: "90",
+    reports: PLAN_LIMITS.scale,
     className: "pricing-card-scale",
     cta: false,
-    features: [
-      "Everything in Pro",
-      "90 AI briefs or Mission plans per month (planned)",
-      "Compare up to 10 opportunities (planned)",
-      "Priority on new Opportunity Intelligence features (planned)",
-    ],
+    features: ["Everything in Pro", "For teams that plan every day"],
+  },
+];
+
+const questions = [
+  {
+    q: "What counts as an AI generation?",
+    a: "Each AI Mission plan or AI opportunity brief you ask for counts as one. Writing Missions, tracking steps and recording evidence never count.",
+  },
+  {
+    q: "Can I cancel at any time?",
+    a: "Yes, from your billing page. Your plan stays active until the end of the month you have paid for.",
+  },
+  {
+    q: "Does the AI act on my behalf?",
+    a: "No. The AI drafts and you decide. Nothing is added to a Mission until you choose to add it.",
   },
 ];
 
 export default function PricingPage() {
   const billing = billingConfigured();
-  // AI can be open by plan before paid plans can be bought: everyone is on Free.
-  const aiOpen = aiAccessMode(process.env) === "plans";
   return <div className="container">
     <section className="pricing-hero">
       <p className="eyebrow"><LocalizedText en="Pricing" /></p>
-      <h1><LocalizedText en="Find the opportunity. Prove it. Turn it into action." /></h1>
-      <p><LocalizedText en="One monthly plan should take you from an early idea to evidence, a clear decision, and a governed Mission." /></p>
-      {billing
-        ? <p className="pricing-status"><LocalizedText en="Plans are billed monthly through Stripe. You can cancel at any time, and your plan lasts until the end of the period you paid for." /></p>
-        : aiOpen
-          ? <p className="pricing-status"><LocalizedText en="Free is open now, with 1 AI brief or Mission plan a month. The paid plans show proposed prices and cannot be bought yet." /></p>
-          : <p className="pricing-status"><LocalizedText en="Proposed launch pricing, not active offers. Paid billing and usage enforcement are not enabled; AI Opportunity Brief access is restricted to an approved preview tester." /></p>}
+      <h1><LocalizedText en="Simple plans. Start free." /></h1>
+      <p><LocalizedText en="Every plan includes the full workspace. Paid plans give you more AI help each month." /></p>
+      {billing && <p className="pricing-status"><LocalizedText en="Plans are billed monthly through Stripe. You can cancel at any time, and your plan lasts until the end of the period you paid for." /></p>}
     </section>
     <section className="pricing" aria-labelledby="pricing-heading">
-      <h2 id="pricing-heading" className="visually-hidden"><LocalizedText en="Proposed monthly plans" /></h2>
+      <h2 id="pricing-heading" className="visually-hidden"><LocalizedText en="Compare plans" /></h2>
       <div className="pricing-grid">
         {plans.map((plan) => <article key={plan.name} className={`pricing-card ${plan.className}`}>
+          {plan.name === "Plus" && <span className="pricing-badge"><LocalizedText en="Best for regular use" /></span>}
           <p className="pricing-name"><LocalizedText en={plan.name} /></p>
-          <div className="pricing-price"><strong>{plan.price}</strong><span><LocalizedText en={billing ? "per month" : "per month (proposed)"} /></span></div>
+          <div className="pricing-price"><strong>{plan.price}</strong><span><LocalizedText en="per month" /></span></div>
           <p className="pricing-allowance">
-            <strong>{plan.reports}</strong> <LocalizedText en={billing || (aiOpen && plan.cta) ? "AI briefs or Mission plans per month" : "AI briefs or Mission plans per month (planned)"} />
+            <strong>{plan.reports}</strong> <LocalizedText en="AI briefs or Mission plans per month" />
           </p>
           <ul>
             {plan.features.map((feature) => <li key={feature}><LocalizedText en={feature} /></li>)}
@@ -97,23 +93,12 @@ export default function PricingPage() {
         </article>)}
       </div>
     </section>
-    <section className="pricing-note card" aria-labelledby="opportunity-intelligence-pricing-heading">
-      <p className="eyebrow"><LocalizedText en="The product we intend to build" /></p>
-      <h2 id="opportunity-intelligence-pricing-heading"><LocalizedText en="Opportunity Intelligence belongs inside the monthly plan—not as a surprise add-on." /></h2>
-      <p><LocalizedText en="The current early-access feature scores the information you enter, keeps your evidence ledger in your account, and can turn a reviewed opportunity into a Mission. A guarded server-side AI analyst route exists for restricted preview access only. It is not generally available, and the route does not fetch source pages itself." /></p>
-      <ul>
-        <li><LocalizedText en="AI challenge: find weak assumptions, contradictions, missing evidence, and reasons an idea may fail." /></li>
-        <li><LocalizedText en="Evidence-first report: each factual claim must cite a source or be clearly labeled as an inference or unknown." /></li>
-        <li><LocalizedText en="Market gap: compare relevant competitors, the prices they publish, customer pain signals, and unmet needs when reliable source data is available." /></li>
-        <li><LocalizedText en="Next best test: recommend a low-cost experiment with success/failure criteria, then create a governed Mission for the user to review." /></li>
-      </ul>
-      <p className="action-hint"><LocalizedText en="These are planned capabilities, not currently available features. The monthly report allowances and prices are hypotheses until provider costs, source access, report quality, and demand are tested." /></p>
-      <Link className="button button-quiet" href="/app/opportunities"><LocalizedText en="Try the current Opportunity Intelligence MVP" /></Link>
-    </section>
-    <section className="pricing-note card">
-      <h2><LocalizedText en="No unsupported promises." /></h2>
-      <p><LocalizedText en="The first version must be useful without AI; the paid analyst should launch only after source-backed reports, safe limits, privacy controls, and cost per report have been verified." /></p>
-      <Link className="button button-quiet" href="/"><LocalizedText en="Back to ZAVQERA" /></Link>
+    <section className="pricing-note card" aria-labelledby="pricing-questions-heading">
+      <h2 id="pricing-questions-heading"><LocalizedText en="Questions" /></h2>
+      {questions.map((item) => <div key={item.q}>
+        <h3><LocalizedText en={item.q} /></h3>
+        <p><LocalizedText en={item.a} /></p>
+      </div>)}
     </section>
   </div>;
 }
