@@ -7,6 +7,7 @@ import {
   PLAN_LIMITS,
   aiAccessMode,
   checkoutSessionParams,
+  managedPaymentsEnabled,
   isPaidPlan,
   stripeKeyMode,
 } from "../lib/billing-plans.mjs";
@@ -43,6 +44,28 @@ test("a checkout session is a monthly subscription tied to the signed-in person,
   assert.equal(params.get("cancel_url"), "https://zavqera.com/app/billing?checkout=cancelled");
   for (const key of params.keys()) {
     assert.doesNotMatch(key, /payment_method_types|automatic_tax/, "Stripe chooses payment methods; tax stays off until registration");
+  }
+});
+
+test("Managed Payments is off unless the deployment says exactly on", () => {
+  for (const env of [undefined, {}, { STRIPE_MANAGED_PAYMENTS: "" }, { STRIPE_MANAGED_PAYMENTS: "true" }, { STRIPE_MANAGED_PAYMENTS: "ON" }]) {
+    assert.equal(managedPaymentsEnabled(env), false, JSON.stringify(env));
+  }
+  assert.equal(managedPaymentsEnabled({ STRIPE_MANAGED_PAYMENTS: "on" }), true);
+  const params = checkoutSessionParams({ priceId: "price_abc", customerId: null, email: "a@example.com", userId: "u-1", origin: "https://zavqera.com" });
+  assert.equal(params.get("managed_payments[enabled]"), null, "off by default");
+});
+
+test("with Managed Payments, Stripe is merchant of record and only supported fields are sent", () => {
+  const params = checkoutSessionParams({ priceId: "price_abc", customerId: "cus_123", email: "a@example.com", userId: "u-1", origin: "https://zavqera.com", managedPayments: true });
+  assert.equal(params.get("managed_payments[enabled]"), "true");
+  assert.equal(params.get("mode"), "subscription");
+  assert.equal(params.get("customer"), "cus_123");
+  assert.equal(params.get("client_reference_id"), "u-1");
+  assert.equal(params.get("subscription_data[metadata][user_id]"), "u-1");
+  // Stripe rejects these on Managed Payments sessions (docs: update-checkout, "Remove unsupported parameters").
+  for (const key of params.keys()) {
+    assert.doesNotMatch(key, /^(adaptive_pricing|custom_text|automatic_tax|tax_id_collection|payment_method_types|payment_method_configuration|customer_update|shipping_|invoice_creation)|subscription_data\[(default_tax_rates|invoice_settings|application_fee_percent|on_behalf_of|transfer_data)/, key);
   }
 });
 

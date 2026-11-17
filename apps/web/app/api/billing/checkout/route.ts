@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "../../../../lib/supabase/server";
 import { isTrustedSameOriginRequest } from "../../../../lib/request-origin.mjs";
 import { resolveRequestOrigin } from "../../../../lib/auth/redirect.mjs";
-import { checkoutSessionParams, isPaidPlan } from "../../../../lib/billing-plans.mjs";
+import { checkoutSessionParams, isPaidPlan, managedPaymentsEnabled } from "../../../../lib/billing-plans.mjs";
 import { stripeErrorCode, stripeMode, stripeRequest } from "../../../../lib/stripe-client";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
     email: user.email,
     userId: user.id,
     origin: resolveRequestOrigin(request.headers, request.url),
+    managedPayments: managedPaymentsEnabled(process.env),
   }));
   if (!result.ok || typeof result.data.url !== "string") {
     console.error(`billing: checkout session not created (${result.status} ${stripeErrorCode(result)})`);
