@@ -34,8 +34,12 @@ const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
  * The privacy notice and the terms are published in English on purpose and
  * say so in their own text: a mistranslated liability clause would bind a
  * reader to something nobody intended.
+ *
+ * The link-preview picture of a shared Mission is fetched by a chat app's
+ * crawler, which has no reader language, and its built-in font draws Latin
+ * text only.
  */
-const ENGLISH_ON_PURPOSE = new Set(["app/privacy/page.tsx", "app/terms/page.tsx"]);
+const ENGLISH_ON_PURPOSE = new Set(["app/privacy/page.tsx", "app/terms/page.tsx", "app/share/m/[id]/opengraph-image.tsx"]);
 
 /** Attribute values that are machinery, not words anyone reads. */
 const MACHINE_ATTRIBUTE =

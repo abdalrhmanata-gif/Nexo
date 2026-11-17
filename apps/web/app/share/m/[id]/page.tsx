@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     title,
     description,
     openGraph: { title, description, type: "article" },
-    twitter: { card: "summary", title, description },
+    twitter: { card: "summary_large_image", title, description },
     robots: { index: false, follow: false },
   };
 }
