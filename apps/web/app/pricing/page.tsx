@@ -26,7 +26,7 @@ const plans = [
     name: "Plus",
     price: "$19",
     reports: PLAN_LIMITS.plus,
-    className: "pricing-card-featured",
+    className: "",
     cta: false,
     features: ["Everything in Free", "For steady personal use"],
   },
@@ -42,7 +42,8 @@ const plans = [
     name: "Scale",
     price: "$69",
     reports: PLAN_LIMITS.scale,
-    className: "pricing-card-scale",
+    // Highlighted: the lowest price per AI generation ($69 / 90).
+    className: "pricing-card-featured",
     cta: false,
     features: ["Everything in Pro", "For teams that plan every day"],
   },
@@ -71,15 +72,14 @@ export default function PricingPage() {
       <h1><LocalizedText en="Simple plans. Start free." /></h1>
       <p><LocalizedText en="Every plan includes the full workspace. Paid plans give you more AI help each month." /></p>
       {billing && <p className="pricing-status">{managedPaymentsEnabled(process.env)
-        ? <LocalizedText en="Plans are billed monthly through Link, a Stripe company, and prices include VAT or sales tax where it applies. You can cancel at any time, and your plan lasts until the end of the period you paid for." />
+        ? <LocalizedText en="Prices include VAT or sales tax where it applies. Billed monthly by Link (Stripe) and shown on your card statement as LINK.COM* ZAVQERA. Cancel any time; your plan lasts until the end of the period you paid for." />
         : <LocalizedText en="Plans are billed monthly through Stripe. You can cancel at any time, and your plan lasts until the end of the period you paid for." />}</p>}
-      {billing && managedPaymentsEnabled(process.env) && <p className="pricing-status"><LocalizedText en="Payments are processed by Link, a Stripe company, and appear on your card statement as LINK.COM* ZAVQERA." /></p>}
     </section>
     <section className="pricing" aria-labelledby="pricing-heading">
       <h2 id="pricing-heading" className="visually-hidden"><LocalizedText en="Compare plans" /></h2>
       <div className="pricing-grid">
         {plans.map((plan) => <article key={plan.name} className={`pricing-card ${plan.className}`}>
-          {plan.name === "Plus" && <span className="pricing-badge"><LocalizedText en="Best for regular use" /></span>}
+          {plan.name === "Scale" && <span className="pricing-badge"><LocalizedText en="Best value" /></span>}
           <p className="pricing-name"><LocalizedText en={plan.name} /></p>
           <div className="pricing-price"><strong>{plan.price}</strong><span><LocalizedText en="per month" /></span></div>
           <p className="pricing-allowance">
