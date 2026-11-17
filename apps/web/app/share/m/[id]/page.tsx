@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { cache } from "react";
 import { LocalizedFill, LocalizedText } from "../../../../components/localized-text";
+import { resolveRequestOrigin } from "../../../../lib/auth/redirect.mjs";
 import { getTranslate } from "../../../../lib/i18n-server";
 import { shareIdOrNull, type MissionShareSnapshot } from "../../../../lib/mission-share.mjs";
 import { isSupabaseConfigured } from "../../../../lib/supabase/config";
@@ -26,7 +28,10 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   if (!snapshot) return { title: "Zavqera", robots: { index: false, follow: false } };
   const title = `${snapshot.name} · Zavqera`;
   const description = snapshot.intent.slice(0, 180);
+  // The preview picture needs a full address: the one this link was opened on.
+  const origin = resolveRequestOrigin(await headers(), "https://zavqera.com");
   return {
+    metadataBase: new URL(origin),
     title,
     description,
     openGraph: { title, description, type: "article" },
