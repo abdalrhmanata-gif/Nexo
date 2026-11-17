@@ -129,7 +129,13 @@ test("the text sent with a shared link names the mission", () => {
 test("each share target carries the Mission name and the link, encoded", () => {
   const url = "https://zavqera.com/share/m/abc";
   const targets = Object.fromEntries(shareTargets("Fornye pass & visum", url).map((target) => [target.id, new URL(target.href)]));
-  assert.deepEqual(Object.keys(targets), ["email", "whatsapp", "x", "linkedin", "facebook"]);
+  assert.deepEqual(Object.keys(targets), ["gmail", "outlook", "whatsapp", "x", "linkedin", "facebook", "email"]);
+  assert.equal(targets.gmail.host, "mail.google.com");
+  assert.equal(targets.gmail.searchParams.get("su"), "Fornye pass & visum");
+  assert.equal(targets.gmail.searchParams.get("body"), `Fornye pass & visum\n${url}`);
+  assert.equal(targets.outlook.host, "outlook.live.com");
+  assert.equal(targets.outlook.searchParams.get("subject"), "Fornye pass & visum");
+  assert.equal(targets.outlook.searchParams.get("body"), `Fornye pass & visum\n${url}`);
   assert.equal(targets.email.protocol, "mailto:");
   assert.equal(targets.email.searchParams.get("subject"), "Fornye pass & visum");
   assert.equal(targets.email.searchParams.get("body"), `Fornye pass & visum\n${url}`);
@@ -138,5 +144,5 @@ test("each share target carries the Mission name and the link, encoded", () => {
   assert.equal(targets.x.searchParams.get("text"), "Fornye pass & visum");
   assert.equal(targets.linkedin.searchParams.get("url"), url);
   assert.equal(targets.facebook.searchParams.get("u"), url);
-  for (const id of ["whatsapp", "x", "linkedin", "facebook"]) assert.equal(targets[id].protocol, "https:");
+  for (const id of ["gmail", "outlook", "whatsapp", "x", "linkedin", "facebook"]) assert.equal(targets[id].protocol, "https:");
 });

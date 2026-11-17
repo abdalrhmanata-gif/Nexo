@@ -89,10 +89,14 @@ export function shareTargets(name, url) {
   const message = shareMessage(title, url);
   const q = (fields) => Object.entries(fields).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join("&");
   return [
-    { id: "email", label: "Email", href: `mailto:?${q({ subject: title || "Zavqera", body: message })}` },
+    // Web mail first: a mailto link asks the computer which app to use, and
+    // many have none set up.
+    { id: "gmail", label: "Gmail", href: `https://mail.google.com/mail/?${q({ view: "cm", fs: "1", su: title || "Zavqera", body: message })}` },
+    { id: "outlook", label: "Outlook", href: `https://outlook.live.com/mail/0/deeplink/compose?${q({ subject: title || "Zavqera", body: message })}` },
     { id: "whatsapp", label: "WhatsApp", href: `https://wa.me/?${q({ text: message })}` },
     { id: "x", label: "X", href: `https://x.com/intent/post?${q({ text: title, url })}` },
     { id: "linkedin", label: "LinkedIn", href: `https://www.linkedin.com/sharing/share-offsite/?${q({ url })}` },
     { id: "facebook", label: "Facebook", href: `https://www.facebook.com/sharer/sharer.php?${q({ u: url })}` },
+    { id: "email", label: "Email app", href: `mailto:?${q({ subject: title || "Zavqera", body: message })}` },
   ];
 }

@@ -79,7 +79,7 @@ export function ShareMissionButton({ missionId, shared }: { missionId: string; s
             {state === "copied" ? <LocalizedText en="Copied" /> : <LocalizedText en="Copy link" />}
           </button>
           {shareTargets(link.name, link.url).map((target) => (
-            <a key={target.id} className="button button-small button-quiet" href={target.href} target={target.id === "email" ? undefined : "_blank"} rel="noopener noreferrer">{target.label}</a>
+            <a key={target.id} className="button button-small button-quiet" href={target.href} target={target.id === "email" ? undefined : "_blank"} rel="noopener noreferrer">{target.id === "email" ? <LocalizedText en="Email app" /> : target.label}</a>
           ))}
           {typeof navigator !== "undefined" && "share" in navigator && (
             <button className="button button-small button-quiet" type="button" onClick={more}><LocalizedText en="More" /></button>
