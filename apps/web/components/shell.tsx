@@ -5,6 +5,9 @@ import { LocalizedFill, LocalizedText } from "./localized-text";
 import { NavLink, WorkspaceNavLink } from "./nav-link";
 import { NotificationBell } from "./notification-bell";
 import { BrandMark } from "./brand-mark";
+import { MobileNavToggle } from "./mobile-nav-toggle";
+import { cache } from "react";
+import { PLAN_LIMITS } from "../lib/billing-plans.mjs";
 import { ThemeSwitcher } from "./theme-switcher";
 import { isSupabaseConfigured } from "../lib/supabase/config";
 import { createSupabaseServerClient } from "../lib/supabase/server";
@@ -32,16 +35,82 @@ function NavIcon({ name }: { name: "search" | "plus" | "business" | "templates" 
 // export of layout.tsx, so an async layout type-checks under the React 18
 // types this project pins, while an async non-page component used as JSX does
 // not reliably.
-export async function readSignedIn(): Promise<boolean> {
-  if (!isSupabaseConfigured()) return false;
+// One auth round trip per request, shared by everything the header reads.
+const readCurrentUser = cache(async () => {
+  if (!isSupabaseConfigured()) return null;
   try {
     const supabase = await createSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();
-    return Boolean(user);
+    return user ?? null;
   } catch {
     // Treat an unreadable session as signed out rather than failing the page.
-    return false;
+    return null;
   }
+});
+
+export async function readSignedIn(): Promise<boolean> {
+  return Boolean(await readCurrentUser());
+}
+
+export type AccountSummary = { email: string; name: string | null; plan: string; used: number; limit: number };
+
+/**
+ * Who is signed in and how much AI they have left this month, for the
+ * account menu. Anything unreadable leaves the menu with just the email and
+ * the Free allowance rather than failing the page.
+ */
+export async function readAccountSummary(): Promise<AccountSummary | null> {
+  const user = await readCurrentUser();
+  if (!user?.email) return null;
+  const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
+  const rawName = typeof meta.full_name === "string" ? meta.full_name : typeof meta.name === "string" ? meta.name : "";
+  const summary: AccountSummary = { email: user.email, name: rawName.trim() || null, plan: "free", used: 0, limit: PLAN_LIMITS.free };
+  try {
+    const supabase = await createSupabaseServerClient();
+    const result = await supabase.rpc("billing_overview");
+    const row = Array.isArray(result.data) ? result.data[0] as { plan?: string; generations_used?: number; monthly_limit?: number } | undefined : undefined;
+    if (row) {
+      summary.plan = row.plan ?? "free";
+      summary.used = row.generations_used ?? 0;
+      summary.limit = row.monthly_limit ?? PLAN_LIMITS.free;
+    }
+  } catch {
+    // Keep the defaults.
+  }
+  return summary;
+}
+
+const PLAN_LABELS: Record<string, string> = { free: "Free", plus: "Plus", pro: "Pro", scale: "Scale" };
+
+function AccountMenu({ account, billing, siteOperator }: { account: AccountSummary; billing: boolean; siteOperator: boolean }) {
+  const display = account.name ?? account.email.split("@")[0];
+  const left = Math.max(account.limit - account.used, 0);
+  return (
+    <details className="account-menu">
+      <summary className="account-trigger">
+        <span className="account-avatar" aria-hidden="true">{display.slice(0, 1).toUpperCase()}</span>
+        <span className="account-trigger-name">{display}</span>
+        <span className="visually-hidden"><LocalizedText en="Account" /></span>
+      </summary>
+      <div className="account-panel">
+        <p className="account-identity">
+          {account.name && <strong>{account.name}</strong>}
+          <span>{account.email}</span>
+        </p>
+        <div className="account-usage">
+          <span className="account-plan"><LocalizedText en={PLAN_LABELS[account.plan] ?? "Free"} /></span>
+          <span><LocalizedFill en="{left} of {limit} AI generations left this month" values={{ left, limit: account.limit }} /></span>
+          <span className="account-meter" aria-hidden="true"><i style={{ width: `${account.limit ? Math.min(100, (left / account.limit) * 100) : 0}%` }} /></span>
+        </div>
+        <div className="account-links">
+          {billing && <NavLink className="nav-link nav-billing" href="/app/billing"><NavIcon name="pricing" /><LocalizedText en="Billing" /></NavLink>}
+          <NavLink className="nav-link nav-team" href="/app/team"><NavIcon name="workspace" /><LocalizedText en="Team" /></NavLink>
+          {siteOperator && <NavLink className="nav-link nav-analytics" href="/app/analytics"><NavIcon name="analytics" /><LocalizedText en="Website analytics" /></NavLink>}
+        </div>
+        <SignOutButton />
+      </div>
+    </details>
+  );
 }
 
 /**
@@ -61,7 +130,7 @@ export async function readSiteOperator(): Promise<boolean> {
   }
 }
 
-export function Shell({ children, signedIn = false, siteOperator = false, billing = false, sharedWorkspace = null, navLabel = "Primary navigation" }: { children: React.ReactNode; signedIn?: boolean; siteOperator?: boolean; billing?: boolean; sharedWorkspace?: { ownerEmail: string; role: string } | null; navLabel?: string }) {
+export function Shell({ children, signedIn = false, siteOperator = false, billing = false, sharedWorkspace = null, account = null, navLabel = "Primary navigation" }: { children: React.ReactNode; signedIn?: boolean; siteOperator?: boolean; billing?: boolean; sharedWorkspace?: { ownerEmail: string; role: string } | null; account?: AccountSummary | null; navLabel?: string }) {
   return (
     <div className="site-shell">
       <header className="topbar">
@@ -71,7 +140,8 @@ export function Shell({ children, signedIn = false, siteOperator = false, billin
           <span className="brand-subtitle"><LocalizedText en="MISSION CONTROL" /></span>
           <span className="visually-hidden"><LocalizedText en="Home" /></span>
         </Link>
-        <nav className="primary-nav" aria-label={navLabel}>
+        <MobileNavToggle />
+        <nav id="primary-nav" className="primary-nav" aria-label={navLabel}>
           {/* The whole product is on show to a first-time visitor, because a
               half-empty header makes the product look smaller than it is. The
               workspace links still need a session, so for a signed-out visitor
@@ -86,13 +156,11 @@ export function Shell({ children, signedIn = false, siteOperator = false, billin
             ? <WorkspaceNavLink />
             : <Link className="nav-link workspace-nav" href="/auth/sign-in?next=%2Fapp" prefetch={false}><NavIcon name="workspace" /><LocalizedText en="Workspace" /></Link>}
           <NavLink href={signedIn ? "/app/opportunities" : "/auth/sign-in?next=%2Fapp%2Fopportunities"} className="nav-link nav-opportunities"><NavIcon name="opportunities" /><LocalizedText en="Opportunity Intelligence" /></NavLink>
-          {signedIn && billing && <NavLink className="nav-link nav-billing" href="/app/billing"><NavIcon name="pricing" /><LocalizedText en="Billing" /></NavLink>}
-          {siteOperator && <NavLink className="nav-link nav-analytics" href="/app/analytics"><NavIcon name="analytics" /><LocalizedText en="Website analytics" /></NavLink>}
           {signedIn && <NotificationBell />}
           <LanguageSwitcher />
           <ThemeSwitcher />
           {signedIn
-            ? <SignOutButton />
+            ? (account ? <AccountMenu account={account} billing={billing} siteOperator={siteOperator} /> : <SignOutButton />)
             : <>
               <Link className="nav-link nav-sign-in" href="/auth/sign-in"><LocalizedText en="Sign in" /></Link>
               <Link className="button button-small nav-start-free" href="/auth/sign-up"><LocalizedText en="Start free" /></Link>

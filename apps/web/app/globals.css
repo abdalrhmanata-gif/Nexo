@@ -1006,7 +1006,7 @@ a:hover { color:var(--teal); }
 /* Final polish for wordmark visibility and the low-friction landing CTA. */
 .brand .brand-wordmark { margin-top:0; color:var(--navy); font-size:18px; letter-spacing:.11em; }
 .brand .brand-subtitle { margin-top:5px; color:#73859a; font-size:9px; letter-spacing:.18em; }
-.landing-template-link { display:inline-flex; align-items:center; gap:6px; margin-top:13px; color:#557286; font-size:12px; font-weight:700; }
+.landing-template-link { display:inline-flex; align-items:center; gap:6px; margin-top:13px; margin-inline-end:18px; color:#557286; font-size:12px; font-weight:700; }
 .landing-template-link span { transition:transform .16s ease; }
 .landing-template-link:hover { color:#087f78; }
 .landing-template-link:hover span { transform:translateX(2px); }
@@ -1607,3 +1607,36 @@ html[dir="rtl"] input, html[dir="rtl"] textarea {
 .topbar .brand .brand-mark { grid-row:span 2; display:block; transition:transform .15s ease; }
 .topbar .brand:hover .brand-mark { transform:rotate(-6deg) scale(1.04); }
 @media (max-width:700px) { .topbar .brand { grid-template-columns:auto; min-width:0; } }
+
+/* Account menu: who is signed in, the plan and the AI left this month,
+   with billing, team and sign-out folded in. */
+.account-menu { position:relative; }
+.account-trigger { display:inline-flex; align-items:center; gap:8px; min-height:39px; padding:4px 10px 4px 4px; border:1px solid var(--line); border-radius:999px; cursor:pointer; list-style:none; color:var(--navy); font-size:12px; font-weight:700; }
+.account-trigger::-webkit-details-marker { display:none; }
+.account-trigger:hover { border-color:var(--teal); }
+.account-avatar { display:inline-grid; place-items:center; width:30px; height:30px; border-radius:50%; background:var(--teal); color:#fff; font-size:13px; font-weight:800; }
+.account-trigger-name { max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.account-panel { position:absolute; inset-inline-end:0; top:calc(100% + 8px); z-index:60; width:280px; display:grid; gap:12px; padding:16px; border:1px solid var(--line); border-radius:14px; background:var(--white); box-shadow:0 18px 40px rgba(10,25,40,.18); }
+.account-identity { display:grid; gap:2px; margin:0; overflow-wrap:anywhere; }
+.account-identity strong { color:var(--navy); font-size:14px; }
+.account-identity span { color:var(--muted); font-size:12px; }
+.account-usage { display:grid; gap:6px; padding:12px; border-radius:10px; background:var(--paper); font-size:12px; color:var(--ink); }
+.account-plan { justify-self:start; padding:2px 8px; border-radius:999px; background:var(--teal); color:#fff; font-size:11px; font-weight:800; }
+.account-meter { display:block; height:6px; border-radius:999px; background:var(--line); overflow:hidden; }
+.account-meter i { display:block; height:100%; border-radius:inherit; background:var(--teal); }
+.account-links { display:grid; gap:2px; }
+.account-panel .nav-link { justify-content:flex-start; width:100%; }
+.account-panel > .button { width:100%; }
+
+/* Phones: the navigation folds behind a menu button. */
+.nav-toggle { display:none; }
+@media (max-width:700px) {
+  .topbar { flex-direction:row !important; flex-wrap:wrap; align-items:center !important; }
+  .nav-toggle { display:inline-grid; place-items:center; width:42px; height:42px; margin-inline-start:auto; border:1px solid var(--line); border-radius:10px; background:transparent; color:var(--navy); }
+  .topbar .primary-nav { display:none !important; }
+  .topbar.nav-open .primary-nav { display:flex !important; flex-direction:column; align-items:stretch; flex-wrap:nowrap; overflow:visible; width:100%; gap:4px; padding:8px 0 4px; }
+  .topbar.nav-open .primary-nav .nav-link { justify-content:flex-start; width:100%; }
+  .topbar.nav-open .primary-nav > * { flex:none; }
+  .account-trigger-name { max-width:200px; }
+  .account-panel { position:static; width:100%; margin-top:8px; box-shadow:none; }
+}
