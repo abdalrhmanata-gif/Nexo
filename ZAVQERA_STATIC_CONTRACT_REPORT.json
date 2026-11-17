@@ -7,8 +7,8 @@
   "warnings": [],
   "web_read_boundary": {
     "status": "STATIC_PASS",
-    "scanned_files": 113,
-    "excluded_test_files": 44,
+    "scanned_files": 121,
+    "excluded_test_files": 45,
     "repository": "apps/web/lib/supabase/mission-repository.ts",
     "authoritative_tables": [
       "workspaces",

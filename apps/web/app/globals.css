@@ -1595,3 +1595,7 @@ html[dir="rtl"] input, html[dir="rtl"] textarea {
 .billing-plan small { color:var(--muted); }
 .billing-plan .button { margin-top:6px; align-self:flex-start; }
 :root[data-theme="dark"] .billing-status { color:#8fd3c7; }
+
+/* Shared mission results */
+.share-mission { display:inline-flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.share-mission-status { color:var(--muted); }

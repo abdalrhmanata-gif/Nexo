@@ -21,7 +21,10 @@ export async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith("/app") && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/sign-in";
-    url.searchParams.set("next", request.nextUrl.pathname);
+    // Keep the full destination, including query parameters. This is required
+    // for shareable Mission templates to survive the sign-in/sign-up handoff.
+    url.search = "";
+    url.searchParams.set("next", `${request.nextUrl.pathname}${request.nextUrl.search}`);
     return NextResponse.redirect(url);
   }
   const isConfirmationEndpoint = request.nextUrl.pathname === "/auth/callback"
