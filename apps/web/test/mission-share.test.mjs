@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { publicMissionSnapshot, remixQuery, shareIdOrNull, shareMessage } from "../lib/mission-share.mjs";
+import { publicMissionSnapshot, remixQuery, shareIdOrNull, shareMessage, shareTargets } from "../lib/mission-share.mjs";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
@@ -124,4 +124,19 @@ test("a link shared before planned steps existed still remixes", () => {
 test("the text sent with a shared link names the mission", () => {
   assert.equal(shareMessage("Open a pharmacy", "https://zavqera.com/share/m/x"), "Open a pharmacy\nhttps://zavqera.com/share/m/x");
   assert.equal(shareMessage("  ", "https://zavqera.com/share/m/x"), "https://zavqera.com/share/m/x");
+});
+
+test("each share target carries the Mission name and the link, encoded", () => {
+  const url = "https://zavqera.com/share/m/abc";
+  const targets = Object.fromEntries(shareTargets("Fornye pass & visum", url).map((target) => [target.id, new URL(target.href)]));
+  assert.deepEqual(Object.keys(targets), ["email", "whatsapp", "x", "linkedin", "facebook"]);
+  assert.equal(targets.email.protocol, "mailto:");
+  assert.equal(targets.email.searchParams.get("subject"), "Fornye pass & visum");
+  assert.equal(targets.email.searchParams.get("body"), `Fornye pass & visum\n${url}`);
+  assert.equal(targets.whatsapp.searchParams.get("text"), `Fornye pass & visum\n${url}`);
+  assert.equal(targets.x.searchParams.get("url"), url);
+  assert.equal(targets.x.searchParams.get("text"), "Fornye pass & visum");
+  assert.equal(targets.linkedin.searchParams.get("url"), url);
+  assert.equal(targets.facebook.searchParams.get("u"), url);
+  for (const id of ["whatsapp", "x", "linkedin", "facebook"]) assert.equal(targets[id].protocol, "https:");
 });

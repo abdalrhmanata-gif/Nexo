@@ -13,3 +13,4 @@ export declare function publicMissionSnapshot(input: unknown): MissionShareSnaps
 export declare function remixQuery(snapshot: MissionShareSnapshot): string;
 export declare function shareIdOrNull(value: unknown): string | null;
 export declare function shareMessage(name: unknown, url: string): string;
+export declare function shareTargets(name: unknown, url: string): { id: string; label: string; href: string }[];

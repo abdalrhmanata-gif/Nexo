@@ -78,3 +78,21 @@ export function shareMessage(name, url) {
   const title = typeof name === "string" ? name.trim() : "";
   return title ? `${title}\n${url}` : url;
 }
+
+/**
+ * Where a shared Mission can be sent from the share panel. Each address is
+ * the service's own public share link; nothing is sent until the person
+ * confirms there.
+ */
+export function shareTargets(name, url) {
+  const title = typeof name === "string" ? name.trim() : "";
+  const message = shareMessage(title, url);
+  const q = (fields) => Object.entries(fields).map(([key, value]) => `${key}=${encodeURIComponent(value)}`).join("&");
+  return [
+    { id: "email", label: "Email", href: `mailto:?${q({ subject: title || "Zavqera", body: message })}` },
+    { id: "whatsapp", label: "WhatsApp", href: `https://wa.me/?${q({ text: message })}` },
+    { id: "x", label: "X", href: `https://x.com/intent/post?${q({ text: title, url })}` },
+    { id: "linkedin", label: "LinkedIn", href: `https://www.linkedin.com/sharing/share-offsite/?${q({ url })}` },
+    { id: "facebook", label: "Facebook", href: `https://www.facebook.com/sharer/sharer.php?${q({ u: url })}` },
+  ];
+}

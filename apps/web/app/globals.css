@@ -1599,3 +1599,5 @@ html[dir="rtl"] input, html[dir="rtl"] textarea {
 /* Shared mission results */
 .share-mission { display:inline-flex; flex-wrap:wrap; align-items:center; gap:8px; }
 .share-mission-status { color:var(--muted); }
+.share-panel { display:flex; flex-wrap:wrap; align-items:center; gap:6px; width:100%; padding:10px; border:1px solid var(--line, rgba(255,255,255,.12)); border-radius:10px; }
+.share-panel-url { flex:1 1 260px; min-width:0; font:inherit; font-size:.85rem; padding:6px 8px; border-radius:8px; border:1px solid var(--line, rgba(255,255,255,.12)); background:transparent; color:inherit; direction:ltr; }
