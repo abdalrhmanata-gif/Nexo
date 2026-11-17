@@ -2,8 +2,8 @@
 //
 // A share is a copy of a mission's public face, stored on the server under an
 // unguessable id. This module decides what goes into that copy: the name,
-// the intent, the criteria, the finished steps and a few plain result
-// values. Nothing that names a person, an account or a workspace, and
+// the intent, the criteria, the titles of the steps (finished and still to
+// do) and a few plain result values. Step notes and evidence stay private. Nothing that names a person, an account or a workspace, and
 // nothing nested. Public result is not public workspace.
 
 const FORBIDDEN_KEY_PARTS = ["email", "token", "secret", "password", "credential", "owner", "workspace", "user", "phone", "address", "authorization", "session", "customer"];
@@ -48,6 +48,7 @@ export function publicMissionSnapshot(input) {
     intent: input.intent.slice(0, 700),
     criteria: boundedStrings(input.criteria, 6, 180),
     completedSteps: boundedStrings(input.completedSteps, 6, 140),
+    plannedSteps: boundedStrings(input.plannedSteps, 8, 140),
     status: typeof input.status === "string" ? input.status.slice(0, 30) : "DRAFT",
     progress: Math.round(clamp(input.progress, 0, 100)),
   };
@@ -61,7 +62,8 @@ export function remixQuery(snapshot) {
     name: snapshot.name,
     intent: snapshot.intent,
     criteria: snapshot.criteria.join("\n"),
-    actions: snapshot.completedSteps.join("\n"),
+    // Links shared before planned steps were stored have none.
+    actions: [...snapshot.completedSteps, ...(snapshot.plannedSteps ?? [])].join("\n"),
   }).toString();
 }
 
@@ -69,4 +71,10 @@ export function shareIdOrNull(value) {
   if (typeof value !== "string") return null;
   const id = value.trim().toLowerCase();
   return UUID.test(id) ? id : null;
+}
+
+/** What is handed to the share sheet or the clipboard: the name, then the link. */
+export function shareMessage(name, url) {
+  const title = typeof name === "string" ? name.trim() : "";
+  return title ? `${title}\n${url}` : url;
 }

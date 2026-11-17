@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
-import { publicMissionSnapshot, remixQuery, shareIdOrNull } from "../lib/mission-share.mjs";
+import { publicMissionSnapshot, remixQuery, shareIdOrNull, shareMessage } from "../lib/mission-share.mjs";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
@@ -33,7 +33,7 @@ test("a shared snapshot carries the mission and its result, and nothing that nam
   assert.deepEqual(snapshot.outcome.result, { summary: "Wholesale to two cafes looks strongest.", count: 5 });
   const text = JSON.stringify(snapshot);
   for (const leak of ["owner@example.com", "3f2c9a1e", "abc", "secret"]) assert.equal(text.includes(leak), false, leak);
-  assert.deepEqual(Object.keys(snapshot).sort(), ["completedSteps", "criteria", "intent", "name", "outcome", "progress", "status"]);
+  assert.deepEqual(Object.keys(snapshot).sort(), ["completedSteps", "criteria", "intent", "name", "outcome", "plannedSteps", "progress", "status"]);
 });
 
 test("a snapshot is bounded, whatever the mission holds", () => {
@@ -100,4 +100,28 @@ test("anyone may read a share; only an editor of the mission's workspace may cre
   assert.match(migration, /revoke all on function public\.create_mission_share\(uuid, jsonb\) from public, anon;/);
   assert.match(migration, /revoked_at is null/);
   assert.match(migration, /octet_length\(p_snapshot::text\) > 8000/);
+});
+
+test("a shared mission shows the steps still to do, by title only", () => {
+  const snapshot = publicMissionSnapshot({ ...mission, plannedSteps: ["Call two suppliers", { title: "x", note: "private" }, "  ", ...Array.from({ length: 20 }, (_, index) => `later ${index} ${"s".repeat(300)}`)] });
+  assert.equal(snapshot.plannedSteps[0], "Call two suppliers");
+  assert.equal(snapshot.plannedSteps.length, 8);
+  assert.ok(snapshot.plannedSteps.every((step) => typeof step === "string" && step.length <= 140));
+  assert.ok(JSON.stringify(snapshot).length < 8000);
+});
+
+test("a remix carries the finished steps and then the ones still to do", () => {
+  const query = new URLSearchParams(remixQuery(publicMissionSnapshot({ ...mission, plannedSteps: ["Call two suppliers"] })));
+  assert.equal(query.get("actions"), "List current customers\nCompare three competitors\nCall two suppliers");
+});
+
+test("a link shared before planned steps existed still remixes", () => {
+  const old = publicMissionSnapshot(mission);
+  delete old.plannedSteps;
+  assert.equal(new URLSearchParams(remixQuery(old)).get("actions"), "List current customers\nCompare three competitors");
+});
+
+test("the text sent with a shared link names the mission", () => {
+  assert.equal(shareMessage("Open a pharmacy", "https://zavqera.com/share/m/x"), "Open a pharmacy\nhttps://zavqera.com/share/m/x");
+  assert.equal(shareMessage("  ", "https://zavqera.com/share/m/x"), "https://zavqera.com/share/m/x");
 });

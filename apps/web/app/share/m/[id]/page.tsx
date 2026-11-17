@@ -60,6 +60,7 @@ export default async function SharedMissionPage({ params }: { params: Promise<{ 
   const supabase = await createSupabaseServerClient();
   await supabase.rpc("record_mission_share_event", { p_id: shareId, p_kind: "view" });
 
+  const planned = snapshot.plannedSteps ?? [];
   const resultEntries = snapshot.outcome ? Object.entries(snapshot.outcome.result) : [];
   // A plain link, not prefetched: opening it is what counts as a remix.
   const remixHref = `/share/m/${shareId}/remix`;
@@ -121,8 +122,11 @@ export default async function SharedMissionPage({ params }: { params: Promise<{ 
         <article className="card">
           <p className="eyebrow"><LocalizedText en="Actions" /></p>
           <h2><LocalizedText en="Actions" /></h2>
-          {snapshot.completedSteps.length
-            ? <ol className="list">{snapshot.completedSteps.map((step) => <li key={step}>{step}</li>)}</ol>
+          {snapshot.completedSteps.length + planned.length
+            ? <ol className="list">
+                {snapshot.completedSteps.map((step) => <li key={`done-${step}`}><span aria-hidden="true">✓ </span>{step}</li>)}
+                {planned.map((step) => <li key={`todo-${step}`}>{step}</li>)}
+              </ol>
             : <p className="detail-intent"><LocalizedText en="No actions yet" /></p>}
         </article>
       </section>
