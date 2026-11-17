@@ -86,6 +86,6 @@ export default async function HomePage() {
       </div>
     </section>
 
-    <section className="landing-final-cta"><div><p className="eyebrow"><LocalizedText en="Start with one Mission" /></p><h2><LocalizedText en="Make the next step clearer." /></h2><p><LocalizedText en="Begin with the workflow you have today. Keep control of what happens next." /></p></div><div className="landing-final-actions"><Link className="button" href="/app"><LocalizedText en="Open workspace" /> <span aria-hidden="true">→</span></Link><Link className="landing-pricing-link" href="/pricing"><LocalizedText en="View proposed plans" /></Link></div></section>
+    <section className="landing-final-cta"><div><p className="eyebrow"><LocalizedText en="Start with one Mission" /></p><h2><LocalizedText en="Make the next step clearer." /></h2><p><LocalizedText en="Begin with the workflow you have today. Keep control of what happens next." /></p></div><div className="landing-final-actions"><Link className="button" href="/app"><LocalizedText en="Open workspace" /> <span aria-hidden="true">→</span></Link><Link className="landing-pricing-link" href="/pricing"><LocalizedText en="Pricing" /></Link></div></section>
   </div>;
 }

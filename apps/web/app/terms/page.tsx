@@ -133,15 +133,28 @@ export default function TermsPage() {
     <section>
       <h2>9. Price and payment</h2>
       <p>
-        <strong>No paid plan is currently available for purchase and no payment details are collected.</strong> The
-        prices shown on the pricing page are proposed, not offers capable of acceptance.
+        ZAVQERA has a free plan and paid monthly plans. The plans, what each includes and their prices are shown on the
+        pricing page, and the price you pay is shown on the payment page before you confirm. Prices are in US dollars;
+        in some countries the payment page shows and charges the amount in your local currency.
       </p>
       <p>
-        If paid plans are introduced, the price, the billing period and the cancellation terms will be shown to you
-        before you are asked to pay, and you will have to accept them separately. As a consumer resident in Norway or
-        the EEA you would then have a 14-day right of withdrawal under the Norwegian Right of Withdrawal Act
-        (angrerettloven), except where you expressly ask for the service to start immediately and acknowledge that you
-        lose that right once it has been fully performed.
+        Payment is taken by Stripe, our payment processor. We do not receive or store your card details. A paid plan
+        is billed in advance for one month at a time and renews automatically each month until you cancel it.
+      </p>
+      <p>
+        You can cancel at any time from the billing page in your account. Your plan then stays active until the end of
+        the month you have paid for and is not renewed. The monthly allowance of AI briefs and Mission plans resets at
+        the start of each calendar month; unused generations do not carry over.
+      </p>
+      <p>
+        <strong>14-day right of withdrawal.</strong> If you are a consumer, you may withdraw from your first purchase of
+        a paid plan within 14 days, as the Norwegian Right of Withdrawal Act (angrerettloven) provides. Write to{" "}
+        {LEGAL.supportEmail} within that period and we will refund that first payment in full, even if you have used
+        the plan in the meantime.
+      </p>
+      <p>
+        If we change the price of a plan, we will tell you at least 30 days before the new price applies to you, and
+        you can cancel before then.
       </p>
     </section>
 

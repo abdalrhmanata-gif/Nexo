@@ -43,7 +43,7 @@ export default function PrivacyPage() {
       <ul className="list">
         <li>{LEGAL.controllerName}</li>
         <li>{LEGAL.controllerAddress}</li>
-        <li>{LEGAL.organisationNumber}</li>
+        {LEGAL.organisationNumber && <li>{LEGAL.organisationNumber}</li>}
         <li>Privacy contact: <strong>{LEGAL.privacyEmail}</strong></li>
       </ul>
       <p>
