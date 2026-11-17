@@ -2,6 +2,7 @@ import { getTranslate } from "../../lib/i18n-server";
 import Link from "next/link";
 import { LocalizedText } from "../../components/localized-text";
 import { LEGAL, PROCESSORS, PURPOSES, legalDetailsPending } from "../../lib/legal";
+import { managedPaymentsEnabled } from "../../lib/billing-plans.mjs";
 
 // Deliberately English only, and the page says so. A mistranslated data or
 // liability clause binds a reader to something nobody intended, and this is
@@ -102,6 +103,12 @@ export default function PrivacyPage() {
           </tbody>
         </table>
       </div>
+      {managedPaymentsEnabled(process.env) && <p>
+        Paid plans are sold through Link, a Stripe company, as the seller of record. For the purchase itself — taking
+        payment, working out sales tax, VAT or GST from your billing address, receipts, refunds and payment support —
+        Link and Stripe use your payment details under their own privacy policies, not only on our instructions. See{" "}
+        <a href="https://support.link.com/topics/sold-through-link">support.link.com</a>.
+      </p>}
       <p>
         We may also disclose data where the law requires it, or to establish or defend a legal claim. If that ever
         happens we will tell you unless we are forbidden to.

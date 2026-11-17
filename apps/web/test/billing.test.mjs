@@ -138,3 +138,17 @@ test("the payment page says that subscribing starts the service at once", () => 
   assert.ok(message.includes("https://zavqera.com/terms"), "the terms are linked from the payment page");
   assert.ok(message.length <= 1200, "Stripe accepts at most 1200 characters");
 });
+
+test("the legal pages describe Link as seller only when Managed Payments is on", () => {
+  const terms = read("app/terms/page.tsx");
+  const privacy = read("app/privacy/page.tsx");
+  for (const page of [terms, privacy]) {
+    assert.match(page, /managedPaymentsEnabled\(process\.env\) (\?|&&)/, "the Link wording is tied to the same switch as checkout");
+    assert.match(page, /sold through Link/i);
+  }
+  const managed = terms.slice(terms.indexOf("managedPaymentsEnabled(process.env) ?"), terms.indexOf(": <>")).replace(/\s+/g, " ");
+  assert.match(managed, /stays active until the end of the month you have paid for/);
+  assert.match(managed, /do not refund a payment because you have changed your mind, except where mandatory consumer law requires it/);
+  assert.match(managed, /LINK\.COM\*/, "the card statement wording matches Stripe's descriptor");
+  assert.doesNotMatch(managed, /custom_text|start the service immediately/, "Stripe shows no custom text on Managed Payments checkout");
+});
