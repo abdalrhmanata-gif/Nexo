@@ -14,7 +14,7 @@ export const missionTemplates: MissionTemplate[] = [
   {
     id: "business-opportunity-scan",
     title: "Find growth opportunities",
-    description: "Give AI a bounded business mission: research the market, compare competitors, and surface practical opportunities.",
+    description: "Map your market, compare competitors and pick the opportunities worth testing, with every claim backed by evidence.",
     intent: "Find the strongest growth opportunities for my business using current public evidence, while keeping the research bounded and the recommendations reviewable.",
     criteria: [
       "Identify at least five relevant competitors or alternatives",
@@ -28,8 +28,8 @@ export const missionTemplates: MissionTemplate[] = [
       "Propose one small, reversible next test",
     ],
     featured: true,
-    shareTitle: "Give AI a real business mission",
-    shareDescription: "Set the goal, limits, and success criteria. Then see how Zavqera turns the mission into a reviewable plan.",
+    shareTitle: "Find your next growth opportunity",
+    shareDescription: "Set the goal and what success looks like. Zavqera turns it into a clear plan you can review step by step.",
   },
   {
     id: "launch-plan",
