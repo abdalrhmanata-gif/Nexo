@@ -165,3 +165,12 @@ test("billing and pricing say prices include tax and name the card statement, on
   }
   assert.match(pricing, /managedPaymentsEnabled\(process\.env\)/);
 });
+
+test("the pricing page highlights Scale as best value, which it is per AI generation", () => {
+  const pricing = read("app/pricing/page.tsx");
+  assert.match(pricing, /plan\.name === "Scale" && <span className="pricing-badge"><LocalizedText en="Best value" \/>/);
+  assert.doesNotMatch(pricing, /Best for regular use/);
+  const perGeneration = { plus: 19 / PLAN_LIMITS.plus, pro: 49 / PLAN_LIMITS.pro, scale: 69 / PLAN_LIMITS.scale };
+  assert.ok(perGeneration.scale < perGeneration.pro && perGeneration.scale < perGeneration.plus, "the badge must stay true");
+  assert.equal((pricing.match(/pricing-status/g) || []).length, 1, "one note above the plans, not two");
+});
