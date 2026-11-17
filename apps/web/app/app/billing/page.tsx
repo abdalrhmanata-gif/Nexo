@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { BillingActions } from "../../../components/billing-actions";
 import { LocalizedDateTime, LocalizedFill, LocalizedText } from "../../../components/localized-text";
-import { PLAN_LIMITS } from "../../../lib/billing-plans.mjs";
+import { PLAN_LIMITS, managedPaymentsEnabled } from "../../../lib/billing-plans.mjs";
 import { billingConfigured } from "../../../lib/stripe-client";
 import { isSupabaseConfigured } from "../../../lib/supabase/config";
 import { createSupabaseServerClient } from "../../../lib/supabase/server";
@@ -57,7 +57,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
     </section>
 
     {configured
-      ? <BillingActions hasSubscription={hasSubscription} plan={overview.plan} checkout={checkout === "success" || checkout === "cancelled" ? checkout : null} />
+      ? <BillingActions hasSubscription={hasSubscription} plan={overview.plan} soldThroughLink={managedPaymentsEnabled(process.env)} checkout={checkout === "success" || checkout === "cancelled" ? checkout : null} />
       : <section className="card"><p><LocalizedText en="Paid plans are not open yet. Everyone is on Free for now." /></p></section>}
   </div>;
 }

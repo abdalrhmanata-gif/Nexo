@@ -152,3 +152,16 @@ test("the legal pages describe Link as seller only when Managed Payments is on",
   assert.match(managed, /LINK\.COM\*/, "the card statement wording matches Stripe's descriptor");
   assert.doesNotMatch(managed, /custom_text|start the service immediately/, "Stripe shows no custom text on Managed Payments checkout");
 });
+
+test("billing and pricing say prices include tax and name the card statement, only when Link sells", () => {
+  const pricing = read("app/pricing/page.tsx");
+  const billingPage = read("app/app/billing/page.tsx");
+  const actions = read("components/billing-actions.tsx");
+  assert.match(billingPage, /soldThroughLink=\{managedPaymentsEnabled\(process\.env\)\}/);
+  assert.match(actions, /soldThroughLink\s*\n?\s*\?/);
+  for (const page of [pricing, actions]) {
+    assert.match(page, /include VAT or sales tax where it applies/);
+    assert.match(page, /LINK\.COM\* ZAVQERA/, "matches the account's statement descriptor ZAVQERA");
+  }
+  assert.match(pricing, /managedPaymentsEnabled\(process\.env\)/);
+});

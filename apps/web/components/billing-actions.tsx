@@ -28,7 +28,7 @@ async function post(url: string, body?: unknown) {
  * proof of payment: it says the payment is being confirmed and reloads the
  * plan for up to 30 seconds until the webhook has landed.
  */
-export function BillingActions({ hasSubscription, plan, checkout }: { hasSubscription: boolean; plan: string; checkout: "success" | "cancelled" | null }) {
+export function BillingActions({ hasSubscription, plan, checkout, soldThroughLink = false }: { hasSubscription: boolean; plan: string; checkout: "success" | "cancelled" | null; soldThroughLink?: boolean }) {
   const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -69,7 +69,12 @@ export function BillingActions({ hasSubscription, plan, checkout }: { hasSubscri
         <button className="button" type="button" disabled={busy !== null} onClick={() => go("/api/billing/portal")}><LocalizedText en="Manage billing" /></button>
       </div>
       : <div className="billing-plans">
-        <p><LocalizedText en="Prices are in US dollars. In some countries, checkout shows and charges the amount in the local currency." /></p>
+        {soldThroughLink
+          ? <>
+            <p><LocalizedText en="Prices are in US dollars and include VAT or sales tax where it applies. In some countries, checkout shows and charges the amount in the local currency." /></p>
+            <p><LocalizedText en="Payments are processed by Link, a Stripe company, and appear on your card statement as LINK.COM* ZAVQERA." /></p>
+          </>
+          : <p><LocalizedText en="Prices are in US dollars. In some countries, checkout shows and charges the amount in the local currency." /></p>}
         <div className="billing-plan-grid">
           {PLANS.map((option) => <div className="billing-plan" key={option.id}>
             <strong><LocalizedText en={option.label} /></strong>

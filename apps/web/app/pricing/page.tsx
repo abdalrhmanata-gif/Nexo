@@ -2,7 +2,7 @@ import Link from "next/link";
 import { LocalizedText } from "../../components/localized-text";
 import { PlanInterest } from "../../components/plan-interest";
 import { billingConfigured } from "../../lib/stripe-client";
-import { PLAN_LIMITS } from "../../lib/billing-plans.mjs";
+import { PLAN_LIMITS, managedPaymentsEnabled } from "../../lib/billing-plans.mjs";
 
 // Read per request: whether billing is open depends on the deployment's key.
 export const dynamic = "force-dynamic";
@@ -70,7 +70,10 @@ export default function PricingPage() {
       <p className="eyebrow"><LocalizedText en="Pricing" /></p>
       <h1><LocalizedText en="Simple plans. Start free." /></h1>
       <p><LocalizedText en="Every plan includes the full workspace. Paid plans give you more AI help each month." /></p>
-      {billing && <p className="pricing-status"><LocalizedText en="Plans are billed monthly through Stripe. You can cancel at any time, and your plan lasts until the end of the period you paid for." /></p>}
+      {billing && <p className="pricing-status">{managedPaymentsEnabled(process.env)
+        ? <LocalizedText en="Plans are billed monthly through Link, a Stripe company, and prices include VAT or sales tax where it applies. You can cancel at any time, and your plan lasts until the end of the period you paid for." />
+        : <LocalizedText en="Plans are billed monthly through Stripe. You can cancel at any time, and your plan lasts until the end of the period you paid for." />}</p>}
+      {billing && managedPaymentsEnabled(process.env) && <p className="pricing-status"><LocalizedText en="Payments are processed by Link, a Stripe company, and appear on your card statement as LINK.COM* ZAVQERA." /></p>}
     </section>
     <section className="pricing" aria-labelledby="pricing-heading">
       <h2 id="pricing-heading" className="visually-hidden"><LocalizedText en="Compare plans" /></h2>
