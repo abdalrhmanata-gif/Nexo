@@ -108,3 +108,11 @@ test("the pricing page says what is true when AI is open by plan but paid plans 
   // The sentence about an approved preview tester stays only for the allowlist.
   assert.match(pricing, /aiOpen\s*\?[\s\S]*Free is open now[\s\S]*:[\s\S]*Proposed launch pricing, not active offers/);
 });
+
+test("the payment page says that subscribing starts the service at once", () => {
+  const fields = checkoutSessionParams({ priceId: "price_x", email: "a@b.c", userId: "u1", origin: "https://zavqera.com" });
+  const message = fields.get("custom_text[submit][message]");
+  assert.ok(message && /start(s)? (the service )?immediately|starts at once/i.test(message), "the request to start at once is shown before paying");
+  assert.ok(message.includes("https://zavqera.com/terms"), "the terms are linked from the payment page");
+  assert.ok(message.length <= 1200, "Stripe accepts at most 1200 characters");
+});
