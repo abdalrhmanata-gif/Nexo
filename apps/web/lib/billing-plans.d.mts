@@ -5,5 +5,6 @@ export declare const PLAN_LIMITS: Readonly<Record<Plan, number>>;
 export declare const CHECKOUT_LABEL: string;
 export declare function isPaidPlan(value: unknown): value is PaidPlan;
 export declare function stripeKeyMode(key: unknown): "test" | "live" | null;
+export declare function managedPaymentsEnabled(env: Record<string, string | undefined> | undefined): boolean;
 export declare function aiAccessMode(env: Record<string, string | undefined> | undefined): "plans" | "allowlist";
-export declare function checkoutSessionParams(input: { priceId: string; customerId: string | null; email: string | null | undefined; userId: string; origin: string }): URLSearchParams;
+export declare function checkoutSessionParams(input: { priceId: string; customerId: string | null; email: string | null | undefined; userId: string; origin: string; managedPayments?: boolean }): URLSearchParams;

@@ -18,6 +18,17 @@ export function stripeKeyMode(key) {
   return match ? match[1] : null;
 }
 
+/**
+ * True when STRIPE_MANAGED_PAYMENTS is exactly "on": Checkout Sessions then
+ * ask Stripe to act as merchant of record (Managed Payments), so Stripe
+ * collects and remits sales tax, VAT and GST in the countries it covers.
+ * Off by default; switching it on needs Managed Payments activated in the
+ * Dashboard and an eligible tax code on every product.
+ */
+export function managedPaymentsEnabled(env) {
+  return env?.STRIPE_MANAGED_PAYMENTS === "on";
+}
+
 /** "plans" opens AI to every signed-in person within their plan's limit. */
 export function aiAccessMode(env) {
   return env?.ZAVQERA_AI_ACCESS === "plans" ? "plans" : "allowlist";
@@ -27,11 +38,17 @@ export function aiAccessMode(env) {
  * The form body for POST /v1/checkout/sessions.
  *
  * No payment_method_types: Stripe offers what the Dashboard enables. No
- * automatic_tax: there is no tax registration yet. The user id goes in twice
- * because Stripe's events can arrive in any order: client_reference_id
- * comes back on the completed session, the metadata on the subscription.
+ * automatic_tax: without Managed Payments there is no tax registration, and
+ * with it Stripe handles tax itself. The user id goes in twice because
+ * Stripe's events can arrive in any order: client_reference_id comes back on
+ * the completed session, the metadata on the subscription.
+ *
+ * With managedPayments, Stripe is the merchant of record. Stripe rejects
+ * adaptive_pricing (always on there) and custom_text on those sessions, so
+ * both are left out; Link shows its own standard terms and applies the
+ * cooling-off rules itself (checked in the Sandbox, 2026-11-17).
  */
-export function checkoutSessionParams({ priceId, customerId, email, userId, origin }) {
+export function checkoutSessionParams({ priceId, customerId, email, userId, origin, managedPayments = false }) {
   const fields = new URLSearchParams();
   fields.set("mode", "subscription");
   fields.set("line_items[0][price]", priceId);
@@ -42,10 +59,13 @@ export function checkoutSessionParams({ priceId, customerId, email, userId, orig
   fields.set("subscription_data[metadata][user_id]", userId);
   fields.set("success_url", `${origin}/app/billing?checkout=success`);
   fields.set("cancel_url", `${origin}/app/billing?checkout=cancelled`);
-  fields.set("adaptive_pricing[enabled]", "true");
+  if (managedPayments) fields.set("managed_payments[enabled]", "true");
+  else fields.set("adaptive_pricing[enabled]", "true");
   fields.set("integration_identifier", CHECKOUT_LABEL);
   // Shown above the pay button: the request to start at once is what the
-  // terms' withdrawal clause relies on.
-  fields.set("custom_text[submit][message]", `By subscribing you ask ZAVQERA to start the service immediately. Terms: ${origin}/terms`);
+  // terms' withdrawal clause relies on. Not allowed with Managed Payments.
+  if (!managedPayments) {
+    fields.set("custom_text[submit][message]", `By subscribing you ask ZAVQERA to start the service immediately. Terms: ${origin}/terms`);
+  }
   return fields;
 }

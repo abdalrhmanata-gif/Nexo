@@ -2,6 +2,7 @@ import { getTranslate } from "../../lib/i18n-server";
 import Link from "next/link";
 import { LocalizedText } from "../../components/localized-text";
 import { LEGAL, legalDetailsPending } from "../../lib/legal";
+import { managedPaymentsEnabled } from "../../lib/billing-plans.mjs";
 
 // English only, for the same reason as the privacy notice.
 //
@@ -137,21 +138,41 @@ export default function TermsPage() {
         pricing page, and the price you pay is shown on the payment page before you confirm. Prices are in US dollars;
         in some countries the payment page shows and charges the amount in your local currency.
       </p>
-      <p>
-        Payment is taken by Stripe, our payment processor. We do not receive or store your card details. A paid plan
-        is billed in advance for one month at a time and renews automatically each month until you cancel it.
-      </p>
-      <p>
-        You can cancel at any time from the billing page in your account. Your plan then stays active until the end of
-        the month you have paid for and is not renewed. The monthly allowance of AI briefs and Mission plans resets at
-        the start of each calendar month; unused generations do not carry over.
-      </p>
-      <p>
-        If you are a consumer, you have the right of withdrawal that the Norwegian Right of Withdrawal Act
-        (angrerettloven) gives you. By subscribing you ask us to start the service immediately; if you then withdraw
-        within 14 days, the part of the period you have already used is deducted from any amount refunded. To
-        withdraw, write to {LEGAL.supportEmail}.
-      </p>
+      {managedPaymentsEnabled(process.env) ? <>
+        <p>
+          Paid plans are sold through Link, a Stripe company, which acts as the seller of record for the payment. Link
+          takes the payment, collects any sales tax, VAT or GST — already included in the price shown — and sends your
+          receipts. Your card statement shows LINK.COM*. We do not receive or store your card details. A paid plan is
+          billed in advance for one month at a time and renews automatically each month until you cancel it.
+        </p>
+        <p>
+          You can cancel at any time from the billing page in your account, or through Link at link.com. Cancelling
+          stops the next renewal: your plan stays active until the end of the month you have paid for. We do not refund
+          a payment because you have changed your mind, except where mandatory consumer law requires it. The monthly
+          allowance of AI briefs and Mission plans resets at the start of each calendar month; unused generations do
+          not carry over.
+        </p>
+        <p>
+          Questions about a payment can go to {LEGAL.supportEmail} or to Link&rsquo;s support at{" "}
+          <a href="https://support.link.com/topics/sold-through-link">support.link.com</a>.
+        </p>
+      </> : <>
+        <p>
+          Payment is taken by Stripe, our payment processor. We do not receive or store your card details. A paid plan
+          is billed in advance for one month at a time and renews automatically each month until you cancel it.
+        </p>
+        <p>
+          You can cancel at any time from the billing page in your account. Your plan then stays active until the end of
+          the month you have paid for and is not renewed. The monthly allowance of AI briefs and Mission plans resets at
+          the start of each calendar month; unused generations do not carry over.
+        </p>
+        <p>
+          If you are a consumer, you have the right of withdrawal that the Norwegian Right of Withdrawal Act
+          (angrerettloven) gives you. By subscribing you ask us to start the service immediately; if you then withdraw
+          within 14 days, the part of the period you have already used is deducted from any amount refunded. To
+          withdraw, write to {LEGAL.supportEmail}.
+        </p>
+      </>}
       <p>
         If we change the price of a plan, we will tell you at least 30 days before the new price applies to you, and
         you can cancel before then.
