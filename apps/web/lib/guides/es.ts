@@ -25,6 +25,10 @@ export const es: GuideLocale = {
     ctaFree: "Gratis para empezar. Sin tarjeta.",
     readGuide: "Leer la guía",
     disclaimer: "Información general, no asesoría legal ni fiscal. Las reglas y tarifas cambian y varían según el estado; las páginas oficiales enlazadas aquí son la referencia. Las fuentes oficiales están en inglés.",
+    homeEyebrow: "Guías gratuitas",
+    homeTitle: "¿Vas a empezar un negocio en EE. UU.? Empieza aquí.",
+    homeLead: "Guías paso a paso con la fuente oficial de cada regla. Lee una y conviértela en tu propio plan con un clic.",
+    allGuides: "Ver todas las guías",
     languages: "Idioma",
     sourceLabels: {
       sbaGuide: "SBA: Guía para negocios",
