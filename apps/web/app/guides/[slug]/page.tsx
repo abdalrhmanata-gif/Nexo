@@ -76,8 +76,8 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
         </div>
       </section>
 
+      <h2 id="steps-heading">Steps</h2>
       <section className="grid" aria-labelledby="steps-heading">
-        <h2 id="steps-heading">Steps</h2>
         {guide.steps.map((step) => (
           <article className="card" key={step.heading}>
             <h3>{step.heading}</h3>

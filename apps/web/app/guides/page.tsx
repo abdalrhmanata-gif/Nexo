@@ -19,8 +19,8 @@ export default function GuidesPage() {
           <p>Each guide lists the steps in order and links to the official source for every rule or fee. When you are ready, turn a guide into your own plan and track it to done.</p>
         </div>
       </section>
+      <h2 id="guides-heading">All guides</h2>
       <section className="grid" aria-labelledby="guides-heading">
-        <h2 id="guides-heading">All guides</h2>
         {guides.map((guide) => (
           <article className="card" key={guide.slug}>
             <h3><Link href={`/guides/${guide.slug}`}>{guide.title}</Link></h3>
