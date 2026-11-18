@@ -27,6 +27,11 @@ const securityHeaders = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Browsers ask for /favicon.ico whatever the page declares. It was a 404
+  // that woke a server function each time; the real icon is app/icon.svg.
+  async redirects() {
+    return [{ source: "/favicon.ico", destination: "/icon.svg", permanent: true }];
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
