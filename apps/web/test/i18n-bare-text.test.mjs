@@ -39,7 +39,17 @@ const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
  * crawler, which has no reader language, and its built-in font draws Latin
  * text only.
  */
-const ENGLISH_ON_PURPOSE = new Set(["app/privacy/page.tsx", "app/terms/page.tsx", "app/share/m/[id]/opengraph-image.tsx"]);
+//
+// The public guides are written for an American audience from US federal
+// sources (see the header of lib/guides.ts); a translated eligibility rule
+// that drifts from the English source would mislead. They render lang="en".
+const ENGLISH_ON_PURPOSE = new Set([
+  "app/privacy/page.tsx",
+  "app/terms/page.tsx",
+  "app/share/m/[id]/opengraph-image.tsx",
+  "app/guides/page.tsx",
+  "app/guides/[slug]/page.tsx",
+]);
 
 /** Attribute values that are machinery, not words anyone reads. */
 const MACHINE_ATTRIBUTE =
