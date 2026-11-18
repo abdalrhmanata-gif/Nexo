@@ -7,6 +7,7 @@ import { PageMetrics } from "../components/page-metrics";
 import { UmamiAnalytics } from "../components/umami-analytics";
 import { LanguageProvider } from "../components/localized-text";
 import { getLanguage, getTranslate } from "../lib/i18n-server";
+import { guidePath, isGuideLanguage } from "../lib/guides";
 
 // The tab title and the description a search engine shows were English for
 // every reader. They are read from the same dictionary as the page.
@@ -48,7 +49,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         {/* The language resolved above reaches every client component, so
             the HTML that leaves the server is already in it. */}
         <LanguageProvider initial={language}>
-          <Shell signedIn={signedIn} siteOperator={siteOperator} sharedWorkspace={sharedWorkspace} account={account} billing={billingConfigured()} navLabel={t("Primary navigation")}>{children}</Shell>
+          <Shell signedIn={signedIn} siteOperator={siteOperator} sharedWorkspace={sharedWorkspace} account={account} billing={billingConfigured()} navLabel={t("Primary navigation")} guidesHref={guidePath(isGuideLanguage(language) ? language : "en")}>{children}</Shell>
         </LanguageProvider>
         <PageMetrics />
         <UmamiAnalytics />

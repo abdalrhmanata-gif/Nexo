@@ -130,7 +130,7 @@ export async function readSiteOperator(): Promise<boolean> {
   }
 }
 
-export function Shell({ children, signedIn = false, siteOperator = false, billing = false, sharedWorkspace = null, account = null, navLabel = "Primary navigation" }: { children: React.ReactNode; signedIn?: boolean; siteOperator?: boolean; billing?: boolean; sharedWorkspace?: { ownerEmail: string; role: string } | null; account?: AccountSummary | null; navLabel?: string }) {
+export function Shell({ children, signedIn = false, siteOperator = false, billing = false, sharedWorkspace = null, account = null, navLabel = "Primary navigation", guidesHref = "/guides" }: { children: React.ReactNode; signedIn?: boolean; siteOperator?: boolean; billing?: boolean; sharedWorkspace?: { ownerEmail: string; role: string } | null; account?: AccountSummary | null; navLabel?: string; guidesHref?: string }) {
   return (
     <div className="site-shell">
       <header className="topbar">
@@ -180,6 +180,7 @@ export function Shell({ children, signedIn = false, siteOperator = false, billin
         {/* Reachable from every page, which is what makes them findable at the
             moment someone wants them: before they sign up. */}
         <span className="footer-links">
+          <Link href={guidesHref} prefetch={false}><LocalizedText en="Guides" /></Link>
           <Link href="/privacy" prefetch={false}><LocalizedText en="Privacy" /></Link>
           <Link href="/terms" prefetch={false}><LocalizedText en="Terms" /></Link>
         </span>

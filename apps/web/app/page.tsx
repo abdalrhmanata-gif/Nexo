@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { LocalizedText } from "../components/localized-text";
-import { getTranslate } from "../lib/i18n-server";
+import { getLanguage, getTranslate } from "../lib/i18n-server";
+import { guidePath, isGuideLanguage } from "../lib/guides";
 import { readSignedIn } from "../components/shell";
 
 const capabilities = [
@@ -36,6 +37,8 @@ function CapabilityIcon({ kind }: { kind: string }) {
 export default async function HomePage() {
   const t = await getTranslate();
   const signedIn = await readSignedIn();
+  const language = await getLanguage();
+  const guidesHref = guidePath(isGuideLanguage(language) ? language : "en");
   return <div className="landing-page">
     <section className="landing-hero">
       <div className="landing-hero-copy">
@@ -50,6 +53,7 @@ export default async function HomePage() {
         </div>
         <div className="landing-trust-line"><span aria-hidden="true">✓</span> <LocalizedText en="Review before action. Clear boundaries. No false certainty." /></div>
         <p className="landing-honesty"><LocalizedText en="AI drafts only when you ask, and never acts for you. You review every step before it counts." /></p>
+        <Link className="landing-template-link" href={guidesHref}><LocalizedText en="Read the guides to starting a business in the US" /> <span aria-hidden="true">→</span></Link>
         <Link className="landing-template-link" href="/templates"><LocalizedText en="Browse mission templates" /> <span aria-hidden="true">→</span></Link>
         <Link className="landing-template-link" href="/app/opportunities"><LocalizedText en="Explore Opportunity Intelligence" /> <span aria-hidden="true">→</span></Link>
       </div>
