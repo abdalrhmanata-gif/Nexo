@@ -1657,7 +1657,7 @@ html[dir="rtl"] input, html[dir="rtl"] textarea {
 .guide-langs { display:flex; flex-wrap:wrap; gap:6px; }
 .guide-langs a { font-size:13px; padding:5px 11px; border:1px solid var(--line); border-radius:999px; color:var(--muted); }
 .guide-langs a:hover { border-color:var(--teal); color:var(--teal); }
-.guide-langs a.is-current { background:var(--navy); border-color:var(--navy); color:var(--white); }
+.guide-langs a.is-current { background:var(--teal); border-color:var(--teal); color:#fff; font-weight:600; }
 .guide-layout { display:grid; grid-template-columns:minmax(0, 1fr) 300px; gap:56px; align-items:start; }
 .guide-body { max-width:720px; min-width:0; }
 .guide-body h2 { font-size:24px; letter-spacing:-.01em; margin:44px 0 20px; scroll-margin-top:96px; }
@@ -1681,7 +1681,7 @@ html[dir="rtl"] input, html[dir="rtl"] textarea {
 .guide-sources a { color:var(--teal); }
 .guide-disclaimer { font-size:13px; color:var(--muted); border-inline-start:3px solid var(--line); padding-inline-start:12px; margin:0; }
 .guide-aside { position:sticky; top:96px; display:grid; gap:18px; }
-.guide-toc { border:1px solid var(--line); border-radius:12px; padding:18px; font-size:14px; }
+.guide-toc { display:block; border:1px solid var(--line); border-radius:12px; padding:18px; font-size:14px; }
 .guide-toc strong { display:block; font-size:12px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); margin-block-end:10px; }
 .guide-toc ol { margin:0 0 10px; padding-inline-start:20px; line-height:1.5; }
 .guide-toc li { margin-block-end:6px; }
