@@ -25,6 +25,10 @@ export const nb: GuideLocale = {
     ctaFree: "Gratis å starte. Ingen kort nødvendig.",
     readGuide: "Les guiden",
     disclaimer: "Generell informasjon, ikke juridisk eller skattemessig rådgivning. Regler og gebyrer endres og varierer mellom delstatene; de lenkede offisielle sidene (på engelsk) gjelder.",
+    homeEyebrow: "Gratis guider",
+    homeTitle: "Skal du starte bedrift i USA? Start her.",
+    homeLead: "Guider steg for steg med den offisielle kilden for hver regel. Les en og gjør den om til din egen plan med ett klikk.",
+    allGuides: "Se alle guidene",
     languages: "Språk",
     sourceLabels: {
       sbaGuide: "SBA: Veiledning for bedrifter",

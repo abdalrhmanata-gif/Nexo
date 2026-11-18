@@ -1720,3 +1720,11 @@ html[dir="rtl"] input, html[dir="rtl"] textarea {
   .guide-step::before { inset-block-start:36px; inset-inline-start:15px; }
   .guide-step h3 { margin-block-start:4px; }
 }
+
+/* Guides section on the home page */
+.home-guides { margin:72px 0; }
+.home-guides-head { display:flex; justify-content:space-between; align-items:end; gap:24px; margin-block-end:24px; }
+.home-guides-head h2 { font-size:clamp(28px, 3.6vw, 40px); line-height:1.12; letter-spacing:-.03em; margin:0 0 10px; }
+.home-guides-head p:not(.eyebrow) { margin:0; color:var(--muted); max-width:60ch; line-height:1.6; }
+.home-guides-head .button { white-space:nowrap; }
+@media (max-width:700px) { .home-guides { margin:48px 0; }.home-guides-head { flex-direction:column; align-items:stretch; }.home-guides-head .button { text-align:center; } }
