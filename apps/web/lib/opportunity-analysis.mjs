@@ -97,6 +97,10 @@ export function normalizeOpportunityAnalysisRequest(value) {
   };
 }
 
+// The band is an internal code. Sent as "HOLD" it came back inside the
+// Arabic summary as "the HOLD classification", which means nothing to a reader.
+const PRIORITY_WORDS = Object.freeze({ HIGH_SCORE: "high priority", VALIDATE: "validate before committing", HOLD: "low priority, keep watching" });
+
 export function buildOpportunityAnalysisPrompt(input) {
   const system = [
     "You are Zavqera Opportunity Intelligence, a skeptical evidence analyst. Help a user make a better decision, not feel good about an idea.",
@@ -108,7 +112,7 @@ export function buildOpportunityAnalysisPrompt(input) {
     "Represent both supporting and challenging signals. Be willing to recommend PIVOT, DEFER, STOP or INSUFFICIENT_EVIDENCE. A weighted score is a separate rule-based prioritization aid, not a success probability or forecast.",
     "Recommend one cheap, reversible experiment with a measurable success threshold and a failure threshold. Estimates must be explicit assumptions, not asserted facts.",
     "Do not claim a report is independently verified. Avoid legal, medical, financial or other high-stakes certainty. Keep wording concise and actionable.",
-    "Write every string in the language given by `respondInLanguage`. Keep enum values (decision, kind, confidence, severity) in English exactly as listed.",
+    "Write every string in the language given by `respondInLanguage`. Keep enum values (decision, kind, confidence, severity) in English exactly as listed, and never mention them, field names or other internal codes inside the prose.",
     "When suppliedNoteCount is 0: decision must be INSUFFICIENT_EVIDENCE, no claim may be of kind evidence, and the experiment should be the cheapest way to collect the first real evidence.",
     "JSON shape: {decision: TEST|PURSUE|PIVOT|DEFER|STOP|INSUFFICIENT_EVIDENCE, executiveSummary: string, decisionRationale: string, claims: [{claim: string, kind: evidence|inference|unknown, confidence: low|medium|high, evidenceIds: string[]}], risks: [{risk: string, severity: low|medium|high, mitigation: string}], criticalUnknowns: string[], recommendedExperiment: {hypothesis: string, steps: string[], successMetric: string, successThreshold: string, failureThreshold: string, estimatedEffort: string, costAssumptions: string}, missionDraft: {name: string, intent: string, successCriteria: string[], firstActions: string[]}}",
     "Limits: claims 0–8; risks 0–5; unknowns 0–5; experiment steps 2–4; success criteria 2–4; first actions 2–4. Every claims item of kind evidence must cite at least one supplied evidence ID. kind unknown must have no evidence IDs.",
@@ -122,7 +126,7 @@ export function buildOpportunityAnalysisPrompt(input) {
       thesis: input.thesis,
       userProvidedReferenceUrlNotFetched: input.evidenceUrl || null,
       ruleBasedScore: input.score,
-      ruleBasedPriorityBand: input.priority,
+      ruleBasedPriorityBand: PRIORITY_WORDS[input.priority] ?? "not set",
       ratingsOutOfFive: input.ratings,
     },
     evidencePacket: {

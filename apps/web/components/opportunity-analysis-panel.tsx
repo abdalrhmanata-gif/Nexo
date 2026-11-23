@@ -71,6 +71,13 @@ const DECISION_LABELS: Record<OpportunityAnalysisReport["decision"], string> = {
   INSUFFICIENT_EVIDENCE: "Insufficient evidence",
 };
 
+/** Claim kinds are enums too; the badge shows a word, in the reader's language. */
+const CLAIM_KIND_LABELS: Record<OpportunityAnalysisReport["claims"][number]["kind"], string> = {
+  evidence: "Backed by your evidence",
+  inference: "Inference",
+  unknown: "Not known yet",
+};
+
 function decisionLabel(decision: OpportunityAnalysisReport["decision"], t: (en: string) => string) {
   return t(DECISION_LABELS[decision] ?? decision);
 }
@@ -180,7 +187,7 @@ export function OpportunityAnalysisPanel({
               <ul className="analysis-list">
                 {report.claims.map((claim, index) => (
                   <li key={`${claim.kind}-${index}`}>
-                    <span className={`analysis-kind analysis-kind-${claim.kind}`}>{claim.kind}</span>
+                    <span className={`analysis-kind analysis-kind-${claim.kind}`}>{t(CLAIM_KIND_LABELS[claim.kind] ?? claim.kind)}</span>
                     <span className="analysis-claim-text">{claim.claim}</span>
                     <span className="analysis-confidence">{fill(t("Confidence: {level}"), { level: t(claim.confidence) })}</span>
                     {claim.evidenceIds.length > 0 && (
