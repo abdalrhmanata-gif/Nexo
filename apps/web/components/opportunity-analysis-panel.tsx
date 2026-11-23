@@ -213,7 +213,7 @@ export function OpportunityAnalysisPanel({
               <ul className="analysis-list">
                 {report.risks.map((risk, index) => (
                   <li key={index}>
-                    <strong>{risk.severity.toUpperCase()}: {risk.risk}</strong>
+                    <strong>{risk.risk}</strong> <span className="analysis-confidence">{fill(t("Risk level: {level}"), { level: t(risk.severity) })}</span>
                     <p>{risk.mitigation}</p>
                   </li>
                 ))}
