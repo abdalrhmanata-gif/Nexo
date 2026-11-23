@@ -40,7 +40,9 @@ const EMPTY_DRAFT: Draft = {
   url: "",
   title: "",
   observation: "",
-  stance: "supports",
+  // Neutral until the person says otherwise: a default of "supports" counted
+  // a challenging note as support whenever the field was left alone.
+  stance: "context",
   sourceType: "other",
   sourceDate: "",
   reliability: "3",
@@ -212,7 +214,7 @@ export function OpportunityEvidencePanel({
             <a className="button button-small button-quiet" href={search.newsUrl} target="_blank" rel="noopener noreferrer"><LocalizedText en="Search news ↗" /></a>
           </div>
           <p className="evidence-search-note">
-            Searches open public results in a new tab. No crawler or search API runs inside Zavqera. Read the source yourself, then record the specific observation and whether it supports or challenges the thesis.
+            <LocalizedText en="Searches open public results in a new tab. No crawler or search API runs inside Zavqera. Read the source yourself, then record the specific observation and whether it supports or challenges the thesis." />
           </p>
           <p className="evidence-search-privacy">
             {t("If you open a search, Google receives this query text:")} <code>{search.query || t("(empty query)")}</code>. {t("Keep confidential business information and personal data out of the query.")}

@@ -242,11 +242,16 @@ export function formatFollowUp(value, now = new Date(), t = same, locale = undef
   const days = Math.round((date0 - now0) / 86400000);
   const absolute = date.toLocaleDateString(locale, { year: "numeric", month: "short", day: "numeric" });
   if (days < 0) {
-    return { absolute, relative: days === -1 ? t("yesterday") : fill(t("{days} days ago"), { days: Math.abs(days) }), overdue: true };
+    // Arabic counts change form at 2 and from 3 to 10, so those counts carry
+    // their own keys; every other language translates them the same way.
+    const ago = Math.abs(days);
+    const key = ago === 2 ? "2 days ago" : ago <= 10 ? "{days} days ago|few" : "{days} days ago";
+    return { absolute, relative: days === -1 ? t("yesterday") : fill(t(key).split("|")[0], { days: ago }), overdue: true };
   }
   if (days === 0) return { absolute, relative: t("today"), overdue: false };
   if (days === 1) return { absolute, relative: t("tomorrow"), overdue: false };
-  return { absolute, relative: fill(t("in {days} days"), { days }), overdue: false };
+  const ahead = days === 2 ? "in 2 days" : days <= 10 ? "in {days} days|few" : "in {days} days";
+  return { absolute, relative: fill(t(ahead).split("|")[0], { days }), overdue: false };
 }
 
 /** Converts a stored timestamp into the value a `date` input expects. */
@@ -348,8 +353,16 @@ export function summariseEventPayload(payload) {
   return parts.join(" · ").slice(0, 160);
 }
 
+/** The events a person sees most, named for what happened rather than by type. */
+const EVENT_LABELS = Object.freeze({
+  ACTION_STATUS_TRANSITION: "Step status changed",
+  MISSION_STATUS_TRANSITION: "Mission status changed",
+  OUTCOME_COMMITTED: "Outcome recorded",
+});
+
 export function humaniseEventType(eventType) {
   if (typeof eventType !== "string" || !eventType.trim()) return "Mission event";
+  if (Object.hasOwn(EVENT_LABELS, eventType)) return EVENT_LABELS[eventType];
   const words = eventType.replaceAll("_", " ").trim().toLowerCase();
   return words.charAt(0).toUpperCase() + words.slice(1);
 }

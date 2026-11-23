@@ -31,7 +31,7 @@ export const compare = {
   title: "ZAVQERA vs ChatGPT, Claude and Gemini for goal planning",
   lead: [
     "Short answer: use ChatGPT, Claude or Gemini to think, research and draft. Use ZAVQERA when one goal has to be finished and you want to show that it was.",
-    "The three assistants are excellent at conversation. ZAVQERA is narrower on purpose: every goal becomes a Mission with a written definition of done, steps with a status, evidence on each step, and a result you accept only when the proof is there.",
+    "The three assistants are excellent at conversation. ZAVQERA is narrower on purpose: every goal becomes a Mission with a written definition of done, steps with a status, a record of what you checked, and a result you accept only when that record is there.",
   ],
   tableTitle: "Side by side",
   tableCaption: "What you get when the goal is the thing you are tracking",
@@ -53,14 +53,14 @@ export const compare = {
       zavqera: "Each step has its own status, and blockers stay visible.",
     },
     {
-      feature: "Proof attached to each step",
+      feature: "A record of what you checked",
       assistants: "Not a built-in feature.",
-      zavqera: "Evidence notes on each step: confirmations, numbers, links.",
+      zavqera: "A verification you record against your success criteria before the result counts.",
     },
     {
       feature: "Accepting the result",
       assistants: "No such step. The chat ends when you stop asking.",
-      zavqera: "You accept a Mission only when its evidence is in place.",
+      zavqera: "You commit an outcome only after a verification is recorded.",
     },
     {
       feature: "Comparing business ideas",
@@ -107,7 +107,7 @@ export const compare = {
   when: [
     { lead: "Use an assistant", text: "to brainstorm, research a market, write a pitch, or think a decision through out loud." },
     { lead: "Use ZAVQERA", text: "when a goal has a deadline or someone to answer to, such as a launch, a company registration or a first ten customers, and you need to know what is done, what is blocked and what is still a guess." },
-    { lead: "Use both", text: "draft the plan in the assistant you already use, paste the steps into a Mission, and track it to done with evidence." },
+    { lead: "Use both", text: "draft the plan in the assistant you already use, paste the steps into a Mission, and track it to a verified result." },
   ],
   faqTitle: "Questions",
   faqs: [
@@ -129,7 +129,7 @@ export const compare = {
     },
   ],
   ctaTitle: "Try it on one real goal",
-  ctaBody: "Write the outcome you want, get a first plan, and keep the proof that you reached it.",
+  ctaBody: "Write the outcome you want, get a first plan, and record what you checked before you call it done.",
   ctaPrimary: "Start free",
   ctaSecondary: "See a real Mission",
   sourcesTitle: "Sources",

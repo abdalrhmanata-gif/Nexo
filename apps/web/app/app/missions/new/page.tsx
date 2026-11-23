@@ -5,6 +5,7 @@ import { getTranslate } from "../../../../lib/i18n-server";
 import { redirect } from "next/navigation";
 import { createSupabaseMissionRepository } from "../../../../lib/supabase/mission-repository";
 import { composeMissionObjective } from "../../../../lib/mission-content.mjs";
+import { PendingSubmitButton } from "../../../../components/pending-submit-button";
 
 type NewMissionSearchParams = {
   error?: string;
@@ -22,21 +23,24 @@ async function createMission(formData: FormData) {
   const criteria = String(formData.get("criteria") ?? "").trim();
   const steps = String(formData.get("actions") ?? "").trim();
   if (!name || intent.length < 12 || !criteria) {
-    redirect("/app/missions/new?error=validation");
+    // Keep what was typed. The redirect used to drop it, so one missing field
+    // cost the person everything they had written.
+    const kept = new URLSearchParams({ error: "validation", name, intent, criteria, actions: steps });
+    if (formData.get("fromOpportunity") === "1") kept.set("fromOpportunity", "1");
+    redirect(`/app/missions/new?${kept.toString()}`);
   }
   const repository = await createSupabaseMissionRepository();
   const toLines = (value: string) => value.split(/\r?\n/).map((item) => item.trim()).filter(Boolean);
-  // Success criteria describe what good looks like; actions are the work. When
-  // no separate first steps are given the criteria seed the plan, which keeps
-  // every mission created before these were separated behaving as it did.
-  const actions = steps ? toLines(steps) : toLines(criteria);
+  // Success criteria describe what good looks like; actions are the work.
+  // Criteria used to be copied in as actions when no steps were given, and
+  // the plan check then warned that a step was also a criterion: the product
+  // made the mistake and blamed the person for it. With no steps, the mission
+  // starts empty and its page offers a plan.
+  const actions = steps ? toLines(steps) : [];
   const mission = await repository.createMission!({ objective: composeMissionObjective({ name, intent, criteria }), actions });
   redirect(`/app/missions/${mission.id}`);
 }
 
-function SubmitButton() {
-  return <button className="button" type="submit"><LocalizedText en="Create mission" /></button>;
-}
 
 export default async function NewMissionPage({ searchParams }: { searchParams: Promise<NewMissionSearchParams> }) {
   const t = await getTranslate();
@@ -52,12 +56,13 @@ export default async function NewMissionPage({ searchParams }: { searchParams: P
       <div className="field"><label htmlFor="name"><LocalizedText en="Mission name" /></label><input id="name" name="name" defaultValue={params.name ?? ""} maxLength={100} placeholder={t("e.g. Renew my passport")} required /></div>
       <div className="field"><label htmlFor="intent"><LocalizedText en="Intent" /></label><textarea id="intent" name="intent" defaultValue={params.intent ?? ""} maxLength={3000} placeholder={t("What should this mission help you accomplish?")} required /><small><LocalizedText en="Use plain language. Keep the decision you want to make visible." /></small></div>
       <div className="field"><label htmlFor="criteria"><LocalizedText en="Success criteria" /></label><textarea id="criteria" name="criteria" defaultValue={params.criteria ?? ""} maxLength={2000} placeholder={t("One criterion per line")} required /><small><LocalizedText en="How you will know this mission succeeded. One per line." /></small></div>
-      <div className="field"><label htmlFor="actions"><LocalizedText en="First steps" /> <span className="field-optional"><LocalizedText en="optional" /></span></label><textarea id="actions" name="actions" defaultValue={params.actions ?? ""} maxLength={2000} placeholder={t("One step per line")} /><small><LocalizedText en="The work you already know about, in the order you would do it. You can add more at any time. Leave empty to start from your success criteria." /></small></div>
+      <div className="field"><label htmlFor="actions"><LocalizedText en="First steps" /> <span className="field-optional"><LocalizedText en="optional" /></span></label><textarea id="actions" name="actions" defaultValue={params.actions ?? ""} maxLength={2000} placeholder={t("One step per line")} /><small><LocalizedText en="The work you already know about, in the order you would do it. You can add more at any time. Leave it empty and the mission page will suggest a plan." /></small></div>
       {/* Sits between the fields and the submit, where someone stuck on
           "first steps" is actually looking. It reads the form through the DOM
           and never takes the inputs over, so the form still posts without it. */}
       <MissionDraftAssist formId="new-mission-form" />
-      <SubmitButton />
+      {fromOpportunity && <input type="hidden" name="fromOpportunity" value="1" />}
+      <PendingSubmitButton label="Create mission" pendingLabel="Creating…" />
       <Link className="button button-quiet" href={fromOpportunity ? "/app/opportunities" : "/app"}><LocalizedText en="Cancel" /></Link>
     </form>
     {params.error === "validation" && <div className="field-error" role="alert"><LocalizedText en="Add a name, an intent of at least 12 characters, and success criteria." /></div>}

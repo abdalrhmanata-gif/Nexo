@@ -19,7 +19,19 @@ import { ActionMutationControls } from "../../../../components/action-mutation-c
 import { AddActionForm } from "../../../../components/add-action-form";
 import { missionIntelligenceFor } from "../../../../lib/mission-intelligence.mjs";
 import { ShareMissionButton, type MissionShareStatus } from "../../../../components/share-mission-button";
-import { createSupabaseServerClient } from "../../../../lib/supabase/server";
+import { createSupabaseServerClient, getAuthenticatedUser } from "../../../../lib/supabase/server";
+import { describeProvider, hasAiAccess } from "../../../../lib/ai/gate";
+
+/** Whether this reader can get an AI plan here; then the keyword plan is noise. */
+async function aiPlanReady() {
+  if (!isSupabaseConfigured() || !describeProvider().ok) return false;
+  try {
+    const user = await getAuthenticatedUser();
+    return Boolean(user && hasAiAccess(user.id));
+  } catch {
+    return false;
+  }
+}
 
 /** The live share link's counters, if this mission is shared. */
 async function readMissionShareStatus(missionId: string): Promise<MissionShareStatus> {
@@ -32,6 +44,11 @@ async function readMissionShareStatus(missionId: string): Promise<MissionShareSt
   } catch {
     return null;
   }
+}
+
+/** A status inside an activity entry, in the reader's words. */
+function statusWord(label: string, status: string, t: (en: string) => string) {
+  return label === "Mission status changed" ? missionStatusLabel(status, t) : actionStatusLabel(status, t);
 }
 
 export default async function MissionDetailPage({
@@ -53,7 +70,10 @@ export default async function MissionDetailPage({
   const intelligence = missionIntelligenceFor(mission, new Date(), t, language);
   // A stated outcome with no work behind it is the moment the product is
   // least useful, so that is where it offers a first plan.
-  const suggested = planIsThin(mission) ? suggestPlanFor(mission) : null;
+  // Where the AI plan is available it is shown alone: the keyword planner
+  // matched an online perfume shop to "opening premises" (visit locations,
+  // check leases) and sat above a far better AI draft.
+  const suggested = planIsThin(mission) && !(await aiPlanReady()) ? suggestPlanFor(mission) : null;
   // Plan health only ever read lifecycle fields, so it reported "no issues"
   // for a mission whose criterion and only step were the same three words.
   const critique = critiqueMission(mission);
@@ -183,7 +203,7 @@ export default async function MissionDetailPage({
               {readiness.unresolved.length > 0 && <p className="action-hint">
                 {fill(t(readiness.unresolved.length === 1 ? "{count} action is still open: {titles}." : "{count} actions are still open: {titles}."), {
                   count: readiness.unresolved.length,
-                  titles: readiness.unresolved.map((action) => action.title).join(", "),
+                  titles: readiness.unresolved.map((action) => `«${action.title.replace(/[.。]+$/, "")}»`).join(" · "),
                 })}
               </p>}
               {readiness.nextStatus && <p className="action-hint">{fill(t("Use “Edit this mission” above to move it to {state}."), { state: missionStatusLabel(readiness.nextStatus, t).toLowerCase() })}</p>}
@@ -204,7 +224,9 @@ export default async function MissionDetailPage({
           <p className="eyebrow"><LocalizedText en="Activity" /></p>
           <h2><LocalizedText en="Recent checkpoints" /></h2>
           {mission.activity.length
-            ? <div className="timeline">{mission.activity.map((item, index) => <div className="timeline-item" key={`${item.label}-${item.time}-${index}`}><strong>{item.label}</strong><span>{item.detail} · <LocalizedDateTime value={item.time} /></span></div>)}</div>
+            ? <div className="timeline">{mission.activity.map((item, index) => <div className="timeline-item" key={`${item.label}-${item.time}-${index}`}><strong>{t(item.label)}</strong><span>{item.fromStatus && item.toStatus
+              ? `${statusWord(item.label, item.fromStatus, t)} → ${statusWord(item.label, item.toStatus, t)}`
+              : t(item.detail)} · <LocalizedDateTime value={item.time} /></span></div>)}</div>
             : <p className="detail-intent"><LocalizedText en="No history has been recorded for this mission yet." /></p>}
         </section>
       </div>

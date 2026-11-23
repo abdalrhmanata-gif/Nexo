@@ -14,6 +14,9 @@ export type MissionAction = {
 };
 
 export type MissionActivity = {
+  /** Set for a status change, so the page can show both states in the reader's language. */
+  fromStatus?: string;
+  toStatus?: string;
   label: string;
   detail: string;
   time: string;

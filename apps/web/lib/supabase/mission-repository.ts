@@ -56,7 +56,11 @@ function toOutcome(row: OutcomeRow): MissionOutcome {
 }
 
 function toActivity(row: EventRow): MissionActivity {
-  return { label: humaniseEventType(row.event_type), detail: summariseEventPayload(row.payload), time: row.created_at };
+  const payload = row.payload as { from_status?: unknown; to_status?: unknown } | null;
+  const transition = payload && typeof payload.from_status === "string" && typeof payload.to_status === "string"
+    ? { fromStatus: payload.from_status, toStatus: payload.to_status }
+    : {};
+  return { label: humaniseEventType(row.event_type), detail: summariseEventPayload(row.payload), time: row.created_at, ...transition };
 }
 
 function toAction(row: ActionRow): MissionAction {
@@ -66,7 +70,7 @@ function toAction(row: ActionRow): MissionAction {
 function toMission(row: MissionRow, actions: ActionRow[] = [], verifications: MissionVerification[] = [], outcomes: MissionOutcome[] = [], activity: MissionActivity[] = []): Mission {
   const status = row.status === "WAITING" || row.status === "NEEDS_USER" ? "WAITING" : row.status === "COMPLETED" ? "COMPLETED" : "ACTIVE";
   const completed = actions.filter((action) => action.status === "COMPLETED").length;
-  const resolved = actions.filter((action) => action.status === "COMPLETED" || action.status === "CANCELLED").length;
+  const live = actions.filter((action) => action.status !== "CANCELLED");
   const { name, intent, criteria } = parseMissionObjective(row.objective);
   return {
     id: row.id,
@@ -75,8 +79,10 @@ function toMission(row: MissionRow, actions: ActionRow[] = [], verifications: Mi
     name,
     intent,
     status,
-    progress: actions.length ? Math.round((resolved / actions.length) * 100) : status === "COMPLETED" ? 100 : 0,
-    actionsTotal: actions.length,
+    // Cancelled steps leave the count instead of counting as done: "0 of 3
+    // actions complete" next to "33%" read as a bug, because it was one.
+    progress: live.length ? Math.round((completed / live.length) * 100) : status === "COMPLETED" ? 100 : 0,
+    actionsTotal: live.length,
     actionsCompleted: completed,
     // The instant, not a formatted string: the server knows neither the
     // reader's language nor their time zone. LocalizedDateTime formats it.
