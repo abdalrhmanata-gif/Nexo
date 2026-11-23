@@ -122,12 +122,12 @@ test("every mission state has a human label rather than a raw enum", () => {
 // was certain to reject them.
 // ---------------------------------------------------------------------------
 
-test("a new mission is told how to reach the state where evidence is accepted", () => {
-  const readiness = verificationReadiness({ lifecycleStatus: "DRAFT", actions: [] });
+test("a mission with open steps is told to finish them, not to move its state by hand", () => {
+  const readiness = verificationReadiness({ lifecycleStatus: "DRAFT", actions: [{ title: "Book", status: "PENDING" }] });
   assert.equal(readiness.ready, false);
-  assert.equal(readiness.nextStatus, "PLANNING");
-  assert.match(readiness.reason, /checking the evidence/i);
-  assert.doesNotMatch(readiness.reason, /VERIFYING/);
+  assert.equal(readiness.nextStatus, null);
+  assert.match(readiness.reason, /finish or cancel the open steps/i);
+  assert.doesNotMatch(readiness.reason, /VERIFYING|Planning|Ready/);
 });
 
 test("the route to the verifying state is the one the database allows", () => {
@@ -138,10 +138,15 @@ test("the route to the verifying state is the one the database allows", () => {
   assert.equal(routeToVerifying("COMPLETED"), null);
 });
 
-test("verification is offered only while the mission is being checked", () => {
-  assert.equal(verificationReadiness({ lifecycleStatus: "VERIFYING", actions: [] }).ready, true);
-  for (const status of ["DRAFT", "PLANNING", "READY", "RUNNING", "WAITING", "PAUSED"]) {
-    assert.equal(verificationReadiness({ lifecycleStatus: status, actions: [] }).ready, false, `${status} must not offer verification`);
+test("verification is offered as soon as every step is finished, in any open state", () => {
+  // advance_mission_lifecycle walks the mission to Checking on submit, so the
+  // user never has to press Planning, Ready and Running first.
+  const done = [{ title: "Done", status: "COMPLETED" }, { title: "Dropped", status: "CANCELLED" }];
+  for (const status of ["DRAFT", "PLANNING", "READY", "RUNNING", "WAITING", "NEEDS_USER", "PAUSED", "BLOCKED", "VERIFYING"]) {
+    assert.equal(verificationReadiness({ lifecycleStatus: status, actions: done }).ready, true, `${status} must offer verification`);
+  }
+  for (const status of ["DRAFT", "RUNNING", "PAUSED"]) {
+    assert.equal(verificationReadiness({ lifecycleStatus: status, actions: [...done, { title: "Open", status: "RUNNING" }] }).ready, false, `${status} with an open step must not offer verification`);
   }
 });
 
@@ -192,10 +197,11 @@ test("closed missions report closure rather than pending work", () => {
   }
 });
 
-test("an in-flight mission with resolved actions is told to move, not to verify", () => {
+test("an in-flight mission with resolved actions is told to record verification", () => {
   const step = nextStepFor({ lifecycleStatus: "RUNNING", actions: [{ status: "COMPLETED", title: "Done" }], verifications: [], outcomes: [] });
   assert.equal(step.tone, "attention");
-  assert.match(step.detail, /checking the evidence/i);
+  assert.match(step.label, /record verification/i);
+  assert.match(step.detail, /evidence that proves the outcome/i);
 });
 
 // ---------------------------------------------------------------------------

@@ -37,6 +37,7 @@ export function AiMissionPlan({ missionId, name, intent, criteria, actions }: {
   const [busy, setBusy] = useState(false);
   const [adding, setAdding] = useState(false);
   const [added, setAdded] = useState(0);
+  const [criteriaAdded, setCriteriaAdded] = useState(0);
   const [error, setError] = useState("");
   const [unavailable, setUnavailable] = useState(false);
   const [notReady, setNotReady] = useState("");
@@ -119,25 +120,29 @@ export function AiMissionPlan({ missionId, name, intent, criteria, actions }: {
     if (!plan) return;
     setAdding(true);
     setError("");
-    let accepted = 0;
-    // One at a time through the ordinary endpoint, so a mission that rejects
-    // one step keeps the ones it accepted and the person is told how far it
-    // got rather than being left to guess.
-    for (const item of plan.steps) {
-      try {
-        const response = await fetch(`/api/missions/${missionId}/actions`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: item.step }),
-        });
-        if (response.ok) accepted += 1;
-      } catch {
-        break;
+    // One request for the whole plan: the steps in one insert, and the plan's
+    // success criteria merged into the mission's own, so the user does not
+    // copy "what finished looks like" by hand.
+    try {
+      const response = await fetch(`/api/missions/${missionId}/actions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ titles: plan.steps.map((item) => item.step), criteria: plan.successCriteria }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setError(typeof payload.error === "string" ? t(payload.error) : t("The steps could not be added. Nothing was changed."));
+        return;
       }
+      setAdded(Array.isArray(payload.actions) ? payload.actions.length : plan.steps.length);
+      setCriteriaAdded(typeof payload.criteriaAdded === "number" ? payload.criteriaAdded : 0);
+      if (typeof payload.criteriaError === "string") setError(t(payload.criteriaError));
+      router.refresh();
+    } catch {
+      setError(t("The steps could not be added. Check your connection and try again."));
+    } finally {
+      setAdding(false);
     }
-    setAdded(accepted);
-    setAdding(false);
-    if (accepted > 0) router.refresh();
   }
 
   if (unavailable && !plan) return null;
@@ -201,13 +206,14 @@ export function AiMissionPlan({ missionId, name, intent, criteria, actions }: {
 
         {added > 0 && !adding && <p className="suggested-plan-done" role="status">
           {`${added} `}<LocalizedText en="steps added to this mission." />
+          {criteriaAdded > 0 && <>{" "}{fillText(t(criteriaAdded === 1 ? "{count} success criterion added." : "{count} success criteria added."), { count: criteriaAdded })}</>}
         </p>}
 
         <div className="action-control-group">
           <button className="button" type="button" onClick={addSteps} disabled={adding || added > 0}>
             {adding ? t("Adding…") : t("Add these steps")}
           </button>
-          <button className="button button-quiet" type="button" onClick={() => { setPlan(null); setAdded(0); }} disabled={adding}>
+          <button className="button button-quiet" type="button" onClick={() => { setPlan(null); setAdded(0); setCriteriaAdded(0); }} disabled={adding}>
             <LocalizedText en="Discard this draft" />
           </button>
         </div>

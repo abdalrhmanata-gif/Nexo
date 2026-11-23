@@ -11,6 +11,9 @@ export type MissionAction = {
   status: ActionStatus;
   version: number;
   followUpAt: string | null;
+  /** What the user recorded as proof when the step was done. */
+  evidenceNote?: string | null;
+  evidenceUrl?: string | null;
 };
 
 export type MissionActivity = {

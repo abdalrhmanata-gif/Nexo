@@ -70,3 +70,8 @@ export declare function verificationReadiness(
 export declare const MISSION_STATUS_LABELS: Record<string, string>;
 export declare const ACTION_STATUS_LABELS: Record<string, string>;
 export declare const ACTION_STATUS_HINTS: Record<string, string>;
+
+export declare function mergeCriteria(existing?: string[], incoming?: unknown[], limit?: number): {
+  criteria: string[];
+  added: string[];
+};
