@@ -25,10 +25,7 @@ export const de: GuideLocale = {
     ctaFree: "Kostenlos starten. Keine Karte nötig.",
     readGuide: "Ratgeber lesen",
     disclaimer: "Allgemeine Informationen, keine Rechts- oder Steuerberatung. Regeln und Gebühren ändern sich und unterscheiden sich je nach Bundesstaat; maßgeblich sind die verlinkten offiziellen Seiten (auf Englisch).",
-    homeEyebrow: "Kostenlose Ratgeber",
-    homeTitle: "Sie gründen in den USA? Hier anfangen.",
-    homeLead: "Anleitungen Schritt für Schritt mit der offiziellen Quelle zu jeder Regel. Lesen Sie eine und machen Sie daraus mit einem Klick Ihren Plan.",
-    allGuides: "Alle Ratgeber",
+    usNotice: "Für die Gründung eines Unternehmens in den USA. Wenn Sie in einem anderen Land gründen, gelten dort andere Regeln.",
     languages: "Sprache",
     sourceLabels: {
       sbaGuide: "SBA: Leitfaden für Unternehmen",

@@ -25,10 +25,7 @@ export const fr: GuideLocale = {
     ctaFree: "Gratuit pour commencer. Sans carte bancaire.",
     readGuide: "Lire le guide",
     disclaimer: "Information générale, pas un conseil juridique ou fiscal. Les règles et les frais changent et varient selon l'État ; les pages officielles citées ici font foi. Les sources officielles sont en anglais.",
-    homeEyebrow: "Guides gratuits",
-    homeTitle: "Vous créez une entreprise aux États-Unis ? Commencez ici.",
-    homeLead: "Des guides pas à pas avec la source officielle de chaque règle. Lisez-en un, puis transformez-le en votre plan en un clic.",
-    allGuides: "Voir tous les guides",
+    usNotice: "Pour créer une entreprise aux États-Unis. Si vous créez votre entreprise dans un autre pays, les règles y sont différentes.",
     languages: "Langue",
     sourceLabels: {
       sbaGuide: "SBA : guide pour les entreprises",

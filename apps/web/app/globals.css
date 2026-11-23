@@ -1647,8 +1647,8 @@ html[dir="rtl"] input, html[dir="rtl"] textarea {
    wide screens, a numbered timeline for the steps. Logical properties only,
    so the Arabic version mirrors without separate rules.
    --------------------------------------------------------------------------- */
-.guide-page, .home-guides { --guide-link:#087068; --guide-accent:#087068; --guide-on-accent:#fff; }
-:root[data-theme="dark"] .guide-page, :root[data-theme="dark"] .home-guides { --guide-link:var(--teal); --guide-accent:var(--teal); --guide-on-accent:#0e151d; }
+.guide-page, .compare-page { --guide-link:#087068; --guide-accent:#087068; --guide-on-accent:#fff; }
+:root[data-theme="dark"] .guide-page, :root[data-theme="dark"] .compare-page { --guide-link:var(--teal); --guide-accent:var(--teal); --guide-on-accent:#0e151d; }
 .guide-page { width:min(1120px, calc(100% - 40px)); margin:0 auto; padding:40px 0 72px; }
 .guide-header { max-width:760px; padding-block:12px 28px; border-block-end:1px solid var(--line); margin-block-end:36px; }
 .guide-crumbs { display:flex; gap:8px; align-items:center; font-size:13px; color:var(--muted); margin-block-end:18px; }
@@ -1681,6 +1681,8 @@ html[dir="rtl"] input, html[dir="rtl"] textarea {
 .guide-faq details p { margin:0; padding:0 18px 18px; line-height:1.7; color:var(--muted); }
 .guide-sources { margin:0 0 16px; padding-inline-start:20px; line-height:1.9; }
 .guide-sources a { color:var(--guide-link); }
+.guide-us-notice { display:flex; gap:10px; align-items:flex-start; max-width:68ch; margin:0 0 18px; padding:12px 14px; border:1px solid var(--line); border-inline-start:3px solid var(--guide-accent); border-radius:10px; background:var(--white); font-size:14.5px; line-height:1.55; color:var(--ink); }
+.guide-us-notice span { flex:none; width:20px; height:20px; border-radius:50%; display:grid; place-items:center; margin-block-start:1px; background:var(--guide-accent); color:var(--guide-on-accent); font-size:12px; font-weight:700; font-style:italic; font-family:Georgia, serif; }
 .guide-disclaimer { font-size:13px; color:var(--muted); border-inline-start:3px solid var(--line); padding-inline-start:12px; margin:0; }
 .guide-aside { position:sticky; top:96px; display:grid; gap:18px; }
 .guide-toc { display:block; border:1px solid var(--line); border-radius:12px; padding:18px; font-size:14px; }
@@ -1723,10 +1725,46 @@ html[dir="rtl"] input, html[dir="rtl"] textarea {
   .guide-step h3 { margin-block-start:4px; }
 }
 
-/* Guides section on the home page */
-.home-guides { margin:72px 0; }
-.home-guides-head { display:flex; justify-content:space-between; align-items:end; gap:24px; margin-block-end:24px; }
-.home-guides-head h2 { font-size:clamp(28px, 3.6vw, 40px); line-height:1.12; letter-spacing:-.03em; margin:0 0 10px; }
-.home-guides-head p:not(.eyebrow) { margin:0; color:var(--muted); max-width:60ch; line-height:1.6; }
-.home-guides-head .button { white-space:nowrap; }
-@media (max-width:700px) { .home-guides { margin:48px 0; }.home-guides-head { flex-direction:column; align-items:stretch; }.home-guides-head .button { text-align:center; } }
+/* ---------------------------------------------------------------------------
+   Comparison page (/compare/...)
+   Reuses the guide reading styles; adds the table and the assistant cards.
+   On phones the table turns into one card per row.
+   --------------------------------------------------------------------------- */
+.compare-page { width:min(1000px, calc(100% - 40px)); margin:0 auto; padding:40px 0 72px; }
+.compare-page h2 { font-size:24px; letter-spacing:-.01em; margin:48px 0 18px; }
+.compare-header { max-width:780px; }
+.compare-text { margin:0 0 16px; line-height:1.7; color:var(--muted); max-width:68ch; }
+.compare-table-wrap { border:1px solid var(--line); border-radius:12px; overflow:hidden; background:var(--white); }
+.compare-table { width:100%; border-collapse:collapse; font-size:15px; line-height:1.55; }
+.compare-table caption { caption-side:top; text-align:start; padding:14px 18px; font-size:13px; color:var(--muted); border-block-end:1px solid var(--line); }
+.compare-table th, .compare-table td { text-align:start; vertical-align:top; padding:14px 18px; border-block-end:1px solid var(--line); }
+.compare-table tbody tr:last-child th, .compare-table tbody tr:last-child td { border-block-end:none; }
+.compare-table thead th { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); background:var(--paper, transparent); }
+.compare-table tbody th { font-weight:650; color:var(--ink); width:26%; }
+.compare-table td { color:var(--muted); }
+.compare-table .compare-ours { color:var(--ink); background:color-mix(in srgb, var(--guide-accent) 7%, transparent); }
+.compare-table thead .compare-ours { color:var(--guide-link); }
+.compare-cards { display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:16px; margin-block-end:16px; }
+.compare-card { padding:20px; border:1px solid var(--line); border-radius:12px; background:var(--white); }
+.compare-card h3 { margin:0 0 10px; font-size:18px; }
+.compare-card ul { margin:0; padding-inline-start:18px; display:grid; gap:10px; line-height:1.6; font-size:14.5px; }
+.compare-card .guide-source { display:block; font-size:12.5px; margin-block-start:2px; }
+.compare-when { margin:0; padding-inline-start:20px; display:grid; gap:10px; line-height:1.7; max-width:72ch; }
+.compare-cta { margin-block:48px 8px; }
+.compare-cta-actions { display:flex; flex-wrap:wrap; align-items:center; gap:14px 20px; }
+.compare-cta .guide-cta-button { display:inline-flex; }
+.compare-cta-secondary { color:var(--white); font-weight:650; font-size:14px; opacity:.9; }
+.compare-cta-secondary:hover { opacity:1; text-decoration:underline; }
+@media (max-width:760px) {
+  .compare-page { width:calc(100% - 28px); padding-block-start:24px; }
+  .compare-cards { grid-template-columns:1fr; }
+  .compare-table thead { display:none; }
+  .compare-table, .compare-table tbody, .compare-table tr, .compare-table th, .compare-table td { display:block; width:auto; }
+  .compare-table tr { padding:14px 16px; border-block-end:1px solid var(--line); }
+  .compare-table tbody tr:last-child { border-block-end:none; }
+  .compare-table th, .compare-table td { padding:0; border:none; }
+  .compare-table tbody th { margin-block-end:8px; width:auto; }
+  .compare-table td { padding:8px 10px; border-radius:8px; margin-block-start:6px; }
+  .compare-table td::before { content:attr(data-label); display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-block-end:2px; }
+}
+
