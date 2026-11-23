@@ -21,7 +21,9 @@ function jsonLd(value: unknown) {
 }
 
 export default function ComparePage() {
-  const usedSources = [...new Set(compare.assistants.flatMap((item) => item.points.map((point) => point.source as CompareSourceKey)))];
+  const usedSources: CompareSourceKey[] = compare.assistants
+    .flatMap((item) => item.points.map((point) => point.source as CompareSourceKey))
+    .filter((key, index, all) => all.indexOf(key) === index);
   const structured = [
     {
       "@context": "https://schema.org",
