@@ -5,7 +5,7 @@ import { DeleteMissionForm } from "../../../../components/delete-mission-form";
 import { localMockMissionRepository } from "../../../../lib/local-mock-repository";
 import { isSupabaseConfigured } from "../../../../lib/supabase/config";
 import { createSupabaseMissionRepository } from "../../../../lib/supabase/mission-repository";
-import { actionStatusHint, actionStatusLabel, formatFollowUp, missionStatusLabel, nextStepFor, verificationReadiness } from "../../../../lib/mission-content.mjs";
+import { actionStatusHint, actionStatusLabel, formatFollowUp, isTerminalMissionStatus, missionStatusLabel, nextStepFor, verificationReadiness } from "../../../../lib/mission-content.mjs";
 import { planHeadline, suggestPlanFor } from "../../../../lib/mission-planner.mjs";
 import { critiqueMission, planIsThin } from "../../../../lib/mission-critique.mjs";
 import { fill } from "../../../../lib/i18n";
@@ -16,6 +16,7 @@ import { StatusPill } from "../../../../components/shell";
 import { VerificationControls } from "../../../../components/verification-controls";
 import { MissionMutationControls } from "../../../../components/mission-mutation-controls";
 import { ActionMutationControls } from "../../../../components/action-mutation-controls";
+import { evidenceFromProof, proofCitation } from "../../../../lib/step-proof.mjs";
 import { AddActionForm } from "../../../../components/add-action-form";
 import { missionIntelligenceFor } from "../../../../lib/mission-intelligence.mjs";
 import { ShareMissionButton, type MissionShareStatus } from "../../../../components/share-mission-button";
@@ -80,6 +81,12 @@ export default async function MissionDetailPage({
   const completedSteps = mission.actions
     .filter((action) => action.status === "COMPLETED")
     .map((action) => action.title);
+  // Proof recorded on each step feeds the evidence summary, so the user does
+  // not retype what they already wrote when they finished the step.
+  const stepProof = Object.fromEntries(mission.actions
+    .filter((action) => action.status === "COMPLETED")
+    .map((action) => [action.title, proofCitation(action)]));
+  const initialEvidence = evidenceFromProof(mission.actions);
   const healthy = intelligence.planHealth.healthy && critique.length === 0;
 
   return <div className="container">
@@ -93,7 +100,7 @@ export default async function MissionDetailPage({
         <section className="card">
           <div className="card-heading">
             <div><h1 className="detail-title">{mission.name}</h1></div>
-            <StatusPill status={mission.status} />
+            <StatusPill status={mission.status} label={missionStatusLabel(mission.lifecycleStatus, t)} />
           </div>
           {mission.intent
             ? <><p className="eyebrow"><LocalizedText en="Intent" /></p><p className="detail-intent">{mission.intent}</p></>
@@ -178,7 +185,7 @@ export default async function MissionDetailPage({
                   </span>}
                   <small className="action-hint">{actionStatusHint(action.status, t)}</small>
                 </div>
-                <ActionMutationControls missionId={mission.id} action={action} />
+                <ActionMutationControls missionId={mission.id} action={action} closed={isTerminalMissionStatus(mission.lifecycleStatus)} />
               </div>
             </li>;
             })}</ul>
@@ -196,8 +203,8 @@ export default async function MissionDetailPage({
           <p><LocalizedText en="A mission is only verified once evidence has been recorded through the authenticated server boundary. Work being reported as finished is not the same as ZAVQERA considering it verified." /></p>
           {readiness.ready
             ? (verification
-              ? <>{!outcome && <VerificationControls missionId={mission.id} verification={verification} criteria={mission.criteria} completedSteps={completedSteps} />}</>
-              : <VerificationControls missionId={mission.id} criteria={mission.criteria} completedSteps={completedSteps} />)
+              ? <>{!outcome && <VerificationControls missionId={mission.id} verification={verification} criteria={mission.criteria} completedSteps={completedSteps} stepProof={stepProof} initialEvidence={initialEvidence} />}</>
+              : <VerificationControls missionId={mission.id} criteria={mission.criteria} completedSteps={completedSteps} stepProof={stepProof} initialEvidence={initialEvidence} />)
             : <div className="readiness" role="status">
               <p>{readiness.reason}</p>
               {readiness.unresolved.length > 0 && <p className="action-hint">
@@ -206,7 +213,6 @@ export default async function MissionDetailPage({
                   titles: readiness.unresolved.map((action) => `«${action.title.replace(/[.。]+$/, "")}»`).join(" · "),
                 })}
               </p>}
-              {readiness.nextStatus && <p className="action-hint">{fill(t("Use “Edit this mission” above to move it to {state}."), { state: missionStatusLabel(readiness.nextStatus, t).toLowerCase() })}</p>}
             </div>}
         </section>
 

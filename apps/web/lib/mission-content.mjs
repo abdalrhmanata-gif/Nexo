@@ -149,23 +149,17 @@ export function verificationReadiness(mission, t = same) {
       unresolved,
     };
   }
-  const route = routeToVerifying(status);
-  if (!route || !route.length) {
+  // The server moves the mission to Checking itself when verification is
+  // recorded (advance_mission_lifecycle), so the user is never sent to press
+  // Planning, Ready and Running by hand. The only thing left to them is the
+  // work: every step finished or cancelled.
+  if (unresolved.length) {
+    return { ready: false, reason: t("Finish or cancel the open steps, then record what you checked."), nextStatus: null, unresolved };
+  }
+  if (!routeToVerifying(status)) {
     return { ready: false, reason: t("This mission cannot move to checking the evidence from its current state."), nextStatus: null, unresolved };
   }
-  return {
-    ready: false,
-    reason: route.length === 1
-      ? t("Move this mission to checking the evidence before recording verification.")
-      : fill(t("This mission is {state}. It moves to checking the evidence through {route}."), {
-        state: missionStatusLabel(status, t).toLowerCase(),
-        // An arrow, not .map(missionStatusLabel): map would pass the index as
-        // the translator.
-        route: route.slice(0, -1).map((step) => missionStatusLabel(step, t)).join(t(", then ")),
-      }),
-    nextStatus: route[0],
-    unresolved,
-  };
+  return { ready: true, reason: "", nextStatus: null, unresolved };
 }
 
 export const ACTION_STATUS_LABELS = {
@@ -318,13 +312,6 @@ export function nextStepFor(mission, t = same, locale = undefined) {
     return { label: t("No actions yet"), detail: t("Add the work this mission needs."), tone: "attention" };
   }
 
-  if (lifecycle !== "VERIFYING") {
-    return {
-      label: t("Ready to check"),
-      detail: t("Every action is resolved. Move this mission to checking the evidence."),
-      tone: "attention",
-    };
-  }
   if (verifications.some((verification) => verification.status === "VERIFIED")) {
     return { label: t("Commit the verified outcome"), detail: t("Passing verification is recorded but no outcome has been committed."), tone: "attention" };
   }
@@ -358,6 +345,7 @@ const EVENT_LABELS = Object.freeze({
   ACTION_STATUS_TRANSITION: "Step status changed",
   MISSION_STATUS_TRANSITION: "Mission status changed",
   OUTCOME_COMMITTED: "Outcome recorded",
+  ACTION_PROOF_RECORDED: "Proof added to a step",
 });
 
 export function humaniseEventType(eventType) {
@@ -365,4 +353,24 @@ export function humaniseEventType(eventType) {
   if (Object.hasOwn(EVENT_LABELS, eventType)) return EVENT_LABELS[eventType];
   const words = eventType.replaceAll("_", " ").trim().toLowerCase();
   return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+/**
+ * Criteria from an AI plan added to the ones a mission already has. Exact
+ * repeats (ignoring case, spacing and a trailing full stop) are dropped, so
+ * adding the same plan twice changes nothing.
+ */
+export function mergeCriteria(existing = [], incoming = [], limit = 12) {
+  const key = (value) => String(value).trim().replace(/\s+/g, " ").replace(/[.。]+$/, "").toLocaleLowerCase();
+  const seen = new Set(existing.map(key));
+  const added = [];
+  for (const raw of incoming) {
+    if (typeof raw !== "string") continue;
+    const text = raw.trim().replace(/\s+/g, " ");
+    if (!text || seen.has(key(text))) continue;
+    if (existing.length + added.length >= limit) break;
+    seen.add(key(text));
+    added.push(text);
+  }
+  return { criteria: [...existing, ...added], added };
 }

@@ -194,7 +194,14 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
     const statusOf = (title) => page.getByLabel(`Status for ${title}`, { exact: true });
     const actionPath = (title) => `/api/missions/${missionId}/actions/${actionId[title]}`;
     const missionPath = () => `/api/missions/${missionId}`;
+    // Moving the state by hand is tucked into a closed <details>; the state
+    // normally follows the steps (advance_mission_lifecycle).
+    const openManualState = async () => {
+      const details = page.locator("details.manual-state");
+      if (!(await details.evaluate((element) => element.open))) await details.locator("summary").click();
+    };
     const moveMission = async (to) => {
+      await openManualState();
       await page.getByLabel("Mission state", { exact: true }).selectOption(to);
       await submit(page, page.getByLabel("Mission state", { exact: true }), { method: "PATCH", path: missionPath(), expectStatus: 200 });
       expect((await readMission(owner.client, missionId)).status).toBe(to);
@@ -203,6 +210,13 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await statusOf(title).selectOption(to);
       await extra?.();
       await submit(page, statusOf(title), { method: "PATCH", path: actionPath(title), expectStatus: 200 });
+    };
+    // Done is its own button, with optional proof, from any open state.
+    const completeStep = async (title, proof) => {
+      await statusOf(title).locator("xpath=ancestor::li[1]").getByRole("button", { name: "Mark done", exact: true }).click();
+      const note = page.locator(`#proof-note-${actionId[title]}`);
+      if (proof) await note.fill(proof);
+      await submit(page, note, { method: "PATCH", path: actionPath(title), expectStatus: 200 });
     };
 
     await test.step("sign up through the app and bind the session to the disposable stack", async () => {
@@ -291,10 +305,21 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       await moveAction(titles.first, "RUNNING");
       const resumed = (await readActions(owner.client, missionId)).find((action) => action.id === actionId[titles.first]);
       expect(resumed).toMatchObject({ status: "RUNNING", follow_up_at: null });
-      await moveAction(titles.first, "COMPLETED");
+      await completeStep(titles.first, "Observed in persisted state");
+      const proven = (await readActions(owner.client, missionId)).find((action) => action.id === actionId[titles.first]);
+      expect(proven).toMatchObject({ status: "COMPLETED", evidence_note: "Observed in persisted state", evidence_url: null });
       await moveAction(titles.second, "CANCELLED");
-      await moveAction(titles.added, "RUNNING");
-      await moveAction(titles.added, "COMPLETED");
+
+      // An open step blocks verification; the mission is not moved for it.
+      const early = await page.request.post(`${missionPath()}/verification`, {
+        data: { status: "VERIFIED", criteria: { summary: "early" }, evidence: { summary: "early" }, confidence: 1 },
+      });
+      expect(early.status()).toBe(422);
+      expect(await readRows(owner.client, "mission_verifications", missionId)).toHaveLength(0);
+      expect((await readMission(owner.client, missionId)).status).toBe("RUNNING");
+
+      // Straight from Not started to Complete in one tap, proof left empty.
+      await completeStep(titles.added);
       for (const title of [titles.first, titles.second, titles.added]) await expect(statusOf(title)).toHaveCount(0);
       const completed = (await readActions(owner.client, missionId)).find((action) => action.id === actionId[titles.first]);
       const reopen = await page.request.patch(actionPath(titles.first), { data: { status: "RUNNING", expectedVersion: completed.version } });
@@ -303,23 +328,9 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
     });
 
     let verificationId;
-    await test.step("verification is refused before checking, then recorded", async () => {
-      const early = await page.request.post(`${missionPath()}/verification`, {
-        data: { status: "VERIFIED", criteria: { summary: "early" }, evidence: { summary: "early" }, confidence: 1 },
-      });
-      expect(early.status()).toBe(422);
-      expect(await readRows(owner.client, "mission_verifications", missionId)).toHaveLength(0);
-
-      await moveMission("VERIFYING");
-      const before = await readMission(owner.client, missionId);
-      const direct = await owner.client.rpc("transition_mission", {
-        p_mission_id: missionId, p_to_status: "COMPLETED", p_expected_version: before.version,
-      });
-      expect(direct.error?.message).toBe("VERIFIED_OUTCOME_REQUIRED");
-      await page.getByLabel("Mission state", { exact: true }).selectOption("COMPLETED");
-      await submit(page, page.getByLabel("Mission state", { exact: true }), { method: "PATCH", path: missionPath(), expectStatus: 422 });
-      await expect(page.getByRole("alert")).toContainText("Commit a passing verified outcome");
-      expect(await readMission(owner.client, missionId)).toEqual(before);
+    await test.step("verification is recorded without moving the mission by hand", async () => {
+      // The step's proof is already in the evidence summary.
+      await expect(page.getByLabel("Evidence summary", { exact: true })).toHaveValue(`- ${titles.first}: Observed in persisted state`);
       await page.getByLabel("Verification criteria", { exact: true }).fill("Each step was observed in persisted state.");
       await page.getByLabel("Evidence summary", { exact: true }).fill("Authoritative reads after every reload.");
       await submit(page, page.getByLabel("Verification criteria", { exact: true }), { method: "POST", path: `${missionPath()}/verification`, expectStatus: 201 });
@@ -328,6 +339,20 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       expect(verifications[0].status).toBe("VERIFIED");
       verificationId = verifications[0].id;
       ledger.record("verification", verificationId);
+      expect((await readMission(owner.client, missionId)).status).toBe("VERIFYING");
+
+      // Completion still needs a committed, verified outcome.
+      const before = await readMission(owner.client, missionId);
+      const direct = await owner.client.rpc("transition_mission", {
+        p_mission_id: missionId, p_to_status: "COMPLETED", p_expected_version: before.version,
+      });
+      expect(direct.error?.message).toBe("VERIFIED_OUTCOME_REQUIRED");
+      await openManualState();
+      await page.getByLabel("Mission state", { exact: true }).selectOption("COMPLETED");
+      await submit(page, page.getByLabel("Mission state", { exact: true }), { method: "PATCH", path: missionPath(), expectStatus: 422 });
+      // The verification form's own confirmation is also an alert by now.
+      await expect(page.getByRole("alert").filter({ hasText: "Commit a passing verified outcome" })).toBeVisible();
+      expect(await readMission(owner.client, missionId)).toEqual(before);
     });
 
     await test.step("pending work blocks completion; cancelled work does not", async () => {

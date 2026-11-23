@@ -34,28 +34,28 @@ export function SuggestedPlan({
   async function addAll() {
     setBusy(true);
     setError("");
-    let accepted = 0;
-    for (const step of steps) {
-      try {
-        const response = await fetch(`/api/missions/${missionId}/actions`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: step }),
-        });
-        if (!response.ok) {
-          const data = await response.json().catch(() => ({})) as { error?: string };
-          setError(data.error || "Those steps could not be added. Nothing after this one was attempted.");
-          break;
-        }
-        accepted += 1;
-        setAdded(accepted);
-      } catch {
-        setError("The connection dropped while adding steps. The ones already added were kept.");
-        break;
+    // Stored in the reader's language: the steps and criteria here are
+    // dictionary keys, and saving the English key put English steps into an
+    // Arabic mission. One request adds the steps and records the criteria.
+    try {
+      const response = await fetch(`/api/missions/${missionId}/actions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ titles: steps.map((step) => t(step)), criteria: criteria.map((item) => t(item)) }),
+      });
+      const data = await response.json().catch(() => ({})) as { error?: string; actions?: unknown[]; criteriaError?: string | null };
+      if (!response.ok) {
+        setError(data.error || "The steps could not be added. Nothing was changed.");
+        return;
       }
+      setAdded(Array.isArray(data.actions) ? data.actions.length : steps.length);
+      if (data.criteriaError) setError(data.criteriaError);
+      router.refresh();
+    } catch {
+      setError("The steps could not be added. Check your connection and try again.");
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
-    if (accepted > 0) router.refresh();
   }
 
   return (
@@ -80,12 +80,12 @@ export function SuggestedPlan({
         <p className="eyebrow"><LocalizedText en="Judge it finished by" /></p>
         <ul>{criteria.map((item) => <li key={item}>{t(item)}</li>)}</ul>
         <p className="suggested-plan-hint">
-          <LocalizedText en="Copy any of these into the success criteria field below if you want them recorded." />
+          <LocalizedText en="Adding the steps also records these as the mission's success criteria." />
         </p>
       </div>}
 
       {error && <p className="field-error" role="alert">{t(error)}</p>}
-      {added > 0 && !busy && !error && <p className="suggested-plan-done" role="status">
+      {added > 0 && !busy && <p className="suggested-plan-done" role="status">
         {`${added} `}<LocalizedText en="steps added to this mission." />
       </p>}
 

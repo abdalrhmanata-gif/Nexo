@@ -189,7 +189,7 @@ export function Shell({ children, signedIn = false, siteOperator = false, billin
   );
 }
 
-export function StatusPill({ status }: { status: string }) {
+export function StatusPill({ status, label: shown }: { status: string; label?: string }) {
   // This pill describes one mission, so Norwegian wants the singular "Aktiv".
   // The metric cards count missions and want "Aktive". Same English word, two
   // Norwegian ones, so the key carries its context; see translate().
@@ -197,5 +197,7 @@ export function StatusPill({ status }: { status: string }) {
     : status === "ACTIVE" ? <LocalizedText en="Active|one mission" />
     : status === "COMPLETED" ? <LocalizedText en="Completed|one mission" />
     : status;
-  return <span className={`status status-${status.toLowerCase()}`}>{label}</span>;
+  // A mission page passes its exact lifecycle state ("Draft", "Checking the
+  // evidence"); lists keep the three broad groups.
+  return <span className={`status status-${status.toLowerCase()}`}>{shown ?? label}</span>;
 }

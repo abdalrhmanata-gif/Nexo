@@ -14,15 +14,21 @@ export function VerificationControls({
   verification,
   criteria = [],
   completedSteps = [],
+  stepProof = {},
+  initialEvidence = "",
 }: {
   missionId: string;
   verification?: MissionVerification;
   criteria?: string[];
   completedSteps?: string[];
+  /** Step title to its evidence line, including any proof the user recorded. */
+  stepProof?: Record<string, string>;
+  /** Pre-filled from the proof on finished steps; the user can change it. */
+  initialEvidence?: string;
 }) {
   const t = useTranslate();
   const router = useRouter();
-  const [evidence, setEvidence] = useState("");
+  const [evidence, setEvidence] = useState(initialEvidence);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -84,7 +90,7 @@ export function VerificationControls({
   if (verification?.status === "VERIFIED") return <div className="form-grid"><form onSubmit={commit}><div className="field"><label htmlFor="result"><LocalizedText en="Outcome result" /></label><textarea id="result" name="result" required /></div><div className="field"><label htmlFor="score"><LocalizedText en="Success score" /></label><input id="score" name="score" type="number" min="0" max="1" step="0.01" defaultValue="1" /></div><button className="button" type="submit" disabled={busy}><LocalizedText en="Commit verified outcome" /></button></form>{message && <div className="field-error" role="alert">{message}</div>}</div>;
   const citeStep = (step: string) => {
     setEvidence((current) => {
-      const line = `- ${step}`;
+      const line = stepProof[step] ?? `- ${step}`;
       if (current.split("\n").some((existing) => existing.trim() === line)) return current;
       return current.trim() ? `${current.replace(/\s+$/, "")}\n${line}` : line;
     });
@@ -102,6 +108,7 @@ export function VerificationControls({
       <div className="field">
         <label htmlFor="evidence"><LocalizedText en="Evidence summary" /></label>
         <textarea id="evidence" name="evidence" value={evidence} onChange={(event) => setEvidence(event.target.value)} required />
+        {initialEvidence && <small><LocalizedText en="Filled in from the proof you recorded on your steps. Change it if you checked more." /></small>}
         {completedSteps.length > 0 && <div className="evidence-cite">
           <small><LocalizedText en="Completed steps you can cite:" /></small>
           <div className="evidence-cite-list">

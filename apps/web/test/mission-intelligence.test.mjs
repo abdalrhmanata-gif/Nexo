@@ -56,7 +56,7 @@ test("future waiting follow-up is distinct from overdue waiting follow-up", () =
 test("cancelled work is not selected as next work and does not create a health blocker", () => {
   const m = mission({ actions: [action("Old appointment", "CANCELLED")] });
   const next = nextActionFor(m, now);
-  assert.equal(next.nextAction, "Ready to check");
+  assert.equal(next.nextAction, "Record verification");
   assert.equal(planHealthFor(m, now).findings.length, 1);
   assert.equal(planHealthFor(m, now).findings[0].code, "APPEARS_COMPLETE");
 });
@@ -120,7 +120,7 @@ test("failed verification never permits outcome guidance", () => {
 test("a passing verification never hides unresolved required work or an invalid lifecycle", () => {
   const verifications = [{ id: "v1", status: "VERIFIED" }];
   assert.equal(nextActionFor(mission({ lifecycleStatus: "VERIFYING", verifications, actions: [action("Required", "PENDING")] }), now).nextAction, "Start: Required");
-  assert.equal(nextActionFor(mission({ lifecycleStatus: "PAUSED", verifications, actions: [action("Done", "COMPLETED")] }), now).nextAction, "Ready to check");
+  assert.equal(nextActionFor(mission({ lifecycleStatus: "PAUSED", verifications, actions: [action("Done", "COMPLETED")] }), now).nextAction, "Commit the verified outcome");
 });
 
 test("pending work is actionable before future waiting work", () => {

@@ -963,6 +963,9 @@ a:hover { color:var(--teal); }
 .template-icon svg { display:block; width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
 .template-icon-research-decision { color:#315c9a; background:#eaf1ff; }
 .template-icon-weekly-operations { color:#986019; background:#fff1dc; }
+.template-icon-settle-new-country { color:#7a3f8f; background:#f5e9fa; }
+.template-icon-find-a-job { color:#315c9a; background:#eaf1ff; }
+.template-icon-organise-an-event { color:#a34425; background:#ffebe3; }
 .template-card .eyebrow { margin-bottom:6px; }
 .template-card h2 { min-height:54px; }
 .template-card .button { border-radius:9px; }
@@ -1368,6 +1371,9 @@ a:hover { color:var(--teal); }
 :root[data-theme="dark"] .template-icon { color:#9fdad6; background:#172924; }
 :root[data-theme="dark"] .template-icon-research-decision { color:#7296ca; background:#111f3a; }
 :root[data-theme="dark"] .template-icon-weekly-operations { color:#ceab7f; background:#34250f; }
+:root[data-theme="dark"] .template-icon-settle-new-country { color:#c9a4d6; background:#2a1833; }
+:root[data-theme="dark"] .template-icon-find-a-job { color:#7296ca; background:#111f3a; }
+:root[data-theme="dark"] .template-icon-organise-an-event { color:#e0a08a; background:#3a1d13; }
 @media (max-width:700px) {
   :root[data-theme="dark"] .landing-proof-strip > div + div { border-top:1px solid #191f24; }
 }
@@ -1775,3 +1781,17 @@ html[dir="rtl"] input, html[dir="rtl"] textarea {
   .compare-table td::before { content:attr(data-label); display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-block-end:2px; }
 }
 
+/* Step proof: one tap to mark a step done, with an optional note and link. */
+.action-control-menu { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.proof-form { display:flex; flex-direction:column; gap:6px; width:min(100%, 360px); margin-top:4px; }
+.proof-form input { border:1px solid #c9d3da; border-radius:5px; padding:8px; font:inherit; color:var(--ink); background:var(--white); min-width:0; }
+.proof-label { font-size:12px; color:var(--muted); }
+.proof-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.action-proof { max-width:360px; }
+.action-proof-text { margin:0; font-size:13px; color:var(--ink); overflow-wrap:anywhere; }
+.action-proof-label { font-weight:600; color:#22605a; }
+.action-proof-text a { color:#22605a; text-decoration:underline; }
+.manual-state { margin-top:14px; }
+.manual-state summary { cursor:pointer; color:var(--muted); font-size:14px; }
+.manual-state[open] summary { margin-bottom:8px; }
+@media (max-width:700px) { .proof-form, .action-proof { width:100%; max-width:none; }.proof-form .button { flex:1 1 auto; text-align:center; } }

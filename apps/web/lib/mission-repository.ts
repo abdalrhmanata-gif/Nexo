@@ -7,7 +7,10 @@ export interface MissionRepository {
   updateMission?(id: string, input: UpdateMission): Promise<Mission>;
   deleteMission?(id: string): Promise<void>;
   addAction?(input: NewAction): Promise<MissionAction>;
+  addActions?(input: { missionId: string; titles: string[] }): Promise<MissionAction[]>;
   updateAction?(input: UpdateAction): Promise<MissionAction>;
+  completeAction?(input: CompleteAction): Promise<MissionAction>;
+  setActionProof?(input: ActionProof): Promise<MissionAction>;
   recordVerification?(input: NewVerification): Promise<MissionVerification>;
   commitOutcome?(input: NewOutcome): Promise<MissionOutcome>;
 }
@@ -21,6 +24,8 @@ export type NewMission = { objective: string; actions?: string[] };
 export type NewAction = { missionId: string; title: string };
 export type UpdateAction = {
   actionId: string;
+  /** When given, a step that starts also moves a draft Mission to In progress. */
+  missionId?: string;
   status: "PENDING" | "RUNNING" | "COMPLETED" | "BLOCKED" | "CANCELLED";
   expectedVersion: number;
   /**
@@ -31,6 +36,14 @@ export type UpdateAction = {
   setFollowUp?: boolean;
   followUpAt?: string | null;
 };
+/** Proof is optional: a short note, a link, both or neither. */
+export type ActionProof = {
+  actionId: string;
+  expectedVersion: number;
+  evidenceNote?: string | null;
+  evidenceUrl?: string | null;
+};
+export type CompleteAction = ActionProof;
 export type UpdateMission = {
   objective?: string;
   status?: MissionLifecycleStatus;

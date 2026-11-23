@@ -13,12 +13,18 @@ type MissionRow = {
   updated_at: string;
 };
 
+// Literal strings, not concatenations, so supabase-js can still type the rows.
+const ACTION_COLUMNS = "id, title, status, version, follow_up_at, evidence_note, evidence_url";
+const ACTION_COLUMNS_WITH_MISSION = "id, title, status, version, follow_up_at, evidence_note, evidence_url, mission_id";
+
 type ActionRow = {
   id: string;
   title: string;
   status: ActionStatus;
   version: number;
   follow_up_at: string | null;
+  evidence_note?: string | null;
+  evidence_url?: string | null;
 };
 
 type VerificationRow = {
@@ -64,7 +70,15 @@ function toActivity(row: EventRow): MissionActivity {
 }
 
 function toAction(row: ActionRow): MissionAction {
-  return { id: row.id, title: row.title, status: row.status, version: row.version, followUpAt: row.follow_up_at ?? null };
+  return {
+    id: row.id,
+    title: row.title,
+    status: row.status,
+    version: row.version,
+    followUpAt: row.follow_up_at ?? null,
+    evidenceNote: row.evidence_note ?? null,
+    evidenceUrl: row.evidence_url ?? null,
+  };
 }
 
 function toMission(row: MissionRow, actions: ActionRow[] = [], verifications: MissionVerification[] = [], outcomes: MissionOutcome[] = [], activity: MissionActivity[] = []): Mission {
@@ -129,7 +143,7 @@ async function currentWorkspace(supabase: SupabaseClient, userId: string) {
 async function actionsFor(supabase: SupabaseClient, missionId: string) {
   const result = await supabase
     .from("mission_actions")
-    .select("id, title, status, version, follow_up_at")
+    .select(ACTION_COLUMNS)
     .eq("mission_id", missionId)
     .order("position");
   if (result.error) throw result.error;
@@ -183,7 +197,20 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
     INVALID_OUTCOME_RESULT: "Describe what the outcome actually was.",
     INVALID_OUTCOME_SCORE: "The success score must be between 0 and 1.",
     INVALID_OUTCOME_STATUS: "An outcome must record either completion or failure.",
+    ALL_ACTIONS_MUST_BE_RESOLVED: "Finish or cancel every step before recording verification.",
+    PROOF_REQUIRES_COMPLETED_STEP: "Proof can only be added to a step that is done.",
   };
+
+  async function advanceLifecycle(missionId: string, target: "RUNNING" | "VERIFYING") {
+    const result = await supabase.rpc("advance_mission_lifecycle", { p_mission_id: missionId, p_target: target });
+    if (!result.error) return;
+    // Starting a step must not fail because the Mission could not follow; the
+    // step itself is already saved. For verification, open steps are the one
+    // reason worth stating here; anything else (a Mission that cannot move, a
+    // collaborator who is not the owner) is left to create_mission_verification,
+    // which gives its own, more specific answer.
+    if (target === "VERIFYING" && result.error.message === "ALL_ACTIONS_MUST_BE_RESOLVED") throwMutationError(result.error);
+  }
 
   function throwMutationError(error: { code?: string; message?: string }) {
     if (error.code === "P0001" && error.message === "STALE_VERSION") {
@@ -213,7 +240,7 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       // loading each mission's full verification and event history.
       const actions = await supabase
         .from("mission_actions")
-        .select("id, title, status, version, follow_up_at, mission_id")
+        .select(ACTION_COLUMNS_WITH_MISSION)
         .in("mission_id", rows.map((row) => row.id))
         .order("position");
       if (actions.error) throw actions.error;
@@ -247,7 +274,7 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
           throw actions.error;
         }
       }
-      return toMission(result.data as MissionRow, actionTitles.map((title, id) => ({ id: `new-${id}`, title, status: "PENDING", version: 1, follow_up_at: null })));
+      return toMission(result.data as MissionRow, actionTitles.map((title, id) => ({ id: `new-${id}`, title, status: "PENDING", version: 1, follow_up_at: null, evidence_note: null, evidence_url: null })));
     },
     async updateMission(id: string, input: UpdateMission) {
       if (input.objective !== undefined && input.status !== undefined) {
@@ -283,10 +310,27 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       const result = await supabase
         .from("mission_actions")
         .insert({ mission_id: input.missionId, title: input.title, position, status: "PENDING" })
-        .select("id, title, status, version, follow_up_at")
+        .select(ACTION_COLUMNS)
         .single();
       if (result.error) throwMutationError(result.error);
       return toAction(result.data as ActionRow);
+    },
+    async addActions(input) {
+      // A whole plan in one insert: one round trip instead of one per step,
+      // and either every step lands or none does.
+      const mission = await supabase.from("missions").select("id").eq("id", input.missionId).eq("workspace_id", workspaceId).maybeSingle();
+      if (mission.error) throw mission.error;
+      if (!mission.data) throw new MissionMutationRejectedError("That mission is no longer available.");
+      const last = await supabase.from("mission_actions").select("position").eq("mission_id", input.missionId).order("position", { ascending: false }).limit(1).maybeSingle();
+      if (last.error) throw last.error;
+      const start = (last.data?.position ?? -1) + 1;
+      const result = await supabase
+        .from("mission_actions")
+        .insert(input.titles.map((title, index) => ({ mission_id: input.missionId, title, position: start + index, status: "PENDING" })))
+        .select(ACTION_COLUMNS)
+        .order("position");
+      if (result.error) throwMutationError(result.error);
+      return (result.data as ActionRow[]).map(toAction);
     },
     async updateAction(input) {
       // The two follow-up parameters are only sent when the caller is actually
@@ -303,9 +347,37 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       }
       const result = await supabase.rpc("transition_mission_action", args);
       if (result.error) throwMutationError(result.error);
+      if (input.status === "RUNNING" && input.missionId) await advanceLifecycle(input.missionId, "RUNNING");
+      return toAction(result.data as ActionRow);
+    },
+    async completeAction(input) {
+      // One call: the step becomes Complete from any open state, the optional
+      // proof is stored with it, and the Mission moves to In progress if it
+      // was still a draft. All of it happens in one database transaction.
+      const result = await supabase.rpc("complete_mission_action", {
+        p_action_id: input.actionId,
+        p_expected_version: input.expectedVersion,
+        p_evidence_note: input.evidenceNote ?? null,
+        p_evidence_url: input.evidenceUrl ?? null,
+      });
+      if (result.error) throwMutationError(result.error);
+      return toAction(result.data as ActionRow);
+    },
+    async setActionProof(input) {
+      const result = await supabase.rpc("set_mission_action_proof", {
+        p_action_id: input.actionId,
+        p_expected_version: input.expectedVersion,
+        p_evidence_note: input.evidenceNote ?? null,
+        p_evidence_url: input.evidenceUrl ?? null,
+      });
+      if (result.error) throwMutationError(result.error);
       return toAction(result.data as ActionRow);
     },
     async recordVerification(input: NewVerification) {
+      // Recording verification is the user saying "the work is done, check
+      // it". The Mission is walked to Checking first instead of asking the
+      // user to press Planning, Ready, Running and Checking one by one.
+      await advanceLifecycle(input.missionId, "VERIFYING");
       const result = await supabase.rpc("create_mission_verification", {
         p_mission_id: input.missionId,
         p_status: input.status,
@@ -318,6 +390,9 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       return toVerification(result.data as VerificationRow);
     },
     async commitOutcome(input: NewOutcome) {
+      // Same as verification: a mission paused after its steps were done can
+      // still record its outcome without being moved by hand first.
+      await advanceLifecycle(input.missionId, "VERIFYING");
       const result = await supabase.rpc("commit_verified_mission_outcome", {
         p_mission_id: input.missionId,
         p_verification_id: input.verificationId,

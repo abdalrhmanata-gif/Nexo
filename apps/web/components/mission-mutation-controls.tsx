@@ -103,16 +103,22 @@ export function MissionMutationControls({
 
     {isTerminalMissionStatus(status)
       ? <p className="action-final">{fill(t("{state} — this mission is closed."), { state: missionStatusLabel(status, t) })}</p>
-      : <form key={status} onSubmit={transition}>
-        <div className="field">
-          <label htmlFor="status"><LocalizedText en="Mission state" /></label>
-          <select id="status" name="status" defaultValue={nextStates[0]} disabled={busy}>
-            {nextStates.map((item) => <option key={item} value={item}>{missionStatusLabel(item, t)}</option>)}
-          </select>
-          <small>{fill(t("Currently {state}. Only the states this mission can move to are listed."), { state: missionStatusLabel(status, t).toLowerCase() })}</small>
-        </div>
-        <button className="button button-small" type="submit" disabled={busy}><LocalizedText en="Move mission" /></button>
-      </form>}
+      // The state follows the steps on its own (advance_mission_lifecycle),
+      // so moving it by hand is tucked away for pausing or cancelling.
+      : <details className="manual-state">
+        <summary><LocalizedText en="Pause, cancel or change the state yourself" /></summary>
+        <p className="action-hint"><LocalizedText en="You do not need this to make progress. The mission moves to In progress when a step starts or is done, and to checking the evidence when you record verification." /></p>
+        <form key={status} onSubmit={transition}>
+          <div className="field">
+            <label htmlFor="status"><LocalizedText en="Mission state" /></label>
+            <select id="status" name="status" defaultValue={nextStates[0]} disabled={busy}>
+              {nextStates.map((item) => <option key={item} value={item}>{missionStatusLabel(item, t)}</option>)}
+            </select>
+            <small>{fill(t("Currently {state}. Only the states this mission can move to are listed."), { state: missionStatusLabel(status, t).toLowerCase() })}</small>
+          </div>
+          <button className="button button-small button-quiet" type="submit" disabled={busy}><LocalizedText en="Move mission" /></button>
+        </form>
+      </details>}
     {message && <div className="field-error" role="alert">{message}</div>}
   </div>;
 }
