@@ -125,31 +125,81 @@ test("report accepts claims cited to user-supplied IDs and distinguishes inferen
   assert.equal(checked.claims[2].kind, "unknown");
 });
 
-test("report rejects source IDs not supplied by the user", () => {
-  assert.throws(() => validateOpportunityAnalysisReport(report({
-    claims: [{ claim: "An uncited market statement.", kind: "evidence", confidence: "high", evidenceIds: ["invented-source"] }],
-  }), [evidence()]), /evidence that was not supplied/);
-});
-
-test("report rejects factual claims with no source and requires unknown claims to have no citation", () => {
-  assert.throws(() => validateOpportunityAnalysisReport(report({
-    claims: [{ claim: "An uncited factual claim.", kind: "evidence", confidence: "high", evidenceIds: [] }],
-  }), [evidence()]), /must cite at least one supplied evidence note/);
-  assert.throws(() => validateOpportunityAnalysisReport(report({
-    claims: [{ claim: "This is unknown.", kind: "unknown", confidence: "low", evidenceIds: ["evidence-customer-01"] }],
-  }), [evidence()]), /unknown claim cannot be presented as source-backed/);
-});
-
-test("report without evidence notes must explicitly say that evidence is insufficient", () => {
-  assert.throws(() => validateOpportunityAnalysisReport(report({
-    decision: "PURSUE",
-    claims: [{ claim: "The evidence packet is empty.", kind: "unknown", confidence: "low", evidenceIds: [] }],
-  }), []), /must return INSUFFICIENT_EVIDENCE/);
+test("a citation to a note that was not supplied is removed, and the claim is no longer shown as evidence", () => {
   const checked = validateOpportunityAnalysisReport(report({
-    decision: "INSUFFICIENT_EVIDENCE",
-    claims: [{ claim: "The current evidence packet is empty.", kind: "unknown", confidence: "low", evidenceIds: [] }],
+    claims: [{ claim: "An uncited market statement.", kind: "evidence", confidence: "high", evidenceIds: ["invented-source"] }],
+  }), [evidence()]);
+  assert.deepEqual(checked.claims[0].evidenceIds, []);
+  assert.equal(checked.claims[0].kind, "inference");
+  assert.equal(checked.claims[0].confidence, "low");
+});
+
+test("a factual claim with no source becomes a low-confidence inference; an unknown never carries a citation", () => {
+  const checked = validateOpportunityAnalysisReport(report({
+    claims: [
+      { claim: "An uncited factual claim.", kind: "evidence", confidence: "high", evidenceIds: [] },
+      { claim: "This is unknown.", kind: "unknown", confidence: "low", evidenceIds: ["evidence-customer-01"] },
+    ],
+  }), [evidence()]);
+  assert.equal(checked.claims[0].kind, "inference");
+  assert.equal(checked.claims[0].confidence, "low");
+  assert.deepEqual(checked.claims[1].evidenceIds, []);
+  for (const claim of checked.claims) {
+    if (claim.kind === "evidence") assert.ok(claim.evidenceIds.length > 0);
+  }
+});
+
+test("with no evidence notes the decision is INSUFFICIENT_EVIDENCE whatever the model said", () => {
+  // The case that failed every time in production on 23 Nov 2026: an
+  // opportunity with no notes, and a model that recommended something anyway.
+  const checked = validateOpportunityAnalysisReport(report({
+    decision: "PURSUE",
+    claims: [{ claim: "Demand looks strong from the supplied note.", kind: "evidence", confidence: "high", evidenceIds: ["evidence-customer-01"] }],
   }), []);
   assert.equal(checked.decision, "INSUFFICIENT_EVIDENCE");
+  assert.equal(checked.claims[0].kind, "inference");
+  assert.deepEqual(checked.claims[0].evidenceIds, []);
+});
+
+test("small slips are repaired instead of costing the person a generation", () => {
+  const long = "word ".repeat(200);
+  const checked = validateOpportunityAnalysisReport(report({
+    decision: "test",
+    claims: Array.from({ length: 12 }, (_, i) => ({ claim: `Claim number ${i} about the market.`, kind: "INFERENCE", confidence: "very high", evidenceIds: [] })),
+    risks: [{ risk: long, severity: "critical", mitigation: long }, { risk: "", severity: "low", mitigation: "x" }],
+    criticalUnknowns: ["One unknown", 42, "", "Two", "Three", "Four", "Five", "Six"],
+    recommendedExperiment: {
+      ...report().recommendedExperiment,
+      steps: ["One", "Two", "Three", "Four", "Five"],
+    },
+    missionDraft: { ...report().missionDraft, successCriteria: ["Only one criterion"] },
+  }), [evidence()]);
+  assert.equal(checked.decision, "TEST");
+  assert.equal(checked.claims.length, 8);
+  assert.equal(checked.claims[0].kind, "inference");
+  assert.equal(checked.claims[0].confidence, "low");
+  assert.equal(checked.risks.length, 1);
+  assert.equal(checked.risks[0].severity, "medium");
+  assert.ok(checked.risks[0].risk.length <= 420 && checked.risks[0].risk.endsWith("…"));
+  assert.deepEqual(checked.criticalUnknowns, ["One unknown", "Two", "Three", "Four", "Five"]);
+  assert.equal(checked.recommendedExperiment.steps.length, 4);
+  assert.deepEqual(checked.missionDraft.successCriteria, ["Only one criterion"]);
+});
+
+test("a report missing the parts a person acts on is still rejected", () => {
+  assert.throws(() => validateOpportunityAnalysisReport("not an object", [evidence()]), /not a JSON object/);
+  assert.throws(() => validateOpportunityAnalysisReport(report({ executiveSummary: "" }), [evidence()]), /executive summary/);
+  assert.throws(() => validateOpportunityAnalysisReport(report({ recommendedExperiment: undefined }), [evidence()]), /recommended experiment/);
+  assert.throws(() => validateOpportunityAnalysisReport(report({ missionDraft: { ...report().missionDraft, firstActions: [] } }), [evidence()]), /first actions/);
+});
+
+test("the brief is written in the reader's language", () => {
+  const normalized = normalizeOpportunityAnalysisRequest(input({ language: "ar" }));
+  assert.equal(normalized.language, "ar");
+  assert.equal(normalizeOpportunityAnalysisRequest(input({ language: "<script>" })).language, "en");
+  const prompt = buildOpportunityAnalysisPrompt(normalized);
+  assert.match(prompt.system, /respondInLanguage/);
+  assert.equal(JSON.parse(prompt.user).respondInLanguage, "ar");
 });
 
 test("AI endpoint requires authentication, explicit opt-in configuration, request limits and no-store responses", () => {

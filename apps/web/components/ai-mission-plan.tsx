@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LocalizedText, useTranslate } from "./localized-text";
 import type { MissionPlanReport } from "../lib/mission-plan-ai.d.mts";
+import { AiProgress } from "./ai-progress";
 
 // The plan a model drafts, shown the way this product shows anything else:
 // with what it does not know kept in view rather than smoothed over.
@@ -163,6 +164,7 @@ export function AiMissionPlan({ missionId, name, intent, criteria, actions }: {
             {busy ? t("Drafting…") : t("Draft a plan")}
           </button>
         </div>
+        {busy && <AiProgress />}
       </>}
 
       {plan && <>
