@@ -78,21 +78,15 @@ export type GuideChrome = {
   ctaFree: string;
   readGuide: string;
   disclaimer: string;
+  /** Shown under the title: these guides are about the US only. */
+  usNotice: string;
   languages: string;
-  /** The guides section on the home page. */
-  homeEyebrow: string;
-  homeTitle: string;
-  homeLead: string;
-  allGuides: string;
   sourceLabels: Record<SourceKey, string>;
 };
 
 export type GuideLocale = { chrome: GuideChrome; guides: Guide[] };
 
 const LOCALES: Record<GuideLanguage, GuideLocale> = { en, es, ar, fr, de, nb };
-
-/** The guides shown on the home page, most searched first. */
-export const HOME_GUIDES = ["how-to-start-an-llc", "how-to-get-an-ein", "how-to-write-a-business-plan"];
 
 export const SITE_URL = "https://zavqera.com";
 

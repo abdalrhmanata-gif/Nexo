@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { LocalizedText } from "../components/localized-text";
-import { getLanguage, getTranslate } from "../lib/i18n-server";
-import { guidePath, isGuideLanguage } from "../lib/guides";
-import { GuidesHomeSection } from "../components/guide-article";
+import { getTranslate } from "../lib/i18n-server";
 import { readSignedIn } from "../components/shell";
 
 const capabilities = [
@@ -38,9 +36,6 @@ function CapabilityIcon({ kind }: { kind: string }) {
 export default async function HomePage() {
   const t = await getTranslate();
   const signedIn = await readSignedIn();
-  const language = await getLanguage();
-  const guideLanguage = isGuideLanguage(language) ? language : "en";
-  const guidesHref = guidePath(guideLanguage);
   return <div className="landing-page">
     <section className="landing-hero">
       <div className="landing-hero-copy">
@@ -55,9 +50,9 @@ export default async function HomePage() {
         </div>
         <div className="landing-trust-line"><span aria-hidden="true">✓</span> <LocalizedText en="Review before action. Clear boundaries. No false certainty." /></div>
         <p className="landing-honesty"><LocalizedText en="AI drafts only when you ask, and never acts for you. You review every step before it counts." /></p>
-        <Link className="landing-template-link" href={guidesHref}><LocalizedText en="Read the guides to starting a business in the US" /> <span aria-hidden="true">→</span></Link>
         <Link className="landing-template-link" href="/templates"><LocalizedText en="Browse mission templates" /> <span aria-hidden="true">→</span></Link>
         <Link className="landing-template-link" href="/app/opportunities"><LocalizedText en="Explore Opportunity Intelligence" /> <span aria-hidden="true">→</span></Link>
+        <Link className="landing-template-link" href="/compare/zavqera-vs-chatgpt-claude-gemini"><LocalizedText en="Compare with ChatGPT, Claude and Gemini" /> <span aria-hidden="true">→</span></Link>
       </div>
       <div className="landing-visual" role="group" aria-label={t("Illustrative view of a governed Mission")}>
         <div className="landing-visual-top"><span className="landing-window-dots"><i/><i/><i/></span><span><LocalizedText en="MISSION CONTROL" /></span><span className="landing-preview-tag"><LocalizedText en="Illustrative view" /></span></div>
@@ -96,7 +91,6 @@ export default async function HomePage() {
       </div>
     </section>
 
-    <GuidesHomeSection lang={guideLanguage} />
     <section className="landing-final-cta"><div><p className="eyebrow"><LocalizedText en="Start with one Mission" /></p><h2><LocalizedText en="Make the next step clearer." /></h2><p><LocalizedText en="Begin with the workflow you have today. Keep control of what happens next." /></p></div><div className="landing-final-actions"><Link className="button" href="/app"><LocalizedText en="Open workspace" /> <span aria-hidden="true">→</span></Link><Link className="landing-pricing-link" href="/pricing"><LocalizedText en="Pricing" /></Link></div></section>
   </div>;
 }

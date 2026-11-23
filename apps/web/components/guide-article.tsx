@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   GUIDE_LANGUAGES,
-  HOME_GUIDES,
   SITE_URL,
   guideAlternates,
   guideBySlug,
@@ -68,6 +67,12 @@ function LanguageSwitch({ lang, slug }: { lang: GuideLanguage; slug?: string }) 
   );
 }
 
+/** The guides are about the US only. Said up front, in the reader's language,
+    because a reader elsewhere would otherwise follow rules that are not theirs. */
+function UsNotice({ text }: { text: string }) {
+  return <p className="guide-us-notice" role="note"><span aria-hidden="true">i</span>{text}</p>;
+}
+
 export function GuideArticle({ slug, lang }: { slug: string; lang: GuideLanguage }) {
   const { chrome } = guideLocale(lang);
   const guide = guideBySlug(slug, lang);
@@ -127,6 +132,7 @@ export function GuideArticle({ slug, lang }: { slug: string; lang: GuideLanguage
           <span>{guide.short}</span>
         </nav>
         <h1 className="guide-title">{guide.title}</h1>
+        <UsNotice text={chrome.usNotice} />
         {guide.intro.map((paragraph) => <p className="guide-lead" key={paragraph}>{paragraph}</p>)}
         <p className="guide-meta">
           <span>{chrome.updated} <time dateTime={guide.updated}>{guide.updated}</time></span>
@@ -216,6 +222,7 @@ export function GuidesIndex({ lang }: { lang: GuideLanguage }) {
     <div className="guide-page" lang={lang} dir={chrome.dir}>
       <header className="guide-header guide-index-header">
         <h1 className="guide-title">{chrome.indexTitle}</h1>
+        <UsNotice text={chrome.usNotice} />
         <p className="guide-lead">{chrome.indexLead}</p>
         <LanguageSwitch lang={lang} />
       </header>
@@ -231,37 +238,5 @@ export function GuidesIndex({ lang }: { lang: GuideLanguage }) {
         ))}
       </div>
     </div>
-  );
-}
-
-/** The guides section of the home page, in the reader's language. */
-export function GuidesHomeSection({ lang }: { lang: GuideLanguage }) {
-  const { chrome } = guideLocale(lang);
-  const featured = HOME_GUIDES
-    .map((slug) => guideBySlug(slug, lang))
-    .filter((item): item is NonNullable<typeof item> => item !== null);
-  const arrow = chrome.dir === "rtl" ? "←" : "→";
-  return (
-    <section className="home-guides" lang={lang} dir={chrome.dir} aria-labelledby="home-guides-title">
-      <div className="home-guides-head">
-        <div>
-          <p className="eyebrow">{chrome.homeEyebrow}</p>
-          <h2 id="home-guides-title">{chrome.homeTitle}</h2>
-          <p>{chrome.homeLead}</p>
-        </div>
-        <Link className="button button-quiet" href={guidePath(lang)}>{chrome.allGuides} <span aria-hidden="true">{arrow}</span></Link>
-      </div>
-      <div className="guide-cards">
-        {featured.map((guide, index) => (
-          <Link className="guide-card" key={guide.slug} href={guidePath(lang, guide.slug)}>
-            <span className="guide-card-index" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
-            <strong>{guide.title}</strong>
-            <p>{guide.metaDescription}</p>
-            <span>{chrome.stepsCount(guide.steps.length)} · {chrome.minutes(readingMinutes(guide))}</span>
-            <span className="guide-card-more">{chrome.readGuide} <span aria-hidden="true">{arrow}</span></span>
-          </Link>
-        ))}
-      </div>
-    </section>
   );
 }

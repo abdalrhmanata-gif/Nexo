@@ -25,10 +25,7 @@ export const en: GuideLocale = {
     ctaFree: "Free to start. No card needed.",
     readGuide: "Read the guide",
     disclaimer: "General information, not legal or tax advice. Rules and fees change and differ by state; the official pages linked here are the authority.",
-    homeEyebrow: "Free guides",
-    homeTitle: "Starting a business in the US? Start here.",
-    homeLead: "Step-by-step guides with the official source for every rule. Read one, then turn it into your own plan in one click.",
-    allGuides: "See all guides",
+    usNotice: "For starting a business in the United States. If you are starting in another country, the rules there are different.",
     languages: "Language",
     sourceLabels: {
       sbaGuide: "SBA: Business guide",
