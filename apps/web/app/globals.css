@@ -327,6 +327,13 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,te
 .analysis-toolbar button { flex:none; }
 .analysis-caution { margin:10px 0; color:var(--muted); font-size:11px; }
 .analysis-status { color:var(--navy); font-size:13px; }
+.ai-progress { margin-block:12px 4px; }
+.ai-progress-bar { position:relative; height:4px; border-radius:999px; background:var(--line); overflow:hidden; }
+.ai-progress-bar span { position:absolute; inset-block:0; width:35%; border-radius:inherit; background:var(--teal); animation:ai-progress-slide 1.4s ease-in-out infinite; }
+.ai-progress p { margin:8px 0 0; font-size:13px; color:var(--muted); }
+.ai-progress strong { color:var(--ink); font-variant-numeric:tabular-nums; }
+@keyframes ai-progress-slide { 0% { inset-inline-start:-35%; } 100% { inset-inline-start:100%; } }
+@media (prefers-reduced-motion:reduce) { .ai-progress-bar span { animation:none; width:100%; opacity:.5; } }
 .analysis-error { font-size:13px; overflow-wrap:anywhere; }
 .analysis-report { margin-top:14px; padding:16px; border:1px solid #b8dcd7; border-radius:7px; background:#f8fbfa; min-width:0; }
 .analysis-report-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap; }

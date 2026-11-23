@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { LocalizedText, useTranslate, fill } from "./localized-text";
+import { AiProgress } from "./ai-progress";
 import type { OpportunityEvidenceItem } from "../lib/evidence-ledger.mjs";
 import type { OpportunityAnalysisReport } from "../lib/opportunity-analysis.mjs";
 
@@ -61,11 +62,12 @@ function missionHref(report: OpportunityAnalysisReport, score: number, t: (en: s
  * and test/i18n-indirect-keys.test.mjs keeps every one of them in the
  * dictionaries because it checks every *LABELS table.
  */
-const DECISION_LABELS: Record<string, string> = {
+const DECISION_LABELS: Record<OpportunityAnalysisReport["decision"], string> = {
+  TEST: "Test it first",
   PURSUE: "Pursue",
-  VALIDATE: "Validate first",
+  PIVOT: "Change the approach",
   DEFER: "Defer for now",
-  HOLD: "Hold on the radar",
+  STOP: "Stop here",
   INSUFFICIENT_EVIDENCE: "Insufficient evidence",
 };
 
@@ -98,6 +100,7 @@ export function OpportunityAnalysisPanel({
         headers: { "Content-Type": "application/json" },
         cache: "no-store",
         body: JSON.stringify({
+          language: document.documentElement.lang || "en",
           title: opportunity.title,
           target: opportunity.target,
           thesis: opportunity.thesis,
@@ -148,7 +151,10 @@ export function OpportunityAnalysisPanel({
         </button>
       </div>
       <p className="analysis-caution">{fill(t("When enabled, this sends the opportunity and up to {count} of your most recent evidence notes to the configured AI provider. Zavqera does not fetch the cited URLs. Review every conclusion before acting."), { count: MAX_EVIDENCE_ITEMS })}</p>
-      {loading && <p className="analysis-status" role="status"><LocalizedText en="Reviewing the supplied evidence and drafting a validation experiment…" /></p>}
+      {loading && <>
+        <p className="analysis-status"><LocalizedText en="Reviewing the supplied evidence and drafting a validation experiment…" /></p>
+        <AiProgress />
+      </>}
       {/* The message may come from our API, which answers in English because it
           has no view of the reader's language. It is translated here, once, at
           the only place it is shown; a test keeps every message the route can

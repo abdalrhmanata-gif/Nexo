@@ -2,6 +2,8 @@ import type { OpportunityEvidenceItem } from "./evidence-ledger.mjs";
 import type { OpportunityScoreInput } from "./opportunity-intelligence.mjs";
 
 export type OpportunityAnalysisInput = {
+  /** Interface language the report is written in, e.g. "ar". */
+  language: string;
   title: string;
   target: string;
   thesis: string;
