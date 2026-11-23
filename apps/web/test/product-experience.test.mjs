@@ -275,6 +275,7 @@ test("success criteria and first steps are separate fields", () => {
   assert.match(source, /name="criteria"/);
   assert.match(source, /name="actions"/);
   assert.doesNotMatch(source, /becomes both a success criterion and an action/);
-  // Omitting the steps must keep the pre-W19 behaviour of seeding from criteria.
-  assert.match(source, /steps \? toLines\(steps\) : toLines\(criteria\)/);
+  // Omitting the steps starts the mission empty (23 Nov 2026). Seeding steps
+  // from the criteria made the plan check flag its own copy as a mistake.
+  assert.match(source, /steps \? toLines\(steps\) : \[\]/);
 });

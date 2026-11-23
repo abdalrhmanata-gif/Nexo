@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { LocalizedText, useTranslate } from "./localized-text";
+import { LocalizedText, useTranslate, fill } from "./localized-text";
 
 export function NotificationBell() {
   const t = useTranslate();
@@ -41,7 +41,7 @@ export function NotificationBell() {
     };
   }, []);
 
-  return <Link href="/app/notifications" className="notification-bell" aria-label={count === null ? "Notifications" : "Notifications, " + count + " items need attention"} title={t("Notifications")}>
+  return <Link href="/app/notifications" className="notification-bell" aria-label={count === null ? t("Notifications") : fill(t("Notifications, {count} need attention"), { count })} title={t("Notifications")}>
     <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
       <path d="M10 21h4" />

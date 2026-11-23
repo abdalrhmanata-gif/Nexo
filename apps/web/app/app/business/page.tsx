@@ -66,7 +66,7 @@ export default async function BusinessWorkspacePage() {
               ? <>{fill(t(waiting.length === 1 ? "{count} mission needs your decision" : "{count} missions need your decision"), { count: waiting.length })}</>
               : focusType === "planning"
                 ? <>{fill(t(withoutActions.length === 1 ? "{count} mission needs a first step" : "{count} missions need a first step"), { count: withoutActions.length })}</>
-                : <LocalizedText en="Your mission board is clear" />}
+                : <LocalizedText en="Nothing is waiting on you" />}
           </h2>
           <p>{focusType === "waiting"
             ? <LocalizedText en="Resolve blockers before starting more work." />
