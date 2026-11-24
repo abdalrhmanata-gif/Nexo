@@ -1867,3 +1867,5 @@ html[dir="rtl"] .action-proof-text > * { unicode-bidi: normal; }
 .resend-confirmation { display:grid; gap:10px; }
 .sign-up-plan { color:var(--ink); }
 .sign-up-free { margin:-4px 0 18px; font-size:13px; color:var(--muted); }
+html[dir="rtl"] .goal-starter-row .button span[aria-hidden="true"],
+html[dir="rtl"] .try-more a span[aria-hidden="true"] { display:inline-block; transform:scaleX(-1); }
