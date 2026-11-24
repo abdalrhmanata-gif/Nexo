@@ -55,7 +55,7 @@ export type Guide = {
   steps: GuideStep[];
   faqs: { question: string; answer: string }[];
   sources: SourceKey[];
-  /** Pre-fills /app/missions/new, the same way a Mission template does. */
+  /** The plan the guide's button saves as a Mission (lib/start-plan.ts). */
   mission: { name: string; intent: string; criteria: string[]; actions: string[] };
   related: string[];
 };
@@ -135,7 +135,7 @@ export function readingMinutes(guide: Guide) {
   return Math.max(1, Math.round(text.split(/\s+/).length / 220));
 }
 
-/** Same query shape as a Mission template's "Use this template" link. */
+/** The guide's plan as a prefilled new-mission form, for editing before saving. */
 export function guideMissionHref(guide: Guide) {
   const params = new URLSearchParams({
     name: guide.mission.name,

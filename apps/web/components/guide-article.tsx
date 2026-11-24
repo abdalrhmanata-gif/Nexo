@@ -7,12 +7,12 @@ import {
   guideAlternates,
   guideBySlug,
   guideLocale,
-  guideMissionHref,
   guidePath,
   readingMinutes,
   sourceUrl,
   type GuideLanguage,
 } from "../lib/guides";
+import { savePlan } from "../app/app/start/actions";
 
 // Every visible word comes from the guide's own language file (lib/guides/*),
 // not from the interface dictionary: see the header of lib/guides.ts.
@@ -80,7 +80,6 @@ export function GuideArticle({ slug, lang }: { slug: string; lang: GuideLanguage
   const guide = guideBySlug(slug, lang);
   if (!guide) return null;
   const url = `${SITE_URL}${guidePath(lang, slug)}`;
-  const missionHref = guideMissionHref(guide);
   const minutes = readingMinutes(guide);
   const related = guide.related
     .map((item) => guideBySlug(item, lang))
@@ -118,7 +117,13 @@ export function GuideArticle({ slug, lang }: { slug: string; lang: GuideLanguage
     <div className="guide-cta">
       <strong className="guide-cta-title">{chrome.ctaTitle}</strong>
       <p>{chrome.ctaBody}</p>
-      <Link className="button guide-cta-button" href={missionHref}>{chrome.ctaButton} <span aria-hidden="true">{chrome.dir === "rtl" ? "←" : "→"}</span></Link>
+      {/* Saves the guide's plan in one press. Without an account the press
+          goes through sign-up, and the plan is saved straight after it. */}
+      <form action={savePlan}>
+        <input type="hidden" name="guide" value={guide.slug} />
+        <input type="hidden" name="lang" value={lang} />
+        <button className="button guide-cta-button" type="submit">{chrome.ctaButton} <span aria-hidden="true">{chrome.dir === "rtl" ? "←" : "→"}</span></button>
+      </form>
       <small>{chrome.ctaFree}</small>
     </div>
   );

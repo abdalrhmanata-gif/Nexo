@@ -14,7 +14,7 @@ export const LEGAL = {
   supportEmail: "hello@zavqera.com",
 
   /** Updated whenever either document changes materially. */
-  lastUpdated: "17 November 2026",
+  lastUpdated: "24 November 2026",
 
   /** Supervisory authority for a controller established in Norway. */
   authority: {
@@ -113,7 +113,7 @@ export type PurposeRow = {
 export const PURPOSES: PurposeRow[] = [
   {
     purpose: "Creating and running your account, and signing you in",
-    data: "Email address, password hash",
+    data: "Email address, password hash; if you sign in with Google, the name and profile picture link Google sends",
     basis: "Article 6(1)(b) — necessary to perform the contract you enter by creating an account",
     retention: "Until you close the account, then deleted within 30 days",
   },

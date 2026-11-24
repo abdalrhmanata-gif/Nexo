@@ -23,7 +23,9 @@ test("global navigation and auth cross-links do not prefetch unopened pages", ()
   const nav = read("components/nav-link.tsx");
   assert.match(nav, /<Link href=\{href\} prefetch=\{false\}/);
   const signIn = read("app/auth/sign-in/page.tsx");
-  assert.match(signIn, /<Link href="\/auth\/sign-up" prefetch=\{false\}>/);
+  // The link back to sign-up carries ?next= when there is one.
+  assert.match(signIn, /<Link href=\{signUpHref\} prefetch=\{false\}>/);
+  assert.match(signIn, /: "\/auth\/sign-up";/);
 });
 
 test("primary navigation restores the key destinations and keeps Opportunity Intelligence", () => {
@@ -177,15 +179,23 @@ test("brand link exposes its visible label and landing proof badges meet AA cont
   assert.match(css, /\.landing-proof-icon \{[^}]*background:#e3f5f0; color:#08685f;/);
 });
 
-test("templates prefill the normal review-before-create mission flow", () => {
+// Templates used to only prefill the new-mission form, and almost nobody who
+// opened one came out with a mission. One press now saves it (through
+// sign-up when needed); the template page still offers the prefilled form
+// for anyone who wants to edit first, and the list says what the press does.
+test("a template saves in one press and can still be edited before saving", () => {
   const templates = read("app/templates/page.tsx");
+  assert.match(templates, /action=\{savePlan\}/);
+  assert.match(templates, /name="template" value=\{template\.id\}/);
+  assert.match(templates, /every step can be changed/);
+  const detail = read("app/templates/[id]/page.tsx");
   const missionForm = read("app/app/missions/new/page.tsx");
-  assert.match(templates, /new URLSearchParams/);
+  assert.match(detail, /new URLSearchParams/);
+  assert.match(detail, /Edit before saving/);
   for (const field of ["name", "intent", "criteria", "actions"]) {
-    assert.match(templates, new RegExp(field));
+    assert.match(detail, new RegExp(field));
     assert.match(missionForm, new RegExp(`params\\.${field}`));
   }
-  assert.match(templates, /Nothing is created until you review/);
 });
 
 test("every .mjs module imported from TypeScript has a .d.mts declaration", () => {

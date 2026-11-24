@@ -4,6 +4,8 @@ export interface MissionRepository {
   listMissions(): Promise<Mission[]>;
   getMission(id: string): Promise<Mission | null>;
   createMission?(input: NewMission): Promise<Mission>;
+  /** The id of a mission with this objective created in the last few minutes, if any. */
+  findRecentMission?(objective: string, withinMinutes: number): Promise<string | null>;
   updateMission?(id: string, input: UpdateMission): Promise<Mission>;
   deleteMission?(id: string): Promise<void>;
   addAction?(input: NewAction): Promise<MissionAction>;

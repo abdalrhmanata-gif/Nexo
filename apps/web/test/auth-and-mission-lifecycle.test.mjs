@@ -30,14 +30,17 @@ test("a token hash confirmation endpoint exists for TokenHash email templates", 
 test("confirmation endpoints fall back to the sign-in page instead of failing hard", async () => {
   for (const file of ["app/auth/callback/route.ts", "app/auth/confirm/route.ts"]) {
     const text = await source(file);
-    assert.match(text, /authErrorPath\("confirmation-link"\)/);
+    // The callback picks the reason first (Google sign-in has its own), and
+    // a broken email link is still the default.
+    assert.match(text, /authErrorPath\("confirmation-link"\)|: "confirmation-link";[\s\S]*authErrorPath\(failure\)/);
   }
   assert.equal(authErrorPath("confirmation-link"), "/auth/sign-in?error=confirmation-link");
 });
 
 test("sign-up sends the confirmation link back to the deployed origin callback", async () => {
   const form = await source("components/auth-form.tsx");
-  assert.match(form, /emailRedirectTo: `\$\{window\.location\.origin\}\/auth\/callback\?next=/);
+  assert.match(form, /return `\$\{window\.location\.origin\}\/auth\/callback\?next=\$\{encodeURIComponent\(nextPath\)\}`/);
+  assert.match(form, /emailRedirectTo: confirmationRedirect\(nextPath\)/);
 });
 
 test("middleware does not bounce signed-in users away from confirmation endpoints", async () => {

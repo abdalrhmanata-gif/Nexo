@@ -1806,3 +1806,64 @@ html[dir="rtl"] input, html[dir="rtl"] textarea {
    "الإثبات:" after the note. Let the line take the page direction instead. */
 html[dir="rtl"] .action-proof-text { unicode-bidi: isolate; }
 html[dir="rtl"] .action-proof-text > * { unicode-bidi: normal; }
+
+/* ---------------------------------------------------------------------------
+   Goal box, try page and saving a plan (24 Nov 2026)
+   Colours come from the theme variables, so the dark theme needs no copies.
+   --------------------------------------------------------------------------- */
+.goal-starter { margin:4px 0 22px; max-width:620px; }
+.goal-starter form { margin:0; }
+.goal-starter-label { display:block; margin:0 0 8px; font-weight:700; font-size:15px; color:var(--ink); }
+.goal-starter-row { display:flex; gap:8px; align-items:stretch; }
+.goal-starter-row input { flex:1; min-width:0; min-height:52px; padding:13px 15px; border:1px solid var(--line); border-radius:10px; font:inherit; font-size:16px; color:var(--ink); background:var(--white); box-shadow:0 2px 8px rgba(18,50,79,.05); }
+.goal-starter-row input:focus { border-color:var(--teal); box-shadow:0 0 0 3px rgba(11,143,134,.14); outline:none; }
+.goal-starter-row .button { min-height:52px; padding:0 20px; border-radius:10px; font-size:15px; white-space:nowrap; }
+.goal-starter-examples { display:flex; flex-wrap:wrap; align-items:center; gap:6px 8px; margin:12px 0 0; font-size:13px; color:var(--muted); }
+.goal-starter-examples a { padding:5px 10px; border:1px solid var(--line); border-radius:99px; color:var(--ink); background:var(--white); }
+.goal-starter-examples a:hover { border-color:var(--teal); color:var(--teal); }
+.goal-starter-note { margin:10px 0 0; font-size:13px; color:var(--muted); }
+.empty-state-start { text-align:start; }
+.empty-state-start .goal-starter { margin:18px 0 8px; max-width:none; }
+@media (max-width:560px) {
+  .goal-starter-row { flex-direction:column; }
+  .goal-starter-row .button { width:100%; }
+}
+
+.try-page { max-width:860px; }
+.try-hero h1 { margin:8px 0 14px; font-size:clamp(30px,5vw,50px); letter-spacing:-.04em; line-height:1.08; }
+.try-plan { margin:8px 0 26px; }
+.try-honesty { margin:18px 0 0; font-size:13px; color:var(--muted); }
+.try-save { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:18px 0 0; }
+.try-save .button { min-height:48px; padding:0 20px; font-size:15px; }
+.try-save-note { margin:10px 0 0; font-size:13px; color:var(--muted); }
+.try-again, .try-more { margin:0 0 26px; }
+.try-again h2, .try-more h2 { font-size:20px; margin:0 0 10px; letter-spacing:-.02em; }
+.try-more a { color:var(--teal); font-weight:700; }
+
+.start-plan-basis { margin:0 0 6px; font-size:13px; color:var(--muted); }
+.start-plan-basis a { color:var(--teal); font-weight:700; }
+.start-plan-headline { margin:0 0 16px; font-size:22px; letter-spacing:-.02em; }
+.start-plan-steps { list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+.start-plan-steps li { display:flex; gap:12px; align-items:flex-start; padding:12px 14px; border:1px solid var(--line); border-radius:10px; background:var(--paper); color:var(--ink); }
+.start-plan-step-number { flex:none; display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:99px; background:var(--teal); color:#fff; font-size:13px; font-weight:700; }
+.start-plan-criteria { margin:18px 0 0; }
+.start-plan-criteria ul { margin:0; padding-inline-start:20px; color:var(--muted); }
+.start-plan-criteria li + li { margin-top:4px; }
+.start-page .detail-title { font-size:clamp(28px,4.5vw,44px); }
+.start-plan-form { display:flex; flex-wrap:wrap; gap:10px; margin:18px 0 22px; }
+.start-plan-card { margin-top:4px; }
+.template-use-form { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.mission-welcome { margin:0 0 18px; }
+
+.auth-form { display:grid; gap:16px; }
+.google-button { width:100%; min-height:48px; gap:10px; font-size:15px; }
+.google-mark { width:18px; height:18px; flex:none; }
+.auth-divider { display:flex; align-items:center; gap:12px; margin:0; color:var(--muted); font-size:13px; }
+.auth-divider::before, .auth-divider::after { content:""; flex:1; height:1px; background:var(--line); }
+.check-email { padding:22px; border:1px solid var(--line); border-radius:12px; background:var(--white); }
+.check-email h2 { margin:0 0 8px; font-size:22px; }
+.check-email-address { font-weight:700; unicode-bidi:isolate; }
+.check-email-actions { display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start; margin-top:14px; }
+.resend-confirmation { display:grid; gap:10px; }
+.sign-up-plan { color:var(--ink); }
+.sign-up-free { margin:-4px 0 18px; font-size:13px; color:var(--muted); }

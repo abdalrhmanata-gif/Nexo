@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { LocalizedText } from "./localized-text";
 
-export function ShareTemplateButton({ title }: { title: string }) {
+export function ShareTemplateButton({ title, label = "Share this Mission" }: { title: string; label?: string }) {
   const [copied, setCopied] = useState(false);
 
   async function share() {
@@ -24,7 +24,7 @@ export function ShareTemplateButton({ title }: { title: string }) {
 
   return (
     <button className="button button-quiet" type="button" onClick={share}>
-      {copied ? <LocalizedText en="Copied" /> : <LocalizedText en="Share this Mission" />}
+      {copied ? <LocalizedText en="Copied" /> : <LocalizedText en={label} />}
     </button>
   );
 }

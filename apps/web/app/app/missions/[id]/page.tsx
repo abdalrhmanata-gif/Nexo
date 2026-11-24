@@ -54,8 +54,10 @@ function statusWord(label: string, status: string, t: (en: string) => string) {
 
 export default async function MissionDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ welcome?: string }>;
 }) {
   const t = await getTranslate();
   const language = await getLanguage();
@@ -95,6 +97,12 @@ export default async function MissionDetailPage({
       <SavePdfButton title={mission.name} subtitle={t("Mission plan")} />
       <ShareMissionButton missionId={mission.id} shared={shareStatus} />
     </div>
+    {/* Arriving from "Save this plan": say it worked and what to do first,
+        once, where the person is looking. */}
+    {(await searchParams)?.welcome === "1" && <div className="success-state mission-welcome" role="status">
+      <strong><LocalizedText en="Your plan is saved." /></strong>{" "}
+      <LocalizedText en="Start with the first step below. When it is done, mark it done and keep the proof: a receipt, a reference number or a link." />
+    </div>}
     <div className="detail-layout">
       <div className="detail-stack">
         <section className="card">

@@ -714,3 +714,74 @@ test("authenticated Opportunity Intelligence backup flow exports, imports, and r
   }
 });
 
+
+// The way most people now arrive: a goal typed on the home page, a plan shown
+// at once without an account, and one press that carries it through sign-up
+// into the workspace. The disposable stack confirms email addresses on sign-up,
+// so the press lands on the saved plan directly; the email-link route shares
+// the same cookie and /app/start page (lib/auth/landing.ts).
+test("a plan seen without an account is saved by one press through sign-up", async ({ browser }) => {
+  assertRuntime();
+  const blocked = [];
+  const previousEntries = readLedgerFile(runtime.ledgerPath).entries ?? [];
+  const ledger = createFixtureLedger({
+    runId: runtime.runId,
+    onChange: (json) => writeLedgerFile(runtime.ledgerPath, { ...json, entries: [...previousEntries, ...json.entries] }),
+  });
+  const user = freshUser("try-before-sign-up");
+  const context = await browser.newContext({ baseURL: runtime.baseURL });
+  await guardNetwork(context, blocked);
+  const page = await context.newPage();
+  page.setDefaultTimeout(15_000);
+  page.setDefaultNavigationTimeout(30_000);
+  const goal = "Open a small café";
+  const firstStep = "Identify the authority that licenses this kind of business, and record in writing exactly what it requires";
+
+  try {
+    await test.step("the home page box shows a plan with no account", async () => {
+      await page.goto("/");
+      await page.getByLabel("What do you want to get done?").first().fill(goal);
+      await page.getByRole("button", { name: /Get my plan/ }).first().click();
+      await expect(page).toHaveURL(/\/try\?goal=/);
+      await expect(page.getByRole("heading", { level: 1, name: goal })).toBeVisible();
+      await expect(page.getByText(firstStep, { exact: true })).toBeVisible();
+    });
+
+    await test.step("saving goes through sign-up, which names the plan", async () => {
+      await page.getByRole("button", { name: "Save this plan, free" }).click();
+      await expect(page).toHaveURL(/\/auth\/sign-up\?next=%2Fapp%2Fstart%3Fgoal%3D/);
+      await expect(page.getByText(`Your plan “${goal}” is ready.`, { exact: false })).toBeVisible();
+      // The way to sign in instead keeps the plan (the header has its own sign-in link).
+      await expect(page.locator('main a[href^="/auth/sign-in?next=%2Fapp%2Fstart"]')).toHaveCount(1);
+    });
+
+    let missionId;
+    await test.step("after sign-up the plan is saved without a second press", async () => {
+      await page.getByLabel("Email", { exact: true }).fill(user.email);
+      await page.getByLabel("Password", { exact: true }).fill(user.password);
+      await formWith(page, page.getByLabel("Email", { exact: true })).locator('button[type="submit"]').click();
+      await expect(page).toHaveURL(/\/app\/missions\/[0-9a-f-]{36}\?welcome=1$/);
+      missionId = /\/app\/missions\/([0-9a-f-]{36})/.exec(page.url())[1];
+      const owner = await ownerSession(user);
+      ledger.record("user", owner.userId);
+      await expect(page.getByText("Your plan is saved.", { exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { level: 1, name: goal })).toBeVisible();
+      const { data: actions, error } = await owner.client.from("mission_actions").select("title").eq("mission_id", missionId).order("position");
+      if (error) throw error;
+      expect(actions.map((row) => row.title)[0]).toBe(firstStep);
+      expect(actions.length).toBe(7);
+    });
+
+    await test.step("a link to the same plan shows it and waits; pressing again finds the saved one", async () => {
+      await page.goto(`/app/start?goal=${encodeURIComponent(goal)}&lang=en`);
+      await expect(page.getByRole("button", { name: "Save this plan" })).toBeVisible();
+      await expect(page.getByText("Saving your plan to your workspace…")).toHaveCount(0);
+      await page.getByRole("button", { name: "Save this plan" }).click();
+      await expect(page).toHaveURL(new RegExp(`/app/missions/${missionId}\\?welcome=1$`));
+    });
+
+    expect(blocked, "requests left the loopback allowlist").toEqual([]);
+  } finally {
+    await context.close();
+  }
+});
