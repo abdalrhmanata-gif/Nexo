@@ -58,7 +58,10 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v3
         with:
-          version: latest
+          # Pinned: 3.4.0 (24 Nov 2026) no longer writes supabase/config.toml
+          # on "supabase init --workdir", which this job edits next. 3.3.0 is
+          # the last version this job passed with. Raise it deliberately.
+          version: 3.3.0
 
       - name: Install web dependencies
         working-directory: apps/web
