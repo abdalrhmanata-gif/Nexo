@@ -2,10 +2,10 @@ import Link from "next/link";
 import { LocalizedFill, LocalizedText } from "../../../components/localized-text";
 import { PendingSubmitButton } from "../../../components/pending-submit-button";
 import { CalendarConnect } from "../../../components/calendar-connect";
-import { calendarLimit, subscribeLinks } from "../../../lib/plan-dates.mjs";
+import { calendarConnections, calendarLimit, subscribeLinks, type CalendarConnections } from "../../../lib/plan-dates.mjs";
 import { isSupabaseConfigured } from "../../../lib/supabase/config";
 import { createSupabaseMissionRepository } from "../../../lib/supabase/mission-repository";
-import { createPlanDatesRepository, type CalendarConnection } from "../../../lib/supabase/plan-dates-repository";
+import { createPlanDatesRepository } from "../../../lib/supabase/plan-dates-repository";
 import { readCurrentPlan } from "../../../lib/supabase/own-template-repository";
 import { removeMissionFromCalendar, replaceCalendarLink } from "./actions";
 
@@ -37,11 +37,14 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   let token: string | null = null;
   let chosen: string[] = [];
   let missions: { id: string; name: string }[] = [];
-  let connection: CalendarConnection | null = null;
+  let connections: CalendarConnections = { active: [], stopped: [] };
   let unreadable = false;
   try {
     const repository = await createPlanDatesRepository();
-    [token, chosen, connection] = await Promise.all([repository.feedToken(), repository.calendarMissionIds(), repository.connection()]);
+    const [feedToken, ids, rows] = await Promise.all([repository.feedToken(), repository.calendarMissionIds(), repository.connections()]);
+    token = feedToken;
+    chosen = ids;
+    connections = calendarConnections(rows);
     const all = await (await createSupabaseMissionRepository()).listMissions();
     const byId = new Map(all.map((mission) => [mission.id, mission.name]));
     missions = chosen.filter((id) => byId.has(id)).map((id) => ({ id, name: byId.get(id)! }));
@@ -62,7 +65,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
     {links && <section className="card calendar-connect" aria-labelledby="calendar-connect-heading">
       <h2 id="calendar-connect-heading"><LocalizedText en="1. Connect your calendar" /></h2>
-      <CalendarConnect links={links} connection={connection} />
+      <CalendarConnect links={links} connections={connections} />
       <ul className="calendar-notes">
         <li><strong><LocalizedText en="Google Calendar" /></strong> <LocalizedText en="checks the link about once a day, so a change made here can take up to a day to show there. To be reminded, open the calendar's settings in Google Calendar once and turn on notifications for it." /></li>
         <li><strong><LocalizedText en="Apple Calendar" /></strong> <LocalizedText en="reminds you at 9:00 the day before each date, as the link asks." /></li>
@@ -103,7 +106,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
     {links && <section className="card calendar-replace">
       <h2><LocalizedText en="Replace the link" /></h2>
-      <p><LocalizedText en="Makes a new private link. Every calendar connected to the old one stops showing your dates at once." /></p>
+      <p><LocalizedText en="Makes a new private link. Every calendar app connected to the old one stops showing your dates at once and leaves the list above: the way to disconnect them all." /></p>
       <form action={replaceCalendarLink}>
         <PendingSubmitButton className="button button-quiet" label="Replace the link" pendingLabel="Replacing…" />
       </form>

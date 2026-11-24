@@ -19,6 +19,9 @@ import {
   todayIn,
   calendarClientFromUserAgent,
   platformFromUserAgent,
+  CONNECTION_FRESH_HOURS,
+  calendarConnections,
+  hasFetchedSince,
 } from "../lib/plan-dates.mjs";
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -250,7 +253,7 @@ test("the guide shows the right path for the device in hand", () => {
   const guide = read("components/calendar-connect.tsx");
   for (const platform of ["ios", "android", "mac", "desktop"]) assert.match(guide, new RegExp(`if \\(platform === "${platform}"\\)`), platform);
   assert.match(guide, /Menu ☰ → Settings → ZAVQERA → turn on “Sync”/, "Android: Google needs the calendar's sync on once");
-  assert.match(guide, /if \(connection\) \{/, "once a calendar has fetched the link, the page says it is connected");
+  assert.match(guide, /if \(connections\.active\.length > 0\) \{/, "once a calendar has fetched the link, the page says it is connected");
 });
 
 test("the connection status is recorded by the feed, never fails it, and is read only by its owner", () => {
@@ -266,4 +269,71 @@ test("the connection status is recorded by the feed, never fails it, and is read
   assert.match(read("lib/supabase/plan-dates-repository.ts"), /export async function recordCalendarFetch[\s\S]*?\} catch \{/, "best effort");
   const proof = readRepo("tool/plan_dates_calendar_proof.sh");
   for (const check of ["a fetch by Apple Calendar is recorded on the owner's link", "an unknown or malformed link records nothing", "nobody else sees the owner's status"]) assert.ok(proof.includes(check), check);
+});
+
+test("each calendar app is listed on its own, and one that went quiet counts as stopped", () => {
+  const now = new Date("2026-11-24T18:00:00Z");
+  const view = calendarConnections([
+    { client: "google", fetchedAt: "2026-11-24T17:02:00Z" },
+    { client: "apple", fetchedAt: "2026-11-24T17:32:00Z" },
+    { client: "apple", fetchedAt: "2026-11-23T10:00:00Z" },
+    { client: "outlook", fetchedAt: "2026-11-20T09:00:00Z" },
+    { client: "fax", fetchedAt: "2026-11-24T17:00:00Z" },
+    { client: "other", fetchedAt: "not a date" },
+  ], now);
+  assert.deepEqual(view.active.map((c) => c.client), ["apple", "google"], "both apps that fetch the link are connected, newest first (the owner's test: Google was hidden by Apple)");
+  assert.equal(view.active[0].fetchedAt, "2026-11-24T17:32:00.000Z", "one entry per app, its latest fetch");
+  assert.deepEqual(view.stopped.map((c) => c.client), ["outlook"], "no fetch for more than three days: stopped, since no app reports a deleted subscription");
+  assert.equal(CONNECTION_FRESH_HOURS, 72, "Google can leave a day between fetches");
+  const edge = calendarConnections([{ client: "google", fetchedAt: "2026-11-21T18:00:00Z" }], now);
+  assert.equal(edge.active.length, 1, "exactly three days is still connected");
+  assert.deepEqual(calendarConnections(null, now), { active: [], stopped: [] });
+});
+
+test("a Mission added after an app's last update is said to appear at its next one", () => {
+  // The owner's screen: added 18:38, Apple last updated 18:32.
+  assert.equal(hasFetchedSince("2026-11-24T17:32:51Z", "2026-11-24T17:38:12Z"), false);
+  assert.equal(hasFetchedSince("2026-11-24T17:40:00Z", "2026-11-24T17:38:12Z"), true);
+  assert.equal(hasFetchedSince("2026-11-24T17:40:00Z", null), true, "no added time: nothing to wait for");
+  const guide = read("components/calendar-connect.tsx");
+  assert.match(guide, /addedAt && !hasFetchedSince\(connection\.fetchedAt, addedAt\)/);
+  const page = read("app/app/missions/[id]/page.tsx");
+  assert.match(page, /connections: calendarConnections\(rows\),\s+addedAt: entry\.addedAt,/);
+});
+
+test("once connected, another calendar can still be added, and taking a Mission out says the calendar stays connected", () => {
+  const guide = read("components/calendar-connect.tsx");
+  const connected = guide.slice(guide.indexOf("if (connections.active.length > 0) {"), guide.indexOf("const guide = guideFor("));
+  assert.match(connected, /<summary><LocalizedText en="Connect another calendar" \/><\/summary>/, "on the Mission page too, not only in settings");
+  assert.doesNotMatch(connected, /\{!compact && <details/, "the other calendars are offered in the compact view as well");
+  const card = read("components/plan-dates-card.tsx");
+  assert.match(card, /label="Take this Mission out of the calendar"/, "the button names what it removes: this Mission, not the connection");
+  assert.match(card, /the calendar stays connected for your other Missions/);
+  const settings = read("app/app/calendar/page.tsx");
+  assert.match(settings, /the way to disconnect them all/, "replacing the link is how every app is disconnected");
+});
+
+test("connections per app: recorded by the feed, cleared when the link is replaced, read only by the owner", () => {
+  const sql = readRepo("supabase/migrations/20261124230000_calendar_connections_per_app.sql");
+  assert.doesNotMatch(sql, /\b(drop table|drop column|delete from|truncate)\b/i, "additive: nothing is deleted");
+  assert.match(sql, /join public\.calendar_feeds f on f\.owner_id = c\.owner_id\s+where c\.owner_id = auth\.uid\(\)\s+and c\.last_fetched_at >= f\.created_at/, "only apps that fetched the current link: replacing it resets created_at");
+  assert.match(sql, /set token = excluded\.token,\s+created_at = timezone\('utc', now\(\)\),/);
+  assert.match(sql, /if p_token is null or p_token !~ '\^\[0-9a-f\]\{64\}\$' then\s+return;/, "a malformed link records nothing");
+  assert.match(sql, /where c\.last_fetched_at < excluded\.last_fetched_at - interval '1 minute'\s+or c\.last_fetched_at < v_created;/, "at most one write a minute per app, except the first fetch of a new link");
+  assert.match(sql, /primary key \(owner_id, client\)/, "one row per app");
+  assert.match(sql, /alter table public\.calendar_feed_clients enable row level security;\s+revoke all on public\.calendar_feed_clients from public, anon, authenticated;/);
+  assert.match(sql, /revoke all on function public\.calendar_feed_connections\(\) from public, anon;/);
+  assert.match(sql, /last_fetched_at = null,\s+last_client = null;/, "the previous status columns are cleared too");
+  const repository = read("lib/supabase/plan-dates-repository.ts");
+  assert.match(repository, /supabase\.rpc\("calendar_feed_connections"\);\s+if \(result\.error \|\| !Array\.isArray\(result\.data\)\) return \[\];/, "never breaks a page");
+  const proof = readRepo("tool/plan_dates_calendar_proof.sh");
+  for (const check of [
+    "Apple and Google are both listed when both fetch the link",
+    "nobody else sees the owner's apps",
+    "a visitor cannot list any apps",
+    "the apps table is closed to direct reads",
+    "replacing the link forgets the apps that used the old one",
+    "an app still holding the old link is not listed again",
+    "an app that subscribes to the new link is listed at its first fetch",
+  ]) assert.ok(proof.includes(check), check);
 });
