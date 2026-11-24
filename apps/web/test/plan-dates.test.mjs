@@ -213,3 +213,13 @@ test("the Mission page shows dates without ever breaking on them", () => {
   assert.match(repository, /if \(schedule\.error \|\| due\.error\) return EMPTY;/);
   assert.match(repository, /\} catch \{\s+return EMPTY;\s+\}/);
 });
+
+test("dates are saved by update-then-insert, never by upsert (the column grants refuse it)", () => {
+  const repository = read("lib/supabase/plan-dates-repository.ts");
+  assert.doesNotMatch(repository, /\.upsert\(/, "PostgREST's upsert rewrites mission_id/action_id, which only the date columns' grants allow: refused live on 24 Nov");
+  assert.match(repository, /async function updateOrInsert\(update: \(\) => Written, insert: \(\) => Written\)/);
+  assert.match(repository, /if \(created\.error\?\.code === "23505"\)/, "a racing second save updates instead of failing");
+  const proof = readRepo("tool/plan_dates_calendar_proof.sh");
+  assert.ok(proof.includes("the owner changes dates already set, as the app does (update, then insert)"));
+  assert.ok(proof.includes("an upsert that rewrites the key is refused, so the app does not use one"));
+});

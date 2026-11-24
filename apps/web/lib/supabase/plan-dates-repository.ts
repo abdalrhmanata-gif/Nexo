@@ -46,6 +46,29 @@ export async function readMissionDates(missionId: string): Promise<MissionDates>
   }
 }
 
+type Written = PromiseLike<{ data: unknown[] | null; error: { code?: string; message?: string } | null }>;
+
+/**
+ * Change the row if it exists, otherwise create it. Not an upsert on
+ * purpose: PostgREST's upsert also rewrites the key columns, and the database
+ * grants UPDATE only on the date columns, so an upsert is always refused (as
+ * the live test on 24 Nov showed). If two saves race, the second insert finds
+ * the row and updates it instead.
+ */
+async function updateOrInsert(update: () => Written, insert: () => Written) {
+  const changed = await update();
+  if (changed.error) throw refusal(changed.error);
+  if (changed.data?.length) return;
+  const created = await insert();
+  if (created.error?.code === "23505") {
+    const again = await update();
+    if (again.error) throw refusal(again.error);
+    if (again.data?.length) return;
+  }
+  if (created.error) throw refusal(created.error);
+  if (!created.data?.length) throw new PlanDatesError("forbidden");
+}
+
 export async function createPlanDatesRepository() {
   const supabase = await createSupabaseServerClient();
   const { data: { user }, error } = await supabase.auth.getUser();
@@ -59,9 +82,10 @@ export async function createPlanDatesRepository() {
         return;
       }
       if (!isPlanDate(targetDate)) throw new PlanDatesError("failed");
-      const result = await supabase.from("mission_schedules").upsert({ mission_id: missionId, target_date: targetDate }, { onConflict: "mission_id" }).select("mission_id");
-      if (result.error) throw refusal(result.error);
-      if (!result.data?.length) throw new PlanDatesError("forbidden");
+      await updateOrInsert(
+        () => supabase.from("mission_schedules").update({ target_date: targetDate }).eq("mission_id", missionId).select("mission_id"),
+        () => supabase.from("mission_schedules").insert({ mission_id: missionId, target_date: targetDate }).select("mission_id"),
+      );
     },
 
     /** Sets, changes or clears several step dates of one Mission at once. */
@@ -74,10 +98,11 @@ export async function createPlanDatesRepository() {
         const result = await supabase.from("action_due_dates").delete().eq("mission_id", missionId).in("action_id", clear);
         if (result.error) throw refusal(result.error);
       }
-      if (set.length) {
-        const result = await supabase.from("action_due_dates").upsert(set, { onConflict: "action_id" }).select("action_id");
-        if (result.error) throw refusal(result.error);
-        if ((result.data?.length ?? 0) !== set.length) throw new PlanDatesError("forbidden");
+      for (const row of set) {
+        await updateOrInsert(
+          () => supabase.from("action_due_dates").update({ due_on: row.due_on, basis: row.basis }).eq("action_id", row.action_id).eq("mission_id", missionId).select("action_id"),
+          () => supabase.from("action_due_dates").insert(row).select("action_id"),
+        );
       }
     },
 
