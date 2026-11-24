@@ -223,6 +223,31 @@ else
   fail "anon read a connection status"
 fi
 
+printf '\n== each calendar app keeps its own connection ==\n'
+# Google and an iPhone on one link (the owner's test, 24 Nov): both stay listed.
+as_anon "select public.calendar_feed_touch('$TOKEN', 'google');" >/dev/null
+[ "$(as_user "$USER_A" "select string_agg(client, ',' order by client) from public.calendar_feed_connections();" | answer)" = "apple,google" ] \
+  && pass "Apple and Google are both listed when both fetch the link" || fail "one app's fetch hid the other's"
+"${PSQL[@]}" -c "update public.calendar_feed_clients set last_fetched_at = timezone('utc', now()) - interval '2 days' where client = 'apple';" >/dev/null
+as_anon "select public.calendar_feed_touch('$TOKEN', 'apple');" >/dev/null
+[ "$(truth "select (last_fetched_at > timezone('utc', now()) - interval '1 minute') from public.calendar_feed_clients where client = 'apple';")" = "t" ] \
+  && pass "a later fetch moves that app's time forward" || fail "a later fetch was not recorded"
+as_anon "select public.calendar_feed_touch('$TOKEN', 'Thunderbird'); select public.calendar_feed_touch(repeat('0', 64), 'outlook');" >/dev/null
+[ "$(truth "select string_agg(client, ',' order by client) from public.calendar_feed_clients;")" = "apple,google,other" ] \
+  && pass "an unknown app is filed as other, and a bad link records nothing" || fail "a fetch was filed wrongly"
+[ "$(as_user "$USER_B" "select count(*) from public.calendar_feed_connections();" | answer)" = "0" ] \
+  && pass "nobody else sees the owner's apps" || fail "another person read the owner's apps"
+if as_anon "select * from public.calendar_feed_connections();" | grep -q 'permission denied'; then
+  pass "a visitor cannot list any apps"
+else
+  fail "anon listed calendar apps"
+fi
+if as_user "$USER_A" "select count(*) from public.calendar_feed_clients;" | grep -q 'permission denied'; then
+  pass "the apps table is closed to direct reads"
+else
+  fail "public.calendar_feed_clients is readable"
+fi
+
 printf '\n== the plan decides how many Missions, and a downgrade pauses the rest ==\n'
 "${PSQL[@]}" -c "update public.ai_entitlements set plan='scale', monthly_limit=90 where user_id='$USER_A';" >/dev/null
 as_user "$USER_A" "insert into public.mission_schedules (mission_id, target_date) values ('$M2', '2027-05-01'), ('$M3', '2027-06-01');
@@ -244,6 +269,14 @@ NEW_TOKEN="$(as_user "$USER_A" "select public.calendar_feed_token(true);" | answ
 [ "$NEW_TOKEN" != "$TOKEN" ] && [[ "$NEW_TOKEN" =~ ^[0-9a-f]{64}$ ]] && pass "a new link is issued" || fail "the link was not replaced"
 [ "$(as_anon "select count(*) from public.calendar_feed_events('$TOKEN');" | answer)" = "0" ] \
   && pass "the old link stops working at once" || fail "the old link still returns rows"
+[ "$(as_user "$USER_A" "select count(*) from public.calendar_feed_connections();" | answer)/$(as_user "$USER_A" "select coalesce(last_client, 'none') from public.calendar_feed_status();" | answer)" = "0/none" ] \
+  && pass "replacing the link forgets the apps that used the old one" || fail "apps of the old link are still listed"
+as_anon "select public.calendar_feed_touch('$TOKEN', 'apple');" >/dev/null
+[ "$(as_user "$USER_A" "select count(*) from public.calendar_feed_connections();" | answer)" = "0" ] \
+  && pass "an app still holding the old link is not listed again" || fail "the old link recorded a connection"
+as_anon "select public.calendar_feed_touch('$NEW_TOKEN', 'apple');" >/dev/null
+[ "$(as_user "$USER_A" "select string_agg(client, ',') from public.calendar_feed_connections();" | answer)" = "apple" ] \
+  && pass "an app that subscribes to the new link is listed at its first fetch" || fail "the first fetch of the new link was not listed"
 
 printf '\n== deleting a Mission takes its dates and calendar place with it ==\n'
 "${PSQL[@]}" >/dev/null <<SQL

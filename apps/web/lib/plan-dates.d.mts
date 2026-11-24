@@ -27,3 +27,9 @@ export declare function buildCalendarFeed(rows: CalendarFeedRow[] | null | undef
 export declare function subscribeLinks(feedUrl: string): { feed: string; webcal: string; google: string; outlook: string };
 export declare function calendarClientFromUserAgent(userAgent: unknown): "apple" | "google" | "outlook" | "other" | null;
 export declare function platformFromUserAgent(userAgent: unknown, maxTouchPoints?: number): "ios" | "android" | "mac" | "desktop";
+export type CalendarClient = "apple" | "google" | "outlook" | "other";
+export type CalendarConnectionView = { client: CalendarClient; fetchedAt: string };
+export type CalendarConnections = { active: CalendarConnectionView[]; stopped: CalendarConnectionView[] };
+export declare const CONNECTION_FRESH_HOURS: number;
+export declare function calendarConnections(rows: { client: string; fetchedAt: string }[] | null | undefined, now?: Date): CalendarConnections;
+export declare function hasFetchedSince(fetchedAt: string | null | undefined, since: string | null | undefined): boolean;

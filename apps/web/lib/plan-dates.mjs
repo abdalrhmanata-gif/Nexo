@@ -217,3 +217,41 @@ export function platformFromUserAgent(userAgent, maxTouchPoints = 0) {
   if (/Macintosh/.test(ua)) return "mac";
   return "desktop";
 }
+
+/**
+ * Hours without a fetch after which a calendar app counts as stopped. No
+ * calendar app reports that a subscription was deleted, so silence is the
+ * only signal; Google can leave a day between fetches, so three days leaves
+ * room before saying it stopped.
+ */
+export const CONNECTION_FRESH_HOURS = 72;
+
+const CALENDAR_CLIENTS = new Set(["apple", "google", "outlook", "other"]);
+
+/**
+ * The calendar apps that have fetched the link, newest first, split into
+ * those still updating and those that stopped. One entry per app.
+ */
+export function calendarConnections(rows, now = new Date()) {
+  const latest = new Map();
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const at = Date.parse(row?.fetchedAt ?? "");
+    if (!CALENDAR_CLIENTS.has(row?.client) || !Number.isFinite(at)) continue;
+    if (!latest.has(row.client) || latest.get(row.client) < at) latest.set(row.client, at);
+  }
+  const cutoff = now.getTime() - CONNECTION_FRESH_HOURS * 60 * 60 * 1000;
+  const sorted = [...latest].sort((a, b) => b[1] - a[1]);
+  const view = ([client, at]) => ({ client, fetchedAt: new Date(at).toISOString() });
+  return {
+    active: sorted.filter(([, at]) => at >= cutoff).map(view),
+    stopped: sorted.filter(([, at]) => at < cutoff).map(view),
+  };
+}
+
+/** Whether an app fetched the link after a Mission was added to it. */
+export function hasFetchedSince(fetchedAt, since) {
+  const fetched = Date.parse(fetchedAt ?? "");
+  const added = Date.parse(since ?? "");
+  if (!Number.isFinite(added)) return true;
+  return Number.isFinite(fetched) && fetched >= added;
+}

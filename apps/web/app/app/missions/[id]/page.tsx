@@ -27,7 +27,7 @@ import { hasOwnTemplates } from "../../../../lib/own-templates.mjs";
 import { readCurrentPlan } from "../../../../lib/supabase/own-template-repository";
 import { PlanDatesCard, type CalendarState } from "../../../../components/plan-dates-card";
 import { PlanDay } from "../../../../components/plan-dates-client";
-import { calendarLimit, subscribeLinks, todayIn } from "../../../../lib/plan-dates.mjs";
+import { calendarConnections, calendarLimit, subscribeLinks, todayIn } from "../../../../lib/plan-dates.mjs";
 import { createPlanDatesRepository, readMissionDates, type MissionDates } from "../../../../lib/supabase/plan-dates-repository";
 
 /** Whether this reader can get an AI plan here; then the keyword plan is noise. */
@@ -109,11 +109,17 @@ export default async function MissionDetailPage({
     dates = await readMissionDates(mission.id);
     try {
       const repository = await createPlanDatesRepository();
-      const chosen = await repository.calendarMissionIds();
-      calendar = { inCalendar: chosen.includes(mission.id), count: chosen.length, limit: calendarLimit(plan), plan };
-      if (calendar.inCalendar) {
-        const [token, connection] = await Promise.all([repository.feedToken(), repository.connection()]);
-        calendar = { ...calendar, links: subscribeLinks(`https://zavqera.com/api/calendar/${token}.ics`), connection };
+      const entries = await repository.calendarEntries();
+      const entry = entries.find((item) => item.missionId === mission.id);
+      calendar = { inCalendar: Boolean(entry), count: entries.length, limit: calendarLimit(plan), plan };
+      if (entry) {
+        const [token, rows] = await Promise.all([repository.feedToken(), repository.connections()]);
+        calendar = {
+          ...calendar,
+          links: subscribeLinks(`https://zavqera.com/api/calendar/${token}.ics`),
+          connections: calendarConnections(rows),
+          addedAt: entry.addedAt,
+        };
       }
     } catch {
       calendar = null;

@@ -6,7 +6,8 @@ import { CalendarConnect } from "./calendar-connect";
 import { addMissionToCalendar, removeMissionFromCalendar, saveMissionDates } from "../app/app/calendar/actions";
 import { legalDeadlineForStep, legalSourceUrl } from "../lib/legal-deadlines";
 import { lateSteps, nextDated, todayIn } from "../lib/plan-dates.mjs";
-import type { CalendarConnection, MissionDates } from "../lib/supabase/plan-dates-repository";
+import type { CalendarConnections } from "../lib/plan-dates.mjs";
+import type { MissionDates } from "../lib/supabase/plan-dates-repository";
 import type { MissionAction } from "../lib/view-models";
 
 const DATE_NOTICES: Record<string, string> = {
@@ -18,7 +19,7 @@ const DATE_NOTICES: Record<string, string> = {
 
 const CALENDAR_NOTICES: Record<string, string> = {
   added: "Added to your calendar. Its dated steps appear in the calendar you connected.",
-  removed: "Removed from your calendar.",
+  removed: "Taken out of your calendar. Its dates leave your calendar apps at their next update; the calendar stays connected for your other Missions.",
   forbidden: "This Mission cannot be added to your calendar.",
   failed: "That did not work just now. Please try again.",
 };
@@ -29,9 +30,10 @@ export type CalendarState = {
   /** null: every Mission. */
   limit: number | null;
   plan: string;
-  /** Set when the Mission is in the calendar: the person's link and whether an app has fetched it. */
+  /** Set when the Mission is in the calendar: the person's link, the apps that fetch it, and when this Mission was added. */
   links?: { feed: string; webcal: string; google: string; outlook: string };
-  connection?: CalendarConnection | null;
+  connections?: CalendarConnections;
+  addedAt?: string | null;
 };
 
 /**
@@ -121,15 +123,15 @@ export function PlanDatesCard({ missionId, actions, dates, calendar, notice }: {
       {calendarMessage && <p className={["added", "removed"].includes(notice.calendar ?? "") ? "success-state" : "field-error"} role="status"><LocalizedText en={calendarMessage} /></p>}
       {calendar.inCalendar
         ? <>
-          {calendar.connection
+          {(calendar.connections?.active.length ?? 0) > 0
             ? <p><LocalizedText en="This Mission's dates are in your calendar link. Google, Apple and Outlook show them with your other events." /></p>
             : <p><strong><LocalizedText en="One last step: connect your calendar." /></strong></p>}
-          {calendar.links && <CalendarConnect links={calendar.links} connection={calendar.connection ?? null} compact />}
+          {calendar.links && <CalendarConnect links={calendar.links} connections={calendar.connections ?? { active: [], stopped: [] }} addedAt={calendar.addedAt ?? null} compact />}
           <div className="plan-dates-calendar-actions">
             <Link className="button button-quiet" href="/app/calendar"><LocalizedText en="Calendar settings" /></Link>
             <form action={removeMissionFromCalendar}>
               <input type="hidden" name="missionId" value={missionId} />
-              <PendingSubmitButton className="button button-quiet" label="Remove from calendar" pendingLabel="Removing…" />
+              <PendingSubmitButton className="button button-quiet" label="Take this Mission out of the calendar" pendingLabel="Removing…" />
             </form>
           </div>
         </>

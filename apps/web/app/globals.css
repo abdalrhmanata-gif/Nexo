@@ -1953,5 +1953,10 @@ html[dir="rtl"] .try-more a span[aria-hidden="true"] { display:inline-block; tra
 .calendar-connected { margin:6px 0; }
 .calendar-connected p { margin:0 0 8px; }
 .calendar-connected strong { color:var(--teal); }
+.calendar-connected ul, .calendar-stopped ul { list-style:none; margin:0 0 8px; padding:0; display:grid; gap:6px; }
+.calendar-pending { color:var(--muted); }
+.calendar-stopped { margin:6px 0 10px; }
+.calendar-stopped li { color:var(--muted); }
+.calendar-stopped strong { color:inherit; }
 :root[data-theme="dark"] .calendar-other-ways summary { color:inherit; }
 @media (max-width:700px) { .calendar-primary { justify-self:stretch; text-align:center; } }

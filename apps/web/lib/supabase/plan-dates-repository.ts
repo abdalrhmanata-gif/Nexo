@@ -4,7 +4,10 @@ import { supabasePublishableKey, supabaseUrl } from "./config";
 import { isPlanDate, type CalendarFeedRow, type DueDate } from "../plan-dates.mjs";
 
 export type MissionDates = { targetDate: string | null; dueDates: Record<string, DueDate> };
+/** One calendar app that has fetched the person's link, and when it last did. */
 export type CalendarConnection = { fetchedAt: string; client: "apple" | "google" | "outlook" | "other" };
+/** A Mission in the person's calendar link, and when it was added. */
+export type CalendarEntry = { missionId: string; addedAt: string };
 
 const EMPTY: MissionDates = { targetDate: null, dueDates: {} };
 
@@ -75,6 +78,13 @@ export async function createPlanDatesRepository() {
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) throw new Error("Authentication required.");
 
+  /** The Missions in the person's calendar link, oldest added first. */
+  async function calendarEntries(): Promise<CalendarEntry[]> {
+    const result = await supabase.from("calendar_missions").select("mission_id, added_at").order("added_at", { ascending: true });
+    if (result.error) throw refusal(result.error);
+    return ((result.data ?? []) as { mission_id: string; added_at: string }[]).map((row) => ({ missionId: row.mission_id, addedAt: row.added_at }));
+  }
+
   return {
     async setTargetDate(missionId: string, targetDate: string | null) {
       if (targetDate === null) {
@@ -107,10 +117,10 @@ export async function createPlanDatesRepository() {
       }
     },
 
+    calendarEntries,
+
     async calendarMissionIds(): Promise<string[]> {
-      const result = await supabase.from("calendar_missions").select("mission_id, added_at").order("added_at", { ascending: true });
-      if (result.error) throw refusal(result.error);
-      return ((result.data ?? []) as { mission_id: string }[]).map((row) => row.mission_id);
+      return (await calendarEntries()).map((entry) => entry.missionId);
     },
 
     async addToCalendar(missionId: string) {
@@ -124,12 +134,15 @@ export async function createPlanDatesRepository() {
       if (result.error) throw refusal(result.error);
     },
 
-    /** When a calendar app last fetched the link, and which kind; null if never. */
-    async connection(): Promise<CalendarConnection | null> {
-      const result = await supabase.rpc("calendar_feed_status");
-      const row = Array.isArray(result.data) ? result.data[0] as { last_fetched_at: string | null; last_client: string | null } | undefined : undefined;
-      if (result.error || !row?.last_fetched_at || !row.last_client) return null;
-      return { fetchedAt: row.last_fetched_at, client: row.last_client as CalendarConnection["client"] };
+    /**
+     * Every calendar app that has fetched the link since it was made, each
+     * with its last fetch. Never throws: unreadable reads as none yet.
+     */
+    async connections(): Promise<CalendarConnection[]> {
+      const result = await supabase.rpc("calendar_feed_connections");
+      if (result.error || !Array.isArray(result.data)) return [];
+      return (result.data as { client: string; last_fetched_at: string }[])
+        .map((row) => ({ fetchedAt: row.last_fetched_at, client: row.client as CalendarConnection["client"] }));
     },
 
     /** The person's calendar link token, made on first use; rotate replaces it. */
