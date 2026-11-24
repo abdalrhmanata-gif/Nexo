@@ -64,10 +64,18 @@ test("Arabic reads right to left and no other language does", () => {
   }
 });
 
-test("every cited source is an official https .gov page", () => {
-  const urls = [...read("lib/guides/sources.ts").matchAll(/: "(https?:[^"]+)"/g)].map((match) => match[1]);
+test("every cited source is an official https page: US .gov or a listed German official host", () => {
+  const text = read("lib/guides/sources.ts");
+  const urls = [...text.matchAll(/: "(https?:[^"]+)"/g)].map((match) => match[1]);
+  const hosts = [...(/OFFICIAL_HOSTS = \[([\s\S]*?)\]/.exec(text)?.[1] ?? "").matchAll(/"([^"]+)"/g)].map((match) => match[1]);
   assert.ok(urls.length > 0, "no sources found; the reader of this test has stopped matching");
-  for (const url of urls) assert.match(url, /^https:\/\/([a-z0-9-]+\.)*[a-z0-9-]+\.gov\//, url);
+  assert.ok(hosts.length > 0, "no official German hosts found");
+  for (const host of hosts) assert.match(host, /(^|\.)(gesetze-im-internet\.de|make-it-in-germany\.com|bund\.de|bafin\.de|bamf\.de|rundfunkbeitrag\.de)$/, host);
+  for (const url of urls) {
+    const { protocol, hostname } = new URL(url);
+    assert.equal(protocol, "https:", url);
+    assert.ok(/\.gov$/.test(hostname) || hosts.includes(hostname), `${url} is not an official source`);
+  }
 });
 
 test("a related guide always points at a guide that exists", () => {
@@ -75,14 +83,39 @@ test("a related guide always points at a guide that exists", () => {
   for (const guide of english) for (const slug of guide.related) assert.ok(slugs.includes(slug), `related guide "${slug}" does not exist`);
 });
 
-test("a dollar amount appears only in a step that cites its source", () => {
+test("a dollar or euro amount appears only in a step that cites its source", () => {
   for (const lang of LANGUAGES) {
     for (const guide of parsed[lang]) {
       for (const step of guide.steps) {
-        if (/\$\s?\d|\d\s?\$/.test(step.body)) assert.ok(step.source, `${lang}/${guide.slug}: "${step.heading}" states an amount without a source`);
+        if (/\$\s?\d|\d\s?\$|€\s?\d|\d\s?€|\d\s?(euro|euros|Euro|يورو)\b/.test(step.body)) assert.ok(step.source, `${lang}/${guide.slug}: "${step.heading}" states an amount without a source`);
       }
     }
   }
+});
+
+test("every guide names its country, and each country has its notice in every language", () => {
+  for (const lang of LANGUAGES) {
+    const body = read(`lib/guides/${lang}.ts`);
+    const guides = body.split(/\n {4}\{\n {6}slug: /).slice(1);
+    for (const block of guides) assert.match(block, /^ {6}country: "(us|de)",$/m, `${lang}: a guide has no country`);
+    for (const field of ["countryNotice", "countryHeading", "disclaimer"]) {
+      assert.match(body, new RegExp(`${field}: \\{\\n {6}us: "[^"]+",\\n {6}de: "[^"]+",`), `${lang}: ${field} is not set for both countries`);
+    }
+  }
+  const component = read("components/guide-article.tsx");
+  assert.match(component, /chrome\.countryNotice\[guide\.country\]/);
+  assert.match(component, /chrome\.disclaimer\[guide\.country\]/);
+  assert.doesNotMatch(component, /usNotice/);
+});
+
+test("the Germany guide covers the first-month essentials, each with its official source", () => {
+  const germany = english.find((guide) => guide.slug === "moving-to-germany-checklist");
+  assert.ok(germany, "the Germany guide is missing");
+  const sources = germany.steps.map((step) => step.source).filter(Boolean);
+  for (const key of ["deRegistration", "deResidence", "deHealth", "deBank", "deTaxId", "deBroadcast", "deIntegration", "deDriving"]) {
+    assert.ok(sources.includes(key), `no step cites ${key}`);
+  }
+  assert.ok(germany.sources.includes("deFines"), "the fine in the FAQ needs its source in the list");
 });
 
 test("search titles and descriptions fit what Google shows", () => {

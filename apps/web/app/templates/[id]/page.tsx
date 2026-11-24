@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LocalizedText } from "../../../components/localized-text";
 import { ShareTemplateButton } from "../../../components/share-template-button";
-import { getTranslate } from "../../../lib/i18n-server";
+import { getLanguage, getTranslate } from "../../../lib/i18n-server";
+import { guidePath, isGuideLanguage } from "../../../lib/guides";
 import { missionTemplateById } from "../../../lib/mission-templates";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -40,6 +41,11 @@ export default async function MissionTemplatePage({ params }: { params: Promise<
   const t = await getTranslate();
   const template = missionTemplateById((await params).id);
   if (!template) notFound();
+  const language = await getLanguage();
+  // The country-specific version of this template, with official sources.
+  const germanyGuide = template.id === "settle-new-country"
+    ? guidePath(isGuideLanguage(language) ? language : "en", "moving-to-germany-checklist")
+    : null;
 
   return (
     <div className="container templates-page">
@@ -50,6 +56,7 @@ export default async function MissionTemplatePage({ params }: { params: Promise<
           <p className="eyebrow">{template.featured ? <LocalizedText en="Mission template" /> : <LocalizedText en="Mission template" />}</p>
           <h1>{t(template.title)}</h1>
           <p>{t(template.description)}</p>
+          {germanyGuide && <p><Link className="landing-template-link" href={germanyGuide}><LocalizedText en="Moving to Germany? Read the step-by-step guide with official sources" /> <span aria-hidden="true">→</span></Link></p>}
         </div>
         <div className="landing-final-actions">
           <Link className="button" href={templateHref(template, t)}><LocalizedText en="Use this template" /> <span aria-hidden="true">→</span></Link>

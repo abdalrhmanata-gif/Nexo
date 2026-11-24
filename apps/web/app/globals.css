@@ -1723,6 +1723,9 @@ html[dir="rtl"] input, html[dir="rtl"] textarea {
 .guide-card .guide-card-more { margin-block-start:auto; color:var(--guide-link); font-weight:650; }
 .guide-index-header { border-block-end:none; margin-block-end:12px; }
 .guide-index-cards { grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); }
+/* Guides index: one section per country, each with its own notice. */
+.guide-country { margin-block:28px 8px; }
+.guide-country-title { font-size:clamp(22px, 3vw, 28px); margin:0 0 12px; }
 @media (max-width:960px) {
   .guide-layout { grid-template-columns:1fr; gap:0; }
   .guide-aside { display:none; }

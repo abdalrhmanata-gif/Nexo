@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
+  GUIDE_COUNTRIES,
   GUIDE_LANGUAGES,
   SITE_URL,
   guideAlternates,
@@ -67,9 +68,10 @@ function LanguageSwitch({ lang, slug }: { lang: GuideLanguage; slug?: string }) 
   );
 }
 
-/** The guides are about the US only. Said up front, in the reader's language,
-    because a reader elsewhere would otherwise follow rules that are not theirs. */
-function UsNotice({ text }: { text: string }) {
+/** Each guide is about one country's rules. Said up front, in the reader's
+    language, because a reader elsewhere would otherwise follow rules that are
+    not theirs. */
+function CountryNotice({ text }: { text: string }) {
   return <p className="guide-us-notice" role="note"><span aria-hidden="true">i</span>{text}</p>;
 }
 
@@ -132,7 +134,7 @@ export function GuideArticle({ slug, lang }: { slug: string; lang: GuideLanguage
           <span>{guide.short}</span>
         </nav>
         <h1 className="guide-title">{guide.title}</h1>
-        <UsNotice text={chrome.usNotice} />
+        <CountryNotice text={chrome.countryNotice[guide.country]} />
         {guide.intro.map((paragraph) => <p className="guide-lead" key={paragraph}>{paragraph}</p>)}
         <p className="guide-meta">
           <span>{chrome.updated} <time dateTime={guide.updated}>{guide.updated}</time></span>
@@ -184,7 +186,7 @@ export function GuideArticle({ slug, lang }: { slug: string; lang: GuideLanguage
               <li key={key}><a href={sourceUrl(key)} rel="noopener" target="_blank">{chrome.sourceLabels[key]} <span aria-hidden="true">↗</span></a></li>
             ))}
           </ul>
-          <p className="guide-disclaimer">{chrome.disclaimer}</p>
+          <p className="guide-disclaimer">{chrome.disclaimer[guide.country]}</p>
         </article>
 
         <aside className="guide-aside">
@@ -218,25 +220,38 @@ export function GuideArticle({ slug, lang }: { slug: string; lang: GuideLanguage
 
 export function GuidesIndex({ lang }: { lang: GuideLanguage }) {
   const { chrome, guides } = guideLocale(lang);
+  let number = 0;
   return (
     <div className="guide-page" lang={lang} dir={chrome.dir}>
       <header className="guide-header guide-index-header">
         <h1 className="guide-title">{chrome.indexTitle}</h1>
-        <UsNotice text={chrome.usNotice} />
         <p className="guide-lead">{chrome.indexLead}</p>
         <LanguageSwitch lang={lang} />
       </header>
-      <div className="guide-cards guide-index-cards">
-        {guides.map((guide, index) => (
-          <Link className="guide-card" key={guide.slug} href={guidePath(lang, guide.slug)}>
-            <span className="guide-card-index" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
-            <strong>{guide.title}</strong>
-            <p>{guide.metaDescription}</p>
-            <span>{chrome.stepsCount(guide.steps.length)} · {chrome.minutes(readingMinutes(guide))}</span>
-            <span className="guide-card-more">{chrome.readGuide} <span aria-hidden="true">{chrome.dir === "rtl" ? "←" : "→"}</span></span>
-          </Link>
-        ))}
-      </div>
+      {GUIDE_COUNTRIES.map((country) => {
+        const inCountry = guides.filter((guide) => guide.country === country);
+        if (!inCountry.length) return null;
+        return (
+          <section className="guide-country" key={country} aria-labelledby={`guides-${country}`}>
+            <h2 id={`guides-${country}`} className="guide-country-title">{chrome.countryHeading[country]}</h2>
+            <CountryNotice text={chrome.countryNotice[country]} />
+            <div className="guide-cards guide-index-cards">
+              {inCountry.map((guide) => {
+                number += 1;
+                return (
+                  <Link className="guide-card" key={guide.slug} href={guidePath(lang, guide.slug)}>
+                    <span className="guide-card-index" aria-hidden="true">{String(number).padStart(2, "0")}</span>
+                    <strong>{guide.title}</strong>
+                    <p>{guide.metaDescription}</p>
+                    <span>{chrome.stepsCount(guide.steps.length)} · {chrome.minutes(readingMinutes(guide))}</span>
+                    <span className="guide-card-more">{chrome.readGuide} <span aria-hidden="true">{chrome.dir === "rtl" ? "←" : "→"}</span></span>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }
