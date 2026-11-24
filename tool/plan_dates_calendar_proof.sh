@@ -126,6 +126,18 @@ as_user "$USER_A" "insert into public.mission_schedules (mission_id, target_date
 insert into public.action_due_dates (action_id, mission_id, due_on, basis) values ('$S1', '$M1', '2027-03-15', 'law'), ('$S2', '$M1', '2027-03-20', null);" >/dev/null
 [ "$(truth "select count(*) from public.action_due_dates where mission_id='$M1';")" = "2" ] \
   && pass "the owner sets the target date and step dates" || fail "the owner could not date the plan"
+as_user "$USER_A" "update public.mission_schedules set target_date='2027-03-02' where mission_id='$M1';
+update public.action_due_dates set due_on='2027-03-16', basis=null where action_id='$S1' and mission_id='$M1';" >/dev/null
+[ "$(truth "select s.target_date || '/' || d.due_on || '/' || coalesce(d.basis, 'none') from public.mission_schedules s join public.action_due_dates d on d.mission_id = s.mission_id where s.mission_id='$M1' and d.action_id='$S1';")" = "2027-03-02/2027-03-16/none" ] \
+  && pass "the owner changes dates already set, as the app does (update, then insert)" || fail "the owner could not change an existing date"
+"${PSQL[@]}" -c "update public.mission_schedules set target_date='2027-03-01' where mission_id='$M1'; update public.action_due_dates set due_on='2027-03-15', basis='law' where action_id='$S1';" >/dev/null
+# PostgREST's upsert rewrites the key column too, which the column grants refuse:
+# the app must never use it here (found live, 24 Nov).
+if as_user "$USER_A" "insert into public.mission_schedules (mission_id, target_date) values ('$M1', '2027-05-05') on conflict (mission_id) do update set mission_id = excluded.mission_id, target_date = excluded.target_date;" | grep -q 'permission denied'; then
+  pass "an upsert that rewrites the key is refused, so the app does not use one"
+else
+  fail "an upsert rewriting mission_id was accepted"
+fi
 if as_user "$USER_A" "insert into public.action_due_dates (action_id, mission_id, due_on) values ('$S3', '$M1', '2027-03-02');" | grep -q 'row-level security'; then
   pass "a step cannot be dated under another Mission"
 else
