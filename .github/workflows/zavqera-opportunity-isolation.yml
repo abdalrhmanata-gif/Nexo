@@ -72,3 +72,13 @@ jobs:
           psql "postgresql://postgres:postgres@127.0.0.1:5432/postgres" -v ON_ERROR_STOP=1 --quiet -c "create database zavqera_site_metrics"
           chmod +x tool/site_metrics_admin_proof.sh
           ./tool/site_metrics_admin_proof.sh
+
+      - name: Prove own templates are private, plan-gated and bounded
+        env:
+          PGPASSWORD: postgres
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/zavqera_own_templates
+        run: |
+          set -euo pipefail
+          psql "postgresql://postgres:postgres@127.0.0.1:5432/postgres" -v ON_ERROR_STOP=1 --quiet -c "create database zavqera_own_templates"
+          chmod +x tool/own_templates_proof.sh
+          ./tool/own_templates_proof.sh

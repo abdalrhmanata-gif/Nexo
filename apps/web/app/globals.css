@@ -1875,3 +1875,31 @@ html[dir="rtl"] .try-more a span[aria-hidden="true"] { display:inline-block; tra
 /* Template cards: the "Use this template" form sits beside "Open mission". */
 .template-card-actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:auto; }
 .template-card-actions form { margin:0; }
+
+/* Own templates (Pro and Scale): the box on a Mission page and /app/templates. */
+.own-template-box { margin-top:22px; padding-top:18px; border-top:1px solid var(--line); }
+.own-template-box h2 { margin:0 0 8px; font-size:19px; }
+.own-template-box p { font-size:14px; }
+.own-template-form { display:grid; gap:10px; }
+.own-template-form label { font-weight:700; font-size:13px; }
+.own-template-form input, .own-template-inline-form input { width:100%; border:1px solid #c9d3da; border-radius:5px; padding:11px 12px; font:inherit; color:var(--ink); background:var(--white); }
+.own-template-link { font-size:13px; font-weight:700; color:var(--teal); }
+.own-templates-hero { margin:0 0 22px; }
+.own-templates-locked { margin:0 0 22px; border-inline-start:3px solid var(--teal); }
+.own-templates-locked h2, .own-templates-empty h2 { margin:0 0 10px; }
+.own-templates-benefits { margin:0 0 18px; padding-inline-start:20px; color:var(--ink); }
+.own-templates-benefits li { margin:6px 0; }
+.own-template-card { display:flex; flex-direction:column; gap:8px; }
+.own-template-card h2 { margin:0; font-size:21px; overflow-wrap:anywhere; }
+.own-template-card .action-hint { margin:0; }
+.own-template-intent { margin:0; font-size:15px; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.own-template-steps { margin:4px 0 0; padding-inline-start:20px; color:var(--ink); font-size:14px; }
+.own-template-steps li { margin:3px 0; overflow-wrap:anywhere; }
+.own-template-actions { display:flex; flex-wrap:wrap; align-items:flex-start; gap:10px; margin-top:auto; padding-top:10px; }
+.own-template-more summary { cursor:pointer; padding:9px 4px; font-size:13px; font-weight:700; color:var(--navy); }
+.own-template-inline-form { display:grid; gap:8px; margin-top:6px; min-width:220px; }
+.own-template-inline-form span { font-size:13px; color:var(--muted); }
+.own-templates-teaser a { font-weight:700; }
+:root[data-theme="dark"] .own-template-form input, :root[data-theme="dark"] .own-template-inline-form input { border-color:#151a1d; }
+:root[data-theme="dark"] .own-template-more summary { color:inherit; }
+@media (max-width:700px) { .own-template-actions { flex-direction:column; align-items:stretch; } .own-template-actions .button { width:100%; } }

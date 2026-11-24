@@ -104,6 +104,7 @@ function AccountMenu({ account, billing, siteOperator }: { account: AccountSumma
         </div>
         <div className="account-links">
           {billing && <NavLink className="nav-link nav-billing" href="/app/billing"><NavIcon name="pricing" /><LocalizedText en="Billing" /></NavLink>}
+          <NavLink className="nav-link nav-own-templates" href="/app/templates"><NavIcon name="templates" /><LocalizedText en="Your templates" /></NavLink>
           <NavLink className="nav-link nav-team" href="/app/team"><NavIcon name="workspace" /><LocalizedText en="Team" /></NavLink>
           {siteOperator && <NavLink className="nav-link nav-analytics" href="/app/analytics"><NavIcon name="analytics" /><LocalizedText en="Website analytics" /></NavLink>}
         </div>
