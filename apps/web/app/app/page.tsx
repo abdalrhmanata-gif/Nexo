@@ -5,6 +5,7 @@ import { getTranslate } from "../../lib/i18n-server";
 import { rankByAttention } from "../../lib/mission-attention.mjs";
 import { fill } from "../../lib/i18n";
 import { MissionCard } from "../../components/mission-card";
+import { GoalStarter } from "../../components/goal-starter";
 import { localMockMissionRepository } from "../../lib/local-mock-repository";
 import { isSupabaseConfigured } from "../../lib/supabase/config";
 import { createSupabaseMissionRepository } from "../../lib/supabase/mission-repository";
@@ -125,10 +126,19 @@ export default async function WorkspacePage({
     </div>
     {visibleMissions.length
       ? <div className="grid">{visibleMissions.map((mission) => <MissionCard key={mission.id} mission={mission} progressLabel={fill(t("Mission progress for {mission}"), { mission: mission.name })} />)}</div>
-      : <div className="empty-state">
-        <h2>{query ? t("No matching missions") : t("No missions yet")}</h2>
-        <p>{query ? t("Try a different search term or clear the search to see your missions.") : t("A mission records an outcome you intend to reach and the work required to reach it. Create your first one to begin.")}</p>
-        <Link className="button" href={query ? "/app#mission-search" : "/app/missions/new"}>{query ? t("Clear search") : t("Create mission")}</Link>
-      </div>}
+      : query
+        ? <div className="empty-state">
+          <h2>{t("No matching missions")}</h2>
+          <p>{t("Try a different search term or clear the search to see your missions.")}</p>
+          <Link className="button" href="/app#mission-search">{t("Clear search")}</Link>
+        </div>
+        // An empty workspace asks for the goal and saves a plan for it in one
+        // press, instead of a button to a blank form.
+        : <div className="empty-state empty-state-start">
+          <h2>{t("No missions yet")}</h2>
+          <p>{t("Write the goal and a first plan is saved for it, steps included. You can change every step.")}</p>
+          <GoalStarter mode="save" />
+          <p><Link href="/app/missions/new">{t("Or start from a blank mission")}</Link></p>
+        </div>}
   </div>;
 }

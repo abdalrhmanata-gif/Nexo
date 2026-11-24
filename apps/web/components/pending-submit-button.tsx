@@ -8,8 +8,8 @@ import { useTranslate } from "./localized-text";
  * few seconds; a second tap in that time created a second, identical mission
  * (the owner's workspace had two "reise" and two "fornye pass mitt").
  */
-export function PendingSubmitButton({ label, pendingLabel }: { label: string; pendingLabel: string }) {
+export function PendingSubmitButton({ label, pendingLabel, className = "button" }: { label: string; pendingLabel: string; className?: string }) {
   const t = useTranslate();
   const { pending } = useFormStatus();
-  return <button className="button" type="submit" disabled={pending} aria-busy={pending}>{pending ? t(pendingLabel) : t(label)}</button>;
+  return <button className={className} type="submit" disabled={pending} aria-busy={pending}>{pending ? t(pendingLabel) : t(label)}</button>;
 }

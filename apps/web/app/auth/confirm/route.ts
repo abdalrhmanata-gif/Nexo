@@ -2,6 +2,7 @@ import type { EmailOtpType } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseServerClient } from "../../../lib/supabase/server";
 import { authErrorPath, resolveRequestOrigin, safeNextPath } from "../../../lib/auth/redirect.mjs";
+import { landingAfterSignIn, redirectToLanding } from "../../../lib/auth/landing";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = await createSupabaseServerClient();
-  const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
+  const { data, error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
   if (error) {
     // A reset link that no longer works belongs on the reset page, which
     // explains it and offers a new one. The sign-in page's message is about
@@ -32,5 +33,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL(authErrorPath("confirmation-link"), origin));
   }
 
-  return NextResponse.redirect(new URL(next, origin));
+  // A recovery link goes to the password form whatever was pending.
+  if (type === "recovery") return NextResponse.redirect(new URL(next, origin));
+  return redirectToLanding(await landingAfterSignIn(supabase, data.user, next), origin);
 }

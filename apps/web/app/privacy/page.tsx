@@ -78,6 +78,18 @@ export default function PrivacyPage() {
         can hold as little as you like.
       </p>
       <p>
+        <strong>Signing in with Google.</strong> Where the sign-in page offers &ldquo;Continue with Google&rdquo;, it
+        is optional. If you choose it, Google confirms who you are and sends us your email address, your name and a
+        link to your profile picture; we use them only to create and run your account. Google handles that step under
+        its own privacy policy, and we receive no Google password and no access to anything else in your Google
+        account.
+      </p>
+      <p>
+        <strong>Trying a plan without an account.</strong> The goal you type into the box on the home page is used to
+        choose a plan and show it to you. We do not save it unless you press &ldquo;Save&rdquo;, which makes it a
+        Mission in your account. Our page counter records only that the page was opened, never what you typed.
+      </p>
+      <p>
         <strong>What we do not do.</strong> We do not sell personal data. We do not share it for anyone else&rsquo;s
         own purposes. We do not profile you, build an advertising audience, or combine your data with data bought from
         elsewhere. We do not use your Missions or your opportunities to train machine-learning models.
@@ -147,6 +159,12 @@ export default function PrivacyPage() {
         </li>
         <li>
           <strong><code>zavqera-language</code></strong> — the language you selected. One year.
+        </li>
+        <li>
+          <strong><code>zavqera-start</code></strong> — set only when you press &ldquo;Save&rdquo; on a plan before you
+          are signed in, or when the email confirmation or Google sign-in brings you back to one, so that the plan is
+          saved as soon as you are in. It holds a fingerprint of which plan it was, not its text, and is removed when
+          the plan is saved, or after one day.
         </li>
         <li>
           <strong><code>zavqera-theme</code></strong> — the light or dark setting you selected. One year.

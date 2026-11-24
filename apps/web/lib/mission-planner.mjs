@@ -251,10 +251,8 @@ const DOMAINS = [
   { kind: "venture", keywords: VENTURE_PLACES, steps: VENTURE_STEPS, criteria: VENTURE_CRITERIA },
 ];
 
-export function suggestPlanFor(mission) {
-  const text = haystack(mission);
-  if (text.trim().length < 6) return null;
-
+/** The best-scoring domain and its score, or null when none is recognised. */
+function bestDomain(mission) {
   let winner = null;
   let bestScore = 0;
   for (const domain of DOMAINS) {
@@ -264,16 +262,53 @@ export function suggestPlanFor(mission) {
     if (domain.kind === "venture" && score > 0 && scoreFor(mission, VENTURE_VERBS) > 0) score += 3;
     if (score > bestScore) { winner = domain; bestScore = score; }
   }
+  return winner ? { domain: winner, score: bestScore } : null;
+}
 
-  if (!winner) {
+export function suggestPlanFor(mission) {
+  const text = haystack(mission);
+  if (text.trim().length < 6) return null;
+
+  const best = bestDomain(mission);
+  if (!best) {
     return { kind: "generic", licensed: false, steps: GENERIC_STEPS, criteria: GENERIC_CRITERIA };
   }
   return {
-    kind: winner.kind,
-    licensed: winner.kind === "venture" && scoreFor(mission, LICENSED) > 0,
-    steps: winner.steps,
-    criteria: winner.criteria,
+    kind: best.domain.kind,
+    licensed: best.domain.kind === "venture" && scoreFor(mission, LICENSED) > 0,
+    steps: best.domain.steps,
+    criteria: best.domain.criteria,
   };
+}
+
+/**
+ * How strongly the planner recognises a mission, on the same scale as
+ * matchStrength() below times three: the goal box on the home page weighs
+ * the planner against the templates and guides with it. Zero means generic.
+ */
+export function planScoreFor(mission) {
+  return bestDomain(mission)?.score ?? 0;
+}
+
+/** The plan for a kind the caller already settled on, e.g. a venture. */
+export function planOfKind(kind, { licensed = false } = {}) {
+  const domain = DOMAINS.find((item) => item.kind === kind);
+  if (!domain) return { kind: "generic", licensed: false, steps: GENERIC_STEPS, criteria: GENERIC_CRITERIA };
+  return { kind: domain.kind, licensed: domain.kind === "venture" && licensed, steps: domain.steps, criteria: domain.criteria };
+}
+
+/** True when a venture plan should lead with the licence. */
+export function needsLicence(text) {
+  return scoreFor({ name: String(text ?? "") }, LICENSED) > 0;
+}
+
+/**
+ * The planner's keyword reading, for other matchers to share: 2 for a word
+ * written exactly (or inflected), 1 for one typo away, a little more for each
+ * further keyword found. Zero when nothing matches.
+ */
+export function matchStrength(text, keywords) {
+  return strength(text, keywords);
 }
 
 /** The headline a plan card uses, chosen by what the plan recognised. */

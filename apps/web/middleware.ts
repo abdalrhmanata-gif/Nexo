@@ -1,6 +1,19 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { supabasePublishableKey, supabaseUrl } from "./lib/supabase/config";
+import { safeNextPath } from "./lib/auth/redirect.mjs";
+
+/**
+ * A signed-out visitor headed for a plan they chose (a goal, a template, a
+ * guide, a prefilled mission) is almost always new, so they get the sign-up
+ * page, which links to sign-in for the few who already have an account.
+ * Everyone else headed into the workspace gets sign-in.
+ */
+function authPageFor(pathname: string, search: URLSearchParams) {
+  if (pathname === "/app/start") return "/auth/sign-up";
+  if (pathname === "/app/missions/new" && search.get("name")) return "/auth/sign-up";
+  return "/auth/sign-in";
+}
 
 export async function middleware(request: NextRequest) {
   if (!supabaseUrl || !supabasePublishableKey) return NextResponse.next();
@@ -20,7 +33,7 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (request.nextUrl.pathname.startsWith("/app") && !user) {
     const url = request.nextUrl.clone();
-    url.pathname = "/auth/sign-in";
+    url.pathname = authPageFor(request.nextUrl.pathname, request.nextUrl.searchParams);
     // Keep the full destination, including query parameters. This is required
     // for shareable Mission templates to survive the sign-in/sign-up handoff.
     url.search = "";
@@ -34,7 +47,10 @@ export async function middleware(request: NextRequest) {
   // /auth pages do, would make the reset impossible to finish.
   const isPasswordReset = request.nextUrl.pathname === "/auth/reset-password";
   if (request.nextUrl.pathname.startsWith("/auth/") && user && !isConfirmationEndpoint && !isPasswordReset) {
-    return NextResponse.redirect(new URL("/app", request.url));
+    // Already signed in: go where the link was going. A plan saved from a
+    // tab that did not know about the session used to land on the bare
+    // workspace and lose the plan.
+    return NextResponse.redirect(new URL(safeNextPath(request.nextUrl.searchParams.get("next")), request.url));
   }
   return response;
 }

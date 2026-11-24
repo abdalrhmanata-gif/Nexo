@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { LocalizedText } from "../components/localized-text";
-import { getTranslate } from "../lib/i18n-server";
+import { getLanguage, getTranslate } from "../lib/i18n-server";
+import { guidePath } from "../lib/guides";
 import { readSignedIn } from "../components/shell";
+import { GoalStarter } from "../components/goal-starter";
 
 const capabilities = [
   {
@@ -36,21 +38,26 @@ function CapabilityIcon({ kind }: { kind: string }) {
 export default async function HomePage() {
   const t = await getTranslate();
   const signedIn = await readSignedIn();
+  const language = await getLanguage();
   return <div className="landing-page">
     <section className="landing-hero">
       <div className="landing-hero-copy">
         <p className="eyebrow"><span className="landing-live-dot" aria-hidden="true" /> <LocalizedText en="Mission control for goals you have to get right" /></p>
         <h1><LocalizedText en="From intent to action." /> <span><LocalizedText en="With control at every step." /></span></h1>
         <p className="landing-lede"><LocalizedText en="Write the outcome you want. Get a first plan back, with the weak parts of your own wording pointed out — then keep the evidence that you reached it." /></p>
+        {/* The first thing a visitor can do is see a plan for their own goal,
+            before any account. Sign-up used to be the only way in, and of
+            the visitors who reached it almost none came out with a mission. */}
+        <GoalStarter mode="preview" />
         <div className="landing-hero-actions">
           {signedIn
-            ? <Link className="button" href="/app"><LocalizedText en="Open workspace" /> <span aria-hidden="true">→</span></Link>
-            : <Link className="button" href="/auth/sign-up"><LocalizedText en="Start free" /> <span aria-hidden="true">→</span></Link>}
-          <Link className="button button-quiet" href="/templates/business-opportunity-scan"><LocalizedText en="Try a real Mission" /></Link>
+            ? <Link className="button button-quiet" href="/app"><LocalizedText en="Open workspace" /> <span aria-hidden="true">→</span></Link>
+            : <Link className="button button-quiet" href="/auth/sign-up"><LocalizedText en="Start free" /> <span aria-hidden="true">→</span></Link>}
+          <Link className="button button-quiet" href="/templates"><LocalizedText en="Browse mission templates" /></Link>
         </div>
         <div className="landing-trust-line"><span aria-hidden="true">✓</span> <LocalizedText en="Review before action. Clear boundaries. No false certainty." /></div>
         <p className="landing-honesty"><LocalizedText en="AI drafts only when you ask, and never acts for you. You review every step before it counts." /></p>
-        <Link className="landing-template-link" href="/templates"><LocalizedText en="Browse mission templates" /> <span aria-hidden="true">→</span></Link>
+        <Link className="landing-template-link" href={guidePath(language)}><LocalizedText en="Read the step-by-step guides, with official sources" /> <span aria-hidden="true">→</span></Link>
         <Link className="landing-template-link" href="/app/opportunities"><LocalizedText en="Explore Opportunity Intelligence" /> <span aria-hidden="true">→</span></Link>
         <Link className="landing-template-link" href="/compare/zavqera-vs-chatgpt-claude-gemini"><LocalizedText en="Compare with ChatGPT, Claude and Gemini" /> <span aria-hidden="true">→</span></Link>
       </div>
@@ -91,6 +98,6 @@ export default async function HomePage() {
       </div>
     </section>
 
-    <section className="landing-final-cta"><div><p className="eyebrow"><LocalizedText en="Start with one Mission" /></p><h2><LocalizedText en="Make the next step clearer." /></h2><p><LocalizedText en="Begin with the workflow you have today. Keep control of what happens next." /></p></div><div className="landing-final-actions"><Link className="button" href="/app"><LocalizedText en="Open workspace" /> <span aria-hidden="true">→</span></Link><Link className="landing-pricing-link" href="/pricing"><LocalizedText en="Pricing" /></Link></div></section>
+    <section className="landing-final-cta"><div><p className="eyebrow"><LocalizedText en="Start with one Mission" /></p><h2><LocalizedText en="Make the next step clearer." /></h2><p><LocalizedText en="Begin with the workflow you have today. Keep control of what happens next." /></p></div><div className="landing-final-actions">{signedIn ? <Link className="button" href="/app"><LocalizedText en="Open workspace" /> <span aria-hidden="true">→</span></Link> : <Link className="button" href="/try"><LocalizedText en="Get a plan for your goal" /> <span aria-hidden="true">→</span></Link>}<Link className="landing-pricing-link" href="/pricing"><LocalizedText en="Pricing" /></Link></div></section>
   </div>;
 }

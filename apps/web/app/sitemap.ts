@@ -7,7 +7,7 @@ import { COMPARE_PATH, compare } from "../lib/compare";
 // machinery; shared Mission links are unlisted on purpose and stay out.
 // Each guide is listed once per language, with its hreflang alternates.
 export default function sitemap(): MetadataRoute.Sitemap {
-  const fixed = ["", "/pricing", "/templates", "/privacy", "/terms"].map((path) => ({ url: `${SITE_URL}${path}` }));
+  const fixed = ["", "/try", "/pricing", "/templates", "/privacy", "/terms"].map((path) => ({ url: `${SITE_URL}${path}` }));
   const indexes = GUIDE_LANGUAGES.map((lang) => ({
     url: `${SITE_URL}${guidePath(lang)}`,
     alternates: { languages: guideAlternates() },

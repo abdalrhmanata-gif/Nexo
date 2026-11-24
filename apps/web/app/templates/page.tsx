@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { LocalizedText } from "../../components/localized-text";
-import { getTranslate } from "../../lib/i18n-server";
+import { getLanguage, getTranslate } from "../../lib/i18n-server";
 import { missionTemplates } from "../../lib/mission-templates";
+import { PendingSubmitButton } from "../../components/pending-submit-button";
+import { savePlan } from "../app/start/actions";
 
 function TemplateIcon({ id }: { id: string }) {
   if (id === "business-opportunity-scan") return <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m16.5 16.5 4 4M8 11h6M11 8v6" /></svg>;
@@ -13,23 +15,14 @@ function TemplateIcon({ id }: { id: string }) {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h10M4 19h6" /><circle cx="18" cy="12" r="2" /><circle cx="14" cy="19" r="2" /></svg>;
 }
 
-function templateHref(template: typeof missionTemplates[number], t: (en: string) => string) {
-  const params = new URLSearchParams({
-    name: t(template.title),
-    intent: t(template.intent),
-    criteria: template.criteria.map((criterion) => t(criterion)).join("\n"),
-    actions: template.actions.map((action) => t(action)).join("\n"),
-  });
-  return `/app/missions/new?${params.toString()}`;
-}
-
 export default async function TemplatesPage() {
   const t = await getTranslate();
+  const language = await getLanguage();
   return <div className="container templates-page">
     <section className="hero template-hero-panel">
       <p className="eyebrow"><LocalizedText en="Mission templates" /></p>
       <h1><LocalizedText en="Start with a useful first plan." /></h1>
-      <p><LocalizedText en="Choose a starting point, review every field, and keep control of the mission before you create it." /></p>
+      <p><LocalizedText en="Choose a starting point. It is saved as a mission you can change: edit any step, add your own, or delete it." /></p>
       <p className="action-hint"><LocalizedText en="Start with a useful first plan." /></p>
     </section>
     <section className="grid" aria-label={t("Mission templates")}>
@@ -41,10 +34,16 @@ export default async function TemplatesPage() {
         <ul className="template-criteria">{template.criteria.map((criterion) => <li key={criterion}><LocalizedText en={criterion} /></li>)}</ul>
         <div className="template-card-actions">
           <Link className="button" href={`/templates/${template.id}`}><LocalizedText en="Open mission" /></Link>
-          <Link className="button button-quiet" href={templateHref(template, t)}><LocalizedText en="Use this template" /></Link>
+          {/* One press saves it, signed in or not: without an account the
+              press goes through sign-up and the plan is saved after it. */}
+          <form action={savePlan}>
+            <input type="hidden" name="template" value={template.id} />
+            <input type="hidden" name="lang" value={language} />
+            <PendingSubmitButton className="button button-quiet" label="Use this template" pendingLabel="Saving…" />
+          </form>
         </div>
       </article>)}
     </section>
-    <p className="action-hint template-note"><LocalizedText en="A template only pre-fills a draft. Nothing is created until you review it and submit the mission form." /></p>
+    <p className="action-hint template-note"><LocalizedText en="Using a template saves it as a mission in your workspace. Nothing happens outside it, and every step can be changed." /></p>
   </div>;
 }

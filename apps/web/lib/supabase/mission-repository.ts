@@ -264,6 +264,25 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       if (!result.data) return null;
       return completeMission(result.data as MissionRow);
     },
+    // A saved plan is created by a press the browser may repeat: a reload of
+    // the page that saves it, the confirmation link opened twice. The same
+    // objective saved by the same person minutes ago is that press again,
+    // not a second mission.
+    async findRecentMission(objective: string, withinMinutes: number) {
+      const since = new Date(Date.now() - withinMinutes * 60_000).toISOString();
+      const result = await supabase
+        .from("missions")
+        .select("id")
+        .eq("workspace_id", workspaceId)
+        .eq("owner_id", user.id)
+        .eq("objective", objective)
+        .gte("created_at", since)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (result.error) throw result.error;
+      return (result.data as { id: string } | null)?.id ?? null;
+    },
     async createMission(input: NewMission) {
       const result = await supabase.from("missions").insert({ workspace_id: workspaceId, owner_id: user.id, objective: input.objective, status: "DRAFT" }).select(missionSelect).single();
       if (result.error) throw result.error;

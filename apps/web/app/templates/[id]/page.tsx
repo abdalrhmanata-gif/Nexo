@@ -6,6 +6,8 @@ import { ShareTemplateButton } from "../../../components/share-template-button";
 import { getLanguage, getTranslate } from "../../../lib/i18n-server";
 import { guidePath, isGuideLanguage } from "../../../lib/guides";
 import { missionTemplateById } from "../../../lib/mission-templates";
+import { PendingSubmitButton } from "../../../components/pending-submit-button";
+import { savePlan } from "../../app/start/actions";
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const template = missionTemplateById((await params).id);
@@ -59,7 +61,12 @@ export default async function MissionTemplatePage({ params }: { params: Promise<
           {germanyGuide && <p><Link className="landing-template-link" href={germanyGuide}><LocalizedText en="Moving to Germany? Read the step-by-step guide with official sources" /> <span aria-hidden="true">→</span></Link></p>}
         </div>
         <div className="landing-final-actions">
-          <Link className="button" href={templateHref(template, t)}><LocalizedText en="Use this template" /> <span aria-hidden="true">→</span></Link>
+          <form action={savePlan} className="template-use-form">
+            <input type="hidden" name="template" value={template.id} />
+            <input type="hidden" name="lang" value={language} />
+            <PendingSubmitButton label="Use this template" pendingLabel="Saving…" />
+            <Link className="button button-quiet" href={templateHref(template, t)} prefetch={false}><LocalizedText en="Edit before saving" /></Link>
+          </form>
           <ShareTemplateButton title={t(template.shareTitle ?? template.title)} />
         </div>
       </section>
@@ -92,7 +99,12 @@ export default async function MissionTemplatePage({ params }: { params: Promise<
           <p><LocalizedText en="A template only pre-fills a draft. Nothing is created until you review it and submit the mission form." /></p>
         </div>
         <div className="landing-final-actions">
-          <Link className="button" href={templateHref(template, t)}><LocalizedText en="Use this template" /> <span aria-hidden="true">→</span></Link>
+          <form action={savePlan} className="template-use-form">
+            <input type="hidden" name="template" value={template.id} />
+            <input type="hidden" name="lang" value={language} />
+            <PendingSubmitButton label="Use this template" pendingLabel="Saving…" />
+            <Link className="button button-quiet" href={templateHref(template, t)} prefetch={false}><LocalizedText en="Edit before saving" /></Link>
+          </form>
           <ShareTemplateButton title={t(template.shareTitle ?? template.title)} />
         </div>
       </section>

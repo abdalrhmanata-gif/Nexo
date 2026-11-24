@@ -5,10 +5,38 @@
 // per mission per day, and an untrusted caller could invent rows at will.
 // Anything unrecognised is counted as "other", so the totals still add up.
 
+// The pages search engines send people to were missing from this list, so
+// every guide and template view was dropped as "other" and the counter could
+// not say whether the guides brought anyone. They are listed by name, like
+// everything else here: a slug a caller invents is still "other".
+// test/goal-plan.test.mjs keeps these two lists equal to the real ones.
+export const GUIDE_SLUGS = [
+  "how-to-start-a-business",
+  "how-to-start-an-llc",
+  "how-to-get-an-ein",
+  "how-to-write-a-business-plan",
+  "how-to-open-a-business-bank-account",
+  "moving-to-germany-checklist",
+];
+export const TEMPLATE_IDS = [
+  "business-opportunity-scan",
+  "launch-plan",
+  "research-decision",
+  "weekly-operations",
+  "settle-new-country",
+  "find-a-job",
+  "organise-an-event",
+];
+const GUIDE_PREFIXES = ["", "/es", "/ar", "/fr", "/de", "/nb"];
+
 export const COUNTED_ROUTES = [
   "/",
+  "/try",
   "/pricing",
   "/templates",
+  ...TEMPLATE_IDS.map((id) => `/templates/${id}`),
+  ...GUIDE_PREFIXES.flatMap((prefix) => [`${prefix}/guides`, ...GUIDE_SLUGS.map((slug) => `${prefix}/guides/${slug}`)]),
+  "/compare/zavqera-vs-chatgpt-claude-gemini",
   "/privacy",
   "/terms",
   "/auth/sign-in",
@@ -16,6 +44,7 @@ export const COUNTED_ROUTES = [
   "/auth/forgot-password",
   "/auth/reset-password",
   "/app",
+  "/app/start",
   "/app/business",
   "/app/opportunities",
   "/app/notifications",

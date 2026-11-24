@@ -30,14 +30,17 @@ test("a token hash confirmation endpoint exists for TokenHash email templates", 
 test("confirmation endpoints fall back to the sign-in page instead of failing hard", async () => {
   for (const file of ["app/auth/callback/route.ts", "app/auth/confirm/route.ts"]) {
     const text = await source(file);
-    assert.match(text, /authErrorPath\("confirmation-link"\)/);
+    // The callback picks the reason first (Google sign-in has its own), and
+    // a broken email link is still the default.
+    assert.match(text, /authErrorPath\("confirmation-link"\)|: "confirmation-link";[\s\S]*authErrorPath\(failure\)/);
   }
   assert.equal(authErrorPath("confirmation-link"), "/auth/sign-in?error=confirmation-link");
 });
 
 test("sign-up sends the confirmation link back to the deployed origin callback", async () => {
   const form = await source("components/auth-form.tsx");
-  assert.match(form, /emailRedirectTo: `\$\{window\.location\.origin\}\/auth\/callback\?next=/);
+  assert.match(form, /return `\$\{window\.location\.origin\}\/auth\/callback\?next=\$\{encodeURIComponent\(nextPath\)\}`/);
+  assert.match(form, /emailRedirectTo: confirmationRedirect\(nextPath\)/);
 });
 
 test("middleware does not bounce signed-in users away from confirmation endpoints", async () => {
@@ -155,4 +158,16 @@ test("mission deletion is authorized server-side and never trusts the client", a
   assert.match(repository, /supabase\.rpc\("ensure_owned_workspace"\)/);
   assert.match(repository, /ownedWorkspace\(supabase\)/);
   assert.doesNotMatch(repository, /\.from\("workspaces"\)\.insert\(/);
+});
+
+test("an auth form pressed before its script runs never puts the password in the address", async () => {
+  // Found by the browser test: a click that lands before hydration submitted
+  // the sign-up form as a GET, with the email and the password in the URL.
+  const form = await source("components/auth-form.tsx");
+  const forms = [...form.matchAll(/<form className="form-grid"[^>]*>/g)].map((match) => match[0]);
+  assert.equal(forms.length, 3, "sign-in/up, forgot and reset forms");
+  for (const tag of forms) assert.match(tag, /method="post"/);
+  const submits = [...form.matchAll(/<button className="button" type="submit" disabled=\{([^}]*)\}>/g)].map((match) => match[1]);
+  assert.equal(submits.length, 3);
+  for (const condition of submits) assert.match(condition, /!hydrated/);
 });
