@@ -263,6 +263,28 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       }
     });
 
+    // "Add these steps" sends a whole plan in one request. The 24 Nov bulk
+    // insert ordered by a column it did not return and failed against the
+    // real database, which only this test sees.
+    await test.step("a whole plan is added in one request, with its criteria", async () => {
+      const plan = [`${tag} plan one`, `${tag} plan two`];
+      const bulk = await page.request.post(`${missionPath()}/actions`, { data: { titles: plan, criteria: [`${tag} plan criterion`] } });
+      expect(bulk.status()).toBe(201);
+      const body = await bulk.json();
+      expect(body.actions.map((action) => action.title)).toEqual(plan);
+      expect(body.criteriaAdded).toBe(1);
+      const { data: stored, error } = await owner.client.from("missions").select("objective").eq("id", missionId).maybeSingle();
+      if (error) throw error;
+      expect(stored.objective).toContain(`${tag} plan criterion`);
+      for (const action of body.actions) {
+        actionId[action.title] = action.id;
+        ledger.record("action", action.id);
+        const cancelled = await page.request.patch(`${missionPath()}/actions/${action.id}`, { data: { status: "CANCELLED", expectedVersion: action.version } });
+        expect(cancelled.status()).toBe(200);
+      }
+      await page.reload();
+    });
+
     await test.step("reopen from the workspace", async () => {
       await page.goto("/app");
       await page.getByRole("heading", { level: 3, name: tag }).getByRole("link").click();
@@ -383,9 +405,11 @@ test("disposable full loop: auth, plan, lifecycle, follow-up, verification, outc
       expect((await readMission(owner.client, missionId)).status).toBe("COMPLETED");
       const lateInsert = await page.request.post(`${missionPath()}/actions`, { data: { title: "Must not reopen completed work" } });
       expect(lateInsert.status()).toBe(422);
-      expect(await readActions(owner.client, missionId)).toHaveLength(4);
+      expect(await readActions(owner.client, missionId)).toHaveLength(6);
       const cancelled = (await readActions(owner.client, missionId)).filter((action) => action.status === "CANCELLED");
-      expect(cancelled.map((action) => action.id).sort()).toEqual([actionId[titles.second], actionId[titles.late]].sort());
+      expect(cancelled.map((action) => action.id).sort()).toEqual([
+        actionId[titles.second], actionId[titles.late], actionId[`${tag} plan one`], actionId[`${tag} plan two`],
+      ].sort());
       await expect(page.getByLabel("Mission state", { exact: true })).toHaveCount(0);
       await expect(page.getByLabel("Outcome result", { exact: true })).toHaveCount(0);
     });

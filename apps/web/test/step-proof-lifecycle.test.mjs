@@ -179,3 +179,12 @@ test("an empty mission does not offer verification; it asks for the work first",
   assert.equal(readiness.ready, false);
   assert.match(readiness.reason, /add the work first/i);
 });
+
+test("the bulk insert does not order by a column it does not return", () => {
+  // Live failure on 24 Nov: insert(...).select(ACTION_COLUMNS).order("position")
+  // was rejected by PostgREST, so "Add these steps" added nothing.
+  const repo = read("lib/supabase/mission-repository.ts");
+  const bulk = repo.slice(repo.indexOf("async addActions"), repo.indexOf("async updateAction"));
+  assert.match(bulk, /\.select\(ACTION_COLUMNS\);/);
+  assert.doesNotMatch(bulk, /\.select\(ACTION_COLUMNS\)\s*\.order/);
+});

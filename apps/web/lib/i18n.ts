@@ -1064,7 +1064,7 @@ const AR: Record<string, string> = {
   "Terms of service — ZAVQERA":"شروط الخدمة — ZAVQERA",
   "Structure AI-assisted work into explicit Missions, track progress, and review evidence before committing to outcomes.":"نظّم العمل المدعوم بالذكاء الاصطناعي في مهام واضحة، وتابع التقدّم، وراجع الأدلة قبل اعتماد النتائج.",
   "ZAVQERA — turn a goal into steps, evidence and a result":"ZAVQERA — حوّل هدفك إلى خطوات وأدلة ونتيجة",
-  "{left} of {limit} AI drafts left this month.":"بقي لك {left} من {limit} مسودات بالذكاء الاصطناعي هذا الشهر.",
+  "{left} of {limit} AI drafts left this month.":"المسودات المتبقية بالذكاء الاصطناعي هذا الشهر: {left} من {limit}.",
   "Working with a team?":"تعمل مع فريق؟",
   "The AI answer was cut off before it finished, so it was discarded. This attempt used one monthly generation; trying again usually works.":"انقطع ردّ الذكاء الاصطناعي قبل أن يكتمل، فتم تجاهله. استهلكت هذه المحاولة توليداً شهرياً واحداً؛ وإعادة المحاولة تنجح في الغالب.",
   "Your account ID, which the person running this site needs to approve you:":"معرّف حسابك، ويحتاجه من يدير هذا الموقع ليوافق عليك:",
