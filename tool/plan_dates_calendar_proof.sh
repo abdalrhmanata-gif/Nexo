@@ -207,6 +207,22 @@ else
   fail "anon can read public.mission_schedules"
 fi
 
+printf '\n== connection status: recorded by the feed, read only by the owner ==\n'
+[ "$(as_user "$USER_A" "select coalesce(last_client, 'none') from public.calendar_feed_status();" | answer)" = "none" ] \
+  && pass "no status before any calendar has fetched the link" || fail "a status existed before any fetch"
+as_anon "select public.calendar_feed_touch('$TOKEN', 'apple'); select public.calendar_feed_touch(repeat('0', 64), 'google'); select public.calendar_feed_touch('x'' or 1=1 --', 'google');" >/dev/null
+[ "$(as_user "$USER_A" "select last_client || '/' || (last_fetched_at is not null) from public.calendar_feed_status();" | answer)" = "apple/true" ] \
+  && pass "a fetch by Apple Calendar is recorded on the owner's link" || fail "the fetch was not recorded"
+[ "$(truth "select count(*) from public.calendar_feeds where last_client is not null;")" = "1" ] \
+  && pass "an unknown or malformed link records nothing" || fail "a bad token touched a link"
+[ "$(as_user "$USER_B" "select count(*) from public.calendar_feed_status();" | answer)" = "0" ] \
+  && pass "nobody else sees the owner's status" || fail "another person read the status"
+if as_anon "select * from public.calendar_feed_status();" | grep -q 'permission denied'; then
+  pass "a visitor cannot read any status"
+else
+  fail "anon read a connection status"
+fi
+
 printf '\n== the plan decides how many Missions, and a downgrade pauses the rest ==\n'
 "${PSQL[@]}" -c "update public.ai_entitlements set plan='scale', monthly_limit=90 where user_id='$USER_A';" >/dev/null
 as_user "$USER_A" "insert into public.mission_schedules (mission_id, target_date) values ('$M2', '2027-05-01'), ('$M3', '2027-06-01');

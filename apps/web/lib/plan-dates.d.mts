@@ -25,3 +25,5 @@ export declare function icsText(value: unknown): string;
 export declare function foldLine(line: string): string;
 export declare function buildCalendarFeed(rows: CalendarFeedRow[] | null | undefined, options?: { now?: Date; origin?: string }): string;
 export declare function subscribeLinks(feedUrl: string): { feed: string; webcal: string; google: string; outlook: string };
+export declare function calendarClientFromUserAgent(userAgent: unknown): "apple" | "google" | "outlook" | "other" | null;
+export declare function platformFromUserAgent(userAgent: unknown, maxTouchPoints?: number): "ios" | "android" | "mac" | "desktop";

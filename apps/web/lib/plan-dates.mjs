@@ -192,3 +192,28 @@ export function subscribeLinks(feedUrl) {
     outlook: `https://outlook.live.com/calendar/0/addfromweb?url=${encodeURIComponent(feedUrl)}&name=ZAVQERA`,
   };
 }
+
+// --- Who fetched the link, and which device the reader is on -----------------
+
+/**
+ * Which kind of calendar app fetched the feed, from its User-Agent, or null
+ * for a web browser (someone opening the link by hand is not a connection).
+ * Apple: iOS "dataaccessd", macOS "CalendarAgent". Google: "Google-Calendar-Importer".
+ */
+export function calendarClientFromUserAgent(userAgent) {
+  const ua = typeof userAgent === "string" ? userAgent : "";
+  if (/Google-Calendar-Importer/i.test(ua)) return "google";
+  if (/dataaccessd|CalendarAgent|iCal\/|DAVKit|\biOS\/\d|\bmacOS\/\d/i.test(ua)) return "apple";
+  if (/Outlook|Microsoft Office|Exchange|MSOffice/i.test(ua)) return "outlook";
+  if (/^Mozilla\/5\.0/.test(ua)) return null;
+  return "other";
+}
+
+/** The reader's device, for showing the right calendar first. */
+export function platformFromUserAgent(userAgent, maxTouchPoints = 0) {
+  const ua = typeof userAgent === "string" ? userAgent : "";
+  if (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && maxTouchPoints > 1)) return "ios";
+  if (/Android/.test(ua)) return "android";
+  if (/Macintosh/.test(ua)) return "mac";
+  return "desktop";
+}

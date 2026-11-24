@@ -1942,3 +1942,16 @@ html[dir="rtl"] .try-more a span[aria-hidden="true"] { display:inline-block; tra
 :root[data-theme="dark"] .due-chip-late { background:#3a2219; color:#f2a57e; }
 :root[data-theme="dark"] .plan-dates-row input[type=date], :root[data-theme="dark"] .copy-link input { border-color:#151a1d; color-scheme:dark; }
 @media (max-width:700px) { .plan-dates-row, .plan-dates-law label { grid-template-columns:1fr; } .calendar-buttons .button { width:100%; text-align:center; } }
+
+/* Connecting a calendar: the right path for the device, then "Connected". */
+.calendar-guide { display:grid; gap:10px; margin:6px 0 4px; }
+.calendar-primary { justify-self:start; }
+.calendar-steps { margin:0; padding-inline-start:22px; display:grid; gap:6px; font-size:15px; }
+.calendar-other-ways summary { cursor:pointer; font-weight:700; font-size:14px; color:var(--navy); padding:4px 0; }
+.calendar-other-ways[open] { display:grid; gap:10px; }
+.calendar-android-note { margin:0; padding:10px 12px; border-radius:6px; background:rgba(58,201,189,.08); border-inline-start:3px solid var(--teal); }
+.calendar-connected { margin:6px 0; }
+.calendar-connected p { margin:0 0 8px; }
+.calendar-connected strong { color:var(--teal); }
+:root[data-theme="dark"] .calendar-other-ways summary { color:inherit; }
+@media (max-width:700px) { .calendar-primary { justify-self:stretch; text-align:center; } }

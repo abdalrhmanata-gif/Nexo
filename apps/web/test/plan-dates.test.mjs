@@ -17,6 +17,8 @@ import {
   nextDated,
   subscribeLinks,
   todayIn,
+  calendarClientFromUserAgent,
+  platformFromUserAgent,
 } from "../lib/plan-dates.mjs";
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -222,4 +224,46 @@ test("dates are saved by update-then-insert, never by upsert (the column grants 
   const proof = readRepo("tool/plan_dates_calendar_proof.sh");
   assert.ok(proof.includes("the owner changes dates already set, as the app does (update, then insert)"));
   assert.ok(proof.includes("an upsert that rewrites the key is refused, so the app does not use one"));
+});
+
+test("a fetch by a calendar app is told apart from a person opening the link in a browser", () => {
+  const cases = [
+    ["iOS/26.1 (23B85) dataaccessd/1.0", "apple"],
+    ["macOS/15.7 (24G222) CalendarAgent/1000", "apple"],
+    ["Google-Calendar-Importer", "google"],
+    ["Mozilla/5.0 (compatible; Google-Calendar-Importer)", "google"],
+    ["Microsoft Office/16.0 (Windows NT 10.0; Microsoft Outlook 16.0.17928; Pro)", "outlook"],
+    ["Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1", null],
+    ["Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36", null],
+    ["Thunderbird-Lightning/1.0", "other"],
+    ["", "other"],
+  ];
+  for (const [ua, expected] of cases) assert.equal(calendarClientFromUserAgent(ua), expected, ua);
+});
+
+test("the guide shows the right path for the device in hand", () => {
+  assert.equal(platformFromUserAgent("Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X)"), "ios");
+  assert.equal(platformFromUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", 5), "ios", "iPadOS reports a Mac with touch");
+  assert.equal(platformFromUserAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", 0), "mac");
+  assert.equal(platformFromUserAgent("Mozilla/5.0 (Linux; Android 15; SM-S921B)"), "android");
+  assert.equal(platformFromUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64)"), "desktop");
+  const guide = read("components/calendar-connect.tsx");
+  for (const platform of ["ios", "android", "mac", "desktop"]) assert.match(guide, new RegExp(`if \\(platform === "${platform}"\\)`), platform);
+  assert.match(guide, /Menu ☰ → Settings → ZAVQERA → turn on “Sync”/, "Android: Google needs the calendar's sync on once");
+  assert.match(guide, /if \(connection\) \{/, "once a calendar has fetched the link, the page says it is connected");
+});
+
+test("the connection status is recorded by the feed, never fails it, and is read only by its owner", () => {
+  const sql = readRepo("supabase/migrations/20261124210000_calendar_connection_status.sql");
+  assert.doesNotMatch(sql, /\b(drop table|drop column|delete from|truncate)\b/i);
+  assert.match(sql, /where p_token ~ '\^\[0-9a-f\]\{64\}\$'\s+and token = p_token/);
+  assert.match(sql, /interval '1 minute'/, "at most one write a minute per link");
+  assert.match(sql, /grant execute on function public\.calendar_feed_touch\(text, text\) to anon, authenticated/);
+  assert.match(sql, /where f\.owner_id = auth\.uid\(\)/);
+  assert.match(sql, /revoke all on function public\.calendar_feed_status\(\) from public, anon;/);
+  const route = read("app/api/calendar/[file]/route.ts");
+  assert.match(route, /const client = calendarClientFromUserAgent\(request\.headers\.get\("user-agent"\)\);\s+if \(client\) await recordCalendarFetch\(match\[1\], client\);/);
+  assert.match(read("lib/supabase/plan-dates-repository.ts"), /export async function recordCalendarFetch[\s\S]*?\} catch \{/, "best effort");
+  const proof = readRepo("tool/plan_dates_calendar_proof.sh");
+  for (const check of ["a fetch by Apple Calendar is recorded on the owner's link", "an unknown or malformed link records nothing", "nobody else sees the owner's status"]) assert.ok(proof.includes(check), check);
 });
