@@ -34,6 +34,13 @@ export async function POST(request: NextRequest) {
   if (!token) return unauthorized(origin);
   const client = clientForToken(token);
   const user = await userForToken(client, token);
+  if (user === "unavailable") {
+    // Supabase Auth could not answer: ask the assistant to retry, not to reconnect.
+    return NextResponse.json(
+      { error: "temporarily_unavailable", error_description: "ZAVQERA could not check the connection just now. Try again in a moment." },
+      { status: 503, headers: { ...BASE_HEADERS, "Retry-After": "5" } },
+    );
+  }
   if (!user) return unauthorized(origin, "The access token is missing, expired or revoked. Connect ZAVQERA again.");
 
   let payload: unknown;
