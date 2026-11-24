@@ -55,7 +55,7 @@ export const compare = {
     {
       feature: "A record of what you checked",
       assistants: "Not a built-in feature.",
-      zavqera: "A verification you record against your success criteria before the result counts.",
+      zavqera: "Each step can carry its own proof, a note or a link saved when you mark it done, and that proof fills the verification you record against your success criteria.",
     },
     {
       feature: "Accepting the result",

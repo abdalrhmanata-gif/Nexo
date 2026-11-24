@@ -55,7 +55,11 @@ test("activity entries are named for what happened", () => {
   assert.match(read("app/app/missions/[id]/page.tsx"), /statusWord\(item\.label, item\.fromStatus, t\)/);
 });
 
-test("the comparison page does not claim proof on each step", () => {
-  // Evidence is recorded per mission, against its criteria, not per step.
-  assert.doesNotMatch(read("lib/compare.ts"), /(proof|evidence)[^"]*each step|each step[^"]*(proof|evidence)/i);
+test("the comparison page claims proof on each step only because the product has it", () => {
+  // Since #151 a step stores an optional note and link when it is marked
+  // done (complete_mission_action). The claim stands only with that code.
+  const compare = read("lib/compare.ts");
+  assert.match(compare, /Each step can carry its own proof/);
+  assert.match(read("lib/supabase/mission-repository.ts"), /rpc\("complete_mission_action"/);
+  assert.match(read("components/action-mutation-controls.tsx"), /evidenceNote: note, evidenceUrl: link/);
 });

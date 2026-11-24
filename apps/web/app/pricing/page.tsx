@@ -62,6 +62,10 @@ const questions = [
     q: "Does the AI act on my behalf?",
     a: "No. The AI drafts and you decide. Nothing is added to a Mission until you choose to add it.",
   },
+  {
+    q: "Does changing the language use an AI generation?",
+    a: "No. The interface and the templates are translated in advance. A Mission or plan you created stays in the language it was written in, and nothing is re-translated by AI.",
+  },
 ];
 
 export default function PricingPage() {
