@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
@@ -12,10 +12,11 @@ test("the pricing page lists the live prices, the shared allowance and only feat
   const pricing = read("app/pricing/page.tsx");
   for (const price of ['price: "$0"', 'price: "$19"', 'price: "$49"', 'price: "$69"']) assert.ok(pricing.includes(price), price);
   // The quota is shared: a mission plan and an opportunity brief both spend
-  // one generation, so the allowance must name both or it understates what
+  // one draft, so the page must say what a draft is or it understates what
   // the plan buys.
-  assert.match(pricing, /AI briefs or Mission plans per month/);
-  assert.match(pricing, /What counts as an AI generation\?/);
+  assert.match(pricing, /AI drafts per month/);
+  assert.match(pricing, /What counts as an AI draft\?/);
+  assert.match(pricing, /ask the AI for a Mission plan or an opportunity brief, that is one draft/);
   for (const unbuilt of [/Market monitoring/i, /Compare up to/i, /Exportable decision reports/i, /source-linked/i]) {
     assert.doesNotMatch(pricing, unbuilt, "a feature that does not exist is not sold");
   }
@@ -125,4 +126,41 @@ test("the pricing grid does not hard-code a column count", () => {
   assert.doesNotMatch(rule[1], /repeat\(\s*\d/,
     "the column count must follow the number of plans, not a number in the stylesheet");
   assert.match(rule[1], /auto-fit|auto-fill/);
+});
+
+test("every 'unlimited' on the pricing page is true: no feature is gated by plan, and the AI is the only allowance", () => {
+  const pricing = read("app/pricing/page.tsx");
+  assert.match(pricing, /Unlimited Missions and plans/);
+  // Opportunities have a storage cap per account (1000), so they are never sold as unlimited.
+  assert.doesNotMatch(pricing, /Unlimited (opportunit|evidence|AI)/i);
+  // Nothing outside checkout asks which plan a person is on, so Free really has every feature.
+  const gated = [];
+  const walk = (dir) => {
+    for (const entry of readdirSync(join(webRoot, dir), { withFileTypes: true })) {
+      const rel = join(dir, entry.name);
+      if (entry.isDirectory()) walk(rel);
+      else if (/\.(tsx?|mjs)$/.test(entry.name) && /isPaidPlan\(|\.plan === "(plus|pro|scale)"/.test(readFileSync(join(webRoot, rel), "utf8"))) gated.push(rel);
+    }
+  };
+  for (const dir of ["app", "components", "lib"]) walk(dir);
+  assert.deepEqual(gated.filter((file) => !/billing|checkout|stripe/.test(file)).sort(), [], "a feature is gated by plan; the pricing page would no longer be true");
+  // The terms carry the fair-use sentence the FAQ points to.
+  const terms = read("app/terms/page.tsx");
+  assert.match(terms, /Where a plan says something is unlimited/);
+  assert.match(pricing, /We only ask for fair use, as our terms explain\./);
+});
+
+test("the per-day wording and the price per draft follow the real allowances", async () => {
+  const { PLAN_LIMITS, pricePerDraft } = await import("../lib/billing-plans.mjs");
+  assert.deepEqual({ ...PLAN_LIMITS }, { free: 2, plus: 10, pro: 30, scale: 90 }, "the allowances changed: update 'every few days', 'one a day', 'three a day'");
+  assert.equal(pricePerDraft(19, PLAN_LIMITS.plus), "$1.90");
+  assert.equal(pricePerDraft(49, PLAN_LIMITS.pro), "$1.63");
+  assert.equal(pricePerDraft(69, PLAN_LIMITS.scale), "$0.77");
+  const pricing = read("app/pricing/page.tsx");
+  for (const [plan, price] of [["plus", 19], ["pro", 49], ["scale", 69]]) {
+    assert.match(pricing, new RegExp(`monthly: ${price},\\s*reports: PLAN_LIMITS\\.${plan}`), plan);
+  }
+  // Teammates do not share the payer's drafts: the quota is per person in the database.
+  assert.match(pricing, /AI drafts belong to each person's own plan/);
+  assert.doesNotMatch(pricing, /For teams that plan every day|For freelancers and small teams/);
 });

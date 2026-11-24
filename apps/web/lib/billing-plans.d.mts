@@ -3,6 +3,7 @@ export type Plan = "free" | PaidPlan;
 export declare const PAID_PLANS: readonly PaidPlan[];
 export declare const PLAN_LIMITS: Readonly<Record<Plan, number>>;
 export declare const CHECKOUT_LABEL: string;
+export declare function pricePerDraft(monthly: number, drafts: number): string;
 export declare function isPaidPlan(value: unknown): value is PaidPlan;
 export declare function stripeKeyMode(key: unknown): "test" | "live" | null;
 export declare function managedPaymentsEnabled(env: Record<string, string | undefined> | undefined): boolean;

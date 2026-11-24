@@ -138,6 +138,11 @@ export default function TermsPage() {
         pricing page, and the price you pay is shown on the payment page before you confirm. Prices are in US dollars;
         in some countries the payment page shows and charges the amount in your local currency.
       </p>
+      <p>
+        Where a plan says something is unlimited, such as Missions, steps, proof, templates and guides, it has no
+        monthly limit for normal personal or business use. Automated or bulk creation, and use that puts the service or
+        other users at risk, is not covered, and technical safeguards such as storage limits per account still apply.
+      </p>
       {managedPaymentsEnabled(process.env) ? <>
         <p>
           Paid plans are sold through Link, a Stripe company, which acts as the seller of record for the payment. Link
@@ -149,8 +154,8 @@ export default function TermsPage() {
           You can cancel at any time from the billing page in your account, or through Link at link.com. Cancelling
           stops the next renewal: your plan stays active until the end of the month you have paid for. We do not refund
           a payment because you have changed your mind, except where mandatory consumer law requires it. The monthly
-          allowance of AI briefs and Mission plans resets at the start of each calendar month; unused generations do
-          not carry over.
+          allowance of AI drafts (AI Mission plans and AI opportunity briefs) resets at the start of each calendar
+          month; unused drafts do not carry over.
         </p>
         <p>
           Questions about a payment can go to {LEGAL.supportEmail} or to Link&rsquo;s support at{" "}
@@ -163,8 +168,8 @@ export default function TermsPage() {
         </p>
         <p>
           You can cancel at any time from the billing page in your account. Your plan then stays active until the end of
-          the month you have paid for and is not renewed. The monthly allowance of AI briefs and Mission plans resets at
-          the start of each calendar month; unused generations do not carry over.
+          the month you have paid for and is not renewed. The monthly allowance of AI drafts (AI Mission plans and AI opportunity briefs)
+          resets at the start of each calendar month; unused drafts do not carry over.
         </p>
         <p>
           If you are a consumer, you have the right of withdrawal that the Norwegian Right of Withdrawal Act
