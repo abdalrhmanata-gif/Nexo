@@ -22,6 +22,9 @@ import { missionIntelligenceFor } from "../../../../lib/mission-intelligence.mjs
 import { ShareMissionButton, type MissionShareStatus } from "../../../../components/share-mission-button";
 import { createSupabaseServerClient, getAuthenticatedUser } from "../../../../lib/supabase/server";
 import { describeProvider, hasAiAccess } from "../../../../lib/ai/gate";
+import { OwnTemplateBox } from "../../../../components/own-template-box";
+import { hasOwnTemplates } from "../../../../lib/own-templates.mjs";
+import { readCurrentPlan } from "../../../../lib/supabase/own-template-repository";
 
 /** Whether this reader can get an AI plan here; then the keyword plan is noise. */
 async function aiPlanReady() {
@@ -57,7 +60,7 @@ export default async function MissionDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams?: Promise<{ welcome?: string }>;
+  searchParams?: Promise<{ welcome?: string; template?: string }>;
 }) {
   const t = await getTranslate();
   const language = await getLanguage();
@@ -90,6 +93,9 @@ export default async function MissionDetailPage({
     .map((action) => [action.title, proofCitation(action)]));
   const initialEvidence = evidenceFromProof(mission.actions);
   const healthy = intelligence.planHealth.healthy && critique.length === 0;
+  const query = await searchParams;
+  // Own templates need the database; the local preview has none.
+  const ownTemplates = isSupabaseConfigured() ? { active: hasOwnTemplates(await readCurrentPlan()) } : null;
 
   return <div className="container">
     <p className="eyebrow no-print"><Link href="/app"><LocalizedText en="Workspace" /></Link> <LocalizedText en="/ Mission detail" /></p>
@@ -99,7 +105,7 @@ export default async function MissionDetailPage({
     </div>
     {/* Arriving from "Save this plan": say it worked and what to do first,
         once, where the person is looking. */}
-    {(await searchParams)?.welcome === "1" && <div className="success-state mission-welcome" role="status">
+    {query?.welcome === "1" && <div className="success-state mission-welcome" role="status">
       <strong><LocalizedText en="Your plan is saved." /></strong>{" "}
       <LocalizedText en="Start with the first step below. When it is done, mark it done and keep the proof: a receipt, a reference number or a link." />
     </div>}
@@ -255,6 +261,7 @@ export default async function MissionDetailPage({
           <li><strong><LocalizedText en="Last updated" /></strong><br /><LocalizedDateTime value={mission.updated} /></li>
           <li><strong><LocalizedText en="Owner" /></strong><br />{t(mission.owner)}</li>
         </ul>
+        {ownTemplates && <OwnTemplateBox missionId={mission.id} missionName={mission.name} active={ownTemplates.active} notice={query?.template} />}
         <DeleteMissionForm missionId={mission.id} missionName={mission.name} />
       </aside>
     </div>

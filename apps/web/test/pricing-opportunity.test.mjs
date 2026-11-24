@@ -139,11 +139,14 @@ test("every 'unlimited' on the pricing page is true: no feature is gated by plan
     for (const entry of readdirSync(join(webRoot, dir), { withFileTypes: true })) {
       const rel = join(dir, entry.name);
       if (entry.isDirectory()) walk(rel);
-      else if (/\.(tsx?|mjs)$/.test(entry.name) && /isPaidPlan\(|\.plan === "(plus|pro|scale)"/.test(readFileSync(join(webRoot, rel), "utf8"))) gated.push(rel);
+      else if (/\.(tsx?|mjs)$/.test(entry.name) && /isPaidPlan\(|hasOwnTemplates\(|\.plan === "(plus|pro|scale)"/.test(readFileSync(join(webRoot, rel), "utf8"))) gated.push(rel);
     }
   };
   for (const dir of ["app", "components", "lib"]) walk(dir);
-  assert.deepEqual(gated.filter((file) => !/billing|checkout|stripe/.test(file)).sort(), [], "a feature is gated by plan; the pricing page would no longer be true");
+  // The one feature gated by plan is own templates (Pro and Scale), and the
+  // pricing page says so; anything else gated would make "every plan" untrue.
+  const OWN_TEMPLATE_FILES = ["app/app/missions/[id]/page.tsx", "app/app/templates/actions.ts", "app/app/templates/page.tsx", "lib/own-templates.mjs"];
+  assert.deepEqual(gated.filter((file) => !/billing|checkout|stripe/.test(file) && !OWN_TEMPLATE_FILES.includes(file)).sort(), [], "a feature is gated by plan; the pricing page would no longer be true");
   // The terms carry the fair-use sentence the FAQ points to.
   const terms = read("app/terms/page.tsx");
   assert.match(terms, /Where a plan says something is unlimited/);

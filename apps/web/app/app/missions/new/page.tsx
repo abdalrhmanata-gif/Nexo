@@ -53,6 +53,7 @@ export default async function NewMissionPage({ searchParams }: { searchParams: P
     <h1 className="detail-title">{fromOpportunity ? t("Validate the opportunity.") : t("Shape the intent.")}</h1>
     <p className="detail-intent">{fromOpportunity ? t("Review the evidence and assumptions before committing resources.") : t("Define what good looks like before anything is allowed to move.")}</p>
     <div className="form-note"><LocalizedText en="Your mission is saved to your private workspace. Ownership comes from your authenticated session." /></div>
+    {!fromOpportunity && <p className="action-hint"><Link href="/app/templates"><LocalizedText en="Start from one of your own templates" /></Link></p>}
     {fromOpportunity && <div className="opportunity-form-origin"><strong><LocalizedText en="Started from Opportunity Intelligence." /></strong> <LocalizedText en="The priority score is a rule-based decision aid, not a verified forecast. Review every field and confirm the source before creating the Mission." /></div>}
     <form id="new-mission-form" className="form-grid" action={createMission} noValidate>
       <div className="field"><label htmlFor="name"><LocalizedText en="Mission name" /></label><input id="name" name="name" defaultValue={params.name ?? ""} maxLength={100} placeholder={t("e.g. Renew my passport")} required /></div>
