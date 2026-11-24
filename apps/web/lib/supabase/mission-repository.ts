@@ -333,8 +333,11 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
       const result = await supabase
         .from("mission_actions")
         .insert(input.titles.map((title, index) => ({ mission_id: input.missionId, title, position: start + index, status: "PENDING" })))
-        .select(ACTION_COLUMNS)
-        .order("position");
+        // No .order("position") here: PostgREST orders the returned rows by
+        // the selected columns only, and position is not among them, so the
+        // whole insert failed with "column mission_actions.position does not
+        // exist" (24 Nov). The page reads the steps back in position order.
+        .select(ACTION_COLUMNS);
       if (result.error) throwMutationError(result.error);
       return (result.data as ActionRow[]).map(toAction);
     },
