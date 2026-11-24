@@ -25,6 +25,10 @@ import { describeProvider, hasAiAccess } from "../../../../lib/ai/gate";
 import { OwnTemplateBox } from "../../../../components/own-template-box";
 import { hasOwnTemplates } from "../../../../lib/own-templates.mjs";
 import { readCurrentPlan } from "../../../../lib/supabase/own-template-repository";
+import { PlanDatesCard, type CalendarState } from "../../../../components/plan-dates-card";
+import { PlanDay } from "../../../../components/plan-dates-client";
+import { calendarLimit, todayIn } from "../../../../lib/plan-dates.mjs";
+import { createPlanDatesRepository, readMissionDates, type MissionDates } from "../../../../lib/supabase/plan-dates-repository";
 
 /** Whether this reader can get an AI plan here; then the keyword plan is noise. */
 async function aiPlanReady() {
@@ -60,7 +64,7 @@ export default async function MissionDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams?: Promise<{ welcome?: string; template?: string }>;
+  searchParams?: Promise<{ welcome?: string; template?: string; dates?: string; calendar?: string }>;
 }) {
   const t = await getTranslate();
   const language = await getLanguage();
@@ -95,7 +99,22 @@ export default async function MissionDetailPage({
   const healthy = intelligence.planHealth.healthy && critique.length === 0;
   const query = await searchParams;
   // Own templates need the database; the local preview has none.
-  const ownTemplates = isSupabaseConfigured() ? { active: hasOwnTemplates(await readCurrentPlan()) } : null;
+  const plan = isSupabaseConfigured() ? await readCurrentPlan() : "free";
+  const ownTemplates = isSupabaseConfigured() ? { active: hasOwnTemplates(plan) } : null;
+  // Dates and the calendar need the database; the local preview has none. A
+  // failure to read them never breaks the page: it shows the Mission undated.
+  let dates: MissionDates = { targetDate: null, dueDates: {} };
+  let calendar: CalendarState | null = null;
+  if (isSupabaseConfigured()) {
+    dates = await readMissionDates(mission.id);
+    try {
+      const chosen = await (await createPlanDatesRepository()).calendarMissionIds();
+      calendar = { inCalendar: chosen.includes(mission.id), count: chosen.length, limit: calendarLimit(plan), plan };
+    } catch {
+      calendar = null;
+    }
+  }
+  const today = todayIn("UTC");
 
   return <div className="container">
     <p className="eyebrow no-print"><Link href="/app"><LocalizedText en="Workspace" /></Link> <LocalizedText en="/ Mission detail" /></p>
@@ -131,6 +150,8 @@ export default async function MissionDetailPage({
           </div>
           <div className="progress"><span style={{ width: `${mission.progress}%` }} /></div>
         </section>
+
+        {calendar && <PlanDatesCard missionId={mission.id} actions={mission.actions} dates={dates} calendar={calendar} notice={{ dates: query?.dates, calendar: query?.calendar }} />}
 
         <section className="card" aria-labelledby="next-action-heading">
           <p className="eyebrow"><LocalizedText en="Deterministic guidance" /></p>
@@ -194,6 +215,9 @@ export default async function MissionDetailPage({
                 <div>
                   <span className="action-title">{action.title}</span>
                   <span className={`status status-action-${action.status.toLowerCase()}`}>{actionStatusLabel(action.status, t)}</span>
+                  {dates.dueDates[action.id] && <span className={`due-chip${["PENDING", "RUNNING", "BLOCKED"].includes(action.status) && dates.dueDates[action.id].dueOn < today ? " due-chip-late" : ""}`}>
+                    {t("Due")} <PlanDay value={dates.dueDates[action.id].dueOn} />{dates.dueDates[action.id].basis === "law" && <> · {t("set by law")}</>}
+                  </span>}
                   {followUp && <span className={`follow-up${followUp.overdue ? " follow-up-overdue" : ""}`}>
                     {followUp.overdue ? t("Follow-up was due") : t("Follow up")} {followUp.relative} · {followUp.absolute}
                   </span>}

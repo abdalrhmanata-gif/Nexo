@@ -82,3 +82,13 @@ jobs:
           psql "postgresql://postgres:postgres@127.0.0.1:5432/postgres" -v ON_ERROR_STOP=1 --quiet -c "create database zavqera_own_templates"
           chmod +x tool/own_templates_proof.sh
           ./tool/own_templates_proof.sh
+
+      - name: Prove plan dates and the calendar link are private, plan-limited and revocable
+        env:
+          PGPASSWORD: postgres
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/zavqera_plan_dates
+        run: |
+          set -euo pipefail
+          psql "postgresql://postgres:postgres@127.0.0.1:5432/postgres" -v ON_ERROR_STOP=1 --quiet -c "create database zavqera_plan_dates"
+          chmod +x tool/plan_dates_calendar_proof.sh
+          ./tool/plan_dates_calendar_proof.sh

@@ -1905,3 +1905,40 @@ html[dir="rtl"] .try-more a span[aria-hidden="true"] { display:inline-block; tra
 @media (max-width:700px) { .own-template-actions { flex-direction:column; align-items:stretch; } .own-template-actions .button { width:100%; } }
 .pricing-new { display:inline-block; margin-inline-start:4px; padding:1px 7px; border-radius:99px; font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--teal); background:#e5f4f1; vertical-align:1px; }
 :root[data-theme="dark"] .pricing-new { background:#1a2825; }
+
+/* Plan dates and the calendar link. */
+.plan-dates-card h2 { margin:0 0 10px; font-size:21px; }
+.plan-countdown { color:var(--teal); }
+.plan-countdown-today { color:var(--orange); }
+.plan-countdown-past { color:#b4532a; }
+.plan-dates-target { font-weight:500; color:var(--muted); font-size:16px; }
+.plan-dates-late { margin:0 0 12px; padding:10px 12px; border-radius:6px; background:#fbeee7; color:#7a3415; }
+.plan-dates-late ul { margin:6px 0 0; padding-inline-start:18px; }
+.plan-dates-next { margin:0 0 12px; }
+.plan-dates-edit { margin:6px 0 16px; border-top:1px solid var(--line); padding-top:10px; }
+.plan-dates-edit summary { cursor:pointer; font-weight:700; color:var(--navy); padding:6px 0; }
+.plan-dates-form { display:grid; gap:10px; margin-top:10px; }
+.plan-dates-row { display:grid; grid-template-columns:minmax(0,1fr) 170px; gap:10px; align-items:center; }
+.plan-dates-row input[type=date] { width:100%; border:1px solid #c9d3da; border-radius:5px; padding:9px 10px; font:inherit; color:var(--ink); background:var(--white); }
+.plan-dates-step { overflow-wrap:anywhere; }
+.plan-dates-target-row span { font-weight:700; }
+.plan-dates-law { grid-template-columns:1fr; padding:10px 12px; border-radius:6px; border-inline-start:3px solid var(--teal); background:rgba(58,201,189,.08); }
+.plan-dates-law label { display:grid; grid-template-columns:minmax(0,1fr) 170px; gap:10px; align-items:center; }
+.plan-dates-law-rule { margin:0; font-size:14px; }
+.plan-dates-calendar { border-top:1px solid var(--line); padding-top:12px; }
+.plan-dates-calendar h3 { margin:0 0 6px; font-size:16px; }
+.plan-dates-calendar-actions { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+.plan-dates-upgrade p { margin:0 0 10px; }
+.due-chip { display:inline-block; margin-inline-start:8px; padding:2px 8px; border-radius:99px; font-size:12px; font-weight:700; background:rgba(58,201,189,.12); color:var(--teal); }
+.due-chip-late { background:#fbeee7; color:#b4532a; }
+.calendar-page .card { margin-bottom:18px; }
+.calendar-buttons { display:flex; flex-wrap:wrap; gap:10px; margin:8px 0 12px; }
+.calendar-notes { margin:14px 0 0; padding-inline-start:18px; font-size:14px; }
+.calendar-notes li { margin:6px 0; }
+.calendar-mission-paused { opacity:.65; }
+.copy-link { display:flex; gap:8px; align-items:stretch; flex-wrap:wrap; }
+.copy-link input { flex:1 1 260px; min-width:0; border:1px solid #c9d3da; border-radius:5px; padding:9px 10px; font:13px ui-monospace, SFMono-Regular, Menlo, monospace; color:var(--ink); background:var(--white); }
+:root[data-theme="dark"] .plan-dates-late { background:#3a2219; color:#f2c3ab; }
+:root[data-theme="dark"] .due-chip-late { background:#3a2219; color:#f2a57e; }
+:root[data-theme="dark"] .plan-dates-row input[type=date], :root[data-theme="dark"] .copy-link input { border-color:#151a1d; color-scheme:dark; }
+@media (max-width:700px) { .plan-dates-row, .plan-dates-law label { grid-template-columns:1fr; } .calendar-buttons .button { width:100%; text-align:center; } }

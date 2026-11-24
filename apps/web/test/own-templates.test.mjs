@@ -154,7 +154,8 @@ test("an unreadable plan is Free: a feature is never unlocked by an error", () =
 
 test("the Mission page offers it where it helps, and only where the database exists", () => {
   const page = read("app/app/missions/[id]/page.tsx");
-  assert.match(page, /isSupabaseConfigured\(\) \? \{ active: hasOwnTemplates\(await readCurrentPlan\(\)\) \} : null/);
+  assert.match(page, /const plan = isSupabaseConfigured\(\) \? await readCurrentPlan\(\) : "free";/);
+  assert.match(page, /isSupabaseConfigured\(\) \? \{ active: hasOwnTemplates\(plan\) \} : null/);
   assert.match(page, /<OwnTemplateBox missionId=\{mission\.id\} missionName=\{mission\.name\} active=\{ownTemplates\.active\} notice=\{query\?\.template\} \/>/);
   const box = read("components/own-template-box.tsx");
   assert.match(box, /href="\/pricing"><LocalizedText en="See Pro and Scale"/, "Free and Plus see where it is");
