@@ -231,8 +231,8 @@ export default async function MissionDetailPage({
           <h2><LocalizedText en="Recent checkpoints" /></h2>
           {mission.activity.length
             ? <div className="timeline">{mission.activity.map((item, index) => <div className="timeline-item" key={`${item.label}-${item.time}-${index}`}><strong>{t(item.label)}</strong><span>{item.fromStatus && item.toStatus
-              ? `${statusWord(item.label, item.fromStatus, t)} → ${statusWord(item.label, item.toStatus, t)}`
-              : t(item.detail)} · <LocalizedDateTime value={item.time} /></span></div>)}</div>
+              ? `${statusWord(item.label, item.fromStatus, t)} → ${statusWord(item.label, item.toStatus, t)}${item.withProof ? ` · ${t("with proof")}` : ""} · `
+              : item.detail ? `${t(item.detail)} · ` : ""}<LocalizedDateTime value={item.time} /></span></div>)}</div>
             : <p className="detail-intent"><LocalizedText en="No history has been recorded for this mission yet." /></p>}
         </section>
       </div>

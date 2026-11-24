@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { evidenceFromProof, hasProof, normaliseProof, proofCitation, proofLinkLabel } from "../lib/step-proof.mjs";
-import { mergeCriteria, humaniseEventType } from "../lib/mission-content.mjs";
+import { composeMissionObjective, humaniseEventType, mergeCriteria, parseMissionObjective, verificationReadiness } from "../lib/mission-content.mjs";
 
 const read = (path) => readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
@@ -121,4 +121,61 @@ test("a step is marked done in one tap, with proof optional and shown afterwards
 
 test("the history names a proof edit in words", () => {
   assert.equal(humaniseEventType("ACTION_PROOF_RECORDED"), "Proof added to a step");
+});
+
+// ---------------------------------------------------------------------------
+// Live check, 24 Nov: what the activity list and the evidence line showed.
+// ---------------------------------------------------------------------------
+import { collapseLifecycleChains, eventDetail } from "../lib/mission-content.mjs";
+
+test("one automatic walk reads as one line, above the step that caused it", () => {
+  const time = "2026-11-23T18:37:00Z";
+  const activity = [
+    { label: "Step status changed", fromStatus: "PENDING", toStatus: "COMPLETED", time, detail: "" },
+    { label: "Mission status changed", fromStatus: "PLANNING", toStatus: "READY", time, detail: "" },
+    { label: "Mission status changed", fromStatus: "DRAFT", toStatus: "PLANNING", time, detail: "" },
+    { label: "Mission status changed", fromStatus: "READY", toStatus: "RUNNING", time, detail: "" },
+    { label: "Step status changed", fromStatus: "RUNNING", toStatus: "COMPLETED", time: "2026-11-23T17:42:00Z", detail: "" },
+  ];
+  const collapsed = collapseLifecycleChains(activity);
+  assert.equal(collapsed.length, 3);
+  assert.deepEqual([collapsed[0].label, collapsed[0].fromStatus, collapsed[0].toStatus], ["Mission status changed", "DRAFT", "RUNNING"]);
+  assert.equal(collapsed[1].label, "Step status changed");
+  // A single manual move is left as it is.
+  const single = [{ label: "Mission status changed", fromStatus: "RUNNING", toStatus: "PAUSED", time, detail: "" }];
+  assert.deepEqual(collapseLifecycleChains(single), single);
+});
+
+test("verification and outcome events say what happened in words, not codes", () => {
+  assert.equal(eventDetail("VERIFICATION_RECORDED", { status: "VERIFIED" }), "Verified");
+  assert.equal(eventDetail("OUTCOME_COMMITTED", { status: "COMPLETED" }), "Complete");
+  assert.equal(eventDetail("OUTCOME_COMMITTED", { status: "FAILED" }), "Did not succeed");
+  assert.equal(eventDetail("MISSION_OBJECTIVE_UPDATED", { objective: "x".repeat(500) }), "");
+  assert.equal(humaniseEventType("VERIFICATION_RECORDED"), "Verification recorded");
+  assert.equal(humaniseEventType("MISSION_OBJECTIVE_UPDATED"), "Mission details edited");
+});
+
+test("an evidence line does not end the step title with a stop before the colon", () => {
+  assert.equal(proofCitation({ title: "Check the rules.", evidenceNote: "Read the page", evidenceUrl: null }), "- Check the rules: Read the page");
+  assert.equal(proofCitation({ title: "تحقّق من المتطلبات.", evidenceNote: "قرأت الصفحة", evidenceUrl: null }), "- تحقّق من المتطلبات: قرأت الصفحة");
+});
+
+test("a saved step closes its form at once and is not shown as an error", () => {
+  const controls = read("components/action-mutation-controls.tsx");
+  assert.match(controls, /setProofOpen\(false\);\s*setSaved\(true\);/);
+  assert.match(controls, /className="action-saved" role="status"/);
+});
+
+test("a mission without criteria does not show an empty heading in its intent", () => {
+  const stored = "Test: first month\n\nSort out the basics after the move.\n\nSuccess criteria:";
+  assert.deepEqual(parseMissionObjective(stored), { name: "Test: first month", intent: "Sort out the basics after the move.", criteria: [] });
+  const composed = composeMissionObjective({ name: "N", intent: "Intent text", criteria: [] });
+  assert.doesNotMatch(composed, /Success criteria/);
+  assert.deepEqual(parseMissionObjective(composeMissionObjective({ name: "N", intent: "Intent text", criteria: ["A", "B"] })).criteria, ["A", "B"]);
+});
+
+test("an empty mission does not offer verification; it asks for the work first", () => {
+  const readiness = verificationReadiness({ lifecycleStatus: "DRAFT", actions: [] });
+  assert.equal(readiness.ready, false);
+  assert.match(readiness.reason, /add the work first/i);
 });

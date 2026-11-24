@@ -75,3 +75,6 @@ export declare function mergeCriteria(existing?: string[], incoming?: unknown[],
   criteria: string[];
   added: string[];
 };
+
+export declare function eventDetail(eventType: string, payload: unknown): string;
+export declare function collapseLifecycleChains<T extends { label: string; time: string; fromStatus?: string; toStatus?: string }>(activity?: T[]): T[];

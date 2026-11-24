@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { createSupabaseServerClient } from "./server";
 import { WORKSPACE_COOKIE, workspaceCookieValue } from "../team-workspace.mjs";
 import { MissionMutationConflictError, MissionMutationRejectedError, type MissionRepository, type NewMission, type NewOutcome, type NewVerification, type UpdateMission } from "../mission-repository";import type { ActionStatus, Mission, MissionAction, MissionActivity, MissionOutcome, MissionVerification, MissionLifecycleStatus } from "../view-models";
-import { humaniseEventType, parseMissionObjective, summariseEventPayload } from "../mission-content.mjs";
+import { collapseLifecycleChains, eventDetail, humaniseEventType, parseMissionObjective } from "../mission-content.mjs";
 
 type MissionRow = {
   id: string;
@@ -62,11 +62,17 @@ function toOutcome(row: OutcomeRow): MissionOutcome {
 }
 
 function toActivity(row: EventRow): MissionActivity {
-  const payload = row.payload as { from_status?: unknown; to_status?: unknown } | null;
+  const payload = row.payload as { from_status?: unknown; to_status?: unknown; has_proof?: unknown } | null;
   const transition = payload && typeof payload.from_status === "string" && typeof payload.to_status === "string"
     ? { fromStatus: payload.from_status, toStatus: payload.to_status }
     : {};
-  return { label: humaniseEventType(row.event_type), detail: summariseEventPayload(row.payload), time: row.created_at, ...transition };
+  return {
+    label: humaniseEventType(row.event_type),
+    detail: eventDetail(row.event_type, row.payload),
+    time: row.created_at,
+    ...transition,
+    ...(row.event_type === "ACTION_STATUS_TRANSITION" && payload?.has_proof === true ? { withProof: true } : {}),
+  };
 }
 
 function toAction(row: ActionRow): MissionAction {
@@ -162,7 +168,7 @@ async function historyFor(supabase: SupabaseClient, missionId: string) {
   return {
     verifications: (verifications.data as VerificationRow[]).map(toVerification),
     outcomes: (outcomes.data as OutcomeRow[]).map(toOutcome),
-    activity: (events.data as EventRow[]).map(toActivity),
+    activity: collapseLifecycleChains((events.data as EventRow[]).map(toActivity)),
   };
 }
 

@@ -1795,3 +1795,5 @@ html[dir="rtl"] input, html[dir="rtl"] textarea {
 .manual-state summary { cursor:pointer; color:var(--muted); font-size:14px; }
 .manual-state[open] summary { margin-bottom:8px; }
 @media (max-width:700px) { .proof-form, .action-proof { width:100%; max-width:none; }.proof-form .button { flex:1 1 auto; text-align:center; } }
+.action-saved { margin:4px 0 0; font-size:13px; color:#22605a; }
+:root[data-theme="dark"] .action-saved, :root[data-theme="dark"] .action-proof-label, :root[data-theme="dark"] .action-proof-text a { color:#7fd1c4; }

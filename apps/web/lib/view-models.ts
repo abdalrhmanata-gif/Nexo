@@ -20,6 +20,8 @@ export type MissionActivity = {
   /** Set for a status change, so the page can show both states in the reader's language. */
   fromStatus?: string;
   toStatus?: string;
+  /** A step marked done with a note or link. */
+  withProof?: boolean;
   label: string;
   detail: string;
   time: string;
