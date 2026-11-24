@@ -70,9 +70,9 @@ export function PlanDatesCard({ missionId, actions, dates, calendar, notice }: {
 
     {late.length > 0 && <div className="plan-dates-late" role="status">
       <strong><LocalizedFill en={late.length === 1 ? "1 step is late" : "{count} steps are late"} values={{ count: late.length }} /></strong>
-      <ul>{late.slice(0, 3).map((action) => <li key={action.id}>{action.title} · <PlanDay value={dates.dueDates[action.id].dueOn} /></li>)}</ul>
+      <ul>{late.slice(0, 3).map((action) => <li key={action.id}><bdi>{action.title}</bdi> · <PlanDay value={dates.dueDates[action.id].dueOn} /></li>)}</ul>
     </div>}
-    {next && <p className="plan-dates-next"><LocalizedText en="Next date:" /> <strong>{next.title}</strong> · <PlanDay value={dates.dueDates[next.id].dueOn} /></p>}
+    {next && <p className="plan-dates-next"><LocalizedText en="Next date:" /> <strong><bdi>{next.title}</bdi></strong> · <PlanDay value={dates.dueDates[next.id].dueOn} /></p>}
 
     <details className="plan-dates-edit" open={!anyDate}>
       <summary><LocalizedText en={anyDate ? "Change the dates" : "Set the dates"} /></summary>
@@ -88,7 +88,7 @@ export function PlanDatesCard({ missionId, actions, dates, calendar, notice }: {
           const due = dates.dueDates[action.id];
           if (deadline) {
             return <div className="plan-dates-row plan-dates-law" key={action.id}>
-              <span className="plan-dates-step">{action.title}</span>
+              <span className="plan-dates-step"><bdi>{action.title}</bdi></span>
               <p className="plan-dates-law-rule">
                 <strong><LocalizedText en="Deadline set by law:" /></strong> <LocalizedText en={deadline.rule} />{" "}
                 <a href={legalSourceUrl(deadline)} target="_blank" rel="noopener noreferrer"><LocalizedText en="Official source" /></a>
@@ -104,7 +104,7 @@ export function PlanDatesCard({ missionId, actions, dates, calendar, notice }: {
             </div>;
           }
           return <label className="plan-dates-row" key={action.id}>
-            <span className="plan-dates-step">{action.status === "COMPLETED" ? "✓ " : ""}{action.title}</span>
+            <span className="plan-dates-step">{action.status === "COMPLETED" ? "✓ " : ""}<bdi>{action.title}</bdi></span>
             <input type="date" name={`due:${action.id}`} defaultValue={due?.dueOn ?? ""} min="2000-01-01" max="2100-12-31" />
           </label>;
         })}

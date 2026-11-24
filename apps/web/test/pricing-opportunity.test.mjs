@@ -184,3 +184,18 @@ test("own templates are sold only where they exist: on Pro and Scale, after the 
   assert.match(sql, new RegExp(`>= ${OWN_TEMPLATE_LIMIT} then`));
   assert.match(sql, new RegExp(`e\\.plan in \\('${OWN_TEMPLATE_PLANS[0]}', '${OWN_TEMPLATE_PLANS[1]}'\\)`));
 });
+
+test("the calendar is sold as it works: 1, 3, every Mission, with Google's daily check said plainly", async () => {
+  const pricing = read("app/pricing/page.tsx");
+  const { CALENDAR_LIMITS } = await import("../lib/plan-dates.mjs");
+  assert.deepEqual({ ...CALENDAR_LIMITS }, { free: 1, plus: 3, pro: null, scale: null }, "update the pricing page with the limits");
+  const card = (name) => pricing.slice(pricing.indexOf(`name: "${name}"`), pricing.indexOf("],", pricing.indexOf("features:", pricing.indexOf(`name: "${name}"`))));
+  assert.match(card("Free"), /"Your plan in Google, Apple or Outlook calendar: 1 Mission"/);
+  assert.match(card("Plus"), /"Your calendar: 3 Missions"/);
+  for (const name of ["Pro", "Scale"]) assert.match(card(name), /"Your calendar: every Mission"/, name);
+  assert.match(pricing, /Free holds 1 Mission, Plus 3, Pro and Scale every Mission\. Google checks the link about once a day/);
+  // Every feature on the cards exists: the dates and calendar files are in place.
+  for (const file of ["app/app/calendar/page.tsx", "app/api/calendar/[file]/route.ts", "components/plan-dates-card.tsx", "lib/legal-deadlines.ts"]) {
+    assert.ok(existsSync(join(webRoot, file)), file);
+  }
+});

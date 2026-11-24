@@ -93,7 +93,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             return <li key={mission.id} className={paused ? "calendar-mission-paused" : undefined}>
               <div className="card-heading">
                 <div>
-                  <Link className="action-title" href={`/app/missions/${mission.id}#plan-dates`}>{mission.name}</Link>
+                  <Link className="action-title" href={`/app/missions/${mission.id}#plan-dates`}><bdi>{mission.name}</bdi></Link>
                   {paused && <small className="action-hint"><LocalizedText en="Paused: beyond your plan's limit. It returns when you remove another or move to a bigger plan." /></small>}
                 </div>
                 <form action={removeMissionFromCalendar}>
