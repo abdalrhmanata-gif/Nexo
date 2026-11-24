@@ -7,6 +7,7 @@ import { missionTemplates } from "../mission-templates";
 import { publicMissionSnapshot, shareIdOrNull } from "../mission-share.mjs";
 import type { DueDate } from "../plan-dates.mjs";
 import type { McpApi, McpMissionDates } from "./tools.mjs";
+import { checkAccessToken, type TokenCheck } from "./identity.mjs";
 import type { Mission } from "../view-models";
 
 /**
@@ -24,18 +25,25 @@ export function clientForToken(token: string): SupabaseClient {
 }
 
 /**
- * The person behind a token, or null when it is missing, expired, revoked or
- * not issued by this project. Asks Supabase Auth rather than only checking
- * the signature, so a connection the person removed stops working at once.
+ * The person behind a token: `{ id }`, null when it is missing, expired,
+ * revoked or not issued by this project, or "unavailable" when Supabase Auth
+ * could not answer. Asks Supabase Auth's userinfo endpoint for OAuth apps
+ * rather than only checking the signature, so a connection the person
+ * removed stops working at once (see lib/mcp/identity.mjs).
  */
-export async function userForToken(client: SupabaseClient, token: string): Promise<{ id: string } | null> {
-  try {
-    const { data, error } = await client.auth.getUser(token);
-    if (error || !data.user) return null;
-    return { id: data.user.id };
-  } catch {
-    return null;
-  }
+export async function userForToken(client: SupabaseClient, token: string): Promise<TokenCheck> {
+  if (!supabaseUrl || !supabasePublishableKey) return "unavailable";
+  return checkAccessToken({
+    supabaseUrl,
+    apiKey: supabasePublishableKey,
+    token,
+    // Only if the userinfo endpoint does not exist on the server.
+    fallback: async () => {
+      const { data, error } = await client.auth.getUser(token);
+      if (error || !data.user) return null;
+      return { id: data.user.id };
+    },
+  });
 }
 
 /** The tools' view of the person's workspace, built on the website's own repositories. */

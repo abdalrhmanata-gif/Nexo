@@ -280,7 +280,8 @@ test("the route requires a token on every POST, answers notifications with 202, 
   assert.match(route, /if \(answer === null\) return new NextResponse\(null, \{ status: 202/);
   assert.match(route, /export function GET\(\) \{[\s\S]*?status: 405/);
   const data = read("lib/mcp/data.ts");
-  assert.match(data, /client\.auth\.getUser\(token\)/, "Auth is asked each time, so a removed connection stops at once");
+  assert.match(data, /return checkAccessToken\(\{/, "Auth is asked each time, so a removed connection stops at once");
+  assert.match(route, /if \(user === "unavailable"\) \{[\s\S]*?status: 503, headers: \{ \.\.\.BASE_HEADERS, "Retry-After": "5" \}/, "an Auth outage asks to retry, not to reconnect");
   assert.match(data, /global: \{ headers: \{ Authorization: `Bearer \$\{token\}` \} \}/, "every statement runs as the person");
   assert.doesNotMatch(data, /SERVICE_ROLE|service_role|SUPABASE_SECRET/i, "no elevated key, ever");
   for (const path of ["app/.well-known/oauth-protected-resource/route.ts", "app/.well-known/oauth-protected-resource/mcp/route.ts"]) {
@@ -322,4 +323,49 @@ test("the guide, the menu and the privacy notice tell people what the assistant 
   assert.match(read("app/privacy/page.tsx"), /AI assistants you connect/);
   assert.match(read("app/robots.ts"), /"\/mcp", "\/oauth"/);
   assert.match(read("app/sitemap.ts"), /"\/ai"/);
+});
+
+test("the token is checked at Supabase Auth's userinfo endpoint for OAuth apps, and only falls back where it does not exist", async () => {
+  const { checkAccessToken, readUserInfo, userInfoUrl } = await import("../lib/mcp/identity.mjs");
+  const id = "0a1b2c3d-4e5f-4a6b-8c7d-9e0f1a2b3c4d";
+  assert.equal(userInfoUrl("https://ref.supabase.co/"), "https://ref.supabase.co/auth/v1/oauth/userinfo");
+
+  assert.deepEqual(readUserInfo(200, { sub: id.toUpperCase() }), { outcome: "user", id });
+  for (const body of [null, {}, { sub: "" }, { sub: "not-a-uuid" }, { sub: 42 }]) assert.deepEqual(readUserInfo(200, body), { outcome: "rejected" }, JSON.stringify(body));
+  for (const status of [400, 401, 403]) assert.deepEqual(readUserInfo(status, null), { outcome: "rejected" }, String(status));
+  for (const status of [404, 405]) assert.deepEqual(readUserInfo(status, null), { outcome: "unsupported" }, String(status));
+  for (const status of [429, 500, 502, 503]) assert.deepEqual(readUserInfo(status, null), { outcome: "unavailable" }, String(status));
+
+  const calls = [];
+  const answer = (status, body) => async (url, init) => {
+    calls.push({ url, init });
+    return { status, json: async () => { if (body instanceof Error) throw body; return body; } };
+  };
+  const base = { supabaseUrl: "https://ref.supabase.co", apiKey: "sb_publishable_test", token: "tok" };
+  let fallbacks = 0;
+  const fallback = async () => { fallbacks += 1; return { id }; };
+
+  assert.deepEqual(await checkAccessToken({ ...base, fallback, fetchImpl: answer(200, { sub: id }) }), { id });
+  assert.equal(calls[0].url, "https://ref.supabase.co/auth/v1/oauth/userinfo");
+  assert.equal(calls[0].init.headers.Authorization, "Bearer tok");
+  assert.equal(calls[0].init.headers.apikey, "sb_publishable_test");
+  assert.equal(calls[0].init.cache, "no-store");
+  assert.ok(calls[0].init.signal, "a slow Auth answer cannot hold the request open");
+
+  assert.equal(await checkAccessToken({ ...base, fallback, fetchImpl: answer(403, null) }), null, "a removed connection is refused");
+  assert.equal(await checkAccessToken({ ...base, fallback, fetchImpl: answer(401, null) }), null);
+  assert.equal(await checkAccessToken({ ...base, fallback, fetchImpl: answer(200, new Error("bad json")) }), null, "an unreadable answer fails closed");
+  assert.equal(await checkAccessToken({ ...base, fallback, fetchImpl: answer(503, null) }), "unavailable");
+  assert.equal(await checkAccessToken({ ...base, fallback, fetchImpl: answer(429, null) }), "unavailable");
+  assert.equal(await checkAccessToken({ ...base, fallback, fetchImpl: async () => { throw new Error("network"); } }), "unavailable");
+  assert.equal(fallbacks, 0, "the fallback is never used while the userinfo endpoint answers");
+
+  assert.deepEqual(await checkAccessToken({ ...base, fallback, fetchImpl: answer(404, null) }), { id }, "falls back only where the endpoint does not exist");
+  assert.equal(fallbacks, 1);
+  assert.equal(await checkAccessToken({ ...base, fallback: async () => { throw new Error("down"); }, fetchImpl: answer(404, null) }), "unavailable");
+  assert.equal(await checkAccessToken({ ...base, fetchImpl: answer(404, null) }), "unavailable");
+
+  let fetched = 0;
+  assert.equal(await checkAccessToken({ ...base, token: "", fetchImpl: async () => { fetched += 1; } }), null);
+  assert.equal(fetched, 0, "no token, no request");
 });
