@@ -24,6 +24,7 @@ function parse(lang) {
     const list = (key) => [...(new RegExp(`^ {6}${key}: \\[([^\\]]*)\\]`, "m").exec(block)?.[1] ?? "").matchAll(/"([^"]+)"/g)].map((m) => m[1]);
     return {
       slug: /^"([^"]+)"/.exec(block)[1],
+      country: string("country"),
       metaTitle: string("metaTitle"),
       metaDescription: string("metaDescription"),
       steps,
@@ -64,13 +65,14 @@ test("Arabic reads right to left and no other language does", () => {
   }
 });
 
-test("every cited source is an official https page: US .gov or a listed German official host", () => {
+test("every cited source is an official https page: US .gov or a listed official host", () => {
   const text = read("lib/guides/sources.ts");
   const urls = [...text.matchAll(/: "(https?:[^"]+)"/g)].map((match) => match[1]);
   const hosts = [...(/OFFICIAL_HOSTS = \[([\s\S]*?)\]/.exec(text)?.[1] ?? "").matchAll(/"([^"]+)"/g)].map((match) => match[1]);
   assert.ok(urls.length > 0, "no sources found; the reader of this test has stopped matching");
-  assert.ok(hosts.length > 0, "no official German hosts found");
-  for (const host of hosts) assert.match(host, /(^|\.)(gesetze-im-internet\.de|make-it-in-germany\.com|bund\.de|bafin\.de|bamf\.de|rundfunkbeitrag\.de)$/, host);
+  assert.ok(hosts.length > 0, "no official hosts found");
+  // Germany's federal and statutory bodies, and the UK's GOV.UK and NHS.
+  for (const host of hosts) assert.match(host, /^((www\.)?(gesetze-im-internet\.de|make-it-in-germany\.com|bafin\.de|bamf\.de|rundfunkbeitrag\.de)|[a-z]+\.bund\.de|www\.gov\.uk|www\.nhs\.uk)$/, host);
   for (const url of urls) {
     const { protocol, hostname } = new URL(url);
     assert.equal(protocol, "https:", url);
@@ -83,11 +85,11 @@ test("a related guide always points at a guide that exists", () => {
   for (const guide of english) for (const slug of guide.related) assert.ok(slugs.includes(slug), `related guide "${slug}" does not exist`);
 });
 
-test("a dollar or euro amount appears only in a step that cites its source", () => {
+test("a dollar, euro or pound amount appears only in a step that cites its source", () => {
   for (const lang of LANGUAGES) {
     for (const guide of parsed[lang]) {
       for (const step of guide.steps) {
-        if (/\$\s?\d|\d\s?\$|€\s?\d|\d\s?€|\d\s?(euro|euros|Euro|يورو)\b/.test(step.body)) assert.ok(step.source, `${lang}/${guide.slug}: "${step.heading}" states an amount without a source`);
+        if (/\$\s?\d|\d\s?\$|€\s?\d|\d\s?€|£\s?\d|\d\s?£|\d\s?(euro|euros|Euro|يورو|pounds?|Pfund|pund|libras|livres|جنيه[اً]*)/.test(step.body)) assert.ok(step.source, `${lang}/${guide.slug}: "${step.heading}" states an amount without a source`);
       }
     }
   }
@@ -97,9 +99,9 @@ test("every guide names its country, and each country has its notice in every la
   for (const lang of LANGUAGES) {
     const body = read(`lib/guides/${lang}.ts`);
     const guides = body.split(/\n {4}\{\n {6}slug: /).slice(1);
-    for (const block of guides) assert.match(block, /^ {6}country: "(us|de)",$/m, `${lang}: a guide has no country`);
+    for (const block of guides) assert.match(block, /^ {6}country: "(us|de|uk)",$/m, `${lang}: a guide has no country`);
     for (const field of ["countryNotice", "countryHeading", "disclaimer"]) {
-      assert.match(body, new RegExp(`${field}: \\{\\n {6}us: "[^"]+",\\n {6}de: "[^"]+",`), `${lang}: ${field} is not set for both countries`);
+      assert.match(body, new RegExp(`${field}: \\{\\n {6}us: "[^"]+",\\n {6}de: "[^"]+",\\n {6}uk: "[^"]+",`), `${lang}: ${field} is not set for every country`);
     }
   }
   const component = read("components/guide-article.tsx");
@@ -116,6 +118,24 @@ test("the Germany guide covers the first-month essentials, each with its officia
     assert.ok(sources.includes(key), `no step cites ${key}`);
   }
   assert.ok(germany.sources.includes("deFines"), "the fine in the FAQ needs its source in the list");
+});
+
+test("the UK guide covers the first-month essentials, each with its official source", () => {
+  const uk = english.find((guide) => guide.slug === "moving-to-the-uk-checklist");
+  assert.ok(uk, "the UK guide is missing");
+  assert.equal(uk.country, "uk");
+  const sources = uk.steps.map((step) => step.source).filter(Boolean);
+  for (const key of ["ukEvisa", "ukRent", "ukCouncilTax", "ukGp", "ukNino", "ukBank", "ukTaxCode", "ukTvLicence", "ukDriving"]) {
+    assert.ok(sources.includes(key), `no step cites ${key}`);
+  }
+  // Facts that are England-only must say so, in every language.
+  for (const lang of LANGUAGES) {
+    const guide = parsed[lang].find((item) => item.slug === "moving-to-the-uk-checklist");
+    const rent = guide.steps.find((step) => step.source === "ukRent");
+    const gp = guide.steps.find((step) => step.source === "ukGp");
+    const england = { en: "England", ar: "إنجلترا", es: "Inglaterra", fr: "Angleterre", de: "England", nb: "England" }[lang];
+    assert.ok(rent.heading.includes(england) && gp.body.includes(england), `${lang}: right to rent and GP registration are said to be for England`);
+  }
 });
 
 test("search titles and descriptions fit what Google shows", () => {

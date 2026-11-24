@@ -54,6 +54,18 @@ test("a country guide needs the country and a move, not either alone", () => {
   expectMatch("Move to Canada", "planner", "move");
 });
 
+test("the UK guide needs the UK and a move, like the Germany one", () => {
+  for (const goal of ["Move to London", "Moving to the UK for work", "Find a job in London", "الانتقال إلى بريطانيا",
+    "أريد العمل في لندن", "Mudarme a Londres", "S'installer au Royaume-Uni", "Nach Großbritannien umziehen", "Flytte til Storbritannia"]) {
+    expectMatch(goal, "guide", "moving-to-the-uk-checklist");
+  }
+  expectMatch("A weekend trip to London", "planner", "travel");
+  expectMatch("Learn English in London", "planner", "study");
+  // French verbs written with an apostrophe still count as a move.
+  expectMatch("Déménager en Allemagne et m'y installer", "guide", "moving-to-germany-checklist");
+  expectMatch("M'installer au Canada", "template", "settle-new-country");
+});
+
 test("American guides need America, except where only America has the thing", () => {
   expectMatch("Start a business in the US", "guide", "how-to-start-a-business");
   expectMatch("Get an EIN for my company", "guide", "how-to-get-an-ein");
