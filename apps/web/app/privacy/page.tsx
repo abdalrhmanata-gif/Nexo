@@ -224,6 +224,16 @@ export default function PrivacyPage() {
         OpenAI&apos;s API terms, data sent through the API is not used to train its models by default.
       </p>
       <p>
+        <strong>AI assistants you connect.</strong> You can connect ZAVQERA to an AI assistant such as ChatGPT
+        (OpenAI), Claude (Anthropic) or Gemini (Google). You approve each one on zavqera.com; it then receives an
+        access token for your account, never your password, and acts with your permissions only. When you ask it to,
+        it reads or changes your Missions, steps, proof and dates through ZAVQERA&apos;s tools. What it reads
+        becomes part of your conversation with that assistant and is handled by its provider under that
+        provider&apos;s own privacy policy, as a separate controller. We do not receive your conversation, only the
+        tool requests the assistant sends. We keep a record of which assistants you have approved and when, until you
+        remove them. You can remove an assistant at any time under Connected AI apps, and its access ends at once.
+      </p>
+      <p>
         <strong>No automated decision-making.</strong> Nothing here produces a decision with legal or similarly
         significant effects for you within the meaning of Article 22. Suggestions are proposals you are free to
         ignore, and no outcome is applied to you automatically.

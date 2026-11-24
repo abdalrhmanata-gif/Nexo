@@ -1,0 +1,10 @@
+export declare const STEP_STATUS_OUT: Readonly<Record<string, string>>;
+export declare const STEP_STATUS_IN: Readonly<Record<string, string>>;
+export declare function missionUrl(origin: string, missionId: string): string;
+export declare function stepView(action: unknown, dates?: unknown): Record<string, unknown>;
+export declare function missionSummary(mission: unknown, dates: unknown, origin: string, today: string): Record<string, unknown>;
+export declare function missionDetail(mission: unknown, dates: unknown, origin: string, today: string): Record<string, unknown>;
+export declare function nextSteps(entries: { mission: unknown; dates?: unknown }[], today: string, options?: { limit?: number; soonDays?: number }): Record<string, unknown>[];
+export declare function missionSummaryText(summary: unknown): string;
+export declare function missionDetailText(detail: unknown): string;
+export declare function nextStepsText(items: unknown[]): string;

@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { createSupabaseServerClient } from "./server";
 import { supabasePublishableKey, supabaseUrl } from "./config";
 import { isPlanDate, type CalendarFeedRow, type DueDate } from "../plan-dates.mjs";
@@ -31,9 +31,9 @@ function refusal(error: { code?: string; message?: string }): PlanDatesError {
  * A Mission's dates. Read separately from the Mission itself, and never
  * fatal: if the dates cannot be read the page still works without them.
  */
-export async function readMissionDates(missionId: string): Promise<MissionDates> {
+export async function readMissionDates(missionId: string, client?: SupabaseClient): Promise<MissionDates> {
   try {
-    const supabase = await createSupabaseServerClient();
+    const supabase = client ?? await createSupabaseServerClient();
     const [schedule, due] = await Promise.all([
       supabase.from("mission_schedules").select("target_date").eq("mission_id", missionId).maybeSingle(),
       supabase.from("action_due_dates").select("action_id, due_on, basis").eq("mission_id", missionId),
@@ -73,10 +73,17 @@ async function updateOrInsert(update: () => Written, insert: () => Written) {
   if (!created.data?.length) throw new PlanDatesError("forbidden");
 }
 
-export async function createPlanDatesRepository() {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) throw new Error("Authentication required.");
+/**
+ * With no client, the signed-in visitor's session from the cookies. An
+ * assistant connected over MCP passes its own client, which already carries
+ * the person's OAuth token; row level security applies to both.
+ */
+export async function createPlanDatesRepository(client?: SupabaseClient) {
+  const supabase = client ?? await createSupabaseServerClient();
+  if (!client) {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error || !user) throw new Error("Authentication required.");
+  }
 
   /** The Missions in the person's calendar link, oldest added first. */
   async function calendarEntries(): Promise<CalendarEntry[]> {

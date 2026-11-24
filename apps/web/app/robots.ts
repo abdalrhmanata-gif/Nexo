@@ -6,7 +6,7 @@ import { SITE_URL } from "../lib/guides";
 // fetch them to draw link previews.
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: { userAgent: "*", allow: "/", disallow: ["/app", "/auth", "/api", "/invite"] },
+    rules: { userAgent: "*", allow: "/", disallow: ["/app", "/auth", "/api", "/invite", "/mcp", "/oauth"] },
     sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }

@@ -176,6 +176,17 @@ export async function createSupabaseMissionRepository(): Promise<MissionReposito
   const supabase = await createSupabaseServerClient();
   const { data: { user }, error } = await supabase.auth.getUser();
   if (error || !user) throw new Error("Authentication required.");
+  return missionRepositoryFor(supabase, user.id);
+}
+
+/**
+ * The same repository for a client that already carries the person's
+ * identity, such as an assistant connected over MCP with an OAuth token.
+ * Every statement still runs as that person, so row level security decides
+ * what it may read and change, exactly as for the website.
+ */
+export async function missionRepositoryFor(supabase: SupabaseClient, userId: string): Promise<MissionRepository> {
+  const user = { id: userId };
   const workspaceId = await currentWorkspace(supabase, user.id);
   const missionSelect = "id, objective, status, version, updated_at";
 

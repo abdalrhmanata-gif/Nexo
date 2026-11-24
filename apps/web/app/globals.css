@@ -1960,3 +1960,19 @@ html[dir="rtl"] .try-more a span[aria-hidden="true"] { display:inline-block; tra
 .calendar-stopped strong { color:inherit; }
 :root[data-theme="dark"] .calendar-other-ways summary { color:inherit; }
 @media (max-width:700px) { .calendar-primary { justify-self:stretch; text-align:center; } }
+
+/* AI assistants: consent, connections and the public guide. */
+.consent-page { max-width:640px; }
+.consent-card { display:grid; gap:12px; margin-top:24px; }
+.consent-card h2 { margin:6px 0 0; font-size:17px; }
+.consent-list, .ai-examples, .ai-assistants { margin:0; padding-inline-start:20px; display:grid; gap:6px; }
+.consent-warning { padding:12px 14px; border-radius:6px; background:rgba(182,91,42,.08); border-inline-start:3px solid var(--orange); }
+.consent-warning p { margin:0 0 6px; }
+.consent-warning p:last-child { margin:0; }
+.consent-actions { display:flex; flex-wrap:wrap; gap:10px; }
+.connections-list li { padding:10px 0; }
+.ai-page section { margin-top:18px; }
+.ai-page h2 { margin-top:0; }
+.ai-examples li { font-style:italic; }
+.ai-assistants { margin-top:12px; }
+:root[data-theme="dark"] .consent-warning { background:rgba(182,91,42,.16); }
