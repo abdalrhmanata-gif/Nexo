@@ -12,7 +12,7 @@ import { ThemeSwitcher } from "./theme-switcher";
 import { isSupabaseConfigured } from "../lib/supabase/config";
 import { createSupabaseServerClient } from "../lib/supabase/server";
 
-function NavIcon({ name }: { name: "search" | "plus" | "business" | "templates" | "pricing" | "workspace" | "opportunities" | "analytics" | "calendar" }) {
+function NavIcon({ name }: { name: "search" | "plus" | "business" | "templates" | "pricing" | "workspace" | "opportunities" | "analytics" | "calendar" | "assistant" }) {
   const common = { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true as const };
   switch (name) {
     case "search": return <svg {...common}><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 4.5 4.5" /></svg>;
@@ -24,6 +24,7 @@ function NavIcon({ name }: { name: "search" | "plus" | "business" | "templates" 
     case "workspace": return <svg {...common}><path d="M3 3h8v8H3zM13 3h8v5h-8zM13 10h8v11h-8zM3 13h8v8H3z" /></svg>;
     case "opportunities": return <svg {...common}><path d="M4 19V12M10 19V5M16 19V9M22 19V3" /></svg>;
     case "analytics": return <svg {...common}><path d="M3 3v18h18M7 15l4-5 3 3 5-7" /></svg>;
+    case "assistant": return <svg {...common}><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8z" /><path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8z" /></svg>;
   }
 }
 
@@ -107,6 +108,7 @@ function AccountMenu({ account, billing, siteOperator }: { account: AccountSumma
           {billing && <NavLink className="nav-link nav-billing" href="/app/billing"><NavIcon name="pricing" /><LocalizedText en="Billing" /></NavLink>}
           <NavLink className="nav-link nav-own-templates" href="/app/templates"><NavIcon name="templates" /><LocalizedText en="Your templates" /></NavLink>
           <NavLink className="nav-link nav-calendar" href="/app/calendar"><NavIcon name="calendar" /><LocalizedText en="Your calendar" /></NavLink>
+          <NavLink className="nav-link nav-connections" href="/app/connections"><NavIcon name="assistant" /><LocalizedText en="Connected AI apps" /></NavLink>
           <NavLink className="nav-link nav-team" href="/app/team"><NavIcon name="workspace" /><LocalizedText en="Team" /></NavLink>
           {siteOperator && <NavLink className="nav-link nav-analytics" href="/app/analytics"><NavIcon name="analytics" /><LocalizedText en="Website analytics" /></NavLink>}
         </div>
@@ -184,6 +186,7 @@ export function Shell({ children, signedIn = false, siteOperator = false, billin
             moment someone wants them: before they sign up. */}
         <span className="footer-links">
           <Link href={guidesHref} prefetch={false}><LocalizedText en="Guides" /></Link>
+          <Link href="/ai" prefetch={false}><LocalizedText en="AI assistants" /></Link>
           <Link href="/privacy" prefetch={false}><LocalizedText en="Privacy" /></Link>
           <Link href="/terms" prefetch={false}><LocalizedText en="Terms" /></Link>
         </span>
