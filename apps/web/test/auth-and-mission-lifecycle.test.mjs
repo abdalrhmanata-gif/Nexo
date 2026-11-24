@@ -159,3 +159,15 @@ test("mission deletion is authorized server-side and never trusts the client", a
   assert.match(repository, /ownedWorkspace\(supabase\)/);
   assert.doesNotMatch(repository, /\.from\("workspaces"\)\.insert\(/);
 });
+
+test("an auth form pressed before its script runs never puts the password in the address", async () => {
+  // Found by the browser test: a click that lands before hydration submitted
+  // the sign-up form as a GET, with the email and the password in the URL.
+  const form = await source("components/auth-form.tsx");
+  const forms = [...form.matchAll(/<form className="form-grid"[^>]*>/g)].map((match) => match[0]);
+  assert.equal(forms.length, 3, "sign-in/up, forgot and reset forms");
+  for (const tag of forms) assert.match(tag, /method="post"/);
+  const submits = [...form.matchAll(/<button className="button" type="submit" disabled=\{([^}]*)\}>/g)].map((match) => match[1]);
+  assert.equal(submits.length, 3);
+  for (const condition of submits) assert.match(condition, /!hydrated/);
+});

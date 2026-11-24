@@ -27,6 +27,19 @@ function FormMessage({ message }: { message: string }) {
   return <div className="success-state" role="status"><LocalizedText en={message} /></div>;
 }
 
+/**
+ * False until this form's script has run. Before that, pressing the button
+ * would submit the form the browser's own way, as a GET to this page, which
+ * put the email and the password into the address bar, the history and the
+ * server log. The button waits instead, and the form says POST in case it is
+ * ever submitted without us.
+ */
+function useHydrated() {
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+  return hydrated;
+}
+
 /** Where a confirmation link should bring the person back to. */
 function confirmationRedirect(nextPath: string) {
   return `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`;
@@ -138,6 +151,7 @@ export function AuthForm({ mode, google = false }: { mode: "sign-in" | "sign-up"
   const [loading, setLoading] = useState(false);
   const [sentTo, setSentTo] = useState("");
   const [unconfirmed, setUnconfirmed] = useState("");
+  const hydrated = useHydrated();
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -197,7 +211,7 @@ export function AuthForm({ mode, google = false }: { mode: "sign-in" | "sign-up"
       <ContinueWithGoogle nextPath={nextPath} onError={setError} />
       <p className="auth-divider"><span><LocalizedText en="or with your email" /></span></p>
     </>}
-    <form className="form-grid" onSubmit={submit} noValidate>
+    <form className="form-grid" method="post" onSubmit={submit} noValidate>
       <div className="field">
         <label htmlFor="email"><LocalizedText en="Email" /></label>
         <input id="email" name="email" type="email" autoComplete="email" required />
@@ -209,7 +223,7 @@ export function AuthForm({ mode, google = false }: { mode: "sign-in" | "sign-up"
       </div>
       <FormError message={error || confirmationError} />
       {unconfirmed && <ResendConfirmation email={unconfirmed} nextPath={nextPath} waitFirst={false} />}
-      <button className="button" type="submit" disabled={loading}>
+      <button className="button" type="submit" disabled={loading || !hydrated}>
         {loading ? <LocalizedText en="Working…" /> : mode === "sign-in" ? <LocalizedText en="Sign in" /> : <LocalizedText en="Create account" />}
       </button>
     </form>
@@ -217,6 +231,7 @@ export function AuthForm({ mode, google = false }: { mode: "sign-in" | "sign-up"
 }
 
 export function ForgotPasswordForm() {
+  const hydrated = useHydrated();
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -242,20 +257,21 @@ export function ForgotPasswordForm() {
     setMessage("If an account exists for this email, a password reset link will arrive shortly. Check your inbox and spam folder.");
   }
 
-  return <form className="form-grid" onSubmit={submit} noValidate>
+  return <form className="form-grid" method="post" onSubmit={submit} noValidate>
     <div className="field">
       <label htmlFor="reset-email"><LocalizedText en="Email" /></label>
       <input id="reset-email" name="email" type="email" autoComplete="email" required />
     </div>
     <FormError message={error} />
     <FormMessage message={message} />
-    <button className="button" type="submit" disabled={loading}>
+    <button className="button" type="submit" disabled={loading || !hydrated}>
       {loading ? <LocalizedText en="Sending…" /> : <LocalizedText en="Send reset link" />}
     </button>
   </form>;
 }
 
 export function ResetPasswordForm() {
+  const hydrated = useHydrated();
   const router = useRouter();
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -280,7 +296,7 @@ export function ResetPasswordForm() {
     router.refresh();
   }
 
-  return <form className="form-grid" onSubmit={submit} noValidate>
+  return <form className="form-grid" method="post" onSubmit={submit} noValidate>
     <div className="field">
       <label htmlFor="new-password"><LocalizedText en="New password" /></label>
       <input id="new-password" name="password" type="password" autoComplete="new-password" minLength={8} required />
@@ -292,7 +308,7 @@ export function ResetPasswordForm() {
     </div>
     <FormError message={error} />
     <FormMessage message={message} />
-    <button className="button" type="submit" disabled={loading}>
+    <button className="button" type="submit" disabled={loading || !hydrated}>
       {loading ? <LocalizedText en="Updating…" /> : <LocalizedText en="Update password" />}
     </button>
   </form>;
