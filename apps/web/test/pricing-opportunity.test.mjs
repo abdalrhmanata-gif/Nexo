@@ -167,3 +167,18 @@ test("the per-day wording and the price per draft follow the real allowances", a
   assert.match(pricing, /AI drafts belong to each person's own plan/);
   assert.doesNotMatch(pricing, /For teams that plan every day|For freelancers and small teams/);
 });
+
+test("own templates are sold only where they exist: on Pro and Scale, after the feature shipped", async () => {
+  const pricing = read("app/pricing/page.tsx");
+  const card = (name) => pricing.slice(pricing.indexOf(`name: "${name}"`), pricing.indexOf("},", pricing.indexOf("features:", pricing.indexOf(`name: "${name}"`))));
+  for (const name of ["Pro", "Scale"]) assert.match(card(name), /"Your own templates: save any Mission, reuse it in one press"/, name);
+  for (const name of ["Free", "Plus"]) assert.doesNotMatch(card(name), /Your own templates/, name);
+  assert.match(pricing, /What are your own templates\?/);
+  // The claims in the answer are the database's rules.
+  assert.match(pricing, /keep up to 100, and they are private to you/);
+  const { OWN_TEMPLATE_LIMIT, OWN_TEMPLATE_PLANS } = await import("../lib/own-templates.mjs");
+  assert.match(pricing, new RegExp(`keep up to ${OWN_TEMPLATE_LIMIT},`));
+  const sql = readFileSync(join(repoRoot, "supabase/migrations/20261124150000_own_templates.sql"), "utf8");
+  assert.match(sql, new RegExp(`>= ${OWN_TEMPLATE_LIMIT} then`));
+  assert.match(sql, new RegExp(`e\\.plan in \\('${OWN_TEMPLATE_PLANS[0]}', '${OWN_TEMPLATE_PLANS[1]}'\\)`));
+});

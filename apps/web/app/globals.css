@@ -1903,3 +1903,5 @@ html[dir="rtl"] .try-more a span[aria-hidden="true"] { display:inline-block; tra
 :root[data-theme="dark"] .own-template-form input, :root[data-theme="dark"] .own-template-inline-form input { border-color:#151a1d; }
 :root[data-theme="dark"] .own-template-more summary { color:inherit; }
 @media (max-width:700px) { .own-template-actions { flex-direction:column; align-items:stretch; } .own-template-actions .button { width:100%; } }
+.pricing-new { display:inline-block; margin-inline-start:4px; padding:1px 7px; border-radius:99px; font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; color:var(--teal); background:#e5f4f1; vertical-align:1px; }
+:root[data-theme="dark"] .pricing-new { background:#1a2825; }
