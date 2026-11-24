@@ -44,10 +44,14 @@ export default async function MissionTemplatePage({ params }: { params: Promise<
   const template = missionTemplateById((await params).id);
   if (!template) notFound();
   const language = await getLanguage();
-  // The country-specific version of this template, with official sources.
-  const germanyGuide = template.id === "settle-new-country"
-    ? guidePath(isGuideLanguage(language) ? language : "en", "moving-to-germany-checklist")
-    : null;
+  // The country-specific versions of this template, with official sources.
+  const guideLanguage = isGuideLanguage(language) ? language : "en";
+  const settleGuides = template.id === "settle-new-country"
+    ? [
+      { href: guidePath(guideLanguage, "moving-to-germany-checklist"), label: "Moving to Germany? Read the step-by-step guide with official sources" },
+      { href: guidePath(guideLanguage, "moving-to-the-uk-checklist"), label: "Moving to the UK? Read the step-by-step guide with official sources" },
+    ]
+    : [];
 
   return (
     <div className="container templates-page">
@@ -58,7 +62,7 @@ export default async function MissionTemplatePage({ params }: { params: Promise<
           <p className="eyebrow">{template.featured ? <LocalizedText en="Mission template" /> : <LocalizedText en="Mission template" />}</p>
           <h1>{t(template.title)}</h1>
           <p>{t(template.description)}</p>
-          {germanyGuide && <p><Link className="landing-template-link" href={germanyGuide}><LocalizedText en="Moving to Germany? Read the step-by-step guide with official sources" /> <span aria-hidden="true">→</span></Link></p>}
+          {settleGuides.map((guide) => <p key={guide.href}><Link className="landing-template-link" href={guide.href}><LocalizedText en={guide.label} /> <span aria-hidden="true">→</span></Link></p>)}
         </div>
         <div className="landing-final-actions">
           <form action={savePlan} className="template-use-form">

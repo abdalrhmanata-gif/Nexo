@@ -35,7 +35,7 @@ export type GuideLanguage = (typeof GUIDE_LANGUAGES)[number];
 export type GuideStep = { heading: string; body: string[]; source?: SourceKey };
 
 /** The country whose rules a guide describes. */
-export const GUIDE_COUNTRIES = ["us", "de"] as const;
+export const GUIDE_COUNTRIES = ["us", "de", "uk"] as const;
 export type GuideCountry = (typeof GUIDE_COUNTRIES)[number];
 
 export type Guide = {

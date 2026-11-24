@@ -41,6 +41,14 @@ const GERMANY = [
   "برلين", "ميونخ", "ميونيخ", "هامبورغ", "هامبورج", "فرانكفورت", "كولونيا", "شتوتغارت",
 ];
 
+const UNITED_KINGDOM = [
+  "uk", "united kingdom", "britain", "great britain", "england", "scotland", "wales", "london", "manchester",
+  "birmingham", "edinburgh", "glasgow", "liverpool", "leeds", "bristol", "بريطانيا", "لبريطانيا", "المملكة المتحدة",
+  "إنجلترا", "انجلترا", "إنكلترا", "اسكتلندا", "لندن", "مانشستر", "برمنغهام", "reino unido", "gran bretaña", "inglaterra",
+  "londres", "escocia", "royaume uni", "grande bretagne", "angleterre", "écosse", "großbritannien", "grossbritannien",
+  "vereinigtes königreich", "vereinigte königreich", "schottland", "storbritannia", "skottland",
+];
+
 /** Moving, living or working somewhere: what turns a country into a relocation. */
 const RELOCATE = [
   "move", "moving", "moved", "move to", "relocate", "relocating", "relocation", "emigrate", "immigrate",
@@ -51,7 +59,8 @@ const RELOCATE = [
   "العيش", "أعيش", "اعيش", "السكن", "الاستقرار", "استقرار", "أستقر", "استقر", "العمل في", "عمل في",
   "وظيفة في", "لم الشمل",
   "mudarse", "mudarme", "mudanza", "emigrar", "vivir en", "trabajar en", "instalarme", "instalarse", "residencia",
-  "déménager", "demenager", "m'installer", "s'installer", "vivre en", "travailler en", "expatriation",
+  // "s'installer" is two tokens to the matcher, so the verb itself is listed.
+  "déménager", "demenager", "installer", "vivre en", "vivre au", "travailler en", "travailler au", "expatriation",
   "titre de séjour",
   "umziehen", "umzug", "auswandern", "auswanderung", "leben in", "arbeiten in", "wohnen in", "ziehen nach",
   "anmeldung", "aufenthaltstitel", "einwanderung",
@@ -116,7 +125,7 @@ const EVENT = [
 const SETTLE = [
   "settle", "settle in", "settling", "just moved", "newly arrived", "new country", "new in", "arrived",
   "استقر", "الاستقرار", "أستقر", "استقرار", "وصلت", "بلد جديد", "instalarme", "instalarse",
-  "recién llegado", "nuevo país", "m'installer", "s'installer", "nouveau pays", "einleben", "ankommen",
+  "recién llegado", "nuevo país", "installer", "nouveau pays", "einleben", "ankommen",
   "angekommen", "neues land", "bosette", "nytt land", "nyankommet",
 ];
 
@@ -194,6 +203,8 @@ export function matchGoal(value) {
   const germany = score(text, GERMANY);
   const relocate = score(text, RELOCATE) + score(text, JOB);
   if (germany > 0 && relocate > 0) add("guide", "moving-to-germany-checklist", germany + relocate, 3);
+  const unitedKingdom = score(text, UNITED_KINGDOM);
+  if (unitedKingdom > 0 && relocate > 0) add("guide", "moving-to-the-uk-checklist", unitedKingdom + relocate, 3);
   const llc = score(text, LLC);
   if (llc > 0) add("guide", "how-to-start-an-llc", llc + us, 3);
   if (namesEin(raw, text)) add("guide", "how-to-get-an-ein", 6 + us, 3);

@@ -17,6 +17,7 @@ export const GUIDE_SLUGS = [
   "how-to-write-a-business-plan",
   "how-to-open-a-business-bank-account",
   "moving-to-germany-checklist",
+  "moving-to-the-uk-checklist",
 ];
 export const TEMPLATE_IDS = [
   "business-opportunity-scan",

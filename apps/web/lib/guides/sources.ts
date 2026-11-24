@@ -1,6 +1,6 @@
 // Official pages the guides cite. URLs only; each language names them in its
 // own words (GuideChrome.sourceLabels). Every entry must be https and either a
-// US .gov site or one of the German official hosts in OFFICIAL_HOSTS.
+// US .gov site or one of the official hosts in OFFICIAL_HOSTS.
 export const SOURCE_URLS = {
   sbaGuide: "https://www.sba.gov/business-guide/10-steps-start-your-business",
   sbaPlan: "https://www.sba.gov/business-guide/plan-your-business/write-your-business-plan",
@@ -20,13 +20,24 @@ export const SOURCE_URLS = {
   deBroadcast: "https://www.rundfunkbeitrag.de/buergerinnen_und_buerger/formulare/anmelden/index_ger.html",
   deIntegration: "https://www.bamf.de/DE/Themen/Integration/ZugewanderteTeilnehmende/Integrationskurse/integrationskurse-node.html",
   deDriving: "https://www.gesetze-im-internet.de/fev_2010/__29.html",
+  // United Kingdom, checked 2026-11-24: GOV.UK and the NHS website.
+  ukEvisa: "https://www.gov.uk/evisa",
+  ukRent: "https://www.gov.uk/prove-right-to-rent",
+  ukCouncilTax: "https://www.gov.uk/council-tax/who-has-to-pay",
+  ukGp: "https://www.nhs.uk/nhs-services/gps/how-to-register-with-a-gp-surgery/",
+  ukNino: "https://www.gov.uk/apply-national-insurance-number",
+  ukBank: "https://www.gov.uk/government/collections/basic-bank-accounts",
+  ukTaxCode: "https://www.gov.uk/tax-codes",
+  ukTvLicence: "https://www.gov.uk/tv-licence",
+  ukDriving: "https://www.gov.uk/driving-nongb-licence",
 } as const;
 
 /**
- * German government and statutory bodies the guides may cite: federal law
- * (Federal Ministry of Justice), the federal portals, the federal skilled-
- * immigration portal, BaFin, BAMF and the public broadcasting contribution
- * service. Anything else is not an official source.
+ * Non-US official hosts the guides may cite. Germany: federal law (Federal
+ * Ministry of Justice), the federal portals, the federal skilled-immigration
+ * portal, BaFin, BAMF and the public broadcasting contribution service.
+ * United Kingdom: GOV.UK and the NHS website. Anything else is not an
+ * official source.
  */
 export const OFFICIAL_HOSTS = [
   "www.gesetze-im-internet.de",
@@ -36,6 +47,8 @@ export const OFFICIAL_HOSTS = [
   "www.bafin.de",
   "www.bamf.de",
   "www.rundfunkbeitrag.de",
+  "www.gov.uk",
+  "www.nhs.uk",
 ] as const;
 
 export type SourceKey = keyof typeof SOURCE_URLS;
