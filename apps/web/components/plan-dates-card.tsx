@@ -2,10 +2,11 @@ import Link from "next/link";
 import { LocalizedFill, LocalizedText } from "./localized-text";
 import { PendingSubmitButton } from "./pending-submit-button";
 import { PlanCountdown, PlanDay } from "./plan-dates-client";
+import { CalendarConnect } from "./calendar-connect";
 import { addMissionToCalendar, removeMissionFromCalendar, saveMissionDates } from "../app/app/calendar/actions";
 import { legalDeadlineForStep, legalSourceUrl } from "../lib/legal-deadlines";
 import { lateSteps, nextDated, todayIn } from "../lib/plan-dates.mjs";
-import type { MissionDates } from "../lib/supabase/plan-dates-repository";
+import type { CalendarConnection, MissionDates } from "../lib/supabase/plan-dates-repository";
 import type { MissionAction } from "../lib/view-models";
 
 const DATE_NOTICES: Record<string, string> = {
@@ -28,6 +29,9 @@ export type CalendarState = {
   /** null: every Mission. */
   limit: number | null;
   plan: string;
+  /** Set when the Mission is in the calendar: the person's link and whether an app has fetched it. */
+  links?: { feed: string; webcal: string; google: string; outlook: string };
+  connection?: CalendarConnection | null;
 };
 
 /**
@@ -117,9 +121,12 @@ export function PlanDatesCard({ missionId, actions, dates, calendar, notice }: {
       {calendarMessage && <p className={["added", "removed"].includes(notice.calendar ?? "") ? "success-state" : "field-error"} role="status"><LocalizedText en={calendarMessage} /></p>}
       {calendar.inCalendar
         ? <>
-          <p><LocalizedText en="This Mission's dates are in your calendar link. Google, Apple and Outlook show them with your other events." /></p>
+          {calendar.connection
+            ? <p><LocalizedText en="This Mission's dates are in your calendar link. Google, Apple and Outlook show them with your other events." /></p>
+            : <p><strong><LocalizedText en="One last step: connect your calendar." /></strong></p>}
+          {calendar.links && <CalendarConnect links={calendar.links} connection={calendar.connection ?? null} compact />}
           <div className="plan-dates-calendar-actions">
-            <Link className="button" href="/app/calendar"><LocalizedText en="Connect or check your calendar" /></Link>
+            <Link className="button button-quiet" href="/app/calendar"><LocalizedText en="Calendar settings" /></Link>
             <form action={removeMissionFromCalendar}>
               <input type="hidden" name="missionId" value={missionId} />
               <PendingSubmitButton className="button button-quiet" label="Remove from calendar" pendingLabel="Removing…" />

@@ -4,6 +4,7 @@ import { supabasePublishableKey, supabaseUrl } from "./config";
 import { isPlanDate, type CalendarFeedRow, type DueDate } from "../plan-dates.mjs";
 
 export type MissionDates = { targetDate: string | null; dueDates: Record<string, DueDate> };
+export type CalendarConnection = { fetchedAt: string; client: "apple" | "google" | "outlook" | "other" };
 
 const EMPTY: MissionDates = { targetDate: null, dueDates: {} };
 
@@ -123,6 +124,14 @@ export async function createPlanDatesRepository() {
       if (result.error) throw refusal(result.error);
     },
 
+    /** When a calendar app last fetched the link, and which kind; null if never. */
+    async connection(): Promise<CalendarConnection | null> {
+      const result = await supabase.rpc("calendar_feed_status");
+      const row = Array.isArray(result.data) ? result.data[0] as { last_fetched_at: string | null; last_client: string | null } | undefined : undefined;
+      if (result.error || !row?.last_fetched_at || !row.last_client) return null;
+      return { fetchedAt: row.last_fetched_at, client: row.last_client as CalendarConnection["client"] };
+    },
+
     /** The person's calendar link token, made on first use; rotate replaces it. */
     async feedToken(rotate = false): Promise<string> {
       const result = await supabase.rpc("calendar_feed_token", { p_rotate: rotate });
@@ -142,4 +151,15 @@ export async function readCalendarFeed(token: string): Promise<CalendarFeedRow[]
   const result = await supabase.rpc("calendar_feed_events", { p_token: token });
   if (result.error) throw result.error;
   return (result.data ?? []) as CalendarFeedRow[];
+}
+
+/** Records that a calendar app fetched the link. Best effort: never throws. */
+export async function recordCalendarFetch(token: string, client: string): Promise<void> {
+  try {
+    if (!supabaseUrl || !supabasePublishableKey) return;
+    const supabase = createClient(supabaseUrl, supabasePublishableKey, { auth: { persistSession: false, autoRefreshToken: false } });
+    await supabase.rpc("calendar_feed_touch", { p_token: token, p_client: client });
+  } catch {
+    // The calendar still gets its feed.
+  }
 }

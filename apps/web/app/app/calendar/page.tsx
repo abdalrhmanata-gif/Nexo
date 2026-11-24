@@ -1,12 +1,11 @@
 import Link from "next/link";
 import { LocalizedFill, LocalizedText } from "../../../components/localized-text";
 import { PendingSubmitButton } from "../../../components/pending-submit-button";
-import { CopyLinkButton } from "../../../components/copy-link-button";
-import { getTranslate } from "../../../lib/i18n-server";
+import { CalendarConnect } from "../../../components/calendar-connect";
 import { calendarLimit, subscribeLinks } from "../../../lib/plan-dates.mjs";
 import { isSupabaseConfigured } from "../../../lib/supabase/config";
 import { createSupabaseMissionRepository } from "../../../lib/supabase/mission-repository";
-import { createPlanDatesRepository } from "../../../lib/supabase/plan-dates-repository";
+import { createPlanDatesRepository, type CalendarConnection } from "../../../lib/supabase/plan-dates-repository";
 import { readCurrentPlan } from "../../../lib/supabase/own-template-repository";
 import { removeMissionFromCalendar, replaceCalendarLink } from "./actions";
 
@@ -25,7 +24,6 @@ const STATUS: Record<string, { text: string; ok: boolean }> = {
 const PLAN_NAMES: Record<string, string> = { free: "Free", plus: "Plus", pro: "Pro", scale: "Scale" };
 
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<{ status?: string }> }) {
-  const t = await getTranslate();
   const { status } = await searchParams;
   const message = status ? STATUS[status] ?? STATUS.failed : null;
 
@@ -39,10 +37,11 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   let token: string | null = null;
   let chosen: string[] = [];
   let missions: { id: string; name: string }[] = [];
+  let connection: CalendarConnection | null = null;
   let unreadable = false;
   try {
     const repository = await createPlanDatesRepository();
-    [token, chosen] = await Promise.all([repository.feedToken(), repository.calendarMissionIds()]);
+    [token, chosen, connection] = await Promise.all([repository.feedToken(), repository.calendarMissionIds(), repository.connection()]);
     const all = await (await createSupabaseMissionRepository()).listMissions();
     const byId = new Map(all.map((mission) => [mission.id, mission.name]));
     missions = chosen.filter((id) => byId.has(id)).map((id) => ({ id, name: byId.get(id)! }));
@@ -63,13 +62,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
     {links && <section className="card calendar-connect" aria-labelledby="calendar-connect-heading">
       <h2 id="calendar-connect-heading"><LocalizedText en="1. Connect your calendar" /></h2>
-      <div className="calendar-buttons">
-        <a className="button" href={links.google} target="_blank" rel="noopener noreferrer"><LocalizedText en="Add to Google Calendar" /></a>
-        <a className="button" href={links.webcal}><LocalizedText en="Add to Apple Calendar" /></a>
-        <a className="button" href={links.outlook} target="_blank" rel="noopener noreferrer"><LocalizedText en="Add to Outlook" /></a>
-      </div>
-      <p className="action-hint"><LocalizedText en="Another calendar app? Copy the link and add it as a calendar subscription (“From URL”)." /></p>
-      <CopyLinkButton value={links.feed} label={t("Copy the link")} copiedLabel={t("Link copied")} />
+      <CalendarConnect links={links} connection={connection} />
       <ul className="calendar-notes">
         <li><strong><LocalizedText en="Google Calendar" /></strong> <LocalizedText en="checks the link about once a day, so a change made here can take up to a day to show there. To be reminded, open the calendar's settings in Google Calendar once and turn on notifications for it." /></li>
         <li><strong><LocalizedText en="Apple Calendar" /></strong> <LocalizedText en="reminds you at 9:00 the day before each date, as the link asks." /></li>
