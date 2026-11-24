@@ -289,6 +289,9 @@ a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible,te
 .pricing-price strong { font-size:38px; letter-spacing:-.04em; }
 .pricing-price span { margin-left:7px; color:var(--muted); }
 .pricing-allowance { margin:0; }
+.pricing-allowance small { display:block; margin-top:2px; color:var(--muted); font-size:13px; }
+.pricing-tagline { margin:0; font-size:14px; color:var(--muted); }
+.pricing-cta-note { display:block; margin-top:6px; color:var(--muted); font-size:13px; text-align:center; }
 .pricing-card ul { flex:1; padding-left:20px; color:var(--muted); }
 .pricing-cta { display:inline-block; margin-top:auto; }
 .pricing-cta-muted { padding:12px 0; color:var(--muted); font-size:14px; }

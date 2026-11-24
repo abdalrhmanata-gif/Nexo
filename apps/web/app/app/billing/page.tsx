@@ -52,7 +52,7 @@ export default async function BillingPage({ searchParams }: { searchParams: Prom
         <LocalizedText en={overview.cancel_at_period_end ? "Ends on" : "Renews on"} /> <LocalizedDateTime value={overview.current_period_end} />
       </p>}
       <p className="billing-usage">
-        <LocalizedFill en="{used} of {limit} AI briefs or Mission plans used this month." values={{ used: overview.generations_used, limit: overview.monthly_limit }} />
+        <LocalizedFill en="{used} of {limit} AI drafts used this month." values={{ used: overview.generations_used, limit: overview.monthly_limit }} />
       </p>
     </section>
 

@@ -79,7 +79,7 @@ export function BillingActions({ hasSubscription, plan, checkout, soldThroughLin
           {PLANS.map((option) => <div className="billing-plan" key={option.id}>
             <strong><LocalizedText en={option.label} /></strong>
             <span>{option.price} <LocalizedText en="per month" /></span>
-            <small>{option.limit} <LocalizedText en="AI briefs or Mission plans per month" /></small>
+            <small>{option.limit} <LocalizedText en="AI drafts per month" /></small>
             <button className="button button-small" type="button" disabled={busy !== null} onClick={() => go("/api/billing/checkout", { plan: option.id })}>
               <LocalizedText en="Choose" /><span className="visually-hidden"> {option.label}</span>
             </button>

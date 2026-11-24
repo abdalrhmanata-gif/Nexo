@@ -1,58 +1,87 @@
 import Link from "next/link";
-import { LocalizedText } from "../../components/localized-text";
+import { LocalizedFill, LocalizedText } from "../../components/localized-text";
 import { PlanInterest } from "../../components/plan-interest";
 import { billingConfigured } from "../../lib/stripe-client";
-import { PLAN_LIMITS, managedPaymentsEnabled } from "../../lib/billing-plans.mjs";
+import { PLAN_LIMITS, managedPaymentsEnabled, pricePerDraft } from "../../lib/billing-plans.mjs";
 
 // Read per request: whether billing is open depends on the deployment's key.
 export const dynamic = "force-dynamic";
 
-// Every plan has the whole workspace; what grows is the monthly AI allowance.
-// Only features that exist today are listed here.
+// Every plan has the whole workspace, and nothing in the code gates a feature
+// by plan: Missions, steps, proof, templates, guides, sharing and team
+// invites are the same on Free and on Scale. What grows is the monthly AI
+// allowance. Only features that exist today are listed here, and nothing is
+// promised that the code does not already do.
 const plans = [
   {
     name: "Free",
     price: "$0",
+    monthly: 0,
     reports: PLAN_LIMITS.free,
+    tagline: "Start your first plan today",
     className: "",
     cta: true,
     features: [
-      "Missions with steps, evidence and results",
+      "Unlimited Missions and plans",
+      "All templates and step-by-step guides",
+      "Proof for each step, and Save as PDF",
       "Opportunity score and evidence ledger",
-      "Share results and invite your team",
+      "Share links and team invites",
+      "Six languages, including Arabic",
     ],
   },
   {
     name: "Plus",
     price: "$19",
+    monthly: 19,
     reports: PLAN_LIMITS.plus,
+    tagline: "For one goal that really matters",
     className: "",
     cta: false,
-    features: ["Everything in Free", "For steady personal use"],
+    // 10 a month: one every three days or so.
+    features: ["Everything in Free", "A fresh AI plan every few days"],
   },
   {
     name: "Pro",
     price: "$49",
+    monthly: 49,
     reports: PLAN_LIMITS.pro,
+    tagline: "For freelancers and founders with many goals",
     className: "pricing-card-pro",
     cta: false,
-    features: ["Everything in Plus", "For freelancers and small teams"],
+    // 30 a month.
+    features: ["Everything in Plus", "About one AI draft a day"],
   },
   {
     name: "Scale",
     price: "$69",
+    monthly: 69,
     reports: PLAN_LIMITS.scale,
-    // Highlighted: the lowest price per AI generation ($69 / 90).
+    tagline: "For people who plan every day",
+    // Highlighted: the lowest price per AI draft ($69 / 90).
     className: "pricing-card-featured",
     cta: false,
-    features: ["Everything in Pro", "For teams that plan every day"],
+    // 90 a month.
+    features: ["Everything in Pro", "About three AI drafts a day"],
   },
 ];
 
 const questions = [
   {
-    q: "What counts as an AI generation?",
-    a: "Each AI Mission plan or AI opportunity brief you ask for counts as one. Writing Missions, tracking steps and recording evidence never count.",
+    q: "What counts as an AI draft?",
+    a: "Each time you ask the AI for a Mission plan or an opportunity brief, that is one draft. Everything else is unlimited: creating Missions, using templates and guides, tracking steps, keeping proof and sharing.",
+  },
+  {
+    q: "Is it really unlimited?",
+    a: "Yes. No plan has a monthly limit on Missions, steps, proof, templates or guides. We only ask for fair use, as our terms explain.",
+  },
+  {
+    q: "What happens when my AI drafts run out?",
+    a: "Everything else keeps working. Your drafts refill at the start of each month, or you can move to a bigger plan at any time.",
+  },
+  {
+    q: "Do my teammates use my AI drafts?",
+    a: "No. AI drafts belong to each person's own plan, including the people you invite to your team.",
   },
   {
     q: "Can I cancel at any time?",
@@ -63,7 +92,7 @@ const questions = [
     a: "No. The AI drafts and you decide. Nothing is added to a Mission until you choose to add it.",
   },
   {
-    q: "Does changing the language use an AI generation?",
+    q: "Does changing the language use an AI draft?",
     a: "No. The interface and the templates are translated in advance. A Mission or plan you created stays in the language it was written in, and nothing is re-translated by AI.",
   },
 ];
@@ -73,8 +102,8 @@ export default function PricingPage() {
   return <div className="container">
     <section className="pricing-hero">
       <p className="eyebrow"><LocalizedText en="Pricing" /></p>
-      <h1><LocalizedText en="Simple plans. Start free." /></h1>
-      <p><LocalizedText en="Every plan includes the full workspace. Paid plans give you more AI help each month." /></p>
+      <h1><LocalizedText en="Unlimited Missions on every plan. Pay only for more AI." /></h1>
+      <p><LocalizedText en="Templates, guides, proof for each step and sharing are included free. Paid plans add more AI drafts each month." /></p>
       {billing && <p className="pricing-status">{managedPaymentsEnabled(process.env)
         ? <LocalizedText en="Prices include VAT or sales tax where it applies. Billed monthly by Link (Stripe) and shown on your card statement as LINK.COM* ZAVQERA. Cancel any time; your plan lasts until the end of the period you paid for." />
         : <LocalizedText en="Plans are billed monthly through Stripe. You can cancel at any time, and your plan lasts until the end of the period you paid for." />}</p>}
@@ -85,15 +114,19 @@ export default function PricingPage() {
         {plans.map((plan) => <article key={plan.name} className={`pricing-card ${plan.className}`}>
           {plan.name === "Scale" && <span className="pricing-badge"><LocalizedText en="Best value" /></span>}
           <p className="pricing-name"><LocalizedText en={plan.name} /></p>
+          <p className="pricing-tagline"><LocalizedText en={plan.tagline} /></p>
           <div className="pricing-price"><strong>{plan.price}</strong><span><LocalizedText en="per month" /></span></div>
           <p className="pricing-allowance">
-            <strong>{plan.reports}</strong> <LocalizedText en="AI briefs or Mission plans per month" />
+            <strong>{plan.reports}</strong> <LocalizedText en="AI drafts per month" />
+            {plan.monthly > 0 && <small><LocalizedFill en="{price} per AI draft" values={{ price: pricePerDraft(plan.monthly, plan.reports) }} />
+              {plan.name === "Scale" && <> · <LocalizedText en="the lowest price" /></>}</small>}
           </p>
           <ul>
             {plan.features.map((feature) => <li key={feature}><LocalizedText en={feature} /></li>)}
           </ul>
           {plan.cta
-            ? <Link className="button pricing-cta" href="/auth/sign-up"><LocalizedText en="Start free" /></Link>
+            ? <><Link className="button pricing-cta" href="/auth/sign-up"><LocalizedText en="Start free" /></Link>
+              <small className="pricing-cta-note"><LocalizedText en="Free. No card needed." /></small></>
             : billing
               ? <Link className="button pricing-cta" href="/app/billing"><LocalizedText en="Choose" /> <LocalizedText en={plan.name} /></Link>
               : <PlanInterest plan={plan.name} />}

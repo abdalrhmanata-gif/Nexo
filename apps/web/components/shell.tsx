@@ -99,7 +99,7 @@ function AccountMenu({ account, billing, siteOperator }: { account: AccountSumma
         </p>
         <div className="account-usage">
           <span className="account-plan"><LocalizedText en={PLAN_LABELS[account.plan] ?? "Free"} /></span>
-          <span><LocalizedFill en="{left} of {limit} AI generations left this month" values={{ left, limit: account.limit }} /></span>
+          <span><LocalizedFill en="{left} of {limit} AI drafts left this month" values={{ left, limit: account.limit }} /></span>
           <span className="account-meter" aria-hidden="true"><i style={{ width: `${account.limit ? Math.min(100, (left / account.limit) * 100) : 0}%` }} /></span>
         </div>
         <div className="account-links">

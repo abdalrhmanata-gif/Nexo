@@ -3,10 +3,15 @@
 // money; this module only describes the request.
 
 export const PAID_PLANS = Object.freeze(["plus", "pro", "scale"]);
-/** Monthly AI briefs or Mission plans. Mirrors the database constraint. */
+/** Monthly AI drafts (AI Mission plans or opportunity briefs). Mirrors the database constraint. */
 export const PLAN_LIMITS = Object.freeze({ free: 2, plus: 10, pro: 30, scale: 90 });
 /** Tags our Checkout Sessions in the Stripe Dashboard. */
 export const CHECKOUT_LABEL = "zavqera-subscriptions-qkvbmwhr";
+
+/** "$1.63": a monthly price in dollars divided by its AI drafts, to the cent. */
+export function pricePerDraft(monthly, drafts) {
+  return `$${(monthly / drafts).toFixed(2)}`;
+}
 
 export function isPaidPlan(value) {
   return typeof value === "string" && PAID_PLANS.includes(value);
