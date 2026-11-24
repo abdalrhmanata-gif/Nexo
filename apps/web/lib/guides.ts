@@ -1,5 +1,6 @@
-// Public, indexable guides for people starting a business in the United
-// States. They exist to be found in search: each answers one question people
+// Public, indexable guides: starting a business in the United States, and
+// the first month after moving to Germany. Each guide belongs to one country
+// and says so under its title. They exist to be found in search: each answers one question people
 // type into Google, cites the official source for every fact that could go
 // stale, and ends with a button that turns the guide into the reader's own
 // Mission.
@@ -14,8 +15,9 @@
 // Rules for anything added (checked by test/guides.test.mjs):
 // - every language has the same guides, in the same order, with the same
 //   number of steps and the same sources;
-// - every source is an official https://*.gov page (lib/guides/sources.ts);
-// - a dollar amount appears only in a step that cites its source.
+// - every source is an official https page: a US .gov site or a German
+//   official host listed in lib/guides/sources.ts;
+// - a dollar or euro amount appears only in a step that cites its source.
 
 import { SOURCE_URLS, type SourceKey } from "./guides/sources";
 import { en } from "./guides/en";
@@ -32,6 +34,10 @@ export type GuideLanguage = (typeof GUIDE_LANGUAGES)[number];
 
 export type GuideStep = { heading: string; body: string[]; source?: SourceKey };
 
+/** The country whose rules a guide describes. */
+export const GUIDE_COUNTRIES = ["us", "de"] as const;
+export type GuideCountry = (typeof GUIDE_COUNTRIES)[number];
+
 export type Guide = {
   slug: string;
   /** The page's H1. */
@@ -44,6 +50,7 @@ export type Guide = {
   metaDescription: string;
   /** ISO date the facts were last checked against the sources. */
   updated: string;
+  country: GuideCountry;
   intro: string[];
   steps: GuideStep[];
   faqs: { question: string; answer: string }[];
@@ -77,9 +84,12 @@ export type GuideChrome = {
   ctaButton: string;
   ctaFree: string;
   readGuide: string;
-  disclaimer: string;
-  /** Shown under the title: these guides are about the US only. */
-  usNotice: string;
+  /** Per country: rules differ by state in the US, by city in Germany. */
+  disclaimer: Record<GuideCountry, string>;
+  /** Shown under each guide's title: whose rules these are. */
+  countryNotice: Record<GuideCountry, string>;
+  /** Section headings on the guides index. */
+  countryHeading: Record<GuideCountry, string>;
   languages: string;
   sourceLabels: Record<SourceKey, string>;
 };
