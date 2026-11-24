@@ -7,11 +7,12 @@ import { PLAN_LIMITS, managedPaymentsEnabled, pricePerDraft } from "../../lib/bi
 // Read per request: whether billing is open depends on the deployment's key.
 export const dynamic = "force-dynamic";
 
-// Every plan has the whole workspace, and nothing in the code gates a feature
-// by plan: Missions, steps, proof, templates, guides, sharing and team
-// invites are the same on Free and on Scale. What grows is the monthly AI
-// allowance. Only features that exist today are listed here, and nothing is
-// promised that the code does not already do.
+// Every plan has the whole workspace: Missions, steps, proof, the built-in
+// templates, guides, sharing and team invites are the same on Free and on
+// Scale. Two things grow with the plan: the monthly AI allowance, and, from
+// Pro, your own templates (lib/own-templates.mjs, enforced in the database).
+// Only features that exist today are listed here, and nothing is promised
+// that the code does not already do.
 const plans = [
   {
     name: "Free",
@@ -50,7 +51,8 @@ const plans = [
     className: "pricing-card-pro",
     cta: false,
     // 30 a month.
-    features: ["Everything in Plus", "About one AI draft a day"],
+    features: ["Everything in Plus", "About one AI draft a day", "Your own templates: save any Mission, reuse it in one press"],
+    isNew: true,
   },
   {
     name: "Scale",
@@ -62,7 +64,8 @@ const plans = [
     className: "pricing-card-featured",
     cta: false,
     // 90 a month.
-    features: ["Everything in Pro", "About three AI drafts a day"],
+    features: ["Everything in Pro", "About three AI drafts a day", "Your own templates: save any Mission, reuse it in one press"],
+    isNew: true,
   },
 ];
 
@@ -78,6 +81,10 @@ const questions = [
   {
     q: "What happens when my AI drafts run out?",
     a: "Everything else keeps working. Your drafts refill at the start of each month, or you can move to a bigger plan at any time.",
+  },
+  {
+    q: "What are your own templates?",
+    a: "On Pro and Scale, any Mission you plan well can be saved as your own template, with its intent, success criteria and steps. The next time, you start a new Mission from it in one press. You can keep up to 100, and they are private to you. If you move to another plan they are kept, and they work again when you come back to Pro or Scale.",
   },
   {
     q: "Do my teammates use my AI drafts?",
@@ -122,7 +129,8 @@ export default function PricingPage() {
               {plan.name === "Scale" && <> · <LocalizedText en="the lowest price" /></>}</small>}
           </p>
           <ul>
-            {plan.features.map((feature) => <li key={feature}><LocalizedText en={feature} /></li>)}
+            {plan.features.map((feature) => <li key={feature}><LocalizedText en={feature} />
+              {"isNew" in plan && plan.isNew && feature.startsWith("Your own templates") && <> <span className="pricing-new"><LocalizedText en="New" /></span></>}</li>)}
           </ul>
           {plan.cta
             ? <><Link className="button pricing-cta" href="/auth/sign-up"><LocalizedText en="Start free" /></Link>
