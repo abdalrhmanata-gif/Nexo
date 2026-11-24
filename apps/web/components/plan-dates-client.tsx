@@ -13,7 +13,9 @@ export function PlanDay({ value }: { value: string }) {
   const language = useLanguage();
   const date = new Date(`${value}T00:00:00Z`);
   if (Number.isNaN(date.getTime())) return <>{value}</>;
-  return <time dateTime={value}>{date.toLocaleDateString(language, { dateStyle: "medium", timeZone: "UTC" })}</time>;
+  // <bdi> keeps the date's own direction: next to a Latin step name in Arabic
+  // it otherwise came out as "202026/11/" (seen live, 24 Nov).
+  return <bdi><time dateTime={value}>{date.toLocaleDateString(language, { dateStyle: "medium", timeZone: "UTC" })}</time></bdi>;
 }
 
 /** The reader's own today: UTC for the first render (server and browser agree), then local. */

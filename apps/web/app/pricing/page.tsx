@@ -9,8 +9,10 @@ export const dynamic = "force-dynamic";
 
 // Every plan has the whole workspace: Missions, steps, proof, the built-in
 // templates, guides, sharing and team invites are the same on Free and on
-// Scale. Two things grow with the plan: the monthly AI allowance, and, from
-// Pro, your own templates (lib/own-templates.mjs, enforced in the database).
+// Scale. Three things grow with the plan: the monthly AI allowance, from Pro
+// your own templates (lib/own-templates.mjs), and how many Missions the
+// calendar link carries (lib/plan-dates.mjs: 1, 3, all), both enforced in
+// the database.
 // Only features that exist today are listed here, and nothing is promised
 // that the code does not already do.
 const plans = [
@@ -29,6 +31,8 @@ const plans = [
       "Opportunity score and evidence ledger",
       "Share links and team invites",
       "Six languages, including Arabic",
+      "Plan dates, countdown and legal deadlines with their source",
+      "Your plan in Google, Apple or Outlook calendar: 1 Mission",
     ],
   },
   {
@@ -40,7 +44,7 @@ const plans = [
     className: "",
     cta: false,
     // 10 a month: one every three days or so.
-    features: ["Everything in Free", "A fresh AI plan every few days"],
+    features: ["Everything in Free", "A fresh AI plan every few days", "Your calendar: 3 Missions"],
   },
   {
     name: "Pro",
@@ -51,8 +55,7 @@ const plans = [
     className: "pricing-card-pro",
     cta: false,
     // 30 a month.
-    features: ["Everything in Plus", "About one AI draft a day", "Your own templates: save any Mission, reuse it in one press"],
-    isNew: true,
+    features: ["Everything in Plus", "About one AI draft a day", "Your own templates: save any Mission, reuse it in one press", "Your calendar: every Mission"],
   },
   {
     name: "Scale",
@@ -64,10 +67,18 @@ const plans = [
     className: "pricing-card-featured",
     cta: false,
     // 90 a month.
-    features: ["Everything in Pro", "About three AI drafts a day", "Your own templates: save any Mission, reuse it in one press"],
-    isNew: true,
+    features: ["Everything in Pro", "About three AI drafts a day", "Your own templates: save any Mission, reuse it in one press", "Your calendar: every Mission"],
   },
 ];
+
+/** Features shipped in November 2026, marked "New" on the cards. */
+const NEW_FEATURES = new Set([
+  "Your own templates: save any Mission, reuse it in one press",
+  "Plan dates, countdown and legal deadlines with their source",
+  "Your plan in Google, Apple or Outlook calendar: 1 Mission",
+  "Your calendar: 3 Missions",
+  "Your calendar: every Mission",
+]);
 
 const questions = [
   {
@@ -85,6 +96,10 @@ const questions = [
   {
     q: "What are your own templates?",
     a: "On Pro and Scale, any Mission you plan well can be saved as your own template, with its intent, success criteria and steps. The next time, you start a new Mission from it in one press. You can keep up to 100, and they are private to you. If you move to another plan they are kept, and they work again when you come back to Pro or Scale.",
+  },
+  {
+    q: "How does the calendar work?",
+    a: "Give a Mission its dates, then connect Google Calendar, Apple Calendar or Outlook once with your private link. The dated steps of the Missions you choose appear there next to everything else. Free holds 1 Mission, Plus 3, Pro and Scale every Mission. Google checks the link about once a day; Apple reminds you the day before.",
   },
   {
     q: "Do my teammates use my AI drafts?",
@@ -130,7 +145,7 @@ export default function PricingPage() {
           </p>
           <ul>
             {plan.features.map((feature) => <li key={feature}><LocalizedText en={feature} />
-              {"isNew" in plan && plan.isNew && feature.startsWith("Your own templates") && <> <span className="pricing-new"><LocalizedText en="New" /></span></>}</li>)}
+              {NEW_FEATURES.has(feature) && <> <span className="pricing-new"><LocalizedText en="New" /></span></>}</li>)}
           </ul>
           {plan.cta
             ? <><Link className="button pricing-cta" href="/auth/sign-up"><LocalizedText en="Start free" /></Link>
