@@ -62,7 +62,9 @@ export function proofLinkLabel(url) {
  */
 export function proofCitation(action) {
   const parts = [action.evidenceNote, action.evidenceUrl].filter(Boolean);
-  return parts.length ? `- ${action.title}: ${parts.join(" ")}` : `- ${action.title}`;
+  // "Check the rules.: read the page" read badly; drop the title's own stop.
+  const title = String(action.title).trim().replace(/[.。!؟?]+$/u, "");
+  return parts.length ? `- ${title}: ${parts.join(" ")}` : `- ${action.title}`;
 }
 
 /**

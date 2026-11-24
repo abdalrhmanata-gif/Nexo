@@ -29,6 +29,7 @@ export function ActionMutationControls({ missionId, action, closed = false }: { 
   const [link, setLink] = useState(action.evidenceUrl ?? "");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
     setStatus(action.status);
@@ -36,11 +37,16 @@ export function ActionMutationControls({ missionId, action, closed = false }: { 
     setNote(action.evidenceNote ?? "");
     setLink(action.evidenceUrl ?? "");
     setProofOpen(false);
+    // The fresh state on screen is the confirmation now; an old "saved" line
+    // under every step read as noise.
+    setMessage("");
+    setSaved(false);
   }, [action.id, action.status, action.followUpAt, action.version, action.evidenceNote, action.evidenceUrl]);
 
-  async function send(method: "PATCH" | "PUT", body: Record<string, unknown>, saved: string) {
+  async function send(method: "PATCH" | "PUT", body: Record<string, unknown>, done: string) {
     setBusy(true);
     setMessage("");
+    setSaved(false);
     try {
       const response = await fetch(`/api/missions/${missionId}/actions/${action.id}`, {
         method,
@@ -57,7 +63,11 @@ export function ActionMutationControls({ missionId, action, closed = false }: { 
         setMessage(payload.error ? t(payload.error) : t("Action update was not accepted."));
         return;
       }
-      setMessage(saved);
+      // Close the form at once; the page refresh that follows can take a few
+      // seconds, and an open form beside "saved" looked like it had not worked.
+      setProofOpen(false);
+      setSaved(true);
+      setMessage(done);
       router.refresh();
     } catch {
       setMessage(t("The action could not be saved. Check your connection and try again."));
@@ -112,7 +122,9 @@ export function ActionMutationControls({ missionId, action, closed = false }: { 
           </div>
         </form>
         : <button className="button button-small button-quiet" type="button" onClick={() => setProofOpen(true)}>{proven ? t("Edit proof") : t("Add proof")}</button>}
-      {message && <p className="field-error" role="alert">{message}</p>}
+      {message && (saved
+      ? <p className="action-saved" role="status">{message}</p>
+      : <p className="field-error" role="alert">{message}</p>)}
     </div>;
   }
 
@@ -177,6 +189,8 @@ export function ActionMutationControls({ missionId, action, closed = false }: { 
     </form>}
     {wantsFollowUp && <p className="action-hint"><LocalizedText en="Optional: the date you intend to check back. Leave empty for no reminder." /></p>}
     {losesFollowUp && <p className="action-hint"><LocalizedText en="Saving this will remove the follow-up date, because it only applies while Waiting." /></p>}
-    {message && <p className="field-error" role="alert">{message}</p>}
+    {message && (saved
+      ? <p className="action-saved" role="status">{message}</p>
+      : <p className="field-error" role="alert">{message}</p>)}
   </div>;
 }

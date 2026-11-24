@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "../../../lib/supabase/server";
 import { isSupabaseConfigured } from "../../../lib/supabase/config";
 import { LocalizedText } from "../../../components/localized-text";
-import { getTranslate } from "../../../lib/i18n-server";
+import { getLanguage, getTranslate } from "../../../lib/i18n-server";
 import { fill } from "../../../lib/i18n";
 
 type PageMetric = { path: string; views: number; days_seen: number; last_seen: string };
@@ -22,16 +22,27 @@ type SiteMetrics = {
   page_sources: Array<{ path: string; source: string; views: number; last_seen: string }>;
 };
 
+// Latin digits in every language, as the rest of the app shows them.
 function number(value: number | null | undefined) {
   return new Intl.NumberFormat("en-US").format(value ?? 0);
 }
 
+// Each column divides views of one page by views of another. Sign-up is also
+// reached from the home page and links, so it can exceed pricing views: "800%"
+// read as a conversion rate, which it is not.
 function percent(value: number | null | undefined) {
-  return value == null ? "—" : `${value.toFixed(1)}%`;
+  if (value == null) return "—";
+  return value > 100 ? ">100%" : `${value.toFixed(1)}%`;
 }
 
-function date(value: string) {
-  return new Intl.DateTimeFormat("en-GB", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value));
+function date(value: string, language: string) {
+  return new Intl.DateTimeFormat(`${language}-u-nu-latn`, { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(value));
+}
+
+// Arabic counts 3–10 with the plural noun ("10 أيام"), 11 and up with the
+// singular ("14 يوماً"); the "|few" key carries the first form.
+function daysSeenKey(days: number) {
+  return days >= 3 && days <= 10 ? "{views} views · {days} days seen|few" : "{views} views · {days} days seen";
 }
 
 export const dynamic = "force-dynamic";
@@ -39,6 +50,7 @@ export const dynamic = "force-dynamic";
 export default async function AnalyticsPage() {
   if (!isSupabaseConfigured()) redirect("/app");
   const t = await getTranslate();
+  const language = await getLanguage();
 
   const supabase = await createSupabaseServerClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -106,7 +118,7 @@ export default async function AnalyticsPage() {
             <tbody>
               {metrics.funnel.slice(0, 14).map((row) => (
                 <tr key={row.day}>
-                  <td style={{ padding: "10px 12px" }}>{date(row.day)}</td>
+                  <td style={{ padding: "10px 12px" }}>{date(row.day, language)}</td>
                   <td style={{ padding: "10px 12px" }}>{number(row.landing)}</td>
                   <td style={{ padding: "10px 12px" }}>{number(row.pricing)}</td>
                   <td style={{ padding: "10px 12px" }}>{number(row.sign_up)}</td>
@@ -130,8 +142,8 @@ export default async function AnalyticsPage() {
           {metrics.by_page.slice(0, 8).map((item) => (
             <div className="business-shortcut" key={item.path}>
               <span className="business-shortcut-icon shortcut-navy" aria-hidden="true">↗</span>
-              <span><strong>{item.path}</strong><small>{fill(t("{views} views · {days} days seen"), { views: number(item.views), days: item.days_seen })}</small></span>
-              <span className="business-shortcut-arrow">{date(item.last_seen)}</span>
+              <span><strong>{item.path}</strong><small>{fill(t(daysSeenKey(item.days_seen)).split("|")[0], { views: number(item.views), days: item.days_seen })}</small></span>
+              <span className="business-shortcut-arrow">{date(item.last_seen, language)}</span>
             </div>
           ))}
         </div>

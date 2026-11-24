@@ -2,7 +2,7 @@ import Link from "next/link";
 import { isSupabaseConfigured } from "../../../lib/supabase/config";
 import { createSupabaseMissionRepository } from "../../../lib/supabase/mission-repository";
 import { localMockMissionRepository } from "../../../lib/local-mock-repository";
-import { LocalizedText } from "../../../components/localized-text";
+import { LocalizedDateTime, LocalizedText } from "../../../components/localized-text";
 import { planIsThin } from "../../../lib/mission-critique.mjs";
 
 export default async function NotificationsPage() {
@@ -57,7 +57,7 @@ export default async function NotificationsPage() {
       {followUps.length ? <ul className="list">{followUps.map((item) => <li key={item.id}>
         <div className="notification-item">
           <div><strong>{item.title}</strong><p className="action-hint">{item.missionName}</p>
-            <p className="action-hint"><span className={item.overdue ? "status status-waiting" : "status status-active"}><LocalizedText en={item.overdue ? "Overdue" : "Due within 7 days"} /></span> · {new Date(item.dueAt).toLocaleString()}</p>
+            <p className="action-hint"><span className={item.overdue ? "status status-waiting" : "status status-active"}><LocalizedText en={item.overdue ? "Overdue" : "Due within 7 days"} /></span> · <LocalizedDateTime value={item.dueAt} /></p>
           </div>
           <Link className="button button-small" href={`/app/missions/${item.missionId}`}><LocalizedText en="Open task" /></Link>
         </div>

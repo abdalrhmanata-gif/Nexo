@@ -15,11 +15,15 @@ export function parseMissionObjective(objective) {
   const text = typeof objective === "string" ? objective.trim() : "";
   if (!text) return { name: "Untitled mission", intent: "", criteria: [] };
 
-  const markerAt = text.indexOf(CRITERIA_MARKER);
-  const head = markerAt === -1 ? text : text.slice(0, markerAt);
-  const criteria = markerAt === -1
-    ? []
-    : text.slice(markerAt + CRITERIA_MARKER.length).split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  // The heading may close the text with nothing under it: a mission created
+  // without criteria (optional since 23 Nov) once stored "...\n\nSuccess
+  // criteria:" and, after trim(), the old exact-marker match missed it and
+  // showed "Success criteria:" as part of the intent.
+  const marker = /\n\s*\nSuccess criteria:[ \t]*(?:\r?\n|$)/.exec(text);
+  const head = marker ? text.slice(0, marker.index) : text;
+  const criteria = marker
+    ? text.slice(marker.index + marker[0].length).split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
+    : [];
 
   const blocks = head.split(/\n\s*\n/);
   const name = (blocks[0] ?? "").trim().slice(0, 200) || "Untitled mission";
@@ -29,8 +33,9 @@ export function parseMissionObjective(objective) {
 }
 
 export function composeMissionObjective({ name, intent, criteria }) {
-  const lines = Array.isArray(criteria) ? criteria.join("\n") : criteria ?? "";
-  return `${name}\n\n${intent}${CRITERIA_MARKER}${lines}`;
+  const lines = (Array.isArray(criteria) ? criteria.join("\n") : criteria ?? "").trim();
+  // No criteria, no heading: an empty "Success criteria:" is not a criterion.
+  return lines ? `${name}\n\n${intent}${CRITERIA_MARKER}${lines}` : `${name}\n\n${intent}`;
 }
 
 export const MISSION_STATUS_LABELS = {
@@ -155,6 +160,11 @@ export function verificationReadiness(mission, t = same) {
   // work: every step finished or cancelled.
   if (unresolved.length) {
     return { ready: false, reason: t("Finish or cancel the open steps, then record what you checked."), nextStatus: null, unresolved };
+  }
+  // An empty mission has nothing to check yet, so it does not offer a
+  // verification form; "Add the work" is its next step.
+  if (!actions.length) {
+    return { ready: false, reason: t("Add the work first, then record what you checked."), nextStatus: null, unresolved };
   }
   if (!routeToVerifying(status)) {
     return { ready: false, reason: t("This mission cannot move to checking the evidence from its current state."), nextStatus: null, unresolved };
@@ -346,7 +356,63 @@ const EVENT_LABELS = Object.freeze({
   MISSION_STATUS_TRANSITION: "Mission status changed",
   OUTCOME_COMMITTED: "Outcome recorded",
   ACTION_PROOF_RECORDED: "Proof added to a step",
+  VERIFICATION_RECORDED: "Verification recorded",
+  MISSION_OBJECTIVE_UPDATED: "Mission details edited",
+  RESEARCH_RUN_COMPLETED: "Research completed",
 });
+
+/**
+ * The short line under an event, as a dictionary key, or "" for none. Codes
+ * such as VERIFIED or COMPLETED never reach the reader; an edit of the
+ * mission text shows nothing rather than the whole objective.
+ */
+export function eventDetail(eventType, payload) {
+  const data = payload && typeof payload === "object" ? payload : {};
+  switch (eventType) {
+    case "VERIFICATION_RECORDED":
+      return data.status === "VERIFIED" ? "Verified" : "Not verified";
+    case "OUTCOME_COMMITTED":
+      return data.status === "COMPLETED" ? "Complete" : data.status === "FAILED" ? "Did not succeed" : "";
+    case "ACTION_PROOF_RECORDED":
+      return data.has_proof === false ? "Proof removed" : "";
+    case "MISSION_OBJECTIVE_UPDATED":
+      return "";
+    default:
+      return summariseEventPayload(payload);
+  }
+}
+
+/**
+ * Activity is newest first. When the mission follows a step on its own, one
+ * transaction writes Draft→Planning, Planning→Ready and Ready→In progress
+ * with the same time, in no reliable order. Those become one line, "Draft →
+ * In progress", placed above the step change that caused it.
+ */
+export function collapseLifecycleChains(activity = []) {
+  const out = [];
+  let index = 0;
+  while (index < activity.length) {
+    const time = activity[index].time;
+    let end = index;
+    while (end < activity.length && activity[end].time === time) end += 1;
+    const group = activity.slice(index, end);
+    const moves = group.filter((item) => item.label === "Mission status changed" && item.fromStatus && item.toStatus);
+    const rest = group.filter((item) => !moves.includes(item));
+    if (moves.length > 1) {
+      const targets = new Set(moves.map((item) => item.toStatus));
+      const sources = new Set(moves.map((item) => item.fromStatus));
+      const first = moves.find((item) => !targets.has(item.fromStatus));
+      const last = moves.find((item) => !sources.has(item.toStatus));
+      if (first && last) out.push({ ...last, fromStatus: first.fromStatus });
+      else out.push(...moves);
+    } else {
+      out.push(...moves);
+    }
+    out.push(...rest);
+    index = end;
+  }
+  return out;
+}
 
 export function humaniseEventType(eventType) {
   if (typeof eventType !== "string" || !eventType.trim()) return "Mission event";
