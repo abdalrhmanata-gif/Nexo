@@ -1797,3 +1797,9 @@ html[dir="rtl"] input, html[dir="rtl"] textarea {
 @media (max-width:700px) { .proof-form, .action-proof { width:100%; max-width:none; }.proof-form .button { flex:1 1 auto; text-align:center; } }
 .action-saved { margin:4px 0 0; font-size:13px; color:#22605a; }
 :root[data-theme="dark"] .action-saved, :root[data-theme="dark"] .action-proof-label, :root[data-theme="dark"] .action-proof-text a { color:#7fd1c4; }
+/* Every text block here uses unicode-bidi: plaintext, which takes its direction
+   from its first strong letter but skips isolated children. The proof line is
+   built only of spans and a link, so it fell back to left-to-right and put
+   "الإثبات:" after the note. Let the line take the page direction instead. */
+html[dir="rtl"] .action-proof-text { unicode-bidi: isolate; }
+html[dir="rtl"] .action-proof-text > * { unicode-bidi: normal; }
