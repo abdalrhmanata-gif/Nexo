@@ -378,3 +378,29 @@ test("signing out of the website keeps the person's AI assistant connections", (
   assert.match(auth, /auth\.signOut\(\{ scope: "local" \}\)/);
   assert.doesNotMatch(auth, /auth\.signOut\(\)/);
 });
+
+test("tool descriptions and server instructions never name another tool (Google Connected Apps policy)", () => {
+  const names = TOOLS.map((tool) => tool.name);
+  const texts = [["server instructions", SERVER_INSTRUCTIONS]];
+  for (const tool of toolDescriptors()) {
+    texts.push([tool.name, tool.description]);
+    for (const [param, schema] of Object.entries(tool.inputSchema.properties ?? {})) {
+      texts.push([`${tool.name}.${param}`, JSON.stringify(schema)]);
+    }
+  }
+  for (const [where, text] of texts) {
+    for (const name of names) {
+      if (where === name || where.startsWith(`${name}.`)) continue;
+      assert.ok(!new RegExp(`\\b${name}\\b`).test(text), `${where} mentions ${name}`);
+    }
+  }
+});
+
+test("shared pages carry a report link and the terms forbid objectionable shared content", () => {
+  const share = read("app/share/m/[id]/page.tsx");
+  assert.match(share, /mailto:\$\{LEGAL\.supportEmail\}\?subject=/);
+  assert.match(share, /Report this page/);
+  const terms = read("app/terms/page.tsx");
+  assert.match(terms, /otherwise objectionable/);
+  assert.match(terms, /We remove shared pages that\s+break these rules/);
+});

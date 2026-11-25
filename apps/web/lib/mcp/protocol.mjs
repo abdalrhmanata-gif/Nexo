@@ -26,8 +26,7 @@ export const SERVER_INFO = Object.freeze({
  */
 export const SERVER_INSTRUCTIONS = [
   "ZAVQERA stores the person's Missions: a goal with an intent, optional success criteria, ordered steps, proof recorded on finished steps, and optional dates.",
-  "Use create_mission to save a plan made in the conversation, get_next_steps or list_missions to see where things stand, get_mission for one Mission's steps and their step_id values, and complete_step to record a finished step with its proof.",
-  "Step and Mission ids come from these tools' results.",
+  "Mission and step ids are UUIDs that appear in ZAVQERA's results.",
 ].join(" ");
 
 export const JSON_RPC_ERRORS = Object.freeze({

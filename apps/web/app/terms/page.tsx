@@ -116,8 +116,13 @@ export default function TermsPage() {
         <li>break the law, or infringe anyone&rsquo;s rights;</li>
         <li>attack, probe, overload or circumvent the security of the infrastructure it runs on;</li>
         <li>resell or redistribute the service, or scrape it in bulk;</li>
-        <li>misrepresent a suggestion from the service as professional advice to someone else.</li>
+        <li>misrepresent a suggestion from the service as professional advice to someone else;</li>
+        <li>publish or share content that is sexually explicit, hateful, harassing, violent or otherwise objectionable, or that exposes someone else&rsquo;s personal data.</li>
       </ul>
+      <p>
+        Anyone can report a shared page with the link at its foot or by writing to us. We remove shared pages that
+        break these rules and may stop the account that shared them from sharing.
+      </p>
     </section>
 
     <section>
