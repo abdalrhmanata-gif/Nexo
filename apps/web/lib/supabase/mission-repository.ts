@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { createSupabaseServerClient, getAuthenticatedUser } from "./server";
+import { isSupabaseConfigured } from "./config";
+import type { AssignedStep } from "../step-owners.mjs";
 import { WORKSPACE_COOKIE, workspaceCookieValue } from "../team-workspace.mjs";
 import { MissionMutationConflictError, MissionMutationRejectedError, type MissionRepository, type NewMission, type NewOutcome, type NewVerification, type UpdateMission } from "../mission-repository";import type { ActionStatus, Mission, MissionAction, MissionActivity, MissionOutcome, MissionVerification, MissionLifecycleStatus } from "../view-models";
 import { collapseLifecycleChains, eventDetail, humaniseEventType, parseMissionObjective } from "../mission-content.mjs";
@@ -443,4 +445,33 @@ export async function missionRepositoryFor(supabase: SupabaseClient, userId: str
       return toOutcome(result.data as OutcomeRow);
     },
   };
+}
+
+/**
+ * Open steps the reader owns, in every workspace they can see; [] if
+ * unavailable. A function of its own, not a repository method: the
+ * repository is what assistants connected over MCP read, and owners are not
+ * part of what they see.
+ */
+export async function readStepsAssignedToYou(): Promise<AssignedStep[]> {
+  if (!isSupabaseConfigured()) return [];
+  try {
+    const [supabase, user] = await Promise.all([createSupabaseServerClient(), getAuthenticatedUser()]);
+    if (!user) return [];
+    const found = await supabase
+      .from("mission_actions")
+      .select("id, title, status, mission_id, missions!inner(objective)")
+      .eq("assignee_id", user.id)
+      .in("status", ["PENDING", "RUNNING", "BLOCKED"])
+      .order("updated_at", { ascending: false })
+      .limit(20);
+    if (found.error) return [];
+    return (found.data as unknown as { id: string; title: string; status: string; mission_id: string; missions: { objective: string | null } | { objective: string | null }[] | null }[])
+      .map((row) => {
+        const mission = Array.isArray(row.missions) ? row.missions[0] : row.missions;
+        return { actionId: row.id, title: row.title, status: row.status, missionId: row.mission_id, missionName: mission?.objective ? parseMissionObjective(mission.objective).name : "" };
+      });
+  } catch {
+    return [];
+  }
 }

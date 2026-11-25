@@ -123,7 +123,11 @@ test("owners are read beside the page's other reads and never break it", () => {
   const repository = read("lib/supabase/step-owner-repository.ts");
   assert.match(repository, /rpc\("mission_step_owners"/);
   assert.match(repository, /rpc\("set_mission_action_assignee"/);
-  assert.equal((repository.match(/catch \{\n    return/g) ?? []).length, 2, "both reads fall back instead of throwing");
+  assert.equal((repository.match(/catch \{\n    return/g) ?? []).length, 1, "the owners read falls back instead of throwing");
+  const missionsFile = read("lib/supabase/mission-repository.ts");
+  const assignedRead = missionsFile.slice(missionsFile.indexOf("export async function readStepsAssignedToYou"));
+  assert.match(assignedRead, /\.eq\("assignee_id", user\.id\)/);
+  assert.match(assignedRead, /catch \{\n    return \[\];/, "the assigned list falls back instead of throwing");
   assert.ok(!repository.includes("auth.getSession("), "identity comes from getUser, never the cookie alone");
 });
 

@@ -1,12 +1,13 @@
 import { createSupabaseServerClient, getAuthenticatedUser } from "./server";
 import { isSupabaseConfigured } from "./config";
-import { parseStepOwners, ownerRefusal, type AssignedStep, type StepOwners } from "../step-owners.mjs";
-import { parseMissionObjective } from "../mission-content.mjs";
+import { parseStepOwners, ownerRefusal, type StepOwners } from "../step-owners.mjs";
 
 // Step owners are read and changed apart from the Mission itself, so the
 // Mission repository (which assistants connected over MCP also use) does not
 // change, and a failure here never breaks the Mission page: it shows the
-// steps without owners.
+// steps without owners. The one read of the steps table itself (the steps
+// assigned to you) lives in mission-repository.ts, the only file allowed to
+// read the Mission tables directly (tool/static_contract_check.py).
 
 /** Why an owner change was refused, with a sentence the page can show. */
 export class StepOwnerError extends Error {
@@ -52,28 +53,4 @@ export async function setStepOwner(input: { actionId: string; expectedVersion: n
   }
   const row = result.data as { id: string; version: number; assignee_id: string | null } | null;
   return { id: row?.id ?? input.actionId, version: row?.version ?? input.expectedVersion, assigneeId: row?.assignee_id ?? null };
-}
-
-/** Open steps the reader owns, in every workspace they can see; [] if unavailable. */
-export async function readStepsAssignedToYou(): Promise<AssignedStep[]> {
-  if (!isSupabaseConfigured()) return [];
-  try {
-    const [supabase, user] = await Promise.all([createSupabaseServerClient(), getAuthenticatedUser()]);
-    if (!user) return [];
-    const found = await supabase
-      .from("mission_actions")
-      .select("id, title, status, mission_id, missions!inner(objective)")
-      .eq("assignee_id", user.id)
-      .in("status", ["PENDING", "RUNNING", "BLOCKED"])
-      .order("updated_at", { ascending: false })
-      .limit(20);
-    if (found.error) return [];
-    return (found.data as unknown as { id: string; title: string; status: string; mission_id: string; missions: { objective: string | null } | { objective: string | null }[] | null }[])
-      .map((row) => {
-        const mission = Array.isArray(row.missions) ? row.missions[0] : row.missions;
-        return { actionId: row.id, title: row.title, status: row.status, missionId: row.mission_id, missionName: mission?.objective ? parseMissionObjective(mission.objective).name : "" };
-      });
-  } catch {
-    return [];
-  }
 }

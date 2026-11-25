@@ -8,8 +8,7 @@ import { MissionCard } from "../../components/mission-card";
 import { GoalStarter } from "../../components/goal-starter";
 import { localMockMissionRepository } from "../../lib/local-mock-repository";
 import { isSupabaseConfigured } from "../../lib/supabase/config";
-import { createSupabaseMissionRepository } from "../../lib/supabase/mission-repository";
-import { readStepsAssignedToYou } from "../../lib/supabase/step-owner-repository";
+import { createSupabaseMissionRepository, readStepsAssignedToYou } from "../../lib/supabase/mission-repository";
 import { assignedToYou } from "../../lib/step-owners.mjs";
 import { actionStatusLabel } from "../../lib/mission-content.mjs";
 
