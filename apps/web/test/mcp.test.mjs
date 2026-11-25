@@ -404,3 +404,11 @@ test("shared pages carry a report link and the terms forbid objectionable shared
   assert.match(terms, /otherwise objectionable/);
   assert.match(terms, /We remove shared pages that\s+break these rules/);
 });
+
+test("the OpenAI plugin domain challenge is served as the bare token in plain text", () => {
+  const route = read("app/.well-known/openai-apps-challenge/route.ts");
+  assert.match(route, /const OPENAI_APPS_CHALLENGE = "[A-Za-z0-9_-]{20,}";/);
+  assert.match(route, /new Response\(OPENAI_APPS_CHALLENGE, \{/);
+  assert.match(route, /"Content-Type": "text\/plain; charset=utf-8"/);
+  assert.doesNotMatch(route, /JSON|redirect\(/);
+});
