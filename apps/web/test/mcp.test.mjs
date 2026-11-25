@@ -369,3 +369,12 @@ test("the token is checked at Supabase Auth's userinfo endpoint for OAuth apps, 
   assert.equal(await checkAccessToken({ ...base, token: "", fetchImpl: async () => { fetched += 1; } }), null);
   assert.equal(fetched, 0, "no token, no request");
 });
+
+test("signing out of the website keeps the person's AI assistant connections", () => {
+  // Supabase's default sign-out scope is "global": it deletes every session of
+  // the person, including the sessions of connected assistants (seen in
+  // production on 25 Nov: a sign-out cut Claude's connection at once).
+  const auth = read("components/auth-form.tsx");
+  assert.match(auth, /auth\.signOut\(\{ scope: "local" \}\)/);
+  assert.doesNotMatch(auth, /auth\.signOut\(\)/);
+});

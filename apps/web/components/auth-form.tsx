@@ -321,7 +321,10 @@ export function SignOutButton() {
   async function signOut() {
     setLoading(true);
     const { createSupabaseBrowserClient } = await import("../lib/supabase/browser");
-    await createSupabaseBrowserClient().auth.signOut();
+    // Only this browser. The default ("global") deletes every session the
+    // person has, which also disconnects the AI assistants they connected
+    // (ChatGPT, Claude, Gemini) and signs them out on their other devices.
+    await createSupabaseBrowserClient().auth.signOut({ scope: "local" });
     router.push("/auth/sign-in");
     router.refresh();
   }
