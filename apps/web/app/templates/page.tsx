@@ -23,6 +23,7 @@ export default async function TemplatesPage() {
       <p className="eyebrow"><LocalizedText en="Mission templates" /></p>
       <h1><LocalizedText en="Start with a useful first plan." /></h1>
       <p><LocalizedText en="Choose a starting point. It is saved as a mission you can change: edit any step, add your own, or delete it." /></p>
+      <p className="action-hint"><Link href="/checklists"><LocalizedText en="Checklists for the work you repeat" /> <span aria-hidden="true">→</span></Link></p>
       <p className="action-hint own-templates-teaser"><Link href="/app/templates"><LocalizedText en="Your own templates" /></Link>{" · "}<LocalizedText en="Save any Mission as a template and reuse it in one press, on Pro and Scale." /></p>
     </section>
     <section className="grid" aria-label={t("Mission templates")}>

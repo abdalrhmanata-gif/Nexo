@@ -28,6 +28,18 @@ export const TEMPLATE_IDS = [
   "find-a-job",
   "organise-an-event",
 ];
+// test/checklists.test.mjs keeps this list equal to lib/checklists.mjs.
+export const CHECKLIST_SLUGS = [
+  "employee-onboarding-checklist",
+  "employee-offboarding-checklist",
+  "client-onboarding-checklist",
+  "month-end-close-checklist",
+  "project-handoff-checklist",
+  "website-launch-checklist",
+  "vendor-onboarding-checklist",
+  "move-in-move-out-inspection-checklist",
+  "quarterly-access-review-checklist",
+];
 const GUIDE_PREFIXES = ["", "/es", "/ar", "/fr", "/de", "/nb"];
 
 export const COUNTED_ROUTES = [
@@ -37,6 +49,8 @@ export const COUNTED_ROUTES = [
   "/templates",
   ...TEMPLATE_IDS.map((id) => `/templates/${id}`),
   ...GUIDE_PREFIXES.flatMap((prefix) => [`${prefix}/guides`, ...GUIDE_SLUGS.map((slug) => `${prefix}/guides/${slug}`)]),
+  "/checklists",
+  ...CHECKLIST_SLUGS.map((slug) => `/checklists/${slug}`),
   "/compare/zavqera-vs-chatgpt-claude-gemini",
   "/privacy",
   "/terms",

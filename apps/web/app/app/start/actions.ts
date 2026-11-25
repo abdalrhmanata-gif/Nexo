@@ -26,6 +26,7 @@ export async function savePlan(formData: FormData) {
     goal: field(formData, "goal"),
     template: field(formData, "template"),
     guide: field(formData, "guide"),
+    checklist: field(formData, "checklist"),
     lang: field(formData, "lang"),
   }, await getLanguage());
   if (!request) redirect("/try");
