@@ -3,12 +3,12 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 import test from "node:test";
-import { CHECKLIST_GROUPS, checklistBySlug, checklistMission, checklistMissionHref, checklists } from "../lib/checklists.ts";
+import { CHECKLIST_GROUPS, checklistBySlug, checklistMission, checklistMissionHref, checklists } from "../lib/checklists.mjs";
 import { CHECKLIST_SLUGS, COUNTED_ROUTES, normaliseRoute } from "../lib/metrics-routes.mjs";
 
 // The public checklists exist to be found in search by small businesses that
 // buy software, and to be saved as a Mission in one press. The rules from the
-// header of lib/checklists.ts are checked here.
+// header of lib/checklists.mjs are checked here.
 
 const webRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (path) => readFileSync(join(webRoot, path), "utf8");
@@ -77,9 +77,9 @@ test("the saved plan has one action per step, in order", () => {
 
 test("pages make no claim the product cannot keep", () => {
   // No assignees per step, no automatic recurrence, no approvals (yet).
-  const text = read("lib/checklists.ts").toLowerCase();
+  const text = read("lib/checklists.mjs").toLowerCase();
   for (const claim of ["assign each step", "assign steps", "assigned to", "runs automatically", "recurring schedule", "approval workflow", "approve in zavqera"]) {
-    assert.ok(!text.includes(claim), `lib/checklists.ts claims "${claim}"`);
+    assert.ok(!text.includes(claim), `lib/checklists.mjs claims "${claim}"`);
   }
 });
 

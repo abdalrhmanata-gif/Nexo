@@ -28,7 +28,7 @@ export const TEMPLATE_IDS = [
   "find-a-job",
   "organise-an-event",
 ];
-// test/checklists.test.mjs keeps this list equal to lib/checklists.ts.
+// test/checklists.test.mjs keeps this list equal to lib/checklists.mjs.
 export const CHECKLIST_SLUGS = [
   "employee-onboarding-checklist",
   "employee-offboarding-checklist",

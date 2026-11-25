@@ -17,6 +17,8 @@
 // Every visible word, the page's interface included, lives in this file, so
 // the interface dictionary (lib/i18n.ts) is not involved.
 //
+// Types: lib/checklists.d.mts.
+//
 // Rules for anything added (checked by test/checklists.test.mjs):
 // - slugs are unique, lowercase and hyphenated, and every related slug exists;
 // - the search title stays under 60 characters, the description under 160;
@@ -24,43 +26,9 @@
 // - a step that states a legal rule or a deadline cites an official source;
 // - the saved plan has one action per step, in the same order.
 
-export type ChecklistSource = { label: string; url: string };
+/** @typedef {import("./checklists.d.mts").Checklist} Checklist */
 
-export type ChecklistStep = {
-  heading: string;
-  detail: string;
-  /** What to record on the step when it is done. */
-  proof: string;
-  source?: ChecklistSource;
-};
-
-export const CHECKLIST_GROUPS = ["people", "clients", "finance", "property"] as const;
-export type ChecklistGroup = (typeof CHECKLIST_GROUPS)[number];
-
-export type Checklist = {
-  slug: string;
-  group: ChecklistGroup;
-  /** The page's H1. */
-  title: string;
-  /** Short label for breadcrumbs, cards and the saved Mission's basis line. */
-  short: string;
-  /** The search result title. Under 60 characters. */
-  metaTitle: string;
-  /** The search result description. Under 160 characters. */
-  metaDescription: string;
-  /** ISO date the content was last checked. */
-  updated: string;
-  audience: string;
-  when: string;
-  intro: string[];
-  steps: ChecklistStep[];
-  faqs: { question: string; answer: string }[];
-  /** Success criteria of the saved Mission. Its actions are the step headings. */
-  criteria: string[];
-  /** The saved Mission's intent. */
-  intent: string;
-  related: string[];
-};
+export const CHECKLIST_GROUPS = Object.freeze(["people", "clients", "finance", "property"]);
 
 export const CHECKLIST_CHROME = {
   indexTitle: "Checklists for the work you repeat",
@@ -69,9 +37,9 @@ export const CHECKLIST_CHROME = {
   indexLead: "Onboarding a hire, closing the month, handing a project to a client: the same steps, every time, and someone will ask whether they were done. Each checklist below says what proof to keep at every step. Save one in a click, tick steps off with the proof attached, and keep the record.",
   indexNote: "Free to use. No card needed. Written for small teams that run these processes themselves.",
   checklistsLabel: "Checklists",
-  groupHeading: { people: "People", clients: "Clients and projects", finance: "Finance and vendors", property: "Property" } satisfies Record<ChecklistGroup, string>,
+  groupHeading: { people: "People", clients: "Clients and projects", finance: "Finance and vendors", property: "Property" },
   updated: "Checked",
-  stepsCount: (count: number) => `${count} steps`,
+  stepsCount: (count) => `${count} steps`,
   whoFor: "Who it is for",
   when: "When to run it",
   steps: "The checklist",
@@ -99,23 +67,24 @@ export const CHECKLIST_CHROME = {
 
 const UPDATED = "2026-11-25";
 
-const USCIS_I9_SECTION_2: ChecklistSource = {
+const USCIS_I9_SECTION_2 = {
   label: "USCIS: Completing Section 2 of Form I-9",
   url: "https://www.uscis.gov/i-9-central/completing-form-i-9/completing-section-2-employer-review-and-attestation",
 };
-const ACF_NEW_HIRE: ChecklistSource = {
+const ACF_NEW_HIRE = {
   label: "US Administration for Children and Families: New hire reporting",
   url: "https://acf.gov/css/outreach-material/new-hire-reporting-employers",
 };
-const GOV_UK_RIGHT_TO_WORK: ChecklistSource = {
+const GOV_UK_RIGHT_TO_WORK = {
   label: "GOV.UK: Checking a job applicant's right to work",
   url: "https://www.gov.uk/check-job-applicant-right-to-work",
 };
-const IRS_W4: ChecklistSource = { label: "IRS: About Form W-4", url: "https://www.irs.gov/forms-pubs/about-form-w-4" };
-const IRS_W9: ChecklistSource = { label: "IRS: About Form W-9", url: "https://www.irs.gov/forms-pubs/about-form-w-9" };
-const DOL_COBRA: ChecklistSource = { label: "US Department of Labor: COBRA continuation coverage", url: "https://www.dol.gov/general/topic/health-plans/cobra" };
+const IRS_W4 = { label: "IRS: About Form W-4", url: "https://www.irs.gov/forms-pubs/about-form-w-4" };
+const IRS_W9 = { label: "IRS: About Form W-9", url: "https://www.irs.gov/forms-pubs/about-form-w-9" };
+const DOL_COBRA = { label: "US Department of Labor: COBRA continuation coverage", url: "https://www.dol.gov/general/topic/health-plans/cobra" };
 
-export const checklists: Checklist[] = [
+/** @type {Checklist[]} */
+export const checklists = [
   {
     slug: "employee-onboarding-checklist",
     group: "people",
@@ -464,16 +433,19 @@ export const checklists: Checklist[] = [
   },
 ];
 
-export function checklistBySlug(slug: string) {
+/** @param {string} slug */
+export function checklistBySlug(slug) {
   return checklists.find((checklist) => checklist.slug === slug) ?? null;
 }
 
-export function checklistPath(slug?: string) {
+/** @param {string} [slug] */
+export function checklistPath(slug) {
   return slug ? `/checklists/${slug}` : "/checklists";
 }
 
 /** The plan the "Use this checklist" button saves: one action per step. */
-export function checklistMission(checklist: Checklist) {
+/** @param {Checklist} checklist */
+export function checklistMission(checklist) {
   return {
     name: checklist.short,
     intent: checklist.intent,
@@ -483,7 +455,8 @@ export function checklistMission(checklist: Checklist) {
 }
 
 /** The plan as a prefilled new-mission form, for editing before saving. */
-export function checklistMissionHref(checklist: Checklist) {
+/** @param {Checklist} checklist */
+export function checklistMissionHref(checklist) {
   const mission = checklistMission(checklist);
   const params = new URLSearchParams({
     name: mission.name,

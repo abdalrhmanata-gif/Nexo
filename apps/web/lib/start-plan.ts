@@ -7,7 +7,7 @@
 import { fill, isSupportedLanguage, translate, type AppLanguage } from "./i18n";
 import { missionTemplateById } from "./mission-templates";
 import { guideBySlug, guidePath } from "./guides";
-import { checklistBySlug, checklistMission, checklistPath } from "./checklists";
+import { checklistBySlug, checklistMission, checklistPath } from "./checklists.mjs";
 import { planHeadline, planOfKind } from "./mission-planner.mjs";
 import { GOAL_MIN_LENGTH, goalTitle, matchGoal, normaliseGoal, type GoalMatch } from "./goal-plan.mjs";
 
@@ -137,7 +137,7 @@ export function editBeforeSavingHref(plan: StartPlan) {
 }
 
 /** A checklist's plan. Checklists are written in English for English-speaking
-    buyers (lib/checklists.ts), so the plan keeps their wording in any language. */
+    buyers (lib/checklists.mjs), so the plan keeps their wording in any language. */
 function checklistPlan(request: StartRequest, slug: string, t: (en: string) => string): StartPlan {
   const checklist = checklistBySlug(slug)!;
   const mission = checklistMission(checklist);

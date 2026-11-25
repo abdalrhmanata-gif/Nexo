@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ChecklistArticle, checklistMetadata } from "../../../components/checklist-article";
-import { checklistBySlug, checklists } from "../../../lib/checklists";
+import { checklistBySlug, checklists } from "../../../lib/checklists.mjs";
 
 export const dynamicParams = false;
 

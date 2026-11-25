@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { GUIDE_LANGUAGES, SITE_URL, guideAlternates, guideLocale, guidePath } from "../lib/guides";
 import { missionTemplates } from "../lib/mission-templates";
 import { COMPARE_PATH, compare } from "../lib/compare";
-import { checklistPath, checklists } from "../lib/checklists";
+import { checklistPath, checklists } from "../lib/checklists.mjs";
 
 // Public pages only. /app, /auth and /api are behind sign-in or are
 // machinery; shared Mission links are unlisted on purpose and stay out.

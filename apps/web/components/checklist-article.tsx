@@ -7,11 +7,11 @@ import {
   checklistMissionHref,
   checklistPath,
   checklists,
-} from "../lib/checklists";
+} from "../lib/checklists.mjs";
 import { SITE_URL } from "../lib/guides";
 import { savePlan } from "../app/app/start/actions";
 
-// Every visible word comes from lib/checklists.ts, which is English on
+// Every visible word comes from lib/checklists.mjs, which is English on
 // purpose: see the header of that file. The layout reuses the guide styles.
 
 /** JSON for a <script> tag: "<" escaped so content can never close the tag. */
