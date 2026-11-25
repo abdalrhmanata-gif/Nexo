@@ -160,9 +160,18 @@ test("an evidence line does not end the step title with a stop before the colon"
   assert.equal(proofCitation({ title: "تحقّق من المتطلبات.", evidenceNote: "قرأت الصفحة", evidenceUrl: null }), "- تحقّق من المتطلبات: قرأت الصفحة");
 });
 
-test("a saved step closes its form at once and is not shown as an error", () => {
+test("a saved step never says it is done while the page still shows it open", () => {
+  // Seen live on 25 Nov: "Step marked done." appeared at once while the step
+  // above it still read "Not started" for about five seconds, until the
+  // refresh arrived. The refresh now runs in a transition: the button keeps
+  // saying "Saving…" until the new state is on screen, and that state (the
+  // step shown as Complete, with its proof) is the confirmation.
   const controls = read("components/action-mutation-controls.tsx");
-  assert.match(controls, /setProofOpen\(false\);\s*setSaved\(true\);/);
+  assert.match(controls, /useTransition/);
+  assert.match(controls, /startRefresh\(\(\) => \{?\s*router\.refresh\(\);?\s*\}?\)/);
+  assert.match(controls, /const working = busy \|\| refreshing;/);
+  assert.doesNotMatch(controls, /disabled=\{busy\}/, "every control stays disabled until the refresh lands");
+  assert.match(controls, /message && !refreshing/, "no confirmation line while the old state is still shown");
   assert.match(controls, /className="action-saved" role="status"/);
 });
 

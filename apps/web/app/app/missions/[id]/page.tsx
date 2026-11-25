@@ -54,6 +54,16 @@ async function readMissionShareStatus(missionId: string): Promise<MissionShareSt
   }
 }
 
+/** The person's calendar entries, or null when they cannot be read. */
+async function readCalendar() {
+  try {
+    const repository = await createPlanDatesRepository();
+    return { repository, entries: await repository.calendarEntries() };
+  } catch {
+    return null;
+  }
+}
+
 /** A status inside an activity entry, in the reader's words. */
 function statusWord(label: string, status: string, t: (en: string) => string) {
   return label === "Mission status changed" ? missionStatusLabel(status, t) : actionStatusLabel(status, t);
@@ -75,7 +85,20 @@ export default async function MissionDetailPage({
   const next = nextStepFor(mission, t, language);
   const verification = mission.verifications.find((item) => item.status === "VERIFIED") ?? mission.verifications[0];
   const outcome = mission.outcomes[0];
-  const shareStatus = await readMissionShareStatus(mission.id);
+  const thin = planIsThin(mission);
+  // These reads do not depend on each other, so they run together rather
+  // than one after another: each is a round trip to the database, and in a
+  // row they made the page (and every refresh after a change) take seconds.
+  const [shareStatus, aiReady, plan, dates, calendarRead] = await Promise.all([
+    readMissionShareStatus(mission.id),
+    thin ? aiPlanReady() : Promise.resolve(true),
+    // Own templates need the database; the local preview has none.
+    isSupabaseConfigured() ? readCurrentPlan() : Promise.resolve("free"),
+    // Dates and the calendar need the database too. A failure to read them
+    // never breaks the page: it shows the Mission undated.
+    isSupabaseConfigured() ? readMissionDates(mission.id) : Promise.resolve<MissionDates>({ targetDate: null, dueDates: {} }),
+    isSupabaseConfigured() ? readCalendar() : Promise.resolve(null),
+  ]);
   const readiness = verificationReadiness(mission, t);
   const intelligence = missionIntelligenceFor(mission, new Date(), t, language);
   // A stated outcome with no work behind it is the moment the product is
@@ -83,7 +106,7 @@ export default async function MissionDetailPage({
   // Where the AI plan is available it is shown alone: the keyword planner
   // matched an online perfume shop to "opening premises" (visit locations,
   // check leases) and sat above a far better AI draft.
-  const suggested = planIsThin(mission) && !(await aiPlanReady()) ? suggestPlanFor(mission) : null;
+  const suggested = thin && !aiReady ? suggestPlanFor(mission) : null;
   // Plan health only ever read lifecycle fields, so it reported "no issues"
   // for a mission whose criterion and only step were the same three words.
   const critique = critiqueMission(mission);
@@ -98,18 +121,11 @@ export default async function MissionDetailPage({
   const initialEvidence = evidenceFromProof(mission.actions);
   const healthy = intelligence.planHealth.healthy && critique.length === 0;
   const query = await searchParams;
-  // Own templates need the database; the local preview has none.
-  const plan = isSupabaseConfigured() ? await readCurrentPlan() : "free";
   const ownTemplates = isSupabaseConfigured() ? { active: hasOwnTemplates(plan) } : null;
-  // Dates and the calendar need the database; the local preview has none. A
-  // failure to read them never breaks the page: it shows the Mission undated.
-  let dates: MissionDates = { targetDate: null, dueDates: {} };
   let calendar: CalendarState | null = null;
-  if (isSupabaseConfigured()) {
-    dates = await readMissionDates(mission.id);
+  if (calendarRead) {
     try {
-      const repository = await createPlanDatesRepository();
-      const entries = await repository.calendarEntries();
+      const { repository, entries } = calendarRead;
       const entry = entries.find((item) => item.missionId === mission.id);
       calendar = { inCalendar: Boolean(entry), count: entries.length, limit: calendarLimit(plan), plan };
       if (entry) {

@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { createSupabaseServerClient } from "./server";
+import { createSupabaseServerClient, getAuthenticatedUser } from "./server";
 import { supabasePublishableKey, supabaseUrl } from "./config";
 import { isPlanDate, type CalendarFeedRow, type DueDate } from "../plan-dates.mjs";
 
@@ -80,10 +80,7 @@ async function updateOrInsert(update: () => Written, insert: () => Written) {
  */
 export async function createPlanDatesRepository(client?: SupabaseClient) {
   const supabase = client ?? await createSupabaseServerClient();
-  if (!client) {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error || !user) throw new Error("Authentication required.");
-  }
+  if (!client && !(await getAuthenticatedUser())) throw new Error("Authentication required.");
 
   /** The Missions in the person's calendar link, oldest added first. */
   async function calendarEntries(): Promise<CalendarEntry[]> {

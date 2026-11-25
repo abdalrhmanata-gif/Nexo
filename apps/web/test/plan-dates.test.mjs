@@ -212,7 +212,8 @@ test("every date action redirects outside its try, and law dates come only from 
 
 test("the Mission page shows dates without ever breaking on them", () => {
   const page = read("app/app/missions/[id]/page.tsx");
-  assert.match(page, /dates = await readMissionDates\(mission\.id\);/);
+  assert.match(page, /isSupabaseConfigured\(\) \? readMissionDates\(mission\.id\) : Promise\.resolve<MissionDates>\(\{ targetDate: null, dueDates: \{\} \}\)/);
+  assert.match(page, /async function readCalendar\(\) \{[\s\S]*?\} catch \{\s+return null;\s+\}/);
   assert.match(page, /\} catch \{\s+calendar = null;\s+\}/);
   const repository = read("lib/supabase/plan-dates-repository.ts");
   assert.match(repository, /if \(schedule\.error \|\| due\.error\) return EMPTY;/);

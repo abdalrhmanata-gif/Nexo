@@ -32,9 +32,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // middleware, so showing them to a signed-out visitor made each one bounce
   // to the sign-in page and read as a dead button.
   const signedIn = await readSignedIn();
-  const siteOperator = signedIn ? await readSiteOperator() : false;
-  const sharedWorkspace = signedIn ? await readOpenSharedWorkspace() : null;
-  const account = signedIn ? await readAccountSummary() : null;
+  // Independent reads, so they run together rather than one after another:
+  // each is a round trip to the database.
+  const [siteOperator, sharedWorkspace, account] = signedIn
+    ? await Promise.all([readSiteOperator(), readOpenSharedWorkspace(), readAccountSummary()])
+    : [false, null, null];
   // Render lang and dir from the saved language rather than hardcoding
   // English: an Arabic visitor otherwise gets a left-to-right first paint,
   // and assistive technology is told the wrong language for the whole page.
