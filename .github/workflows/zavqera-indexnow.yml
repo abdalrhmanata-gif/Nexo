@@ -1,0 +1,48 @@
+name: ZAVQERA IndexNow
+
+# Once a day, tell IndexNow (Bing, which ChatGPT search reads, and the other
+# IndexNow engines) which public pages of zavqera.com changed. The script reads
+# the live sitemap and pages, so it does not matter when Netlify finished a
+# deploy; the state of the last successful run is kept in the Actions cache.
+# No secrets: the IndexNow key is public by design (zavqera.com/<key>.txt).
+on:
+  schedule:
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zavqera-indexnow
+  cancel-in-progress: false
+
+jobs:
+  submit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Restore the last run's page hashes
+        uses: actions/cache/restore@v4
+        with:
+          path: .indexnow-state.json
+          key: indexnow-state-${{ github.run_id }}
+          restore-keys: indexnow-state-
+
+      - name: Send changed pages to IndexNow
+        run: node tool/indexnow.mjs .indexnow-state.json
+
+      - name: Keep this run's page hashes
+        if: success()
+        uses: actions/cache/save@v4
+        with:
+          path: .indexnow-state.json
+          key: indexnow-state-${{ github.run_id }}

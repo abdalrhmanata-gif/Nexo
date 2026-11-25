@@ -53,8 +53,7 @@ const NB: Record<string, string> = {
   "Privacy notice — ZAVQERA":"Personvernerklæring – ZAVQERA",
   "The agreement between you and ZAVQERA: what the service is, what it is not, and the rights you keep.":"Avtalen mellom deg og ZAVQERA: hva tjenesten er, hva den ikke er, og rettighetene du beholder.",
   "Terms of service — ZAVQERA":"Vilkår for bruk – ZAVQERA",
-  "Structure AI-assisted work into explicit Missions, track progress, and review evidence before committing to outcomes.":"Strukturer KI-støttet arbeid i tydelige oppdrag, følg fremdriften og gå gjennom dokumentasjonen før du fastslår et resultat.",
-  "ZAVQERA — turn a goal into steps, evidence and a result":"ZAVQERA – gjør et mål om til steg, dokumentasjon og et resultat",
+    "ZAVQERA — turn a goal into steps, evidence and a result":"ZAVQERA – gjør et mål om til steg, dokumentasjon og et resultat",
   "{left} of {limit} AI drafts left this month.":"{left} av {limit} KI-utkast igjen denne måneden.",
   "Working with a team?":"Jobber du i et team?",
   "The AI answer was cut off before it finished, so it was discarded. This attempt used one monthly generation; trying again usually works.":"KI-svaret ble kuttet før det var ferdig, og ble derfor forkastet. Dette forsøket brukte én månedlig generering; et nytt forsøk fungerer som regel.",
@@ -1050,6 +1049,8 @@ const NB: Record<string, string> = {
   "You can view this mission. To work on it, ask the workspace owner to let you edit.":"Du kan se dette oppdraget. For å jobbe med det, be eieren av arbeidsområdet om å gi deg redigeringstilgang.",
   "Only {name}, who created this mission, can edit its details, set its dates, check the result and close it. You can add steps, work on them and record their proof.":"Bare {name}, som opprettet dette oppdraget, kan endre detaljene, sette datoer, kontrollere resultatet og avslutte det. Du kan legge til steg, jobbe med dem og registrere beviset.",
   "{name} checks the result and closes this mission.":"{name} kontrollerer resultatet og avslutter dette oppdraget.",
+  // The site's description in search results (25 Nov 2026)
+  "Checklists and plans for small teams: give every step an owner, keep proof when it is done, and see what is late. Free plan, no card.":"Sjekklister og planer for små team: gi hvert steg en ansvarlig, ta vare på beviset når det er gjort, og se hva som er forsinket. Gratisplan, uten kort.",
 };
 const AR: Record<string, string> = {
   "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"تم تصدير النسخة الاحتياطية. الفرص: {count}. ملاحظات الأدلة: {notes}. احفظ الملف في مكان آمن؛ فهو يحتوي على ما سجّلته.",
@@ -1078,8 +1079,7 @@ const AR: Record<string, string> = {
   "Privacy notice — ZAVQERA":"إشعار الخصوصية — ZAVQERA",
   "The agreement between you and ZAVQERA: what the service is, what it is not, and the rights you keep.":"الاتفاق بينك وبين ZAVQERA: ما هي الخدمة، وما ليست، والحقوق التي تحتفظ بها.",
   "Terms of service — ZAVQERA":"شروط الخدمة — ZAVQERA",
-  "Structure AI-assisted work into explicit Missions, track progress, and review evidence before committing to outcomes.":"نظّم العمل المدعوم بالذكاء الاصطناعي في مهام واضحة، وتابع التقدّم، وراجع الأدلة قبل اعتماد النتائج.",
-  "ZAVQERA — turn a goal into steps, evidence and a result":"ZAVQERA — حوّل هدفك إلى خطوات وأدلة ونتيجة",
+    "ZAVQERA — turn a goal into steps, evidence and a result":"ZAVQERA — حوّل هدفك إلى خطوات وأدلة ونتيجة",
   "{left} of {limit} AI drafts left this month.":"المسودات المتبقية بالذكاء الاصطناعي هذا الشهر: {left} من {limit}.",
   "Working with a team?":"تعمل مع فريق؟",
   "The AI answer was cut off before it finished, so it was discarded. This attempt used one monthly generation; trying again usually works.":"انقطع ردّ الذكاء الاصطناعي قبل أن يكتمل، فتم تجاهله. استهلكت هذه المحاولة توليداً شهرياً واحداً؛ وإعادة المحاولة تنجح في الغالب.",
@@ -2075,6 +2075,8 @@ const AR: Record<string, string> = {
   "You can view this mission. To work on it, ask the workspace owner to let you edit.":"يمكنك عرض هذه المهمة. للعمل عليها، اطلب من مالك مساحة العمل أن يمنحك صلاحية التعديل.",
   "Only {name}, who created this mission, can edit its details, set its dates, check the result and close it. You can add steps, work on them and record their proof.":"{name} وحده، لأنه منشئ هذه المهمة، يعدّل تفاصيلها ويحدد مواعيدها ويتحقق من نتيجتها ويغلقها. أما أنت فيمكنك إضافة الخطوات والعمل عليها وتسجيل إثباتها.",
   "{name} checks the result and closes this mission.":"يتحقق {name} من النتيجة ويغلق هذه المهمة.",
+  // The site's description in search results (25 Nov 2026)
+  "Checklists and plans for small teams: give every step an owner, keep proof when it is done, and see what is late. Free plan, no card.":"قوائم مهام وخطط للفرق الصغيرة: لكل خطوة مسؤول، واحفظ الإثبات عند إنجازها، واعرف ما تأخّر. خطة مجانية دون بطاقة.",
 };
 const ES: Record<string, string> = {
   "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"Copia de seguridad exportada. Oportunidades: {count}. Notas de evidencia: {notes}. Guarda el archivo en un lugar seguro; contiene lo que registraste.",
@@ -2103,8 +2105,7 @@ const ES: Record<string, string> = {
   "Privacy notice — ZAVQERA":"Aviso de privacidad — ZAVQERA",
   "The agreement between you and ZAVQERA: what the service is, what it is not, and the rights you keep.":"El acuerdo entre tú y ZAVQERA: qué es el servicio, qué no es y los derechos que conservas.",
   "Terms of service — ZAVQERA":"Condiciones del servicio — ZAVQERA",
-  "Structure AI-assisted work into explicit Missions, track progress, and review evidence before committing to outcomes.":"Estructura el trabajo asistido por IA en misiones claras, sigue el progreso y revisa las evidencias antes de dar un resultado por bueno.",
-  "ZAVQERA — turn a goal into steps, evidence and a result":"ZAVQERA: convierte un objetivo en pasos, evidencias y un resultado",
+    "ZAVQERA — turn a goal into steps, evidence and a result":"ZAVQERA: convierte un objetivo en pasos, evidencias y un resultado",
   "{left} of {limit} AI drafts left this month.":"Te quedan {left} de {limit} borradores con IA este mes.",
   "Working with a team?":"¿Trabajas en equipo?",
   "The AI answer was cut off before it finished, so it was discarded. This attempt used one monthly generation; trying again usually works.":"La respuesta de la IA se cortó antes de terminar, así que se descartó. Este intento usó una generación mensual; volver a intentarlo suele funcionar.",
@@ -3103,6 +3104,8 @@ const ES: Record<string, string> = {
   "You can view this mission. To work on it, ask the workspace owner to let you edit.":"Puedes ver esta misión. Para trabajar en ella, pide al propietario del espacio de trabajo que te deje editar.",
   "Only {name}, who created this mission, can edit its details, set its dates, check the result and close it. You can add steps, work on them and record their proof.":"Solo {name}, que creó esta misión, puede editar sus detalles, fijar sus fechas, comprobar el resultado y cerrarla. Tú puedes añadir pasos, trabajar en ellos y registrar su prueba.",
   "{name} checks the result and closes this mission.":"{name} comprueba el resultado y cierra esta misión.",
+  // The site's description in search results (25 Nov 2026)
+  "Checklists and plans for small teams: give every step an owner, keep proof when it is done, and see what is late. Free plan, no card.":"Listas de verificación y planes para equipos pequeños: un responsable en cada paso, la prueba guardada al terminarlo y lo que va con retraso a la vista. Plan gratuito, sin tarjeta.",
 };
 const FR: Record<string, string> = {
   "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"Sauvegarde exportée. Opportunités : {count}. Notes de preuve : {notes}. Conservez le fichier en lieu sûr ; il contient ce que vous avez enregistré.",
@@ -3131,8 +3134,7 @@ const FR: Record<string, string> = {
   "Privacy notice — ZAVQERA":"Avis de confidentialité — ZAVQERA",
   "The agreement between you and ZAVQERA: what the service is, what it is not, and the rights you keep.":"L'accord entre vous et ZAVQERA : ce qu'est le service, ce qu'il n'est pas, et les droits que vous conservez.",
   "Terms of service — ZAVQERA":"Conditions d'utilisation — ZAVQERA",
-  "Structure AI-assisted work into explicit Missions, track progress, and review evidence before committing to outcomes.":"Structurez le travail assisté par l'IA en missions explicites, suivez l'avancement et examinez les preuves avant de valider un résultat.",
-  "ZAVQERA — turn a goal into steps, evidence and a result":"ZAVQERA — transformez un objectif en étapes, preuves et résultat",
+    "ZAVQERA — turn a goal into steps, evidence and a result":"ZAVQERA — transformez un objectif en étapes, preuves et résultat",
   "{left} of {limit} AI drafts left this month.":"Il vous reste {left} brouillons IA sur {limit} ce mois-ci.",
   "Working with a team?":"Vous travaillez en équipe ?",
   "The AI answer was cut off before it finished, so it was discarded. This attempt used one monthly generation; trying again usually works.":"La réponse de l'IA a été coupée avant la fin et a donc été écartée. Cette tentative a utilisé une génération mensuelle ; un nouvel essai fonctionne en général.",
@@ -4131,6 +4133,8 @@ const FR: Record<string, string> = {
   "You can view this mission. To work on it, ask the workspace owner to let you edit.":"Vous pouvez consulter cette mission. Pour y travailler, demandez au propriétaire de l'espace de travail de vous laisser modifier.",
   "Only {name}, who created this mission, can edit its details, set its dates, check the result and close it. You can add steps, work on them and record their proof.":"Seul·e {name}, qui a créé cette mission, peut modifier ses détails, fixer ses dates, vérifier le résultat et la clôturer. Vous pouvez ajouter des étapes, y travailler et enregistrer leur preuve.",
   "{name} checks the result and closes this mission.":"{name} vérifie le résultat et clôture cette mission.",
+  // The site's description in search results (25 Nov 2026)
+  "Checklists and plans for small teams: give every step an owner, keep proof when it is done, and see what is late. Free plan, no card.":"Checklists et plans pour petites équipes : un responsable pour chaque étape, la preuve gardée une fois faite et les retards visibles. Offre gratuite, sans carte.",
 };
 const DE: Record<string, string> = {
   "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"Sicherung exportiert. Chancen: {count}. Nachweisnotizen: {notes}. Bewahren Sie die Datei sicher auf; sie enthält, was Sie erfasst haben.",
@@ -4159,8 +4163,7 @@ const DE: Record<string, string> = {
   "Privacy notice — ZAVQERA":"Datenschutzhinweis – ZAVQERA",
   "The agreement between you and ZAVQERA: what the service is, what it is not, and the rights you keep.":"Die Vereinbarung zwischen Ihnen und ZAVQERA: was der Dienst ist, was er nicht ist und welche Rechte Sie behalten.",
   "Terms of service — ZAVQERA":"Nutzungsbedingungen – ZAVQERA",
-  "Structure AI-assisted work into explicit Missions, track progress, and review evidence before committing to outcomes.":"Strukturieren Sie KI-gestützte Arbeit in klare Missionen, verfolgen Sie den Fortschritt und prüfen Sie Nachweise, bevor Sie ein Ergebnis festhalten.",
-  "ZAVQERA — turn a goal into steps, evidence and a result":"ZAVQERA – aus einem Ziel werden Schritte, Nachweise und ein Ergebnis",
+    "ZAVQERA — turn a goal into steps, evidence and a result":"ZAVQERA – aus einem Ziel werden Schritte, Nachweise und ein Ergebnis",
   "{left} of {limit} AI drafts left this month.":"Noch {left} von {limit} KI-Entwürfen in diesem Monat.",
   "Working with a team?":"Arbeiten Sie im Team?",
   "The AI answer was cut off before it finished, so it was discarded. This attempt used one monthly generation; trying again usually works.":"Die KI-Antwort wurde abgeschnitten, bevor sie fertig war, und deshalb verworfen. Dieser Versuch hat eine monatliche Generierung verbraucht; ein erneuter Versuch klappt meist.",
@@ -5159,6 +5162,8 @@ const DE: Record<string, string> = {
   "You can view this mission. To work on it, ask the workspace owner to let you edit.":"Sie können diese Mission ansehen. Um daran zu arbeiten, bitten Sie den Inhaber des Arbeitsbereichs um Bearbeitungsrechte.",
   "Only {name}, who created this mission, can edit its details, set its dates, check the result and close it. You can add steps, work on them and record their proof.":"{name} hat diese Mission erstellt und ist die einzige Person, die ihre Details ändern, Termine festlegen, das Ergebnis prüfen und sie abschließen kann. Sie können Schritte hinzufügen, daran arbeiten und den Nachweis festhalten.",
   "{name} checks the result and closes this mission.":"{name} prüft das Ergebnis und schließt diese Mission ab.",
+  // The site's description in search results (25 Nov 2026)
+  "Checklists and plans for small teams: give every step an owner, keep proof when it is done, and see what is late. Free plan, no card.":"Checklisten und Pläne für kleine Teams: für jeden Schritt eine verantwortliche Person, Nachweise beim Erledigen und ein Blick auf alles Verspätete. Kostenloser Plan, ohne Karte.",
 };
 
 export const DICTIONARIES: Record<AppLanguage, Record<string, string>> = {

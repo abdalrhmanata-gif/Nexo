@@ -1,0 +1,62 @@
+name: ZAVQERA MCP Registry
+
+# Lists ZAVQERA's remote MCP server (https://zavqera.com/mcp) in the official
+# MCP Registry (registry.modelcontextprotocol.io), which MCP clients and
+# marketplaces read. server.json at the repository root is the listing.
+#
+# Runs when server.json changes on main, or by hand. The registry refuses a
+# version it already has, so bump "version" in server.json with each change.
+# Signs in with GitHub OIDC: no secret is stored anywhere, and the token can
+# only publish under io.github.abdalrhmanata-gif/*.
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "server.json"
+      - ".github/workflows/zavqera-mcp-registry.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zavqera-mcp-registry
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check that the server is live and asks for sign-in
+        run: |
+          status=$(curl -s -o /dev/null -w '%{http_code}' -X POST https://zavqera.com/mcp \
+            -H 'Content-Type: application/json' \
+            -d '{"jsonrpc":"2.0","id":1,"method":"ping"}')
+          if [ "$status" != "401" ]; then
+            echo "::error::https://zavqera.com/mcp answered $status; expected 401 (sign-in required). Not publishing."
+            exit 1
+          fi
+
+      - name: Install mcp-publisher (pinned)
+        run: |
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/download/v1.8.5/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+          test -x mcp-publisher
+
+      - name: Sign in with GitHub OIDC
+        run: ./mcp-publisher login github-oidc
+
+      - name: Publish server.json
+        run: ./mcp-publisher publish
+
+      - name: Show the listing
+        run: |
+          sleep 5
+          curl -fsS "https://registry.modelcontextprotocol.io/v0.1/servers?search=io.github.abdalrhmanata-gif/zavqera" | head -c 2000
