@@ -31,7 +31,7 @@ import { calendarConnections, calendarLimit, subscribeLinks, todayIn } from "../
 import { createPlanDatesRepository, readMissionDates, type MissionDates } from "../../../../lib/supabase/plan-dates-repository";
 import { readStepOwners } from "../../../../lib/supabase/step-owner-repository";
 import { StepOwnerPicker } from "../../../../components/step-owner-picker";
-import { ownersInUse, stepTakesOwner } from "../../../../lib/step-owners.mjs";
+import { creatorName, missionPermissions, ownersInUse, stepTakesOwner } from "../../../../lib/step-owners.mjs";
 
 /** Whether this reader can get an AI plan here; then the keyword plan is noise. */
 async function aiPlanReady() {
@@ -106,6 +106,10 @@ export default async function MissionDetailPage({
   ]);
   const closed = isTerminalMissionStatus(mission.lifecycleStatus);
   const teamOwners = ownersInUse(stepOwners);
+  // What this reader may do here. Unknown access shows everything, as before;
+  // the database refuses anything they may not do either way.
+  const can = missionPermissions(stepOwners);
+  const creator = creatorName(stepOwners, t);
   const readiness = verificationReadiness(mission, t);
   const intelligence = missionIntelligenceFor(mission, new Date(), t, language);
   // A stated outcome with no work behind it is the moment the product is
@@ -154,7 +158,7 @@ export default async function MissionDetailPage({
     <p className="eyebrow no-print"><Link href="/app"><LocalizedText en="Workspace" /></Link> <LocalizedText en="/ Mission detail" /></p>
     <div className="landing-final-actions no-print">
       <SavePdfButton title={mission.name} subtitle={t("Mission plan")} />
-      <ShareMissionButton missionId={mission.id} shared={shareStatus} />
+      {can.canEdit && <ShareMissionButton missionId={mission.id} shared={shareStatus} />}
     </div>
     {/* Arriving from "Save this plan": say it worked and what to do first,
         once, where the person is looking. */}
@@ -162,6 +166,9 @@ export default async function MissionDetailPage({
       <strong><LocalizedText en="Your plan is saved." /></strong>{" "}
       <LocalizedText en="Start with the first step below. When it is done, mark it done and keep the proof: a receipt, a reference number or a link." />
     </div>}
+    {can.known && !can.canEdit && <p className="readiness mission-access-note" role="status">
+      {t("You can view this mission. To work on it, ask the workspace owner to let you edit.")}
+    </p>}
     <div className="detail-layout">
       <div className="detail-stack">
         <section className="card">
@@ -185,7 +192,7 @@ export default async function MissionDetailPage({
           <div className="progress"><span style={{ width: `${mission.progress}%` }} /></div>
         </section>
 
-        {calendar && <PlanDatesCard missionId={mission.id} actions={mission.actions} dates={dates} calendar={calendar} notice={{ dates: query?.dates, calendar: query?.calendar }} />}
+        {calendar && can.isCreator && <PlanDatesCard missionId={mission.id} actions={mission.actions} dates={dates} calendar={calendar} notice={{ dates: query?.dates, calendar: query?.calendar }} />}
 
         <section className="card" aria-labelledby="next-action-heading">
           <p className="eyebrow"><LocalizedText en="Deterministic guidance" /></p>
@@ -198,7 +205,7 @@ export default async function MissionDetailPage({
           <p className="action-hint">{t("Based on this mission’s saved state:")} {intelligence.nextAction.currentState}.</p>
         </section>
 
-        {suggested && <SuggestedPlan
+        {suggested && can.canEdit && <SuggestedPlan
           missionId={mission.id}
           headline={planHeadline(suggested.kind)}
           steps={suggested.steps}
@@ -209,13 +216,13 @@ export default async function MissionDetailPage({
         {/* The deterministic planner knows six domains by keyword. This is
             the path for every mission it cannot help with, which is most of
             them. It renders nothing where no provider is configured. */}
-        <AiMissionPlan
+        {can.canEdit && <AiMissionPlan
           missionId={mission.id}
           name={mission.name}
           intent={mission.intent}
           criteria={mission.criteria}
           actions={mission.actions.map((action) => action.title)}
-        />
+        />}
 
         <section className="card" aria-labelledby="plan-health-heading">
           <p className="eyebrow"><LocalizedText en="Plan health" /></p>
@@ -265,7 +272,7 @@ export default async function MissionDetailPage({
                   />}
                   <small className="action-hint">{actionStatusHint(action.status, t)}</small>
                 </div>
-                <ActionMutationControls missionId={mission.id} action={action} closed={closed} />
+                {can.canEdit && <ActionMutationControls missionId={mission.id} action={action} closed={closed} />}
               </div>
             </li>;
             })}</ul>
@@ -276,10 +283,14 @@ export default async function MissionDetailPage({
             <LocalizedText en="Doing this with someone? Invite them, then give each step an owner so everyone knows what is theirs." />{" "}
             <Link href="/app/team"><LocalizedText en="Invite your team" /></Link>
           </p>}
-          {repository.addAction && <AddActionForm missionId={mission.id} />}
+          {repository.addAction && can.canEdit && <AddActionForm missionId={mission.id} />}
         </section>
 
-        {repository.updateMission && <section className="card no-print"><p className="eyebrow"><LocalizedText en="Mission setup" /></p><h2><LocalizedText en="Edit this mission" /></h2><p><LocalizedText en="Changes are accepted only after the server confirms the current version." /></p><MissionMutationControls missionId={mission.id} name={mission.name} intent={mission.intent} criteria={mission.criteria} status={mission.lifecycleStatus} version={mission.version} /></section>}
+        {can.known && can.canEdit && !can.isCreator && <p className="readiness mission-access-note no-print">
+          {fill(t("Only {name}, who created this mission, can edit its details, set its dates, check the result and close it. You can add steps, work on them and record their proof."), { name: creator })}
+        </p>}
+
+        {repository.updateMission && can.isCreator && <section className="card no-print"><p className="eyebrow"><LocalizedText en="Mission setup" /></p><h2><LocalizedText en="Edit this mission" /></h2><p><LocalizedText en="Changes are accepted only after the server confirms the current version." /></p><MissionMutationControls missionId={mission.id} name={mission.name} intent={mission.intent} criteria={mission.criteria} status={mission.lifecycleStatus} version={mission.version} /></section>}
 
         <section className="card">
           <p className="eyebrow"><LocalizedText en="Verification" /></p>
@@ -287,7 +298,9 @@ export default async function MissionDetailPage({
             ? fill(t("Verification {status}"), { status: t(verification.status.toLowerCase()) })
             : t("Record what you checked")}</h2>
           <p><LocalizedText en="A mission is only verified once evidence has been recorded through the authenticated server boundary. Work being reported as finished is not the same as ZAVQERA considering it verified." /></p>
-          {readiness.ready
+          {readiness.ready && !can.isCreator
+            ? <p className="readiness" role="status">{fill(t("{name} checks the result and closes this mission."), { name: creator })}</p>
+            : readiness.ready
             ? (verification
               ? <>{!outcome && <VerificationControls missionId={mission.id} verification={verification} criteria={mission.criteria} completedSteps={completedSteps} stepProof={stepProof} initialEvidence={initialEvidence} />}</>
               : <VerificationControls missionId={mission.id} criteria={mission.criteria} completedSteps={completedSteps} stepProof={stepProof} initialEvidence={initialEvidence} />)
@@ -331,10 +344,10 @@ export default async function MissionDetailPage({
           <li><strong><LocalizedText en="Actions" /></strong><br />{fill(t("{done} complete of {total}"), { done: mission.actionsCompleted, total: mission.actionsTotal })}</li>
           <li><strong><LocalizedText en="Verified" /></strong><br />{verification?.status === "VERIFIED" ? t("Yes") : t("Not yet")}</li>
           <li><strong><LocalizedText en="Last updated" /></strong><br /><LocalizedDateTime value={mission.updated} /></li>
-          <li><strong><LocalizedText en="Owner" /></strong><br />{t(mission.owner)}</li>
+          <li><strong><LocalizedText en="Created by" /></strong><br />{can.known ? creator : t(mission.owner)}</li>
         </ul>
         {ownTemplates && <OwnTemplateBox missionId={mission.id} missionName={mission.name} active={ownTemplates.active} notice={query?.template} />}
-        <DeleteMissionForm missionId={mission.id} missionName={mission.name} />
+        {can.canDelete && <DeleteMissionForm missionId={mission.id} missionName={mission.name} />}
       </aside>
     </div>
   </div>;

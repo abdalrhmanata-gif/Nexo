@@ -75,20 +75,18 @@ export default async function WorkspacePage({
       {attention && <Link className="button button-quiet" href={`/app/missions/${attention.mission.id}`}><LocalizedText en="Open mission" /></Link>}
     </section>}
 
-    {(assigned.here.length > 0 || assigned.elsewhere > 0) && <section className="card assigned-to-you" aria-labelledby="assigned-heading">
+    {assigned.length > 0 && <section className="card assigned-to-you" aria-labelledby="assigned-heading">
       <p className="eyebrow"><LocalizedText en="Your steps" /></p>
       <h2 id="assigned-heading"><LocalizedText en="Assigned to you" /></h2>
-      {assigned.here.length > 0 && <ul className="list">
-        {assigned.here.map((step) => <li key={step.actionId}>
-          <Link href={`/app/missions/${step.missionId}`}><strong>{step.title}</strong></Link>
+      <ul className="list">
+        {assigned.map((step) => <li key={step.actionId}>
+          {/* A plain link, never prefetched: /app/open switches the workspace
+              the app shows, which must only happen when the person clicks. */}
+          <a href={step.href}><strong>{step.title}</strong></a>
           <span className={`status status-action-${step.status.toLowerCase()}`}>{actionStatusLabel(step.status, t)}</span>
           <small className="action-hint">{step.missionName}</small>
         </li>)}
-      </ul>}
-      {assigned.elsewhere > 0 && <p className="action-hint">
-        {fill(t(assigned.elsewhere === 1 ? "{count} more step is yours in another workspace." : "{count} more steps are yours in another workspace."), { count: assigned.elsewhere })}{" "}
-        <Link href="/app/team"><LocalizedText en="Switch workspace" /></Link>
-      </p>}
+      </ul>
     </section>}
 
     <section className="workspace-quick-actions" aria-label={t("Quick actions")}>

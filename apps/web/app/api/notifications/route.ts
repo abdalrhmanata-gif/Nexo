@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { isSupabaseConfigured } from "../../../lib/supabase/config";
-import { createSupabaseMissionRepository } from "../../../lib/supabase/mission-repository";
+import { createSupabaseMissionRepository, readStepsAssignedToYou } from "../../../lib/supabase/mission-repository";
 import { localMockMissionRepository } from "../../../lib/local-mock-repository";
 
 export const dynamic = "force-dynamic";
@@ -17,21 +17,25 @@ export async function GET() {
     const repository = isSupabaseConfigured()
       ? await createSupabaseMissionRepository()
       : localMockMissionRepository;
-    const missions = await repository.listMissions();
+    // Steps someone gave you are read beside the missions, in any workspace.
+    const [missions, assigned] = await Promise.all([repository.listMissions(), readStepsAssignedToYou()]);
     const now = Date.now();
     const followUpWindow = now + 7 * 24 * 60 * 60 * 1000;
-    const followUps = missions.reduce((count, mission) => count + mission.actions.filter((action) => {
+    const followUpSteps = new Set(missions.flatMap((mission) => mission.actions.filter((action) => {
       if (!action.followUpAt || action.status === "COMPLETED" || action.status === "CANCELLED") return false;
       const dueAt = Date.parse(action.followUpAt);
       return Number.isFinite(dueAt) && dueAt <= followUpWindow;
-    }).length, 0);
+    }).map((action) => action.id)));
+    const followUps = followUpSteps.size;
+    // A step that is yours and already counted for its follow-up counts once.
+    const yours = assigned.filter((step) => !followUpSteps.has(step.actionId)).length;
     const waiting = missions.filter((mission) => mission.status === "WAITING").length;
     // A mission that states an outcome and holds no work is the easiest thing
     // to lose track of, and it was the one thing the badge never counted.
     const unplanned = missions.filter((mission) =>
       mission.status !== "COMPLETED"
       && mission.actions.filter((action) => action.status !== "CANCELLED").length === 0).length;
-    return NextResponse.json({ count: waiting + followUps + unplanned }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ count: waiting + followUps + unplanned + yours }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
     if (/auth|session|jwt|not authenticated|unauthor/i.test(message)) {

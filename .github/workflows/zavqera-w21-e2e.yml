@@ -22,6 +22,7 @@ on:
       - "supabase/migrations/20261123190000_step_proof_and_auto_lifecycle.sql"
       - "supabase/migrations/20261125180000_workspace_editors_work_on_missions.sql"
       - "supabase/migrations/20261125190000_step_owner.sql"
+      - "supabase/migrations/20261125200000_mission_access_for_page.sql"
   pull_request:
     branches:
       - "main"
@@ -33,6 +34,7 @@ on:
       - "supabase/migrations/20261123190000_step_proof_and_auto_lifecycle.sql"
       - "supabase/migrations/20261125180000_workspace_editors_work_on_missions.sql"
       - "supabase/migrations/20261125190000_step_owner.sql"
+      - "supabase/migrations/20261125200000_mission_access_for_page.sql"
 
 permissions:
   contents: read
@@ -155,7 +157,8 @@ jobs:
           # check, and the owner functions are new, so both apply on top.
           for team_migration in \
             supabase/migrations/20261125180000_workspace_editors_work_on_missions.sql \
-            supabase/migrations/20261125190000_step_owner.sql; do
+            supabase/migrations/20261125190000_step_owner.sql \
+            supabase/migrations/20261125200000_mission_access_for_page.sql; do
             test -s "${team_migration}"
             printf '\n' >> "${schema_file}"
             cat "${team_migration}" >> "${schema_file}"
