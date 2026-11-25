@@ -359,6 +359,7 @@ const EVENT_LABELS = Object.freeze({
   VERIFICATION_RECORDED: "Verification recorded",
   MISSION_OBJECTIVE_UPDATED: "Mission details edited",
   RESEARCH_RUN_COMPLETED: "Research completed",
+  ACTION_ASSIGNED: "Step owner changed",
 });
 
 /**
@@ -377,6 +378,9 @@ export function eventDetail(eventType, payload) {
       return data.has_proof === false ? "Proof removed" : "";
     case "MISSION_OBJECTIVE_UPDATED":
       return "";
+    // The payload holds user ids, never shown; who it is shows on the step.
+    case "ACTION_ASSIGNED":
+      return data.assignee_id ? "" : "Owner removed";
     default:
       return summariseEventPayload(payload);
   }

@@ -29,6 +29,9 @@ import { PlanDatesCard, type CalendarState } from "../../../../components/plan-d
 import { PlanDay } from "../../../../components/plan-dates-client";
 import { calendarConnections, calendarLimit, subscribeLinks, todayIn } from "../../../../lib/plan-dates.mjs";
 import { createPlanDatesRepository, readMissionDates, type MissionDates } from "../../../../lib/supabase/plan-dates-repository";
+import { readStepOwners } from "../../../../lib/supabase/step-owner-repository";
+import { StepOwnerPicker } from "../../../../components/step-owner-picker";
+import { ownersInUse, stepTakesOwner } from "../../../../lib/step-owners.mjs";
 
 /** Whether this reader can get an AI plan here; then the keyword plan is noise. */
 async function aiPlanReady() {
@@ -89,7 +92,7 @@ export default async function MissionDetailPage({
   // These reads do not depend on each other, so they run together rather
   // than one after another: each is a round trip to the database, and in a
   // row they made the page (and every refresh after a change) take seconds.
-  const [shareStatus, aiReady, plan, dates, calendarRead] = await Promise.all([
+  const [shareStatus, aiReady, plan, dates, calendarRead, stepOwners] = await Promise.all([
     readMissionShareStatus(mission.id),
     thin ? aiPlanReady() : Promise.resolve(true),
     // Own templates need the database; the local preview has none.
@@ -98,7 +101,11 @@ export default async function MissionDetailPage({
     // never breaks the page: it shows the Mission undated.
     isSupabaseConfigured() ? readMissionDates(mission.id) : Promise.resolve<MissionDates>({ targetDate: null, dueDates: {} }),
     isSupabaseConfigured() ? readCalendar() : Promise.resolve(null),
+    // Who owns each step. Null when it cannot be read: the steps show alone.
+    readStepOwners(mission.id),
   ]);
+  const closed = isTerminalMissionStatus(mission.lifecycleStatus);
+  const teamOwners = ownersInUse(stepOwners);
   const readiness = verificationReadiness(mission, t);
   const intelligence = missionIntelligenceFor(mission, new Date(), t, language);
   // A stated outcome with no work behind it is the moment the product is
@@ -248,13 +255,27 @@ export default async function MissionDetailPage({
                   {followUp && <span className={`follow-up${followUp.overdue ? " follow-up-overdue" : ""}`}>
                     {followUp.overdue ? t("Follow-up was due") : t("Follow up")} {followUp.relative} · {followUp.absolute}
                   </span>}
+                  {teamOwners && stepOwners && <StepOwnerPicker
+                    missionId={mission.id}
+                    actionId={action.id}
+                    version={action.version}
+                    editors={stepOwners.editors}
+                    ownerId={stepOwners.owners[action.id] ?? null}
+                    editable={stepOwners.canAssign && !closed && stepTakesOwner(action.status)}
+                  />}
                   <small className="action-hint">{actionStatusHint(action.status, t)}</small>
                 </div>
-                <ActionMutationControls missionId={mission.id} action={action} closed={isTerminalMissionStatus(mission.lifecycleStatus)} />
+                <ActionMutationControls missionId={mission.id} action={action} closed={closed} />
               </div>
             </li>;
             })}</ul>
             : <p className="detail-intent"><LocalizedText en="No actions have been added yet." /></p>}
+          {/* Alone in the workspace, every step is yours. The way to give
+              steps an owner is to bring the team in. */}
+          {stepOwners && stepOwners.canAssign && !teamOwners && !closed && mission.actions.length > 1 && <p className="action-hint step-owner-invite no-print">
+            <LocalizedText en="Doing this with someone? Invite them, then give each step an owner so everyone knows what is theirs." />{" "}
+            <Link href="/app/team"><LocalizedText en="Invite your team" /></Link>
+          </p>}
           {repository.addAction && <AddActionForm missionId={mission.id} />}
         </section>
 

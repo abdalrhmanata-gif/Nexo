@@ -1985,3 +1985,19 @@ html[dir="rtl"] .try-more a span[aria-hidden="true"] { display:inline-block; tra
 .checklist-facts dd { margin:0; }
 .checklist-proof { border-inline-start:3px solid var(--teal); padding-inline-start:10px; }
 .checklist-edit-link { display:inline-block; margin-block:8px 4px; font-size:14px; }
+
+/* Step owners (25 Nov 2026): who on the team has each step. */
+.step-owner { display:inline-flex; align-items:center; gap:6px; margin-inline-start:8px; padding:2px 8px; border-radius:99px; font-size:12px; font-weight:700; background:rgba(99,102,241,.10); color:#4338ca; }
+.step-owner-edit { background:none; padding:0; flex-wrap:wrap; }
+.step-owner-edit label { display:inline-flex; align-items:center; gap:6px; color:var(--muted); font-weight:600; }
+.step-owner-edit select { padding:3px 8px; border:1px solid var(--line); border-radius:99px; font:inherit; font-size:12px; color:var(--ink); background:var(--white); max-width:220px; }
+.step-owner-edit .field-error { font-weight:500; }
+.step-owner-invite a { font-weight:700; }
+.assigned-to-you { margin-bottom:18px; }
+.assigned-to-you li { display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; }
+.assigned-to-you li .action-hint { flex-basis:100%; margin:0; }
+:root[data-theme="dark"] .step-owner { background:rgba(129,140,248,.16); color:#c7d2fe; }
+:root[data-theme="dark"] .step-owner-edit { background:none; }
+:root[data-theme="dark"] .step-owner-edit select { background:transparent; color:inherit; color-scheme:dark; }
+@media print { .step-owner-edit select { border:none; appearance:none; padding:0; } }
+@media (max-width:700px) { .step-owner { margin-inline-start:0; margin-top:4px; } .step-owner-edit select { max-width:100%; } }

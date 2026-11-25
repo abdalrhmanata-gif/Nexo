@@ -20,6 +20,8 @@ on:
       - "supabase/test-snapshots/**"
       - "supabase/migrations/20261113160000_opportunities_account_storage.sql"
       - "supabase/migrations/20261123190000_step_proof_and_auto_lifecycle.sql"
+      - "supabase/migrations/20261125180000_workspace_editors_work_on_missions.sql"
+      - "supabase/migrations/20261125190000_step_owner.sql"
   pull_request:
     branches:
       - "main"
@@ -29,6 +31,8 @@ on:
       - "supabase/test-snapshots/**"
       - "supabase/migrations/20261113160000_opportunities_account_storage.sql"
       - "supabase/migrations/20261123190000_step_proof_and_auto_lifecycle.sql"
+      - "supabase/migrations/20261125180000_workspace_editors_work_on_missions.sql"
+      - "supabase/migrations/20261125190000_step_owner.sql"
 
 permissions:
   contents: read
@@ -146,6 +150,16 @@ jobs:
           test -s "${step_proof_migration}"
           printf '\n' >> "${schema_file}"
           cat "${step_proof_migration}" >> "${schema_file}"
+          # Team members do the work and steps have owners (25 Nov): the six
+          # functions keep their production bodies except the permission
+          # check, and the owner functions are new, so both apply on top.
+          for team_migration in \
+            supabase/migrations/20261125180000_workspace_editors_work_on_missions.sql \
+            supabase/migrations/20261125190000_step_owner.sql; do
+            test -s "${team_migration}"
+            printf '\n' >> "${schema_file}"
+            cat "${team_migration}" >> "${schema_file}"
+          done
 
           grep -q 'VERIFIED_OUTCOME_REQUIRED' "${schema_file}"
           grep -q 'missions_initial_state' "${schema_file}"
@@ -153,6 +167,7 @@ jobs:
           grep -q 'handle_new_user_profile' "${schema_file}"
           grep -q 'opportunity_evidence_items_select_own' "${schema_file}"
           grep -q 'complete_mission_action' "${schema_file}"
+          grep -q 'set_mission_action_assignee' "${schema_file}"
 
           echo "${workdir}" > "${RUNNER_TEMP}/zavqera-e2e-workdir"
           sha256sum "${schema_file}" > "${RUNNER_TEMP}/zavqera-e2e-schema.sha256"

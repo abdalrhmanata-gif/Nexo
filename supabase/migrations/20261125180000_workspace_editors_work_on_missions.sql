@@ -19,6 +19,9 @@
 -- - recording verification, committing the outcome and editing the Mission's
 --   name and intent stay with its creator: closing a Mission is the creator's
 --   decision, and those rows carry the creator as owner_id;
+-- - for the same reason, moving the Mission itself to Cancelled, Failed or
+--   Completed stays with the creator (transition_mission checks it); editors
+--   can pause, block and resume it, and it still follows its steps on its own;
 -- - deleting a Mission stays with the owner and admins (row level security);
 -- - the history still records who made each change (actor_id).
 --
@@ -51,7 +54,10 @@ begin
    where id = p_mission_id
    for update;
 
-  if not found or not private.can_edit_workspace(v_mission.workspace_id, auth.uid()) then
+  -- Anyone who can edit moves the work along; ending the Mission (cancelled,
+  -- failed or completed) stays with the person who created it.
+  if not found or not private.can_edit_workspace(v_mission.workspace_id, auth.uid())
+     or (p_to_status in ('CANCELLED', 'FAILED', 'COMPLETED') and v_mission.owner_id <> auth.uid()) then
     raise exception 'MISSION_NOT_FOUND_OR_FORBIDDEN' using errcode = '42501';
   end if;
 
