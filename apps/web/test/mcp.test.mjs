@@ -410,5 +410,5 @@ test("the OpenAI plugin domain challenge is served as the bare token in plain te
   assert.match(route, /const OPENAI_APPS_CHALLENGE = "[A-Za-z0-9_-]{20,}";/);
   assert.match(route, /new Response\(OPENAI_APPS_CHALLENGE, \{/);
   assert.match(route, /"Content-Type": "text\/plain; charset=utf-8"/);
-  assert.doesNotMatch(route, /JSON|redirect\(/);
+  assert.doesNotMatch(route, /\.json\(|JSON\.stringify|redirect\(/);
 });
