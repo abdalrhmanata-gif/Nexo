@@ -4,6 +4,7 @@ import { getLanguage, getTranslate } from "../lib/i18n-server";
 import { guidePath } from "../lib/guides";
 import { readSignedIn } from "../components/shell";
 import { GoalStarter } from "../components/goal-starter";
+import { homeStructuredData, jsonLdScript } from "../lib/site-schema.mjs";
 
 const capabilities = [
   {
@@ -40,6 +41,9 @@ export default async function HomePage() {
   const signedIn = await readSignedIn();
   const language = await getLanguage();
   return <div className="landing-page">
+    {/* What ZAVQERA is, for search engines and AI assistants: the company,
+        the site and the product with its real prices. */}
+    <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdScript(homeStructuredData()) }} />
     <section className="landing-hero">
       <div className="landing-hero-copy">
         <p className="eyebrow"><span className="landing-live-dot" aria-hidden="true" /> <LocalizedText en="Mission control for goals you have to get right" /></p>

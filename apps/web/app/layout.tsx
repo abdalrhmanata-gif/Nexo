@@ -15,7 +15,8 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslate();
   return {
     title: t("ZAVQERA — turn a goal into steps, evidence and a result"),
-    description: t("Structure AI-assisted work into explicit Missions, track progress, and review evidence before committing to outcomes."),
+    // The same sentence as the home page's structured data (lib/site-schema.mjs).
+    description: t("Checklists and plans for small teams: give every step an owner, keep proof when it is done, and see what is late. Free plan, no card."),
   };
 }
 

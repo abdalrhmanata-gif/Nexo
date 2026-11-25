@@ -1,0 +1,21 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.abdalrhmanata-gif/zavqera",
+  "title": "ZAVQERA",
+  "description": "Save plans from the chat as Missions with steps, proof and dates, and see what to do next.",
+  "version": "1.0.0",
+  "websiteUrl": "https://zavqera.com/ai",
+  "icons": [
+    {
+      "src": "https://zavqera.com/brand/zavqera-icon-512.png",
+      "mimeType": "image/png",
+      "sizes": ["512x512"]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://zavqera.com/mcp"
+    }
+  ]
+}
