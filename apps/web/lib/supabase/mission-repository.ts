@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
-import { createSupabaseServerClient } from "./server";
+import { createSupabaseServerClient, getAuthenticatedUser } from "./server";
 import { WORKSPACE_COOKIE, workspaceCookieValue } from "../team-workspace.mjs";
 import { MissionMutationConflictError, MissionMutationRejectedError, type MissionRepository, type NewMission, type NewOutcome, type NewVerification, type UpdateMission } from "../mission-repository";import type { ActionStatus, Mission, MissionAction, MissionActivity, MissionOutcome, MissionVerification, MissionLifecycleStatus } from "../view-models";
 import { collapseLifecycleChains, eventDetail, humaniseEventType, parseMissionObjective } from "../mission-content.mjs";
@@ -174,8 +174,8 @@ async function historyFor(supabase: SupabaseClient, missionId: string) {
 
 export async function createSupabaseMissionRepository(): Promise<MissionRepository> {
   const supabase = await createSupabaseServerClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) throw new Error("Authentication required.");
+  const user = await getAuthenticatedUser();
+  if (!user) throw new Error("Authentication required.");
   return missionRepositoryFor(supabase, user.id);
 }
 

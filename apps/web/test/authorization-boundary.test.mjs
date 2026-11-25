@@ -56,8 +56,12 @@ test("client-supplied owner authority is ignored", () => {
 test("server repository derives identity and scopes every authoritative read", async () => {
   const repository = await source(repositoryPath);
   const server = await source(serverPath);
-  assert.match(repository, /supabase\.auth\.getUser\(\)/);
-  assert.match(repository, /if \(error \|\| !user\) throw new Error\("Authentication required\."\)/);
+  // Identity comes from Supabase Auth (getUser, which asks the auth server),
+  // read once per request through the cached helper in server.ts.
+  assert.match(repository, /const user = await getAuthenticatedUser\(\);/);
+  assert.match(repository, /if \(!user\) throw new Error\("Authentication required\."\)/);
+  assert.match(server, /export const getAuthenticatedUser = cache\(async \(\) => \{\s+const supabase = await createSupabaseServerClient\(\);\s+const \{ data, error \} = await supabase\.auth\.getUser\(\);/);
+  assert.doesNotMatch(server, /auth\.getSession\(/, "a session read from cookies is not proof of identity");
   // Owned workspace creation must be atomic and must establish the owner
   // membership plus the default bounded Research Agent in the database.
   assert.match(repository, /supabase\.rpc\("ensure_owned_workspace"\)/);
