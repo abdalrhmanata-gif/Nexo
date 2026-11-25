@@ -145,6 +145,6 @@ test("the analytics link is in the menu only for the people who run the site", (
   assert.match(shell, /siteOperator = false/, "hidden unless the layout says otherwise");
   assert.match(shell, /\.rpc\("is_site_operator"\)/);
   assert.match(shell, /return data === true;/, "anything but a plain yes — an error, a missing function — hides the link");
-  assert.match(layout, /const siteOperator = signedIn \? await readSiteOperator\(\) : false;/, "a visitor who is not signed in is never asked about");
+  assert.match(layout, /const \[siteOperator, sharedWorkspace, account\] = signedIn\s+\? await Promise\.all\(\[readSiteOperator\(\), readOpenSharedWorkspace\(\), readAccountSummary\(\)\]\)\s+: \[false, null, null\];/, "a visitor who is not signed in is never asked about");
   assert.match(layout, /<Shell signedIn=\{signedIn\} siteOperator=\{siteOperator\}/);
 });

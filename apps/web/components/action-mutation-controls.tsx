@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState, useTransition } from "react";
 import { LocalizedText, fill, useTranslate } from "./localized-text";
 import { useRouter } from "next/navigation";
 import type { ActionStatus, MissionAction } from "../lib/view-models";
@@ -30,6 +30,11 @@ export function ActionMutationControls({ missionId, action, closed = false }: { 
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [saved, setSaved] = useState(false);
+  // The page's fresh state comes from a server refresh that can take a few
+  // seconds. Until it lands, the step must not look finished here while the
+  // rest of the page still shows it open.
+  const [refreshing, startRefresh] = useTransition();
+  const working = busy || refreshing;
 
   useEffect(() => {
     setStatus(action.status);
@@ -63,12 +68,15 @@ export function ActionMutationControls({ missionId, action, closed = false }: { 
         setMessage(payload.error ? t(payload.error) : t("Action update was not accepted."));
         return;
       }
-      // Close the form at once; the page refresh that follows can take a few
-      // seconds, and an open form beside "saved" looked like it had not worked.
-      setProofOpen(false);
+      // The form stays as it is, its button saying "Saving…", until the
+      // refreshed page arrives with the step in its new state; that state is
+      // the confirmation. The line below shows only if nothing changed on
+      // screen (for example a proof saved with the same text).
       setSaved(true);
       setMessage(done);
-      router.refresh();
+      startRefresh(() => {
+        router.refresh();
+      });
     } catch {
       setMessage(t("The action could not be saved. Check your connection and try again."));
     } finally {
@@ -83,7 +91,7 @@ export function ActionMutationControls({ missionId, action, closed = false }: { 
       name="evidenceNote"
       value={note}
       maxLength={PROOF_NOTE_MAX}
-      disabled={busy}
+      disabled={working}
       placeholder={t("For example: Paid, confirmation 4471")}
       onChange={(event) => setNote(event.target.value)}
     />
@@ -95,7 +103,7 @@ export function ActionMutationControls({ missionId, action, closed = false }: { 
       inputMode="url"
       autoComplete="off"
       value={link}
-      disabled={busy}
+      disabled={working}
       placeholder={t("Link to a receipt, page or file (optional)")}
       onChange={(event) => setLink(event.target.value)}
     />
@@ -117,12 +125,12 @@ export function ActionMutationControls({ missionId, action, closed = false }: { 
         }}>
           {proofFields}
           <div className="proof-actions">
-            <button className="button button-small" type="submit" disabled={busy}>{busy ? t("Saving…") : t("Save proof")}</button>
-            <button className="button button-small button-quiet" type="button" disabled={busy} onClick={() => setProofOpen(false)}>{t("Cancel")}</button>
+            <button className="button button-small" type="submit" disabled={working}>{working ? t("Saving…") : t("Save proof")}</button>
+            <button className="button button-small button-quiet" type="button" disabled={working} onClick={() => setProofOpen(false)}>{t("Cancel")}</button>
           </div>
         </form>
         : <button className="button button-small button-quiet" type="button" onClick={() => setProofOpen(true)}>{proven ? t("Edit proof") : t("Add proof")}</button>}
-      {message && (saved
+      {message && !refreshing && (saved
       ? <p className="action-saved" role="status">{message}</p>
       : <p className="field-error" role="alert">{message}</p>)}
     </div>;
@@ -147,7 +155,7 @@ export function ActionMutationControls({ missionId, action, closed = false }: { 
 
   return <div className="action-control-group">
     <div className="action-control">
-      {!proofOpen && <button className="button button-small" type="button" disabled={busy} onClick={() => setProofOpen(true)}>
+      {!proofOpen && <button className="button button-small" type="button" disabled={working} onClick={() => setProofOpen(true)}>
         <span aria-hidden="true">✓ </span>{t("Mark done")}
       </button>}
       <form onSubmit={submit} className="action-control-menu">
@@ -156,7 +164,7 @@ export function ActionMutationControls({ missionId, action, closed = false }: { 
           id={`status-${action.id}`}
           name="status"
           value={status}
-          disabled={busy}
+          disabled={working}
           onChange={(event) => setStatus(event.target.value as ActionStatus)}
         >
           {options.map((value) => <option key={value} value={value}>{actionStatusLabel(value, t)}</option>)}
@@ -168,12 +176,12 @@ export function ActionMutationControls({ missionId, action, closed = false }: { 
             type="date"
             name="followUpAt"
             value={followUp}
-            disabled={busy}
+            disabled={working}
             onChange={(event) => setFollowUp(event.target.value)}
           />
         </>}
         {status !== action.status || wantsFollowUp
-          ? <button className="button button-small button-quiet" type="submit" disabled={busy}>{busy ? t("Saving…") : t("Save")}</button>
+          ? <button className="button button-small button-quiet" type="submit" disabled={working}>{working ? t("Saving…") : t("Save")}</button>
           : null}
       </form>
     </div>
@@ -183,13 +191,13 @@ export function ActionMutationControls({ missionId, action, closed = false }: { 
     }}>
       {proofFields}
       <div className="proof-actions">
-        <button className="button button-small" type="submit" disabled={busy}>{busy ? t("Saving…") : t("Save as done")}</button>
-        <button className="button button-small button-quiet" type="button" disabled={busy} onClick={() => setProofOpen(false)}>{t("Cancel")}</button>
+        <button className="button button-small" type="submit" disabled={working}>{working ? t("Saving…") : t("Save as done")}</button>
+        <button className="button button-small button-quiet" type="button" disabled={working} onClick={() => setProofOpen(false)}>{t("Cancel")}</button>
       </div>
     </form>}
     {wantsFollowUp && <p className="action-hint"><LocalizedText en="Optional: the date you intend to check back. Leave empty for no reminder." /></p>}
     {losesFollowUp && <p className="action-hint"><LocalizedText en="Saving this will remove the follow-up date, because it only applies while Waiting." /></p>}
-    {message && (saved
+    {message && !refreshing && (saved
       ? <p className="action-saved" role="status">{message}</p>
       : <p className="field-error" role="alert">{message}</p>)}
   </div>;

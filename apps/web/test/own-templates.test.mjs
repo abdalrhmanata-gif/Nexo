@@ -148,13 +148,16 @@ test("every action checks the plan before writing and redirects outside its try"
 
 test("an unreadable plan is Free: a feature is never unlocked by an error", () => {
   const repository = read("lib/supabase/own-template-repository.ts");
-  assert.match(repository, /return !result\.error && typeof row\?\.plan === "string" \? row\.plan : "free";/);
-  assert.match(repository, /\} catch \{\s+return "free";/);
+  assert.match(repository, /const row = await readBillingOverview\(\);\s+return typeof row\?\.plan === "string" \? row\.plan : "free";/);
+  // The shared read turns any error into null, which the line above reads as Free.
+  const server = read("lib/supabase/server.ts");
+  assert.match(server, /if \(result\.error \|\| !Array\.isArray\(result\.data\)\) return null;/);
+  assert.match(server, /readBillingOverview = cache\([\s\S]*?\} catch \{\s+return null;\s+\}/);
 });
 
 test("the Mission page offers it where it helps, and only where the database exists", () => {
   const page = read("app/app/missions/[id]/page.tsx");
-  assert.match(page, /const plan = isSupabaseConfigured\(\) \? await readCurrentPlan\(\) : "free";/);
+  assert.match(page, /isSupabaseConfigured\(\) \? readCurrentPlan\(\) : Promise\.resolve\("free"\)/);
   assert.match(page, /isSupabaseConfigured\(\) \? \{ active: hasOwnTemplates\(plan\) \} : null/);
   assert.match(page, /<OwnTemplateBox missionId=\{mission\.id\} missionName=\{mission\.name\} active=\{ownTemplates\.active\} notice=\{query\?\.template\} \/>/);
   const box = read("components/own-template-box.tsx");

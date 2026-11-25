@@ -10,7 +10,7 @@ import { cache } from "react";
 import { PLAN_LIMITS } from "../lib/billing-plans.mjs";
 import { ThemeSwitcher } from "./theme-switcher";
 import { isSupabaseConfigured } from "../lib/supabase/config";
-import { createSupabaseServerClient } from "../lib/supabase/server";
+import { createSupabaseServerClient, getAuthenticatedUser, readBillingOverview } from "../lib/supabase/server";
 
 function NavIcon({ name }: { name: "search" | "plus" | "business" | "templates" | "pricing" | "workspace" | "opportunities" | "analytics" | "calendar" | "assistant" }) {
   const common = { width: 16, height: 16, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true as const };
@@ -41,9 +41,8 @@ function NavIcon({ name }: { name: "search" | "plus" | "business" | "templates" 
 const readCurrentUser = cache(async () => {
   if (!isSupabaseConfigured()) return null;
   try {
-    const supabase = await createSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    return user ?? null;
+    // The same cached read the page and its repositories use.
+    return await getAuthenticatedUser();
   } catch {
     // Treat an unreadable session as signed out rather than failing the page.
     return null;
@@ -68,9 +67,7 @@ export async function readAccountSummary(): Promise<AccountSummary | null> {
   const rawName = typeof meta.full_name === "string" ? meta.full_name : typeof meta.name === "string" ? meta.name : "";
   const summary: AccountSummary = { email: user.email, name: rawName.trim() || null, plan: "free", used: 0, limit: PLAN_LIMITS.free };
   try {
-    const supabase = await createSupabaseServerClient();
-    const result = await supabase.rpc("billing_overview");
-    const row = Array.isArray(result.data) ? result.data[0] as { plan?: string; generations_used?: number; monthly_limit?: number } | undefined : undefined;
+    const row = await readBillingOverview();
     if (row) {
       summary.plan = row.plan ?? "free";
       summary.used = row.generations_used ?? 0;

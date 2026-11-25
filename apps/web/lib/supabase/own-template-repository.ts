@@ -1,4 +1,4 @@
-import { createSupabaseServerClient } from "./server";
+import { createSupabaseServerClient, getAuthenticatedUser, readBillingOverview } from "./server";
 import { isTemplateId, type OwnTemplateContent } from "../own-templates.mjs";
 
 export type OwnTemplate = OwnTemplateContent & { id: string; updatedAt: string };
@@ -49,14 +49,8 @@ function refusal(error: { code?: string; message?: string }): OwnTemplateError {
  * unreadable is Free: a feature is never unlocked by an error.
  */
 export async function readCurrentPlan(): Promise<string> {
-  try {
-    const supabase = await createSupabaseServerClient();
-    const result = await supabase.rpc("billing_overview");
-    const row = Array.isArray(result.data) ? result.data[0] as { plan?: string } | undefined : undefined;
-    return !result.error && typeof row?.plan === "string" ? row.plan : "free";
-  } catch {
-    return "free";
-  }
+  const row = await readBillingOverview();
+  return typeof row?.plan === "string" ? row.plan : "free";
 }
 
 /**
@@ -65,8 +59,8 @@ export async function readCurrentPlan(): Promise<string> {
  */
 export async function createOwnTemplateRepository() {
   const supabase = await createSupabaseServerClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) throw new Error("Authentication required.");
+  const user = await getAuthenticatedUser();
+  if (!user) throw new Error("Authentication required.");
 
   return {
     async list(): Promise<OwnTemplate[]> {

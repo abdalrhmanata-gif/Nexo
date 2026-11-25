@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { createSupabaseServerClient } from "./server";
+import { createSupabaseServerClient, getAuthenticatedUser } from "./server";
 import { isSupabaseConfigured } from "./config";
 import { WORKSPACE_COOKIE, workspaceCookieValue } from "../team-workspace.mjs";
 
@@ -86,7 +86,7 @@ export async function readOpenSharedWorkspace(): Promise<{ ownerEmail: string; r
   if (!chosen) return null;
   try {
     const supabase = await createSupabaseServerClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await getAuthenticatedUser();
     if (!user) return null;
     const membership = await supabase.from("workspace_members").select("role").eq("workspace_id", chosen).eq("user_id", user.id).maybeSingle();
     if (membership.error || !membership.data || membership.data.role === "owner") return null;
