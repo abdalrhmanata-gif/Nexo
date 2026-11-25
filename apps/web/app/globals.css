@@ -1976,3 +1976,12 @@ html[dir="rtl"] .try-more a span[aria-hidden="true"] { display:inline-block; tra
 .ai-examples li { font-style:italic; }
 .ai-assistants { margin-top:12px; }
 :root[data-theme="dark"] .consent-warning { background:rgba(182,91,42,.16); }
+
+/* Checklists (/checklists): the guide layout plus who/when facts and the
+   proof line under each step. */
+.checklist-facts { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin:0 0 8px; }
+.checklist-facts div { border:1px solid var(--line); border-radius:8px; padding:12px 14px; background:var(--white); }
+.checklist-facts dt { font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin-block-end:4px; }
+.checklist-facts dd { margin:0; }
+.checklist-proof { border-inline-start:3px solid var(--teal); padding-inline-start:10px; }
+.checklist-edit-link { display:inline-block; margin-block:8px 4px; font-size:14px; }

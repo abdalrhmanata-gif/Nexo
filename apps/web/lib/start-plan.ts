@@ -7,18 +7,20 @@
 import { fill, isSupportedLanguage, translate, type AppLanguage } from "./i18n";
 import { missionTemplateById } from "./mission-templates";
 import { guideBySlug, guidePath } from "./guides";
+import { checklistBySlug, checklistMission, checklistPath } from "./checklists";
 import { planHeadline, planOfKind } from "./mission-planner.mjs";
 import { GOAL_MIN_LENGTH, goalTitle, matchGoal, normaliseGoal, type GoalMatch } from "./goal-plan.mjs";
 
 export type StartRequest =
   | { kind: "goal"; value: string; lang: AppLanguage }
   | { kind: "template"; value: string; lang: AppLanguage }
-  | { kind: "guide"; value: string; lang: AppLanguage };
+  | { kind: "guide"; value: string; lang: AppLanguage }
+  | { kind: "checklist"; value: string; lang: AppLanguage };
 
 export type StartPlan = {
   request: StartRequest;
   /** Where the plan comes from, for the line above it and its link. */
-  basis: { source: "guide" | "template" | "planner"; id: string; label: string; href: string | null };
+  basis: { source: "guide" | "template" | "checklist" | "planner"; id: string; label: string; href: string | null };
   name: string;
   intent: string;
   headline: string;
@@ -56,6 +58,8 @@ export function readStartRequest(params: Params, fallbackLanguage: AppLanguage):
   if (template) return missionTemplateById(template) ? { kind: "template", value: template, lang } : null;
   const guide = first(params.guide);
   if (guide) return guideBySlug(guide, "en") ? { kind: "guide", value: guide, lang } : null;
+  const checklist = first(params.checklist);
+  if (checklist) return checklistBySlug(checklist) ? { kind: "checklist", value: checklist, lang } : null;
   const goal = normaliseGoal(first(params.goal));
   return goal.length >= GOAL_MIN_LENGTH ? { kind: "goal", value: goal, lang } : null;
 }
@@ -75,6 +79,7 @@ export function buildStartPlan(request: StartRequest): StartPlan {
   const t = (en: string) => translate(en, request.lang);
   if (request.kind === "template") return templatePlan(request, request.value, null, t);
   if (request.kind === "guide") return guidePlan(request, request.value, null, t);
+  if (request.kind === "checklist") return checklistPlan(request, request.value, t);
   const match: GoalMatch = matchGoal(request.value) ?? { source: "planner", id: "generic", licensed: false };
   const title = goalTitle(request.value);
   if (match.source === "template" && missionTemplateById(match.id)) return templatePlan(request, match.id, title, t);
@@ -129,4 +134,21 @@ export function editBeforeSavingHref(plan: StartPlan) {
     actions: plan.actions.join("\n"),
   });
   return `/app/missions/new?${params.toString()}`;
+}
+
+/** A checklist's plan. Checklists are written in English for English-speaking
+    buyers (lib/checklists.ts), so the plan keeps their wording in any language. */
+function checklistPlan(request: StartRequest, slug: string, t: (en: string) => string): StartPlan {
+  const checklist = checklistBySlug(slug)!;
+  const mission = checklistMission(checklist);
+  return {
+    request,
+    basis: { source: "checklist", id: slug, label: fill(t("From the checklist “{name}”"), { name: checklist.short }), href: checklistPath(slug) },
+    name: mission.name,
+    intent: mission.intent,
+    headline: checklist.title,
+    criteria: mission.criteria,
+    actions: mission.actions,
+    licensed: false,
+  };
 }

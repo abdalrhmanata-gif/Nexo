@@ -12,7 +12,7 @@ import { savePlan } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-type StartSearchParams = { goal?: string; template?: string; guide?: string; lang?: string; error?: string };
+type StartSearchParams = { goal?: string; template?: string; guide?: string; checklist?: string; lang?: string; error?: string };
 
 /**
  * Where a plan is saved once the person is signed in. Arriving from sign-up,

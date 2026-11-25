@@ -186,6 +186,7 @@ export function Shell({ children, signedIn = false, siteOperator = false, billin
             moment someone wants them: before they sign up. */}
         <span className="footer-links">
           <Link href={guidesHref} prefetch={false}><LocalizedText en="Guides" /></Link>
+          <Link href="/checklists" prefetch={false}><LocalizedText en="Checklists" /></Link>
           <Link href="/ai" prefetch={false}><LocalizedText en="AI assistants" /></Link>
           <Link href="/privacy" prefetch={false}><LocalizedText en="Privacy" /></Link>
           <Link href="/terms" prefetch={false}><LocalizedText en="Terms" /></Link>

@@ -15,7 +15,9 @@ import { savePlan } from "../app/start/actions";
 
 type TrySearchParams = { goal?: string | string[] };
 
-const HONESTY: Record<StartPlan["basis"]["source"], string> = {
+// A goal typed here is matched to a guide, a template or the planner, never
+// to a checklist: checklists are saved from their own pages.
+const HONESTY: Record<Exclude<StartPlan["basis"]["source"], "checklist">, string> = {
   guide: "Built from the guide, with no AI. Rules and fees change: the guide links the official page for each one.",
   template: "Built from a template, with no AI. It states no rule, fee or deadline: confirm those at the official source.",
   planner: "A first structure built from the words you used, with no AI. It states no rule, price or deadline: check those at the official source.",
@@ -69,7 +71,7 @@ export default async function TryPage({ searchParams }: { searchParams: Promise<
 
     {plan && <section className="card try-plan" aria-label={t("Your plan|steps")}>
       <StartPlanPreview plan={plan} />
-      <p className="try-honesty">{t(HONESTY[plan.basis.source])}</p>
+      {plan.basis.source !== "checklist" ? <p className="try-honesty">{t(HONESTY[plan.basis.source])}</p> : null}
       <form action={savePlan} className="try-save">
         <StartPlanFields plan={plan} />
         <PendingSubmitButton label={signedIn ? "Save to my workspace" : "Save this plan, free"} pendingLabel="Saving…" />
