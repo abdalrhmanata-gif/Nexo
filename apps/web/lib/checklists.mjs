@@ -211,7 +211,7 @@ export const checklists = [
     audience: "Bookkeepers, accountants and owners who close the books for one business or many clients.",
     when: "Every month, in the first days after the month ends.",
     intro: [
-      "A clean close is the same twelve-ish steps every month, done in order, with the evidence kept. Skipping one does not show until the year end, when it costs the most to fix.",
+      "A clean close is the same dozen or so steps every month, done in order, with the evidence kept. Skipping one does not show until the year end, when it costs the most to fix.",
       "This checklist covers a typical small-business close on accrual or cash basis. Each step says what to keep as proof, such as the reconciliation report or the adjusting entry, so the file explains itself to a reviewer, a client or a tax preparer.",
     ],
     steps: [
