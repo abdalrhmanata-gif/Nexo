@@ -7,6 +7,7 @@ import { resolveRequestOrigin } from "../../../../lib/auth/redirect.mjs";
 import { getTranslate } from "../../../../lib/i18n-server";
 import { shareIdOrNull, type MissionShareSnapshot } from "../../../../lib/mission-share.mjs";
 import { isSupabaseConfigured } from "../../../../lib/supabase/config";
+import { LEGAL } from "../../../../lib/legal";
 import { createSupabaseServerClient } from "../../../../lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -141,6 +142,14 @@ export default async function SharedMissionPage({ params }: { params: Promise<{ 
           <LocalizedText en="Remix this Mission" /> <span aria-hidden="true">→</span>
         </a>
       </section>
+
+      {/* Shared pages are written by people, so anyone can report one. */}
+      <p className="action-hint share-report">
+        <LocalizedText en="Shared by a ZAVQERA user. We remove shared pages that break our terms." />{" "}
+        <a href={`mailto:${LEGAL.supportEmail}?subject=${encodeURIComponent(`Report shared Mission ${shareId}`)}`} rel="nofollow">
+          <LocalizedText en="Report this page" />
+        </a>
+      </p>
     </div>
   );
 }

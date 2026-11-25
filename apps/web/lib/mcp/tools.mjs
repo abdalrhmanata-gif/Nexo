@@ -152,8 +152,8 @@ const stepsSchema = (description) => ({
   items: { type: "string", minLength: 1, maxLength: BOUNDS.step },
 });
 
-const missionIdSchema = { type: "string", description: "The Mission's id, from list_missions, get_next_steps or get_mission." };
-const stepIdSchema = { type: "string", description: "The step's step_id, from get_mission or get_next_steps." };
+const missionIdSchema = { type: "string", description: "The Mission's id (mission_id): the UUID shown with each Mission in ZAVQERA's results." };
+const stepIdSchema = { type: "string", description: "The step's id (step_id): the UUID shown with each step in ZAVQERA's results." };
 
 function annotations(title, { readOnly, destructive = false, openWorld = false, idempotent = false }) {
   return { title, readOnlyHint: readOnly, destructiveHint: destructive, openWorldHint: openWorld, idempotentHint: idempotent };
@@ -224,7 +224,7 @@ export const TOOLS = [
   {
     name: "get_mission",
     title: "Get a Mission",
-    description: "Returns one Mission in full: its intent, success criteria, every step with its step_id, status, due date and recorded proof, and its target date. Use it before changing a step. Read only.",
+    description: "Returns one Mission in full: its intent, success criteria, every step with its step_id, status, due date and recorded proof, and its target date. Read only.",
     inputSchema: {
       type: "object",
       properties: { mission_id: missionIdSchema },
@@ -275,7 +275,7 @@ export const TOOLS = [
   {
     name: "create_mission",
     title: "Create a Mission",
-    description: "Saves a new Mission in the person's ZAVQERA workspace from a goal and, optionally, success criteria, ordered steps and a target date, so it can be tracked step by step with proof. Creates one Mission each call; the same Mission sent again within 10 minutes is not saved twice. Steps can be added later with add_steps.",
+    description: "Saves a new Mission in the person's ZAVQERA workspace from a goal and, optionally, success criteria, ordered steps and a target date, so it can be tracked step by step with proof. Creates one Mission each call; the same Mission sent again within 10 minutes is not saved twice.",
     inputSchema: {
       type: "object",
       properties: {
@@ -302,11 +302,11 @@ export const TOOLS = [
   {
     name: "create_mission_from_template",
     title: "Create a Mission from a template",
-    description: "Saves a new Mission in the person's workspace from one of ZAVQERA's templates (see list_templates), with the template's intent, success criteria and steps. Optionally renames it and sets a target date. The same template sent again within 10 minutes is not saved twice.",
+    description: "Saves a new Mission in the person's workspace from one of ZAVQERA's ready-made templates, with the template's intent, success criteria and steps. Optionally renames it and sets a target date. The same template sent again within 10 minutes is not saved twice.",
     inputSchema: {
       type: "object",
       properties: {
-        template_id: { type: "string", description: "A template_id from list_templates." },
+        template_id: { type: "string", description: "The template's id, for example launch-plan, find-a-job or organise-an-event." },
         name: { type: "string", minLength: 1, maxLength: BOUNDS.name, description: "Optional. A name for this Mission instead of the template's title." },
         target_date: { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}$", description: "Optional. When the goal should be done, YYYY-MM-DD." },
       },
@@ -385,7 +385,7 @@ export const TOOLS = [
   {
     name: "update_step_status",
     title: "Change a step's status",
-    description: "Moves one step to not_started, in_progress, waiting (paused on something outside the person's control) or cancelled. Cancelling is final. To mark a step done, use complete_step. Only the moves the Mission allows are accepted; a refused move says which are allowed.",
+    description: "Moves one step to not_started, in_progress, waiting (paused on something outside the person's control) or cancelled. Cancelling is final. Marking a step done is not one of these statuses. Only the moves the Mission allows are accepted; a refused move says which are allowed.",
     inputSchema: {
       type: "object",
       properties: {
