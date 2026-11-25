@@ -10,8 +10,9 @@
 //
 // What makes them ZAVQERA's: every step says what proof to keep, and the
 // button saves the checklist as a Mission where each step is ticked off with
-// that proof. Nothing here claims a feature the product does not have: no
-// assignees per step, no automatic recurrence, no approvals.
+// that proof, and each step can have an owner on the team. Nothing here
+// claims a feature the product does not have: no automatic recurrence, no
+// approvals.
 //
 // English only, on purpose: the buyers searched for are in the US and the UK.
 // Every visible word, the page's interface included, lives in this file, so
@@ -50,7 +51,7 @@ export const CHECKLIST_CHROME = {
   onThisPage: "On this page",
   open: "Open the checklist",
   ctaTitle: "Run this checklist with proof on every step",
-  ctaBody: "Save it as a Mission in one click. Tick each step off with a note or a link as proof, see what is late, and keep the record when someone asks.",
+  ctaBody: "Save it as a Mission in one click. Give each step an owner on your team, tick it off with a note or a link as proof, see what is late, and keep the record when someone asks.",
   ctaButton: "Use this checklist",
   ctaEdit: "Edit the steps first",
   ctaFree: "Free plan, no card. Invite your team at no extra cost.",

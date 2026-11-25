@@ -76,10 +76,16 @@ test("the saved plan has one action per step, in order", () => {
 });
 
 test("pages make no claim the product cannot keep", () => {
-  // No assignees per step, no automatic recurrence, no approvals (yet).
+  // No automatic recurrence and no approvals (yet).
   const text = read("lib/checklists.mjs").toLowerCase();
-  for (const claim of ["assign each step", "assign steps", "assigned to", "runs automatically", "recurring schedule", "approval workflow", "approve in zavqera"]) {
+  for (const claim of ["runs automatically", "recurring schedule", "approval workflow", "approve in zavqera"]) {
     assert.ok(!text.includes(claim), `lib/checklists.mjs claims "${claim}"`);
+  }
+  // Step owners are claimed, so the database must have them (25 Nov 2026).
+  if (text.includes("owner on your team")) {
+    const owners = read("../../supabase/migrations/20261125190000_step_owner.sql");
+    assert.match(owners, /create or replace function private\.set_mission_action_assignee/);
+    assert.match(read("components/step-owner-picker.tsx"), /export function StepOwnerPicker/);
   }
 });
 

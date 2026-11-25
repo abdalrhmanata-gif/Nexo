@@ -8,7 +8,9 @@ import { MissionCard } from "../../components/mission-card";
 import { GoalStarter } from "../../components/goal-starter";
 import { localMockMissionRepository } from "../../lib/local-mock-repository";
 import { isSupabaseConfigured } from "../../lib/supabase/config";
-import { createSupabaseMissionRepository } from "../../lib/supabase/mission-repository";
+import { createSupabaseMissionRepository, readStepsAssignedToYou } from "../../lib/supabase/mission-repository";
+import { assignedToYou } from "../../lib/step-owners.mjs";
+import { actionStatusLabel } from "../../lib/mission-content.mjs";
 
 const ERRORS: Record<string, string> = {
   "mission-provenance": "This Mission cannot be deleted because its historical provenance must be preserved.",
@@ -23,7 +25,9 @@ export default async function WorkspacePage({
 }) {
   const t = await getTranslate();
   const repository = isSupabaseConfigured() ? await createSupabaseMissionRepository() : localMockMissionRepository;
-  const missions = await repository.listMissions();
+  // The steps someone gave you are read beside the missions, not after them.
+  const [missions, assignedRows] = await Promise.all([repository.listMissions(), readStepsAssignedToYou()]);
+  const assigned = assignedToYou(assignedRows, missions.map((mission) => mission.id));
   const { error, status, q } = await searchParams;
   const query = (q ?? "").trim().slice(0, 120);
   const errorMessage = ERRORS[error ?? ""];
@@ -69,6 +73,22 @@ export default async function WorkspacePage({
         </p>}
       </div>
       {attention && <Link className="button button-quiet" href={`/app/missions/${attention.mission.id}`}><LocalizedText en="Open mission" /></Link>}
+    </section>}
+
+    {(assigned.here.length > 0 || assigned.elsewhere > 0) && <section className="card assigned-to-you" aria-labelledby="assigned-heading">
+      <p className="eyebrow"><LocalizedText en="Your steps" /></p>
+      <h2 id="assigned-heading"><LocalizedText en="Assigned to you" /></h2>
+      {assigned.here.length > 0 && <ul className="list">
+        {assigned.here.map((step) => <li key={step.actionId}>
+          <Link href={`/app/missions/${step.missionId}`}><strong>{step.title}</strong></Link>
+          <span className={`status status-action-${step.status.toLowerCase()}`}>{actionStatusLabel(step.status, t)}</span>
+          <small className="action-hint">{step.missionName}</small>
+        </li>)}
+      </ul>}
+      {assigned.elsewhere > 0 && <p className="action-hint">
+        {fill(t(assigned.elsewhere === 1 ? "{count} more step is yours in another workspace." : "{count} more steps are yours in another workspace."), { count: assigned.elsewhere })}{" "}
+        <Link href="/app/team"><LocalizedText en="Switch workspace" /></Link>
+      </p>}
     </section>}
 
     <section className="workspace-quick-actions" aria-label={t("Quick actions")}>
