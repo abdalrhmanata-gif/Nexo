@@ -475,3 +475,20 @@ export async function readStepsAssignedToYou(): Promise<AssignedStep[]> {
     return [];
   }
 }
+
+/**
+ * The workspace a Mission belongs to, when the reader can see it (row level
+ * security decides), or null. Used to open a Mission from a link or an email
+ * whatever workspace the app is showing.
+ */
+export async function readMissionWorkspaceId(missionId: string): Promise<string | null> {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    const supabase = await createSupabaseServerClient();
+    const found = await supabase.from("missions").select("workspace_id").eq("id", missionId).maybeSingle();
+    if (found.error || !found.data) return null;
+    return (found.data as { workspace_id: string }).workspace_id;
+  } catch {
+    return null;
+  }
+}

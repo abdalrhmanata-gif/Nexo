@@ -29,7 +29,38 @@ export function parseStepOwners(payload, youId) {
       if (typeof userId === "string") owners[actionId] = userId;
     }
   }
-  return { canAssign: payload.can_assign === true, editors, owners };
+  return {
+    canAssign: payload.can_assign === true,
+    isCreator: payload.is_creator === true,
+    role: typeof payload.role === "string" ? payload.role : null,
+    creatorEmail: typeof payload.creator_email === "string" ? payload.creator_email : "",
+    missionObjective: typeof payload.mission_objective === "string" ? payload.mission_objective : "",
+    editors,
+    owners,
+  };
+}
+
+/**
+ * What the page offers this reader. The database checks every change anyway;
+ * this only stops the page showing buttons that would be refused. When the
+ * reader's access is unknown, everything shows as before and the database
+ * still has the last word.
+ */
+export function missionPermissions(access) {
+  if (!access) return { known: false, canEdit: true, isCreator: true, canDelete: true };
+  return {
+    known: true,
+    canEdit: access.canAssign,
+    isCreator: access.isCreator,
+    canDelete: access.role === "owner" || access.role === "admin",
+  };
+}
+
+/** Who created the Mission, as the page names them. */
+export function creatorName(access, t = (text) => text) {
+  if (!access || access.isCreator) return t("You");
+  const local = access.creatorEmail.split("@")[0];
+  return local || t("A team member");
 }
 
 /**
@@ -57,20 +88,20 @@ export function ownerOf(stepOwners, actionId) {
 }
 
 /**
- * Open steps assigned to the reader, split into those in the workspace the
- * app is showing (which can be opened from here) and the number elsewhere
- * (which need the workspace switched on the Team page first).
+ * Open steps assigned to the reader, newest first. A step in the workspace
+ * the app is showing opens directly; one in another workspace opens through
+ * /app/open, which switches to that workspace first.
  */
 export function assignedToYou(rows, visibleMissionIds) {
   const visible = new Set(visibleMissionIds);
-  const here = [];
-  let elsewhere = 0;
-  for (const row of Array.isArray(rows) ? rows : []) {
-    if (!row || !stepTakesOwner(row.status)) continue;
-    if (visible.has(row.missionId)) here.push(row);
-    else elsewhere += 1;
-  }
-  return { here, elsewhere };
+  return (Array.isArray(rows) ? rows : [])
+    .filter((row) => row && stepTakesOwner(row.status))
+    .map((row) => ({ ...row, href: visible.has(row.missionId) ? `/app/missions/${row.missionId}` : missionOpenPath(row.missionId) }));
+}
+
+/** A link to a Mission that works from any workspace the reader belongs to. */
+export function missionOpenPath(missionId) {
+  return `/app/open/${encodeURIComponent(missionId)}`;
 }
 
 /** Why the database refused an owner change, as a sentence for the person. */

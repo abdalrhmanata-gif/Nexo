@@ -1043,10 +1043,13 @@ const NB: Record<string, string> = {
   "Invite your team":"Inviter teamet ditt",
   "Your steps":"Dine steg",
   "Assigned to you":"Tildelt deg",
-  "{count} more step is yours in another workspace.":"{count} steg til er ditt i et annet arbeidsområde.",
-  "{count} more steps are yours in another workspace.":"{count} steg til er dine i et annet arbeidsområde.",
   "Step owner changed":"Ansvarlig for steget endret",
   "Owner removed":"Ansvarlig fjernet",
+  // Who may do what on a Mission (25 Nov 2026)
+  "Created by":"Opprettet av",
+  "You can view this mission. To work on it, ask the workspace owner to let you edit.":"Du kan se dette oppdraget. For å jobbe med det, be eieren av arbeidsområdet om å gi deg redigeringstilgang.",
+  "Only {name}, who created this mission, can edit its details, set its dates, check the result and close it. You can add steps, work on them and record their proof.":"Bare {name}, som opprettet dette oppdraget, kan endre detaljene, sette datoer, kontrollere resultatet og avslutte det. Du kan legge til steg, jobbe med dem og registrere beviset.",
+  "{name} checks the result and closes this mission.":"{name} kontrollerer resultatet og avslutter dette oppdraget.",
 };
 const AR: Record<string, string> = {
   "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"تم تصدير النسخة الاحتياطية. الفرص: {count}. ملاحظات الأدلة: {notes}. احفظ الملف في مكان آمن؛ فهو يحتوي على ما سجّلته.",
@@ -2065,10 +2068,13 @@ const AR: Record<string, string> = {
   "Invite your team":"ادعُ فريقك",
   "Your steps":"خطواتك",
   "Assigned to you":"مُسندة إليك",
-  "{count} more step is yours in another workspace.":"لديك {count} خطوة أخرى في مساحة عمل أخرى.",
-  "{count} more steps are yours in another workspace.":"لديك {count} خطوات أخرى في مساحة عمل أخرى.",
   "Step owner changed":"تغيّر المسؤول عن الخطوة",
   "Owner removed":"أُزيل المسؤول",
+  // Who may do what on a Mission (25 Nov 2026)
+  "Created by":"أنشأها",
+  "You can view this mission. To work on it, ask the workspace owner to let you edit.":"يمكنك عرض هذه المهمة. للعمل عليها، اطلب من مالك مساحة العمل أن يمنحك صلاحية التعديل.",
+  "Only {name}, who created this mission, can edit its details, set its dates, check the result and close it. You can add steps, work on them and record their proof.":"{name} وحده، لأنه منشئ هذه المهمة، يعدّل تفاصيلها ويحدد مواعيدها ويتحقق من نتيجتها ويغلقها. أما أنت فيمكنك إضافة الخطوات والعمل عليها وتسجيل إثباتها.",
+  "{name} checks the result and closes this mission.":"يتحقق {name} من النتيجة ويغلق هذه المهمة.",
 };
 const ES: Record<string, string> = {
   "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"Copia de seguridad exportada. Oportunidades: {count}. Notas de evidencia: {notes}. Guarda el archivo en un lugar seguro; contiene lo que registraste.",
@@ -3090,10 +3096,13 @@ const ES: Record<string, string> = {
   "Invite your team":"Invita a tu equipo",
   "Your steps":"Tus pasos",
   "Assigned to you":"Asignados a ti",
-  "{count} more step is yours in another workspace.":"Tienes {count} paso más en otro espacio de trabajo.",
-  "{count} more steps are yours in another workspace.":"Tienes {count} pasos más en otro espacio de trabajo.",
   "Step owner changed":"Cambió el responsable del paso",
   "Owner removed":"Responsable eliminado",
+  // Who may do what on a Mission (25 Nov 2026)
+  "Created by":"Creada por",
+  "You can view this mission. To work on it, ask the workspace owner to let you edit.":"Puedes ver esta misión. Para trabajar en ella, pide al propietario del espacio de trabajo que te deje editar.",
+  "Only {name}, who created this mission, can edit its details, set its dates, check the result and close it. You can add steps, work on them and record their proof.":"Solo {name}, que creó esta misión, puede editar sus detalles, fijar sus fechas, comprobar el resultado y cerrarla. Tú puedes añadir pasos, trabajar en ellos y registrar su prueba.",
+  "{name} checks the result and closes this mission.":"{name} comprueba el resultado y cierra esta misión.",
 };
 const FR: Record<string, string> = {
   "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"Sauvegarde exportée. Opportunités : {count}. Notes de preuve : {notes}. Conservez le fichier en lieu sûr ; il contient ce que vous avez enregistré.",
@@ -4115,10 +4124,13 @@ const FR: Record<string, string> = {
   "Invite your team":"Invitez votre équipe",
   "Your steps":"Vos étapes",
   "Assigned to you":"Qui vous sont confiées",
-  "{count} more step is yours in another workspace.":"{count} autre étape vous revient dans un autre espace de travail.",
-  "{count} more steps are yours in another workspace.":"{count} autres étapes vous reviennent dans un autre espace de travail.",
   "Step owner changed":"Responsable de l'étape modifié",
   "Owner removed":"Responsable retiré",
+  // Who may do what on a Mission (25 Nov 2026)
+  "Created by":"Créée par",
+  "You can view this mission. To work on it, ask the workspace owner to let you edit.":"Vous pouvez consulter cette mission. Pour y travailler, demandez au propriétaire de l'espace de travail de vous laisser modifier.",
+  "Only {name}, who created this mission, can edit its details, set its dates, check the result and close it. You can add steps, work on them and record their proof.":"Seul·e {name}, qui a créé cette mission, peut modifier ses détails, fixer ses dates, vérifier le résultat et la clôturer. Vous pouvez ajouter des étapes, y travailler et enregistrer leur preuve.",
+  "{name} checks the result and closes this mission.":"{name} vérifie le résultat et clôture cette mission.",
 };
 const DE: Record<string, string> = {
   "Backup exported. Opportunities: {count}. Evidence notes: {notes}. Store the file securely; it contains the details you recorded.":"Sicherung exportiert. Chancen: {count}. Nachweisnotizen: {notes}. Bewahren Sie die Datei sicher auf; sie enthält, was Sie erfasst haben.",
@@ -5140,10 +5152,13 @@ const DE: Record<string, string> = {
   "Invite your team":"Team einladen",
   "Your steps":"Ihre Schritte",
   "Assigned to you":"Ihnen zugewiesen",
-  "{count} more step is yours in another workspace.":"{count} weiterer Schritt gehört Ihnen in einem anderen Arbeitsbereich.",
-  "{count} more steps are yours in another workspace.":"{count} weitere Schritte gehören Ihnen in einem anderen Arbeitsbereich.",
   "Step owner changed":"Verantwortlicher für den Schritt geändert",
   "Owner removed":"Zuweisung entfernt",
+  // Who may do what on a Mission (25 Nov 2026)
+  "Created by":"Erstellt von",
+  "You can view this mission. To work on it, ask the workspace owner to let you edit.":"Sie können diese Mission ansehen. Um daran zu arbeiten, bitten Sie den Inhaber des Arbeitsbereichs um Bearbeitungsrechte.",
+  "Only {name}, who created this mission, can edit its details, set its dates, check the result and close it. You can add steps, work on them and record their proof.":"{name} hat diese Mission erstellt und ist die einzige Person, die ihre Details ändern, Termine festlegen, das Ergebnis prüfen und sie abschließen kann. Sie können Schritte hinzufügen, daran arbeiten und den Nachweis festhalten.",
+  "{name} checks the result and closes this mission.":"{name} prüft das Ergebnis und schließt diese Mission ab.",
 };
 
 export const DICTIONARIES: Record<AppLanguage, Record<string, string>> = {

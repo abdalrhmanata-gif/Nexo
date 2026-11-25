@@ -51,6 +51,14 @@ export async function setStepOwner(input: { actionId: string; expectedVersion: n
           : 500;
     throw new StepOwnerError(ownerRefusal(message), status);
   }
-  const row = result.data as { id: string; version: number; assignee_id: string | null } | null;
-  return { id: row?.id ?? input.actionId, version: row?.version ?? input.expectedVersion, assigneeId: row?.assignee_id ?? null };
+  const row = result.data as { id: string; version: number; assignee_id: string | null; title?: string; mission_id?: string } | null;
+  return {
+    id: row?.id ?? input.actionId,
+    version: row?.version ?? input.expectedVersion,
+    assigneeId: row?.assignee_id ?? null,
+    title: row?.title ?? "",
+    missionId: row?.mission_id ?? "",
+    actorId: user.id,
+    actorEmail: user.email ?? "",
+  };
 }
