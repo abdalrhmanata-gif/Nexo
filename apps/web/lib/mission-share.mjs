@@ -7,6 +7,10 @@
 // nothing nested. Public result is not public workspace.
 
 const FORBIDDEN_KEY_PARTS = ["email", "token", "secret", "password", "credential", "owner", "workspace", "user", "phone", "address", "authorization", "session", "customer"];
+/** Steps a shared copy keeps, done and still to do together. */
+export const MAX_SHARED_STEPS = 20;
+/** Under the database's 8000-byte limit on a stored copy, with room to spare. */
+const MAX_SNAPSHOT_BYTES = 7600;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 function isSafeResultKey(key) {
@@ -43,16 +47,27 @@ export function publicMissionSnapshot(input) {
     outcome = { status: candidate.status, successScore: clamp(candidate.successScore, 0, 1), result };
   }
 
+  // A shared checklist is copied by whoever opens it, so it keeps every step
+  // a real checklist has (up to MAX_SHARED_STEPS), done ones first.
+  const completedSteps = boundedStrings(input.completedSteps, MAX_SHARED_STEPS, 140);
+  const plannedSteps = boundedStrings(input.plannedSteps, MAX_SHARED_STEPS - completedSteps.length, 140);
   const snapshot = {
     name: input.name.slice(0, 100),
     intent: input.intent.slice(0, 700),
     criteria: boundedStrings(input.criteria, 6, 180),
-    completedSteps: boundedStrings(input.completedSteps, 6, 140),
-    plannedSteps: boundedStrings(input.plannedSteps, 8, 140),
+    completedSteps,
+    plannedSteps,
     status: typeof input.status === "string" ? input.status.slice(0, 30) : "DRAFT",
     progress: Math.round(clamp(input.progress, 0, 100)),
   };
   if (outcome) snapshot.outcome = outcome;
+  // The database refuses a copy over 8000 bytes; Arabic takes two bytes a
+  // letter. Drop steps from the end until it fits, the planned ones first.
+  const encoder = new TextEncoder();
+  while (encoder.encode(JSON.stringify(snapshot)).length > MAX_SNAPSHOT_BYTES && (snapshot.plannedSteps.length || snapshot.completedSteps.length)) {
+    if (snapshot.plannedSteps.length) snapshot.plannedSteps.pop();
+    else snapshot.completedSteps.pop();
+  }
   return snapshot;
 }
 

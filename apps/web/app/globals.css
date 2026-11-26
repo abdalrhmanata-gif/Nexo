@@ -1612,6 +1612,11 @@ html[dir="rtl"] input, html[dir="rtl"] textarea {
 :root[data-theme="dark"] .billing-status { color:#8fd3c7; }
 
 /* Shared mission results */
+/* The strip at the top of a shared checklist: who made the tool, for a reader who may not know it. */
+.share-brand { display:flex; flex-wrap:wrap; align-items:center; gap:6px 14px; margin:0 0 22px; padding:12px 16px; border:1px solid var(--teal); border-radius:10px; background:color-mix(in srgb, var(--teal) 9%, transparent); color:var(--ink); font-size:14px; text-decoration:none; }
+.share-brand:hover { background:color-mix(in srgb, var(--teal) 15%, transparent); color:var(--ink); }
+.share-brand-name { font-weight:800; letter-spacing:.12em; color:var(--teal); }
+.share-brand-cta { margin-inline-start:auto; font-weight:700; color:var(--teal); white-space:nowrap; }
 .share-mission { display:inline-flex; flex-wrap:wrap; align-items:center; gap:8px; }
 .share-mission-status { color:var(--muted); }
 .share-panel { display:flex; flex-wrap:wrap; align-items:center; gap:6px; width:100%; padding:10px; border:1px solid var(--line, rgba(255,255,255,.12)); border-radius:10px; }
