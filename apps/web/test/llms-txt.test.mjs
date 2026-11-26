@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildLlmsTxt, pricingSentence } from "../lib/llms-txt.mjs";
+import { SOURCE_URL, buildLlmsTxt, pricingSentence } from "../lib/llms-txt.mjs";
 import { PLAN_LIMITS } from "../lib/billing-plans.mjs";
 import { FEATURES, PLAN_PRICES_USD, PROFILES, SITE_DESCRIPTION } from "../lib/site-schema.mjs";
 import { checklistPath, checklists } from "../lib/checklists.mjs";
@@ -29,6 +29,8 @@ test("prices and AI drafts match the pricing data", () => {
 test("every feature, profile and checklist is there, with absolute links", () => {
   for (const feature of FEATURES) assert.ok(sample.includes(`- ${feature}`), feature);
   for (const profile of PROFILES) assert.ok(sample.includes(`](${profile})`), profile);
+  assert.ok(sample.includes(`](${SOURCE_URL})`), "the source code link");
+  assert.equal(SOURCE_URL, "https://github.com/abdalrhmanata-gif/zavqera");
   for (const item of checklists) assert.ok(sample.includes(`](https://zavqera.com${checklistPath(item.slug)})`), item.slug);
   const links = [...sample.matchAll(/\]\(([^)]+)\)/g)].map((match) => match[1]);
   assert.ok(links.length > 15);
