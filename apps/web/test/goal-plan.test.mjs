@@ -195,7 +195,7 @@ test("the box's example, onboarding a new employee, lands on the onboarding chec
     expectMatch(hire, "planner", "hiring");
   }
   expectMatch("Onboard a new client", "checklist", "client-onboarding-checklist");
-  expectMatch("استقبال عميل جديد", "planner", "generic");
+  expectMatch("استقبال عميل جديد", "checklist", "client-onboarding-checklist");
 });
 
 test("the onboarding plan for readers in other languages is translated into every one", () => {
@@ -216,4 +216,15 @@ test("the first example is closing the month, a process repeated every month", (
   // The end of a month is not, by itself, closing the books.
   expectMatch("A trip at the end of the month", "planner", "travel");
   expectMatch("سفر في نهاية الشهر", "planner", "travel");
+});
+
+test("the examples are processes a paying team repeats, and personal goals still find their plans", () => {
+  const ids = GOAL_EXAMPLES.map((example) => example.expect.id);
+  for (const id of ["month-end-close-checklist", "client-onboarding-checklist", "move-in-move-out-inspection-checklist"]) assert.ok(ids.includes(id), id);
+  // Taken off the examples, but still understood when typed.
+  expectMatch("Find a new job", "template", "find-a-job");
+  expectMatch("Organise our wedding", "template", "organise-an-event");
+  expectMatch("Move to Germany and settle in", "guide", "moving-to-germany-checklist");
+  // An Arabic reader gets the Arabic handover checklist for a rental inspection.
+  assert.match(read("lib/start-plan.ts"), /checklistsIn\(request\.lang\)\.find\(\(item\) => item\.en === match\.id\)/);
 });

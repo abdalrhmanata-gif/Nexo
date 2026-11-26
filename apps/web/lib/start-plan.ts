@@ -7,7 +7,7 @@
 import { fill, isSupportedLanguage, translate, type AppLanguage } from "./i18n";
 import { missionTemplateById } from "./mission-templates";
 import { guideBySlug, guidePath } from "./guides";
-import { checklistBySlug, checklistLanguage, checklistMission, checklistPath } from "./checklists.mjs";
+import { checklistBySlug, checklistLanguage, checklistMission, checklistPath, checklistsIn } from "./checklists.mjs";
 import { planHeadline, planOfKind } from "./mission-planner.mjs";
 import { GOAL_MIN_LENGTH, goalTitle, matchGoal, normaliseGoal, type GoalMatch } from "./goal-plan.mjs";
 
@@ -85,6 +85,40 @@ const CHECKLIST_SUBJECT_PLANS: Record<string, { headline: string; intent: string
       "Lock the period and send the month's report",
     ],
   },
+  "client-onboarding-checklist": {
+    headline: "A new client starts well with these six steps",
+    intent: "Start every new client the same way: agreement signed, access received and the first delivery dated, with proof on each step.",
+    criteria: [
+      "The signed agreement and the first invoice are on file",
+      "Everything needed from the client is received",
+      "The client knows the first delivery date and who to contact",
+    ],
+    actions: [
+      "Get the signed agreement or proposal back",
+      "Send the first invoice or deposit request",
+      "Collect the access, files and details you need from the client",
+      "Hold the kickoff call and write down the goals",
+      "Name one contact on each side and agree how you will update them",
+      "Set the first delivery date and share it with the client",
+    ],
+  },
+  "move-in-move-out-inspection-checklist": {
+    headline: "A rental handover holds up with these six steps",
+    intent: "Hand over the rental with a record both sides signed: every room photographed, meters read and keys counted, with proof on each step.",
+    criteria: [
+      "Every room is photographed, with the date recorded",
+      "The meter readings and the keys are written down",
+      "Both sides have signed the handover report",
+    ],
+    actions: [
+      "Book a time when the tenant can attend",
+      "Photograph every room, with the date recorded",
+      "Note the condition of each room and test the appliances",
+      "Read the meters and photograph each one",
+      "Count the keys and cards handed over",
+      "Sign the handover report together and keep a copy each",
+    ],
+  },
 };
 
 type Params = Record<string, string | string[] | undefined | null>;
@@ -129,6 +163,11 @@ export function buildStartPlan(request: StartRequest): StartPlan {
   if (match.source === "checklist") {
     const checklist = checklistBySlug(match.id);
     const subject = CHECKLIST_SUBJECT_PLANS[match.id];
+    // The same subject written in the reader's language comes first (an
+    // Arabic reader asking for a rental inspection gets the Arabic handover
+    // checklist), then the translated plan, then the checklist as written.
+    const own = checklistsIn(request.lang).find((item) => item.en === match.id);
+    if (own) return checklistPlan(request, own.slug, title, t);
     if (checklist && (checklistLanguage(checklist) === request.lang || !subject)) return checklistPlan(request, match.id, title, t);
     if (subject) {
       return {
