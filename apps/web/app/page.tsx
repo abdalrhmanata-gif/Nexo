@@ -64,6 +64,7 @@ export default async function HomePage() {
         <Link className="landing-template-link" href={guidePath(language)}><LocalizedText en="Read the step-by-step guides, with official sources" /> <span aria-hidden="true">→</span></Link>
         <Link className="landing-template-link" href="/app/opportunities"><LocalizedText en="Explore Opportunity Intelligence" /> <span aria-hidden="true">→</span></Link>
         <Link className="landing-template-link" href="/compare/zavqera-vs-chatgpt-claude-gemini"><LocalizedText en="Compare with ChatGPT, Claude and Gemini" /> <span aria-hidden="true">→</span></Link>
+        <Link className="landing-template-link" href="/compare"><LocalizedText en="Compare with Process Street, Trello and Manifestly" /> <span aria-hidden="true">→</span></Link>
       </div>
       <div className="landing-visual" role="group" aria-label={t("Illustrative view of a governed Mission")}>
         <div className="landing-visual-top"><span className="landing-window-dots"><i/><i/><i/></span><span><LocalizedText en="MISSION CONTROL" /></span><span className="landing-preview-tag"><LocalizedText en="Illustrative view" /></span></div>
