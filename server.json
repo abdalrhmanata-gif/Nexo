@@ -2,8 +2,8 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.abdalrhmanata-gif/zavqera",
   "title": "ZAVQERA",
-  "description": "Save plans from the chat as Missions with steps, proof and dates, and see what to do next.",
-  "version": "1.0.0",
+  "description": "Save plans from the chat as checklists with steps, due dates and proof, and see what to do next.",
+  "version": "1.0.1",
   "websiteUrl": "https://zavqera.com/ai",
   "icons": [
     {
