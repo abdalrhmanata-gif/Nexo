@@ -20,7 +20,7 @@ on it for a validation round.
 
 ## Import the existing repository
 
-An authorized Netlify owner must connect `abdalrhmanata-gif/Nexo` through
+An authorized Netlify owner must connect `abdalrhmanata-gif/zavqera` through
 **Projects > Add new project > Import an existing project > GitHub**. Select
 the existing repository; do not start from a template or create a static site.
 Set the site's **production branch** to
