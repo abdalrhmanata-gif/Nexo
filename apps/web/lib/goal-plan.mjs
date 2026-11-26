@@ -29,9 +29,9 @@ export const GOAL_MIN_LENGTH = 4;
 export const GOAL_EXAMPLES = [
   { goal: "Close the month's books", expect: { source: "checklist", id: "month-end-close-checklist" } },
   { goal: "Open a small café", expect: { source: "planner", id: "venture" } },
-  { goal: "Find a new job", expect: { source: "template", id: "find-a-job" } },
+  { goal: "Onboard a new client", expect: { source: "checklist", id: "client-onboarding-checklist" } },
   { goal: "Start an LLC in the US", expect: { source: "guide", id: "how-to-start-an-llc" } },
-  { goal: "Organise our wedding", expect: { source: "template", id: "organise-an-event" } },
+  { goal: "Inspect a rental before move-in", expect: { source: "checklist", id: "move-in-move-out-inspection-checklist" } },
 ];
 
 const GERMANY = [
@@ -186,6 +186,27 @@ const MONTH_END = [
   "månedsavslutning", "avslutte regnskapet", "månedsregnskap",
 ];
 
+/** Starting work with a new client: what agencies and freelancers repeat. */
+const CLIENT_ONBOARDING = [
+  "onboard a new client", "onboard a client", "client onboarding", "new client onboarding", "customer onboarding",
+  "استقبال عميل", "استقبال العميل", "استقبال العملاء", "تهيئة عميل", "تهيئة العميل",
+  "incorporar a un nuevo cliente", "incorporación de clientes", "onboarding de clientes",
+  "intégrer un nouveau client", "intégration client", "intégration des clients",
+  "neuen kunden aufnehmen", "kunden onboarding", "kundenonboarding",
+  "ta imot en ny kunde", "ta imot ny kunde", "kundemottak",
+];
+
+/** Handing over or taking back a rental: what landlords and property managers repeat. */
+const RENTAL_INSPECTION = [
+  "move in inspection", "move out inspection", "inspect a rental", "rental inspection", "inspect the rental",
+  "check in inventory", "inventory check", "rental before move in",
+  "فحص وحدة إيجارية", "فحص الوحدة الإيجارية", "تسليم الوحدة", "استلام الوحدة", "تسليم واستلام", "فحص الشقة",
+  "revisar un alquiler", "inspección de entrada", "acta de entrega", "inventario de entrada",
+  "état des lieux", "etat des lieux",
+  "wohnungsübergabe", "übergabeprotokoll", "mietwohnung vor dem einzug", "mietwohnung prüfen",
+  "sjekke en utleiebolig", "utleiebolig før innflytting", "overtakelsesprotokoll", "innflyttingsbefaring",
+];
+
 /** Onboarding a client, not an employee. */
 const CLIENT = [
   "client", "clients", "customer", "customers", "عميل", "العميل", "عملاء", "cliente", "clientes",
@@ -257,9 +278,13 @@ export function matchGoal(value) {
 
   // A ready-made checklist beats a template on its own subject.
   const onboarding = score(text, ONBOARDING);
-  if (onboarding > 0) {
+  const clientOnboarding = score(text, CLIENT_ONBOARDING);
+  if (clientOnboarding > 0) add("checklist", "client-onboarding-checklist", clientOnboarding + 3, 2.5);
+  else if (onboarding > 0) {
     add("checklist", score(text, CLIENT) > 0 ? "client-onboarding-checklist" : "employee-onboarding-checklist", onboarding + 3, 2.5);
   }
+  const inspection = score(text, RENTAL_INSPECTION);
+  if (inspection > 0) add("checklist", "move-in-move-out-inspection-checklist", inspection + 3, 2.5);
 
   const monthEnd = score(text, MONTH_END);
   if (monthEnd > 0) add("checklist", "month-end-close-checklist", monthEnd + 3, 2.5);
