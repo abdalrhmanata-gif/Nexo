@@ -11,8 +11,8 @@
 // What makes them ZAVQERA's: every step says what proof to keep, and the
 // button saves the checklist as a Mission where each step is ticked off with
 // that proof, and each step can have an owner on the team. Nothing here
-// claims a feature the product does not have: no automatic recurrence, no
-// approvals.
+// claims a feature the product does not have: no approvals. Repeating
+// (every day, week or month) exists since 27 Nov 2026.
 //
 // English only, on purpose: the buyers searched for are in the US and the UK.
 // Every visible word, the page's interface included, lives in this file, so
@@ -30,8 +30,12 @@
 /** @typedef {import("./checklists.d.mts").Checklist} Checklist */
 
 import { CHECKLIST_CHROME_AR, checklistsAr } from "./checklists-ar.mjs";
+import { CHECKLIST_CHROME_ES, checklistsEs } from "./checklists-es.mjs";
+import { CHECKLIST_CHROME_FR, checklistsFr } from "./checklists-fr.mjs";
+import { CHECKLIST_CHROME_DE, checklistsDe } from "./checklists-de.mjs";
+import { CHECKLIST_CHROME_NB, checklistsNb } from "./checklists-nb.mjs";
 
-export const CHECKLIST_GROUPS = Object.freeze(["people", "clients", "finance", "property"]);
+export const CHECKLIST_GROUPS = Object.freeze(["operations", "people", "clients", "finance", "property"]);
 
 export const CHECKLIST_CHROME = {
   indexTitle: "Checklists for the work you repeat",
@@ -40,7 +44,7 @@ export const CHECKLIST_CHROME = {
   indexLead: "Onboarding a hire, closing the month, handing a project to a client: the same steps, every time, and someone will ask whether they were done. Each checklist below says what proof to keep at every step. Save one in a click, tick steps off with the proof attached, and keep the record.",
   indexNote: "Free to use. No card needed. Written for small teams that run these processes themselves.",
   checklistsLabel: "Checklists",
-  groupHeading: { people: "People", clients: "Clients and projects", finance: "Finance and vendors", property: "Property" },
+  groupHeading: { operations: "Daily operations", people: "People", clients: "Clients and projects", finance: "Finance and vendors", property: "Property" },
   updated: "Checked",
   stepsCount: (count) => `${count} steps`,
   whoFor: "Who it is for",
@@ -63,7 +67,7 @@ export const CHECKLIST_CHROME = {
     "When a client, an auditor, an accountant or your future self asks whether a step was done, the answer is on the step instead of in someone's inbox.",
   ],
   repeatTitle: "Running it again next time",
-  repeat: "On the Pro and Scale plans you can save a finished Mission as your own template, with your wording and your steps, and start the next run from it in one click.",
+  repeat: "Set it to repeat every day, week or month, and a fresh copy appears on its own with the same steps and the same people on them. The free plan includes one repeating checklist.",
   disclaimer: "General guidance for small businesses, not legal, tax or accounting advice. Rules differ by country, state and industry: check the ones that apply to you.",
   allChecklists: "All checklists",
   pdfButton: "Download the PDF",
@@ -438,27 +442,156 @@ export const checklists = [
     intent: "Review who can access each business system every quarter, remove what is not needed, and keep a record of the review.",
     related: ["employee-offboarding-checklist", "employee-onboarding-checklist", "vendor-onboarding-checklist"],
   },
+  {
+    slug: "restaurant-opening-closing-checklist",
+    group: "operations",
+    title: "Restaurant and café opening and closing checklist, with proof",
+    short: "Opening and closing",
+    metaTitle: "Restaurant opening and closing checklist, with proof",
+    metaDescription: "A daily opening and closing checklist for restaurants and cafés: fridge readings, cleaning, the till, deliveries and locking up, with the proof to keep.",
+    updated: "2026-11-27",
+    audience: "Owners, managers and shift leads of restaurants, cafés, bakeries and bars.",
+    when: "Every day: the opening steps before the first customer, the closing steps after the last.",
+    intro: [
+      "Opening and closing are where small problems start: a fridge that ran warm overnight, a till that does not balance, a back door left unlocked. They are also the steps most often done from memory.",
+      "This checklist splits the day into opening and closing, and every step says what to keep as proof, so the manager sees at a glance that today's shift did it, and the owner or an inspector can still see it weeks later.",
+    ],
+    steps: [
+      { heading: "Read the fridge and freezer temperatures on arrival", detail: "Check every fridge, freezer and display unit, and act on any reading outside the range in your food-safety plan.", proof: "Each reading with the time, or a photo of each display." },
+      { heading: "Check the deliveries due today", detail: "Know what arrives, from which supplier and when, and who on shift receives and checks it.", proof: "The delivery list, with who receives each one." },
+      { heading: "Set up and sanitise the prep areas", detail: "Surfaces, boards and sinks cleaned and sanitised before any food is prepared.", proof: "Who set up which area, and when." },
+      { heading: "Check stock and date labels", detail: "Use the oldest stock first and remove anything past its date.", proof: "What was thrown away, if anything, and why." },
+      { heading: "Open the till with a counted float", detail: "Count the float before the first sale, with a second person if you can.", proof: "The float amount and who counted it." },
+      { heading: "Walk the dining room and restrooms before opening", detail: "Tables, floor, menus, soap and paper, lights, music and the door sign.", proof: "A photo of the room, or a short note." },
+      { heading: "Count and close the till", detail: "Count the cash, match the card total with the terminal report, and note any difference.", proof: "The end-of-day report and the counted total." },
+      { heading: "Clean the kitchen and take out the bins", detail: "Equipment off and cleaned, surfaces sanitised, floors done, bins emptied and taken out.", proof: "Who cleaned which area." },
+      { heading: "Store the food and read the fridges again", detail: "Cover, label and date food, and check that every fridge and freezer is in range for the night.", proof: "The closing readings with the time." },
+      { heading: "Lock up and set the alarm", detail: "Gas and appliances off, windows and back door locked, alarm set.", proof: "The time the alarm was set, and who set it." },
+    ],
+    faqs: [
+      { question: "Do I need separate opening and closing checklists?", answer: "One list with both halves works for most small places: the morning shift ticks the first part and the evening shift the second. Each step can be given to the person on that shift." },
+      { question: "Can it start again every day by itself?", answer: "Yes. Set it to repeat every day, or only on the days you open, and a fresh copy appears each day with the same steps and the same people on them. The free plan includes one repeating checklist." },
+      { question: "What temperature should the fridges be?", answer: "That depends on the food-safety rules where you are. Write the range from your food-safety plan or local guidance into the step, so everyone checks against the same numbers." },
+      { question: "Do photos count as proof?", answer: "Yes, as a link: keep the photo in your shared drive or team chat and paste its link on the step, with a short note." },
+    ],
+    criteria: [
+      "Every opening and closing step was done by a named person",
+      "Fridge readings were recorded at opening and at closing",
+      "The till was counted and any difference noted",
+    ],
+    intent: "Open and close the restaurant the same way every day, with proof that the fridges, cleaning, the till and locking up were done.",
+    related: ["kitchen-cleaning-schedule", "short-stay-turnover-cleaning-checklist"],
+  },
+  {
+    slug: "kitchen-cleaning-schedule",
+    group: "operations",
+    title: "Kitchen and restroom cleaning schedule, with sign-off",
+    short: "Cleaning schedule",
+    metaTitle: "Kitchen and restroom cleaning schedule, with sign-off",
+    metaDescription: "A daily and weekly cleaning schedule for restaurant kitchens, cafés and offices: what to clean, how often, who did it, and the proof to keep.",
+    updated: "2026-11-27",
+    audience: "Restaurant and café owners, kitchen managers, cleaning teams and office managers.",
+    when: "The daily tasks every day and the weekly tasks on a fixed day: run them as two repeating checklists.",
+    intro: [
+      "A cleaning schedule on the wall says what should be cleaned. It rarely says who cleaned it and when, which is exactly what an inspector, a customer complaint or a new manager asks.",
+      "Each task below names what to clean and what to keep as proof. Run the daily part every day and the weekly part once a week, and give each task to the person on that shift.",
+    ],
+    steps: [
+      { heading: "Clean and sanitise prep surfaces after each service", detail: "Counters, prep tables and handles, with the cleaning and sanitising products in your plan.", proof: "Initials and the time, after each service." },
+      { heading: "Wash and sanitise boards, knives and utensils", detail: "Through the dishwasher or by hand, then dried and stored off the floor.", proof: "Initials and the time." },
+      { heading: "Clean the hob, grill and fryer surroundings", detail: "Wipe down splashes and grease around the cooking line before it builds up.", proof: "Initials and the time." },
+      { heading: "Empty and clean the bins", detail: "Empty every bin, clean the lids and replace the liners.", proof: "Initials and the time." },
+      { heading: "Sweep and mop the kitchen floor", detail: "Including under the units you can reach and the corners where waste collects.", proof: "Initials and the time." },
+      { heading: "Clean and restock the restrooms", detail: "Toilets, sinks, mirrors and floor, with soap and paper refilled; check them more often at busy times.", proof: "The times checked, with initials." },
+      { heading: "Weekly: clean inside the fridges and freezers", detail: "Remove old food, wipe the shelves and check the door seals.", proof: "A photo of the clean fridge, or a note of what was removed." },
+      { heading: "Weekly: degrease the extraction hood filters", detail: "Soak or wash the filters and wipe the hood.", proof: "The date and who did it." },
+      { heading: "Weekly: descale the sinks, taps and dishwasher", detail: "Remove limescale and clean the dishwasher filter.", proof: "The date and who did it." },
+      { heading: "Weekly: check for pests and restock cleaning supplies", detail: "Look behind units and in storage for any sign of pests, and order what is running low.", proof: "What was found, if anything, and the order placed." },
+    ],
+    faqs: [
+      { question: "How often should a commercial kitchen be cleaned?", answer: "Surfaces in use are cleaned during and after each service; floors, bins and restrooms at least daily; fridges, hoods and deeper cleaning weekly or monthly. Your local food-safety guidance and your own plan set the exact frequency." },
+      { question: "How do I know the cleaning was really done?", answer: "Give each task to a named person and ask for a quick proof: initials and the time, or a photo link. A missed task shows as late the same day, not at the inspection." },
+      { question: "Can I use it for an office or a shop?", answer: "Yes. Drop the kitchen tasks and keep surfaces, bins, floors, restrooms and the weekly deeper clean." },
+    ],
+    criteria: [
+      "Every daily task was signed off by a named person",
+      "The weekly tasks were done on their day",
+      "The cleaning record can be shown when someone asks",
+    ],
+    intent: "Keep the kitchen and restrooms clean on a fixed schedule, with a named person and proof for every task.",
+    related: ["restaurant-opening-closing-checklist", "short-stay-turnover-cleaning-checklist"],
+  },
+  {
+    slug: "short-stay-turnover-cleaning-checklist",
+    group: "operations",
+    title: "Airbnb and holiday rental turnover cleaning checklist",
+    short: "Turnover cleaning",
+    metaTitle: "Airbnb turnover cleaning checklist, with photos",
+    metaDescription: "A turnover cleaning checklist for Airbnb and holiday rentals: bedrooms, bathroom, kitchen, restocking and damage checks, with photos for the host.",
+    updated: "2026-11-27",
+    audience: "Hosts, co-hosts, cleaning teams and property managers of short-stay rentals.",
+    when: "Between every check-out and the next check-in.",
+    intro: [
+      "Between two guests there are a few hours and a long list. A missed towel or a stain on the sofa becomes a poor review; a broken item nobody reported becomes an argument about the deposit.",
+      "This checklist follows the turnover room by room and asks for photos at the points that matter, so the host knows the place is ready without going there.",
+    ],
+    steps: [
+      { heading: "Check for damage and left items on arrival", detail: "Walk through before cleaning and photograph anything broken, stained or left behind.", proof: "Photos of any damage or left items, or a note that there were none." },
+      { heading: "Strip the beds and start the laundry", detail: "Sheets, duvet covers, pillowcases and towels, washed hot enough for your linen.", proof: "The number of sets taken to the laundry." },
+      { heading: "Make the beds with fresh linen", detail: "Check mattress protectors and pillows for stains before making up.", proof: "A photo of each made bed." },
+      { heading: "Clean the bathroom", detail: "Toilet, shower or bath, sink, mirror, floor and drains, with fresh towels set out.", proof: "A photo of the bathroom." },
+      { heading: "Clean the kitchen", detail: "Surfaces, hob, microwave, fridge emptied and wiped, dishes washed and put away.", proof: "A photo of the kitchen and the open fridge." },
+      { heading: "Dust, vacuum and mop every room", detail: "Including under the beds and sofa, window sills and light switches.", proof: "Who cleaned, and the time it took." },
+      { heading: "Restock the supplies", detail: "Toilet paper, soap, shampoo, coffee, tea, bin bags and cleaning products.", proof: "What was restocked, and what is running low." },
+      { heading: "Empty the bins and take out the recycling", detail: "Every bin, sorted as your building or area asks.", proof: "Initials and the time." },
+      { heading: "Take final photos of every room", detail: "The same angles every time, so changes are easy to see.", proof: "A link to the folder of final photos." },
+      { heading: "Report to the host", detail: "Done, any problems, anything to repair or buy before the next guest.", proof: "The message sent to the host, or a note of what was reported." },
+    ],
+    faqs: [
+      { question: "How long does a turnover clean take?", answer: "For a one-bedroom apartment, often one to three hours, depending on laundry and the state of the place. Noting the time on each turnover shows you the real number for your property." },
+      { question: "Why take photos?", answer: "They show the host the place is ready, and they record its state if a guest later reports damage or a missing item." },
+      { question: "Can each cleaner see only their tasks?", answer: "Each step can be given to a person on your team, and everyone sees the steps given to them. Steps without an owner stay open to the team." },
+    ],
+    criteria: [
+      "Every room was cleaned and photographed",
+      "Damage and missing items were reported to the host",
+      "Supplies were restocked for the next guest",
+    ],
+    intent: "Get the rental ready for the next guest after every stay, with photos and a report the host can trust.",
+    related: ["restaurant-opening-closing-checklist", "kitchen-cleaning-schedule", "move-in-move-out-inspection-checklist"],
+  },
 ];
 
 /** Languages with their own checklists. English at /checklists, the rest at /<lang>/checklists. */
-export const CHECKLIST_LANGUAGES = Object.freeze(["en", "ar"]);
+export const CHECKLIST_LANGUAGES = Object.freeze(["en", "ar", "es", "fr", "de", "nb"]);
+
+/** Each other language's checklists and the words of its pages, written in that language. */
+const OTHER_LANGUAGES = {
+  ar: { chrome: CHECKLIST_CHROME_AR, list: checklistsAr },
+  es: { chrome: CHECKLIST_CHROME_ES, list: checklistsEs },
+  fr: { chrome: CHECKLIST_CHROME_FR, list: checklistsFr },
+  de: { chrome: CHECKLIST_CHROME_DE, list: checklistsDe },
+  nb: { chrome: CHECKLIST_CHROME_NB, list: checklistsNb },
+};
+const ALL_OTHERS = Object.values(OTHER_LANGUAGES).flatMap((entry) => entry.list);
 
 /** The checklists written in a language (English by default). */
 /** @param {string} [lang] */
 export function checklistsIn(lang = "en") {
-  return lang === "ar" ? checklistsAr : lang === "en" ? checklists : [];
+  if (lang === "en") return checklists;
+  return OTHER_LANGUAGES[lang]?.list ?? [];
 }
 
 /** The pages' frame in a language. */
 /** @param {string} [lang] */
 export function checklistChrome(lang = "en") {
-  return lang === "ar" ? CHECKLIST_CHROME_AR : CHECKLIST_CHROME;
+  return OTHER_LANGUAGES[lang]?.chrome ?? CHECKLIST_CHROME;
 }
 
 /** A checklist in any language: slugs are unique across languages. */
 /** @param {string} slug */
 export function checklistBySlug(slug) {
-  return checklists.find((checklist) => checklist.slug === slug) ?? checklistsAr.find((checklist) => checklist.slug === slug) ?? null;
+  return checklists.find((checklist) => checklist.slug === slug) ?? ALL_OTHERS.find((checklist) => checklist.slug === slug) ?? null;
 }
 
 /** A checklist's language: "en" unless it says otherwise. */
@@ -485,7 +618,7 @@ export function checklistPath(slug, lang = "en") {
 export function checklistAlternates(checklist) {
   const english = checklistLanguage(checklist) === "en" ? checklist.slug : checklist.en;
   if (!english) return null;
-  const others = checklistsAr.filter((item) => item.en === english);
+  const others = ALL_OTHERS.filter((item) => item.en === english);
   if (!others.length) return null;
   return Object.fromEntries([["en", checklistPath(english)], ...others.map((item) => [checklistLanguage(item), checklistPath(item.slug)])]);
 }

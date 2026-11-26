@@ -44,9 +44,11 @@ test("an Arabic checklist's English counterpart exists, and both name each other
     assert.ok(item.en, `${item.slug}: no English counterpart named`);
     const english = checklistBySlug(item.en);
     assert.ok(english && !english.lang, `${item.slug}: ${item.en} is not an English checklist`);
-    const expected = { en: checklistPath(item.en), ar: checklistPath(item.slug) };
-    assert.deepEqual(checklistAlternates(item), expected);
-    assert.deepEqual(checklistAlternates(english), expected);
+    // The pair is always there; subjects written in more languages list them too.
+    const alternates = checklistAlternates(item);
+    assert.equal(alternates.en, checklistPath(item.en));
+    assert.equal(alternates.ar, checklistPath(item.slug));
+    assert.deepEqual(checklistAlternates(english), alternates);
   }
   // An English checklist with no Arabic counterpart has no alternates.
   assert.equal(checklistAlternates(checklistBySlug("month-end-close-checklist")), null);
@@ -127,9 +129,9 @@ test("analytics, the sitemap and llms.txt know every Arabic page", () => {
   const sitemap = read("app/sitemap.ts");
   assert.match(sitemap, /CHECKLIST_LANGUAGES\.flatMap/);
   assert.match(sitemap, /taskTrackerPath/);
-  assert.match(read("app/llms.txt/route.ts"), /checklistsIn\("ar"\)/);
+  assert.match(read("app/llms.txt/route.ts"), /\["ar", "es", "fr", "de", "nb"\]\.flatMap\(\(lang\) => checklistsIn\(lang\)/);
   const body = buildLlmsTxt({ localized: [{ title: TASK_TRACKER_AR.title, url: taskTrackerPath("ar"), description: "x" }] });
-  assert.match(body, /## In Arabic\n/);
+  assert.match(body, /## In other languages\n/);
   assert.ok(body.includes(`https://zavqera.com${taskTrackerPath("ar")}`) || body.includes(taskTrackerPath("ar")));
 });
 

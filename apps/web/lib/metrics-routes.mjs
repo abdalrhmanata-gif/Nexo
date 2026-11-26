@@ -39,9 +39,20 @@ export const CHECKLIST_SLUGS = [
   "vendor-onboarding-checklist",
   "move-in-move-out-inspection-checklist",
   "quarterly-access-review-checklist",
+  "restaurant-opening-closing-checklist",
+  "kitchen-cleaning-schedule",
+  "short-stay-turnover-cleaning-checklist",
 ];
-// test/checklists-ar.test.mjs keeps this list equal to lib/checklists-ar.mjs.
-export const CHECKLIST_SLUGS_AR = ["employee-clearance-checklist", "rental-unit-handover-checklist"];
+// Checklists written in other languages, at /<lang>/checklists/<slug>.
+// test/checklists-intl.test.mjs keeps these equal to the language files.
+export const CHECKLIST_SLUGS_BY_LANG = {
+  ar: ["employee-clearance-checklist", "rental-unit-handover-checklist", "cafe-restaurant-daily-checklist", "daily-cleaning-schedule", "holiday-home-cleaning-checklist"],
+  es: ["checklist-apertura-cierre-restaurante", "plan-de-limpieza-cocina-banos", "checklist-limpieza-apartamento-turistico"],
+  fr: ["checklist-ouverture-fermeture-restaurant", "plan-de-nettoyage-cuisine-sanitaires", "checklist-menage-location-saisonniere"],
+  de: ["checkliste-oeffnen-schliessen-restaurant", "reinigungsplan-kueche-sanitaer", "checkliste-reinigung-ferienwohnung"],
+  nb: ["sjekkliste-apning-stenging-restaurant", "renholdsplan-kjokken-toalett", "sjekkliste-vask-utleiebolig"],
+};
+export const CHECKLIST_SLUGS_AR = CHECKLIST_SLUGS_BY_LANG.ar;
 const GUIDE_PREFIXES = ["", "/es", "/ar", "/fr", "/de", "/nb"];
 
 export const COUNTED_ROUTES = [
@@ -53,8 +64,7 @@ export const COUNTED_ROUTES = [
   ...GUIDE_PREFIXES.flatMap((prefix) => [`${prefix}/guides`, ...GUIDE_SLUGS.map((slug) => `${prefix}/guides/${slug}`)]),
   "/checklists",
   ...CHECKLIST_SLUGS.map((slug) => `/checklists/${slug}`),
-  "/ar/checklists",
-  ...CHECKLIST_SLUGS_AR.map((slug) => `/ar/checklists/${slug}`),
+  ...Object.entries(CHECKLIST_SLUGS_BY_LANG).flatMap(([lang, slugs]) => [`/${lang}/checklists`, ...slugs.map((slug) => `/${lang}/checklists/${slug}`)]),
   "/ar/employee-task-tracker",
   "/compare/zavqera-vs-chatgpt-claude-gemini",
   "/privacy",

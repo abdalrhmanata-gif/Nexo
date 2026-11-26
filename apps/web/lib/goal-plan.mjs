@@ -186,6 +186,36 @@ const MONTH_END = [
   "månedsavslutning", "avslutte regnskapet", "månedsregnskap",
 ];
 
+/** Opening and closing a restaurant or café: done every day. Pairs only, so opening a new café stays a business plan. */
+const OPENING_CLOSING = [
+  "opening and closing", "open and close", "opening closing checklist", "closing checklist", "closing the restaurant",
+  "فتح وإغلاق", "فتح واغلاق", "إغلاق المطعم", "اغلاق المطعم", "إغلاق المقهى",
+  "apertura y cierre", "abrir y cerrar", "cierre del restaurante",
+  "ouverture et fermeture", "ouvrir et fermer", "fermeture du restaurant",
+  "öffnen und schließen", "öffnen und schliessen", "öffnung und schließung",
+  "åpning og stenging", "åpne og stenge", "stenging av restaurant",
+];
+
+/** A cleaning schedule for a kitchen, restrooms or an office: done every day and week. */
+const CLEANING_SCHEDULE = [
+  "cleaning schedule", "cleaning checklist", "cleaning plan", "kitchen cleaning", "cleaning rota",
+  "جدول نظافة", "جدول تنظيف", "تنظيف المطبخ", "خطة النظافة",
+  "plan de limpieza", "checklist de limpieza", "limpieza de cocina", "limpieza de baños",
+  "plan de nettoyage", "nettoyage cuisine", "planning de nettoyage",
+  "reinigungsplan", "putzplan", "küchenreinigung",
+  "renholdsplan", "vaskeliste", "vaskeplan",
+];
+
+/** Cleaning a short-stay rental between guests: done after every stay. */
+const TURNOVER_CLEANING = [
+  "airbnb", "turnover cleaning", "turnover clean", "holiday rental", "vacation rental", "short stay", "between guests",
+  "شقق مفروشة", "شقة مفروشة", "بين ضيفين", "الشقق المفروشة",
+  "apartamento turístico", "entre huéspedes", "piso turístico",
+  "location saisonnière", "entre deux voyageurs", "ménage location",
+  "ferienwohnung", "zwischen zwei gästen",
+  "utleiebolig", "mellom gjester", "korttidsutleie",
+];
+
 /** Starting work with a new client: what agencies and freelancers repeat. */
 const CLIENT_ONBOARDING = [
   "onboard a new client", "onboard a client", "client onboarding", "new client onboarding", "customer onboarding",
@@ -283,6 +313,14 @@ export function matchGoal(value) {
   else if (onboarding > 0) {
     add("checklist", score(text, CLIENT) > 0 ? "client-onboarding-checklist" : "employee-onboarding-checklist", onboarding + 3, 2.5);
   }
+  // Daily operations: a rental between guests before a cleaning schedule,
+  // since "cleaning the Airbnb" names both.
+  const turnover = score(text, TURNOVER_CLEANING);
+  const cleaning = score(text, CLEANING_SCHEDULE);
+  if (turnover > 0) add("checklist", "short-stay-turnover-cleaning-checklist", turnover + 4, 2.5);
+  else if (cleaning > 0) add("checklist", "kitchen-cleaning-schedule", cleaning + 3, 2.5);
+  const openingClosing = score(text, OPENING_CLOSING);
+  if (openingClosing > 0) add("checklist", "restaurant-opening-closing-checklist", openingClosing + 3, 2.5);
   const inspection = score(text, RENTAL_INSPECTION);
   if (inspection > 0) add("checklist", "move-in-move-out-inspection-checklist", inspection + 3, 2.5);
 

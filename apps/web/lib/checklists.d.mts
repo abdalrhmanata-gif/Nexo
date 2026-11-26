@@ -8,12 +8,12 @@ export type ChecklistStep = {
   source?: ChecklistSource;
 };
 
-export declare const CHECKLIST_GROUPS: readonly ["people", "clients", "finance", "property"];
+export declare const CHECKLIST_GROUPS: readonly ["operations", "people", "clients", "finance", "property"];
 export type ChecklistGroup = (typeof CHECKLIST_GROUPS)[number];
 
 export type Checklist = {
   /** Absent for English. */
-  lang?: "ar";
+  lang?: "ar" | "es" | "fr" | "de" | "nb";
   /** For a checklist in another language: the English one on the same subject. */
   en?: string;
   slug: string;
@@ -79,10 +79,10 @@ export type ChecklistChrome = {
 };
 
 export declare const CHECKLIST_CHROME: ChecklistChrome;
-export declare const CHECKLIST_LANGUAGES: readonly ["en", "ar"];
+export declare const CHECKLIST_LANGUAGES: readonly ["en", "ar", "es", "fr", "de", "nb"];
 export declare function checklistsIn(lang?: string): Checklist[];
 export declare function checklistChrome(lang?: string): ChecklistChrome;
-export declare function checklistLanguage(checklist: Checklist): "en" | "ar";
+export declare function checklistLanguage(checklist: Checklist): "en" | "ar" | "es" | "fr" | "de" | "nb";
 export declare function checklistAlternates(checklist: Checklist): Record<string, string> | null;
 
 export declare const checklists: Checklist[];

@@ -20,11 +20,11 @@ export function GET() {
       { title: compare.title, url: COMPARE_PATH, description: compare.metaDescription },
     ],
     guides: guideLocale("en").guides.map((item) => ({ title: item.title, url: guidePath("en", item.slug), description: item.metaDescription })),
-    // Written in Arabic for Arabic-speaking teams (not translations).
+    // Written in each language for its readers (not translations).
     localized: [
       { title: TASK_TRACKER_AR.title, url: taskTrackerPath("ar"), description: TASK_TRACKER_AR.metaDescription },
       { title: "قوائم المهام", url: checklistPath(undefined, "ar"), description: "Arabic checklists index." },
-      ...checklistsIn("ar").map((item) => ({ title: item.title, url: checklistPath(item.slug), description: item.metaDescription })),
+      ...["ar", "es", "fr", "de", "nb"].flatMap((lang) => checklistsIn(lang).map((item) => ({ title: item.title, url: checklistPath(item.slug), description: item.metaDescription }))),
     ],
   });
   return new Response(body, {
