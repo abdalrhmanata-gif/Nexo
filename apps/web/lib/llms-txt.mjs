@@ -11,6 +11,9 @@
 import { PLAN_LIMITS } from "./billing-plans.mjs";
 import { FEATURES, FOUNDER, PLAN_PRICES_USD, PROFILES, SITE_DESCRIPTION, SITE_URL } from "./site-schema.mjs";
 
+/** The public repository (renamed from Nexo on 26 Nov 2026). */
+export const SOURCE_URL = "https://github.com/abdalrhmanata-gif/zavqera";
+
 const PLAN_KEYS = Object.freeze({ Free: "free", Plus: "plus", Pro: "pro", Scale: "scale" });
 
 /** "- [Title](url): note" with the note left out when there is none. */
@@ -70,6 +73,7 @@ export function buildLlmsTxt({ checklists = [], templates = [], comparisons = []
   const company = [
     ...PROFILES.map((url) => ({ title: profileName(url), url })),
     { title: `Founder: ${FOUNDER.name}`, url: FOUNDER.profile },
+    { title: "Source code", url: SOURCE_URL, description: "Published for transparency, so what the app stores, sends and decides can be checked against its code. All rights reserved." },
     { title: "Contact", url: "mailto:hello@zavqera.com", description: "hello@zavqera.com" },
   ];
 
