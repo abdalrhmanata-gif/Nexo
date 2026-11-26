@@ -112,3 +112,12 @@ test("publishing to the registry signs in with GitHub OIDC and stores no secret"
   assert.match(workflow, /\.\/mcp-publisher publish/);
   assert.match(workflow, /if \[ "\$status" != "401" \]/, "nothing is published unless the live server answers and asks for sign-in");
 });
+
+test("Glama can verify that zavqera.com owns the ZAVQERA connector", () => {
+  // Owner's claim on glama.ai (26 Nov 2026). Removing this route unverifies the listing.
+  const route = read("app/.well-known/glama.json/route.ts");
+  assert.match(route, /const GLAMA_CLAIM = "glama_claim_[A-Za-z0-9]{20,}";/);
+  assert.match(route, /\$schema: "https:\/\/glama\.ai\/mcp\/schemas\/connector\.json", claim: GLAMA_CLAIM/);
+  assert.match(route, /export const dynamic = "force-static";/);
+  assert.doesNotMatch(route, /redirect\(/);
+});
