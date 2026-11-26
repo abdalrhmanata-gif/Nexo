@@ -33,7 +33,7 @@ jobs:
       id-token: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Check that the server is live and asks for sign-in
         run: |
