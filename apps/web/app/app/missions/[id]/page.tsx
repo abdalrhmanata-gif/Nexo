@@ -23,6 +23,9 @@ import { ShareMissionButton, type MissionShareStatus } from "../../../../compone
 import { createSupabaseServerClient, getAuthenticatedUser } from "../../../../lib/supabase/server";
 import { describeProvider, hasAiAccess } from "../../../../lib/ai/gate";
 import { OwnTemplateBox } from "../../../../components/own-template-box";
+import { RepeatBox } from "../../../../components/repeat-box";
+import { countOwnRepeats, readRepeatFor } from "../../../../lib/supabase/repeat-repository";
+import { repeatAllowance } from "../../../../lib/repeats.mjs";
 import { hasOwnTemplates } from "../../../../lib/own-templates.mjs";
 import { readCurrentPlan } from "../../../../lib/supabase/own-template-repository";
 import { PlanDatesCard, type CalendarState } from "../../../../components/plan-dates-card";
@@ -77,7 +80,7 @@ export default async function MissionDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams?: Promise<{ welcome?: string; template?: string; dates?: string; calendar?: string }>;
+  searchParams?: Promise<{ welcome?: string; template?: string; dates?: string; calendar?: string; repeat?: string }>;
 }) {
   const t = await getTranslate();
   const language = await getLanguage();
@@ -92,7 +95,7 @@ export default async function MissionDetailPage({
   // These reads do not depend on each other, so they run together rather
   // than one after another: each is a round trip to the database, and in a
   // row they made the page (and every refresh after a change) take seconds.
-  const [shareStatus, aiReady, plan, dates, calendarRead, stepOwners] = await Promise.all([
+  const [shareStatus, aiReady, plan, dates, calendarRead, stepOwners, repeat, repeatsUsed] = await Promise.all([
     readMissionShareStatus(mission.id),
     thin ? aiPlanReady() : Promise.resolve(true),
     // Own templates need the database; the local preview has none.
@@ -103,6 +106,9 @@ export default async function MissionDetailPage({
     isSupabaseConfigured() ? readCalendar() : Promise.resolve(null),
     // Who owns each step. Null when it cannot be read: the steps show alone.
     readStepOwners(mission.id),
+    // Whether this checklist repeats, and how many repeats the person runs.
+    isSupabaseConfigured() ? readRepeatFor(mission.id) : Promise.resolve(null),
+    isSupabaseConfigured() ? countOwnRepeats() : Promise.resolve(0),
   ]);
   const closed = isTerminalMissionStatus(mission.lifecycleStatus);
   const teamOwners = ownersInUse(stepOwners);
@@ -346,6 +352,7 @@ export default async function MissionDetailPage({
           <li><strong><LocalizedText en="Last updated" /></strong><br /><LocalizedDateTime value={mission.updated} /></li>
           <li><strong><LocalizedText en="Created by" /></strong><br />{can.known ? creator : t(mission.owner)}</li>
         </ul>
+        {isSupabaseConfigured() && can.canEdit && <RepeatBox missionId={mission.id} repeat={repeat} used={repeatsUsed} allowance={repeatAllowance(plan)} notice={query?.repeat} t={t} />}
         {ownTemplates && <OwnTemplateBox missionId={mission.id} missionName={mission.name} active={ownTemplates.active} notice={query?.template} />}
         {can.canDelete && <DeleteMissionForm missionId={mission.id} missionName={mission.name} />}
       </aside>

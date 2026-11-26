@@ -83,6 +83,16 @@ jobs:
           chmod +x tool/own_templates_proof.sh
           ./tool/own_templates_proof.sh
 
+      - name: Prove repeating checklists are editor-only, plan-limited and made once per period
+        env:
+          PGPASSWORD: postgres
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/zavqera_repeats
+        run: |
+          set -euo pipefail
+          psql "postgresql://postgres:postgres@127.0.0.1:5432/postgres" -v ON_ERROR_STOP=1 --quiet -c "create database zavqera_repeats"
+          chmod +x tool/repeats_proof.sh
+          ./tool/repeats_proof.sh
+
       - name: Prove plan dates and the calendar link are private, plan-limited and revocable
         env:
           PGPASSWORD: postgres

@@ -11,6 +11,7 @@ import { isSupabaseConfigured } from "../../lib/supabase/config";
 import { createSupabaseMissionRepository, readStepsAssignedToYou } from "../../lib/supabase/mission-repository";
 import { assignedToYou } from "../../lib/step-owners.mjs";
 import { actionStatusLabel } from "../../lib/mission-content.mjs";
+import { runDueRepeats } from "../../lib/supabase/repeat-repository";
 
 const ERRORS: Record<string, string> = {
   "mission-provenance": "This Mission cannot be deleted because its historical provenance must be preserved.",
@@ -24,6 +25,9 @@ export default async function WorkspacePage({
   searchParams: Promise<{ error?: string; status?: string; q?: string }>;
 }) {
   const t = await getTranslate();
+  // Today's repeating checklists are made before the list is read, so the
+  // day's opening list is there when the team opens the workspace.
+  if (isSupabaseConfigured()) await runDueRepeats();
   const repository = isSupabaseConfigured() ? await createSupabaseMissionRepository() : localMockMissionRepository;
   // The steps someone gave you are read beside the missions, not after them.
   const [missions, assignedRows] = await Promise.all([repository.listMissions(), readStepsAssignedToYou()]);
