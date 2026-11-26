@@ -1,4 +1,4 @@
-import { SavePdfButton } from "../../../../components/save-pdf-button";
+import { DownloadPdfLink } from "../../../../components/download-pdf-link";
 import Link from "next/link";
 import { LocalizedDateTime, LocalizedText } from "../../../../components/localized-text";
 import { DeleteMissionForm } from "../../../../components/delete-mission-form";
@@ -163,7 +163,7 @@ export default async function MissionDetailPage({
   return <div className="container">
     <p className="eyebrow no-print"><Link href="/app"><LocalizedText en="Workspace" /></Link> <LocalizedText en="/ Mission detail" /></p>
     <div className="landing-final-actions no-print">
-      <SavePdfButton title={mission.name} subtitle={t("Mission plan")} />
+      <DownloadPdfLink href={`/app/missions/${mission.id}/pdf`} />
       {can.canEdit && <ShareMissionButton missionId={mission.id} shared={shareStatus} />}
     </div>
     {/* Arriving from "Save this plan": say it worked and what to do first,

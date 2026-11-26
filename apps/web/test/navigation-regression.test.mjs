@@ -472,9 +472,12 @@ test("a page can be taken away as a document, from every workspace surface", () 
   assert.match(button, /window\.print\(\)/);
   assert.match(button, /root\.setAttribute\("data-theme", "light"\)/, "a dark page printed is a page of black ink");
   assert.match(button, /addEventListener\("afterprint", restore\)/, "the reader's theme and title come back");
-  for (const file of ["app/app/missions/[id]/page.tsx", "app/app/page.tsx", "app/app/business/page.tsx", "components/opportunity-intelligence.tsx"]) {
+  for (const file of ["app/app/page.tsx", "app/app/business/page.tsx", "components/opportunity-intelligence.tsx"]) {
     assert.match(read(file), /<SavePdfButton title=/, file);
   }
+  // A checklist downloads a real PDF file made on the server: the print
+  // window does nothing inside the in-app browsers of iPhone apps.
+  assert.match(read("app/app/missions/[id]/page.tsx"), /<DownloadPdfLink href=\{`\/app\/missions\/\$\{mission\.id\}\/pdf`\} \/>/);
   const css = read("app/globals.css");
   const print = css.slice(css.indexOf("@media print"));
   assert.ok(print.length > 200, "the print stylesheet is missing");

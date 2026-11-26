@@ -2019,3 +2019,5 @@ html[dir="rtl"] .try-more a span[aria-hidden="true"] { display:inline-block; tra
 .repeat-select select { max-width:260px; }
 .repeat-notice { color:var(--teal); font-weight:700; font-size:14px; }
 .repeat-allowance { color:var(--muted); font-size:13px; margin-top:8px; }
+/* The checklist's PDF, under its save button. */
+.checklist-pdf-link { display:inline-block; margin-top:12px; font-weight:700; color:var(--teal); }

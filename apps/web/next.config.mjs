@@ -27,6 +27,11 @@ const securityHeaders = [
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // The PDF of a checklist is drawn with the fonts in public/fonts; the
+  // server function that makes it needs them on its own disk.
+  outputFileTracingIncludes: {
+    "/app/missions/[id]/pdf": ["./public/fonts/*.ttf"],
+  },
   // Browsers ask for /favicon.ico whatever the page declares. It was a 404
   // that woke a server function each time; the real icon is app/icon.svg.
   async redirects() {

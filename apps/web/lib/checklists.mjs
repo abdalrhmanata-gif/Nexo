@@ -66,6 +66,10 @@ export const CHECKLIST_CHROME = {
   repeat: "On the Pro and Scale plans you can save a finished Mission as your own template, with your wording and your steps, and start the next run from it in one click.",
   disclaimer: "General guidance for small businesses, not legal, tax or accounting advice. Rules differ by country, state and industry: check the ones that apply to you.",
   allChecklists: "All checklists",
+  pdfButton: "Download the PDF",
+  pdfNote: "Free, to print and tick by hand.",
+  pdfWriteIn: "Done by: ______________    Date: __________",
+  pdfFooter: "Track who did each step and keep the proof, free: zavqera.com",
 };
 
 const UPDATED = "2026-11-25";

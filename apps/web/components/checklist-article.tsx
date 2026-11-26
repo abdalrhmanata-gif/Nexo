@@ -13,6 +13,7 @@ import {
 import { SITE_URL } from "../lib/guides";
 import { savePlan } from "../app/app/start/actions";
 import { taskTrackerPath } from "../lib/task-tracker.mjs";
+import { checklistPdfPath } from "../lib/checklist-pdf.mjs";
 
 // Every visible word comes from the checklist data: lib/checklists.mjs in
 // English, lib/checklists-ar.mjs in Arabic. A checklist carries its own
@@ -73,6 +74,10 @@ function SaveChecklist({ slug, compact = false }: { slug: string; compact?: bool
       </form>
       <Link className="checklist-edit-link" href={checklistMissionHref(checklist)} prefetch={false}>{chrome.ctaEdit}</Link>
       <small>{chrome.ctaFree}</small>
+      {/* The same checklist as a file, for teams that print it. A plain link:
+          a real file opens on every phone, unlike the print window. */}
+      <a className="checklist-pdf-link" href={checklistPdfPath(checklist.slug)} download>{chrome.pdfButton}</a>
+      <small>{chrome.pdfNote}</small>
     </div>
   );
 }
