@@ -15,6 +15,9 @@ export const PROFILES = Object.freeze([
   "https://www.crunchbase.com/organization/zavqera",
 ]);
 
+/** The founder, as he names himself on his public profile. */
+export const FOUNDER = Object.freeze({ name: "Abd Ata", profile: "https://peerlist.io/zavqera" });
+
 /** Monthly prices in US dollars, as /pricing shows them. */
 export const PLAN_PRICES_USD = Object.freeze({ Free: 0, Plus: 19, Pro: 49, Scale: 69 });
 
@@ -46,6 +49,7 @@ export function homeStructuredData() {
         logo: { "@type": "ImageObject", url: `${SITE_URL}/brand/zavqera-icon-512.png`, width: 512, height: 512 },
         email: "hello@zavqera.com",
         foundingDate: "2026",
+        founder: { "@type": "Person", name: FOUNDER.name, sameAs: [FOUNDER.profile] },
         sameAs: [...PROFILES],
       },
       {
