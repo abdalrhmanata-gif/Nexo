@@ -2,8 +2,8 @@ export declare const GOAL_MAX_LENGTH: number;
 export declare const GOAL_MIN_LENGTH: number;
 
 export type GoalMatch = {
-  source: "guide" | "template" | "planner";
-  /** Guide slug, template id, or planner kind. */
+  source: "guide" | "checklist" | "template" | "planner";
+  /** Guide slug, checklist slug, template id, or planner kind. */
   id: string;
   /** Planner ventures only: the kind that needs a licence first. */
   licensed?: boolean;

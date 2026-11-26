@@ -179,3 +179,33 @@ test("the privacy notice names what the try box and the save cookie do", () => {
   assert.match(privacy, /We do not save it unless you press/);
   assert.match(read("lib/start-plan-token.ts"), /START_COOKIE = "zavqera-start"/);
 });
+
+test("the box's example, onboarding a new employee, lands on the onboarding checklist in every language", () => {
+  const example = read("components/goal-starter.tsx").match(/placeholder=\{t\("([^"]+)"\)\}/)[1];
+  assert.equal(example, "e.g. Onboard a new employee");
+  const goal = (text) => text.replace(/^(e\.g\.|f\.eks\.|مثلاً:|p\. ej\.,|ex\. :|z\. B\.)\s*/, "");
+  expectMatch(goal(example), "checklist", "employee-onboarding-checklist");
+  for (const lang of ["nb", "ar", "es", "fr", "de"]) {
+    const translated = translation(lang, example);
+    assert.ok(translated, `${lang} translates the box's example`);
+    expectMatch(goal(translated), "checklist", "employee-onboarding-checklist");
+  }
+  // Hiring someone is a hiring plan, and a new client is a client.
+  for (const hire of ["Hire a new employee", "توظيف موظف جديد", "Contratar un nuevo empleado", "Embaucher un salarié", "Neuen Mitarbeiter einstellen", "Ansette en ny ansatt"]) {
+    expectMatch(hire, "planner", "hiring");
+  }
+  expectMatch("Onboard a new client", "checklist", "client-onboarding-checklist");
+  expectMatch("استقبال عميل جديد", "planner", "generic");
+});
+
+test("the onboarding plan for readers in other languages is translated into every one", () => {
+  const source = read("lib/start-plan.ts");
+  const start = source.indexOf("const CHECKLIST_SUBJECT_PLANS");
+  const block = source.slice(start, source.indexOf("\n};", start));
+  const strings = [...block.matchAll(/^\s+(?:headline: |intent: )?"([^"]+)",?$/gm)].map((match) => match[1]).filter((text) => !text.endsWith("-checklist"));
+  assert.ok(strings.length >= 11, `found ${strings.length} strings`);
+  for (const lang of ["nb", "ar", "es", "fr", "de"]) {
+    for (const text of strings) assert.ok(translation(lang, text), `${lang} translates "${text}"`);
+  }
+  assert.match(source, /checklistLanguage\(checklist\) === request\.lang/);
+});

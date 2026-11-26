@@ -7,7 +7,7 @@
 import { fill, isSupportedLanguage, translate, type AppLanguage } from "./i18n";
 import { missionTemplateById } from "./mission-templates";
 import { guideBySlug, guidePath } from "./guides";
-import { checklistBySlug, checklistMission, checklistPath } from "./checklists.mjs";
+import { checklistBySlug, checklistLanguage, checklistMission, checklistPath } from "./checklists.mjs";
 import { planHeadline, planOfKind } from "./mission-planner.mjs";
 import { GOAL_MIN_LENGTH, goalTitle, matchGoal, normaliseGoal, type GoalMatch } from "./goal-plan.mjs";
 
@@ -41,6 +41,33 @@ const PLANNER_INTENTS: Record<string, string> = {
   product: "Test the riskiest assumption cheaply before building more, and decide on the evidence by a set date.",
   venture: "Open it on checked facts: the licence requirements in writing, real prices nearby, and a break-even number.",
   generic: "Reach this outcome on evidence: check what must be true, test the riskiest part first, and decide by a set date.",
+};
+
+/**
+ * A goal that names a ready-made checklist gets that checklist when it is
+ * written in the reader's language. In another language the reader gets this
+ * plan on the same subject instead, translated like the rest of the app and
+ * with no country's rules in it. Only subjects listed here have one; any
+ * other checklist is shown in its own language, as its page shows it.
+ */
+const CHECKLIST_SUBJECT_PLANS: Record<string, { headline: string; intent: string; criteria: string[]; actions: string[] }> = {
+  "employee-onboarding-checklist": {
+    headline: "A new employee's first 90 days start with these six steps",
+    intent: "Get the new employee ready to work from day one: paperwork done, access in place and goals agreed, with proof on each step.",
+    criteria: [
+      "The contract and the paperwork your country requires are on file before day one",
+      "Equipment and accounts work on the first day",
+      "Goals for the first 90 days are written down and agreed",
+    ],
+    actions: [
+      "Confirm the signed contract, start date, role and manager in writing",
+      "Complete the employment paperwork your country requires before the first day",
+      "Prepare the equipment, accounts and access the role needs",
+      "Plan the first day and the first week, with one real task",
+      "Walk through the policies, safety rules and how to ask for help",
+      "Agree goals for the first 90 days and set the check-in dates",
+    ],
+  },
 };
 
 type Params = Record<string, string | string[] | undefined | null>;
@@ -79,9 +106,26 @@ export function buildStartPlan(request: StartRequest): StartPlan {
   const t = (en: string) => translate(en, request.lang);
   if (request.kind === "template") return templatePlan(request, request.value, null, t);
   if (request.kind === "guide") return guidePlan(request, request.value, null, t);
-  if (request.kind === "checklist") return checklistPlan(request, request.value, t);
+  if (request.kind === "checklist") return checklistPlan(request, request.value, null, t);
   const match: GoalMatch = matchGoal(request.value) ?? { source: "planner", id: "generic", licensed: false };
   const title = goalTitle(request.value);
+  if (match.source === "checklist") {
+    const checklist = checklistBySlug(match.id);
+    const subject = CHECKLIST_SUBJECT_PLANS[match.id];
+    if (checklist && (checklistLanguage(checklist) === request.lang || !subject)) return checklistPlan(request, match.id, title, t);
+    if (subject) {
+      return {
+        request,
+        basis: { source: "planner", id: match.id, label: t("A first plan built from the words you used"), href: null },
+        name: title,
+        intent: t(subject.intent),
+        headline: t(subject.headline),
+        criteria: subject.criteria.map(t),
+        actions: subject.actions.map(t),
+        licensed: false,
+      };
+    }
+  }
   if (match.source === "template" && missionTemplateById(match.id)) return templatePlan(request, match.id, title, t);
   if (match.source === "guide" && guideBySlug(match.id, request.lang)) return guidePlan(request, match.id, title, t);
   const plan = planOfKind(match.id, { licensed: Boolean(match.licensed) });
@@ -139,13 +183,13 @@ export function editBeforeSavingHref(plan: StartPlan) {
 /** A checklist's plan. Each checklist is written in one language (English in
     lib/checklists.mjs, Arabic in lib/checklists-ar.mjs), so the plan keeps its
     wording whatever the app's language. */
-function checklistPlan(request: StartRequest, slug: string, t: (en: string) => string): StartPlan {
+function checklistPlan(request: StartRequest, slug: string, title: string | null, t: (en: string) => string): StartPlan {
   const checklist = checklistBySlug(slug)!;
   const mission = checklistMission(checklist);
   return {
     request,
     basis: { source: "checklist", id: slug, label: fill(t("From the checklist “{name}”"), { name: checklist.short }), href: checklistPath(slug) },
-    name: mission.name,
+    name: title ?? mission.name,
     intent: mission.intent,
     headline: checklist.title,
     criteria: mission.criteria,
