@@ -136,8 +136,9 @@ export function editBeforeSavingHref(plan: StartPlan) {
   return `/app/missions/new?${params.toString()}`;
 }
 
-/** A checklist's plan. Checklists are written in English for English-speaking
-    buyers (lib/checklists.mjs), so the plan keeps their wording in any language. */
+/** A checklist's plan. Each checklist is written in one language (English in
+    lib/checklists.mjs, Arabic in lib/checklists-ar.mjs), so the plan keeps its
+    wording whatever the app's language. */
 function checklistPlan(request: StartRequest, slug: string, t: (en: string) => string): StartPlan {
   const checklist = checklistBySlug(slug)!;
   const mission = checklistMission(checklist);

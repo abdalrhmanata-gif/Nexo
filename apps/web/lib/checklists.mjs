@@ -29,6 +29,8 @@
 
 /** @typedef {import("./checklists.d.mts").Checklist} Checklist */
 
+import { CHECKLIST_CHROME_AR, checklistsAr } from "./checklists-ar.mjs";
+
 export const CHECKLIST_GROUPS = Object.freeze(["people", "clients", "finance", "property"]);
 
 export const CHECKLIST_CHROME = {
@@ -434,14 +436,54 @@ export const checklists = [
   },
 ];
 
-/** @param {string} slug */
-export function checklistBySlug(slug) {
-  return checklists.find((checklist) => checklist.slug === slug) ?? null;
+/** Languages with their own checklists. English at /checklists, the rest at /<lang>/checklists. */
+export const CHECKLIST_LANGUAGES = Object.freeze(["en", "ar"]);
+
+/** The checklists written in a language (English by default). */
+/** @param {string} [lang] */
+export function checklistsIn(lang = "en") {
+  return lang === "ar" ? checklistsAr : lang === "en" ? checklists : [];
 }
 
-/** @param {string} [slug] */
-export function checklistPath(slug) {
-  return slug ? `/checklists/${slug}` : "/checklists";
+/** The pages' frame in a language. */
+/** @param {string} [lang] */
+export function checklistChrome(lang = "en") {
+  return lang === "ar" ? CHECKLIST_CHROME_AR : CHECKLIST_CHROME;
+}
+
+/** A checklist in any language: slugs are unique across languages. */
+/** @param {string} slug */
+export function checklistBySlug(slug) {
+  return checklists.find((checklist) => checklist.slug === slug) ?? checklistsAr.find((checklist) => checklist.slug === slug) ?? null;
+}
+
+/** A checklist's language: "en" unless it says otherwise. */
+/** @param {Checklist} checklist */
+export function checklistLanguage(checklist) {
+  return checklist.lang ?? "en";
+}
+
+/**
+ * The page of a checklist, or of the index in a language. A slug carries its
+ * own language, so only the index needs `lang`.
+ * @param {string} [slug]
+ * @param {string} [lang]
+ */
+export function checklistPath(slug, lang = "en") {
+  const found = slug ? checklistBySlug(slug) : null;
+  const language = found ? checklistLanguage(found) : lang;
+  const base = language === "en" ? "/checklists" : `/${language}/checklists`;
+  return slug ? `${base}/${slug}` : base;
+}
+
+/** The same subject in other languages, as hreflang alternates: { en: path, ar: path }. */
+/** @param {Checklist} checklist */
+export function checklistAlternates(checklist) {
+  const english = checklistLanguage(checklist) === "en" ? checklist.slug : checklist.en;
+  if (!english) return null;
+  const others = checklistsAr.filter((item) => item.en === english);
+  if (!others.length) return null;
+  return Object.fromEntries([["en", checklistPath(english)], ...others.map((item) => [checklistLanguage(item), checklistPath(item.slug)])]);
 }
 
 /** The plan the "Use this checklist" button saves: one action per step. */

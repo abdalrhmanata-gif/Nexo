@@ -40,6 +40,8 @@ export const CHECKLIST_SLUGS = [
   "move-in-move-out-inspection-checklist",
   "quarterly-access-review-checklist",
 ];
+// test/checklists-ar.test.mjs keeps this list equal to lib/checklists-ar.mjs.
+export const CHECKLIST_SLUGS_AR = ["employee-clearance-checklist", "rental-unit-handover-checklist"];
 const GUIDE_PREFIXES = ["", "/es", "/ar", "/fr", "/de", "/nb"];
 
 export const COUNTED_ROUTES = [
@@ -51,6 +53,9 @@ export const COUNTED_ROUTES = [
   ...GUIDE_PREFIXES.flatMap((prefix) => [`${prefix}/guides`, ...GUIDE_SLUGS.map((slug) => `${prefix}/guides/${slug}`)]),
   "/checklists",
   ...CHECKLIST_SLUGS.map((slug) => `/checklists/${slug}`),
+  "/ar/checklists",
+  ...CHECKLIST_SLUGS_AR.map((slug) => `/ar/checklists/${slug}`),
+  "/ar/employee-task-tracker",
   "/compare/zavqera-vs-chatgpt-claude-gemini",
   "/privacy",
   "/terms",

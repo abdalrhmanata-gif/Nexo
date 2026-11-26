@@ -6,4 +6,5 @@ export declare function buildLlmsTxt(lists?: {
   templates?: LlmsLink[];
   comparisons?: LlmsLink[];
   guides?: LlmsLink[];
+  localized?: LlmsLink[];
 }): string;

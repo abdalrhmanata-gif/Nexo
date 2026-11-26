@@ -1,4 +1,5 @@
-import { checklistPath, checklists } from "../../lib/checklists.mjs";
+import { checklistPath, checklists, checklistsIn } from "../../lib/checklists.mjs";
+import { TASK_TRACKER_AR, taskTrackerPath } from "../../lib/task-tracker.mjs";
 import { COMPARE_PATH, compare } from "../../lib/compare";
 import { TOOL_COMPARISONS, toolComparisonPath } from "../../lib/compare-tools.mjs";
 import { guideLocale, guidePath } from "../../lib/guides";
@@ -19,6 +20,12 @@ export function GET() {
       { title: compare.title, url: COMPARE_PATH, description: compare.metaDescription },
     ],
     guides: guideLocale("en").guides.map((item) => ({ title: item.title, url: guidePath("en", item.slug), description: item.metaDescription })),
+    // Written in Arabic for Arabic-speaking teams (not translations).
+    localized: [
+      { title: TASK_TRACKER_AR.title, url: taskTrackerPath("ar"), description: TASK_TRACKER_AR.metaDescription },
+      { title: "قوائم المهام", url: checklistPath(undefined, "ar"), description: "Arabic checklists index." },
+      ...checklistsIn("ar").map((item) => ({ title: item.title, url: checklistPath(item.slug), description: item.metaDescription })),
+    ],
   });
   return new Response(body, {
     headers: {
