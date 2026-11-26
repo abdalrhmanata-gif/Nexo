@@ -228,3 +228,16 @@ test("the examples are processes a paying team repeats, and personal goals still
   // An Arabic reader gets the Arabic handover checklist for a rental inspection.
   assert.match(read("lib/start-plan.ts"), /checklistsIn\(request\.lang\)\.find\(\(item\) => item\.en === match\.id\)/);
 });
+
+test("daily operations land on their checklist in every language, and opening a café stays a business plan", () => {
+  for (const goal of ["Restaurant opening and closing checklist", "فتح وإغلاق المقهى", "Checklist de apertura y cierre", "Ouverture et fermeture du restaurant", "Öffnen und Schließen im Café", "Åpning og stenging av kafé"]) {
+    expectMatch(goal, "checklist", "restaurant-opening-closing-checklist");
+  }
+  for (const goal of ["Kitchen cleaning schedule", "جدول نظافة يومي للمطاعم", "Plan de limpieza de cocina", "Plan de nettoyage cuisine", "Reinigungsplan Küche", "Renholdsplan kjøkken"]) {
+    expectMatch(goal, "checklist", "kitchen-cleaning-schedule");
+  }
+  for (const goal of ["Airbnb cleaning checklist", "تنظيف الشقق المفروشة بين ضيفين", "Limpieza apartamento turístico", "Ménage location saisonnière", "Reinigung Ferienwohnung", "Vask av utleiebolig mellom gjester"]) {
+    expectMatch(goal, "checklist", "short-stay-turnover-cleaning-checklist");
+  }
+  assert.notEqual(matchGoal("Open a small café")?.source, "checklist");
+});
