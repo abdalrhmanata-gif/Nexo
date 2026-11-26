@@ -139,7 +139,7 @@ export function Shell({ children, signedIn = false, siteOperator = false, billin
         <Link className="brand" href="/" prefetch={false}>
           <BrandMark />
           <span className="brand-wordmark">ZAVQERA</span>
-          <span className="brand-subtitle"><LocalizedText en="MISSION CONTROL" /></span>
+          <span className="brand-subtitle"><LocalizedText en="TEAM CHECKLISTS" /></span>
           <span className="visually-hidden"><LocalizedText en="Home" /></span>
         </Link>
         <MobileNavToggle />
@@ -178,7 +178,7 @@ export function Shell({ children, signedIn = false, siteOperator = false, billin
       </div>}
       <main>{children}</main>
       <footer className="footer">
-        <span><LocalizedText en="A calm control plane for bounded AI work." /></span>
+        <span><LocalizedText en="Checklists for small teams, with an owner and proof on every step." /></span>
         {/* Reachable from every page, which is what makes them findable at the
             moment someone wants them: before they sign up. */}
         <span className="footer-links">

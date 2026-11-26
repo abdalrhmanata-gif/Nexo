@@ -53,15 +53,15 @@ const NB: Record<string, string> = {
   "Privacy notice — ZAVQERA":"Personvernerklæring – ZAVQERA",
   "The agreement between you and ZAVQERA: what the service is, what it is not, and the rights you keep.":"Avtalen mellom deg og ZAVQERA: hva tjenesten er, hva den ikke er, og rettighetene du beholder.",
   "Terms of service — ZAVQERA":"Vilkår for bruk – ZAVQERA",
-    "ZAVQERA — turn a goal into steps, evidence and a result":"ZAVQERA – gjør et mål om til steg, dokumentasjon og et resultat",
+    "ZAVQERA — Checklists with an owner and proof on every step":"ZAVQERA – sjekklister med en ansvarlig og bevis på hvert steg",
   "{left} of {limit} AI drafts left this month.":"{left} av {limit} KI-utkast igjen denne måneden.",
   "Working with a team?":"Jobber du i et team?",
   "The AI answer was cut off before it finished, so it was discarded. This attempt used one monthly generation; trying again usually works.":"KI-svaret ble kuttet før det var ferdig, og ble derfor forkastet. Dette forsøket brukte én månedlig generering; et nytt forsøk fungerer som regel.",
   "Your account ID, which the person running this site needs to approve you:":"Konto-ID-en din, som den som drifter nettstedet trenger for å godkjenne deg:",
-  "MISSION CONTROL":"KONTROLLSENTER", "Search":"Søk", "New mission":"Nytt oppdrag",
-  "Business":"Bedrift", "Guides":"Guider", "Checklists":"Sjekklister", "Checklists for the work you repeat":"Sjekklister for arbeidet du gjentar", "Compare with ChatGPT, Claude and Gemini":"Sammenlign med ChatGPT, Claude og Gemini", "Compare with Process Street, Trello and Manifestly":"Sammenlign med Process Street, Trello og Manifestly", "Templates":"Maler", "Pricing":"Priser", "Workspace":"Arbeidsområde",
+  "TEAM CHECKLISTS":"SJEKKLISTER FOR TEAM", "Search":"Søk", "New mission":"Nytt oppdrag",
+  "Business":"Bedrift", "Guides":"Guider", "Checklists":"Sjekklister", "Checklists for the work you repeat":"Sjekklister for arbeidet du gjentar", "Compare with ChatGPT, Claude and Gemini":"Sammenlign med ChatGPT, Claude og Gemini", "Compare with Process Street, Trello and Manifestly":"Sammenlign med Process Street, Trello og Manifestly", "Checklists for small teams":"Sjekklister for små team", "Every step has an owner.":"Hvert steg har en ansvarlig.", "And proof when it is done.":"Og bevis når det er gjort.", "Start from a ready-made checklist or describe your goal. Give each step to someone on your team with a due date, see what is late, and keep a note and a link that show the work was done.":"Start fra en ferdig sjekkliste eller beskriv målet ditt. Gi hvert steg til noen på teamet med en frist, se hva som er forsinket, og ta vare på en merknad og en lenke som viser at arbeidet ble gjort.", "Browse the checklists":"Se sjekklistene", "Free plan, no card. Your team joins free.":"Gratisplan, uten kort. Teamet ditt blir med gratis.", "Plans for other goals":"Planer for andre mål", "Illustrative view of a team checklist":"Illustrasjon av en sjekkliste for et team", "TEAM CHECKLIST":"TEAMSJEKKLISTE", "CHECKLIST":"SJEKKLISTE", "Client onboarding":"Kundeoppstart", "Each step has an owner, a due date and proof.":"Hvert steg har en ansvarlig, en frist og bevis.", "Steps":"Steg", "2 of 9 done":"2 av 9 ferdig", "Get the contract signed":"Få kontrakten signert", "Done by Sara · Proof: signed contract":"Utført av Sara · Bevis: signert kontrakt", "Send the deposit request":"Send forskuddsfaktura", "Done by Omar · Proof: invoice paid":"Utført av Omar · Bevis: faktura betalt", "Get access to the accounts":"Få tilgang til kontoene", "Lina · 2 days late":"Lina · 2 dager forsinket", "Owner on every step":"Ansvarlig på hvert steg", "Proof you can check":"Bevis du kan sjekke", "An owner on every step":"En ansvarlig på hvert steg", "Everyone sees what is theirs":"Alle ser hva som er deres", "A due date on every step":"En frist på hvert steg", "Late steps stand out":"Forsinkede steg synes tydelig", "Proof when it is done":"Bevis når det er gjort", "A note and a link anyone can check":"En merknad og en lenke alle kan sjekke", "Built for the work you repeat":"Laget for arbeidet du gjentar", "Onboarding, month-end, handoffs. Done the same way every time.":"Oppstart, månedsslutt, overleveringer. Gjort likt hver gang.", "ZAVQERA turns the processes a small team repeats into checklists everyone can follow, with the proof kept in one place.":"ZAVQERA gjør prosessene et lite team gjentar til sjekklister alle kan følge, med bevisene samlet på ett sted.", "Start from a ready-made checklist":"Start fra en ferdig sjekkliste", "Employee onboarding, month-end close, client handoffs and more, each step saying what proof to keep.":"Oppstart av ansatte, månedsavslutning, kundeoverleveringer og mer, der hvert steg sier hvilket bevis du skal ta vare på.", "Give every step an owner":"Gi hvert steg en ansvarlig", "Assign steps to people on your team with a due date. Each person sees what is theirs and what is late.":"Gi steg til personer på teamet med en frist. Hver person ser hva som er deres og hva som er forsinket.", "Keep the proof":"Ta vare på beviset", "When a step is done, save a note and a link, so anyone can check the work later.":"Når et steg er ferdig, lagrer du en merknad og en lenke, så alle kan sjekke arbeidet senere.", "Three steps, then repeat.":"Tre steg, og så på nytt.", "Pick a checklist or describe your goal, share the work, and keep the record.":"Velg en sjekkliste eller beskriv målet ditt, del arbeidet og ta vare på dokumentasjonen.", "Pick":"Velg", "Start from a ready-made checklist, or let AI draft the steps from your goal.":"Start fra en ferdig sjekkliste, eller la AI lage et utkast til stegene fra målet ditt.", "Assign":"Fordel", "Give each step an owner and a due date. Invite your team for free.":"Gi hvert steg en ansvarlig og en frist. Inviter teamet ditt gratis.", "Prove":"Bevis", "Mark steps done with a note and a link. Late steps stand out.":"Merk steg som ferdige med en merknad og en lenke. Forsinkede steg synes tydelig.", "Start with one checklist":"Start med én sjekkliste", "Run your next process with an owner on every step.":"Kjør neste prosess med en ansvarlig på hvert steg.", "Pick a checklist, invite your team and see who does what, by when.":"Velg en sjekkliste, inviter teamet og se hvem som gjør hva, og når.", "Templates":"Maler", "Pricing":"Priser", "Workspace":"Arbeidsområde",
   "Opportunity Intelligence":"Mulighetsanalyse", "Notifications":"Varsler", "Sign out":"Logg ut",
-  "A calm control plane for bounded AI work.":"Et oversiktlig kontrollsenter for avgrenset KI-arbeid.",
+  "Checklists for small teams, with an owner and proof on every step.":"Sjekklister for små team, med en ansvarlig og bevis på hvert steg.",
   "Business workspace":"Arbeidsområde for bedrifter", "Run AI work with clear boundaries.":"Organiser KI-arbeid med tydelige rammer.",
   "Total missions":"Oppdrag totalt", "Active":"Aktive", "Completed":"Fullførte", "Needs your input":"Trenger avklaring",
   "Recent missions":"Nylige oppdrag", "Open workspace":"Åpne arbeidsområdet",
@@ -167,56 +167,56 @@ const NB: Record<string, string> = {
   "That confirmation link was incomplete. Open the most recent link from your email.":"Bekreftelseslenken var ufullstendig. Åpne den nyeste lenken fra e-posten din.",
   "/ Mission detail":"/ Oppdragsdetaljer",
   "/ New mission":"/ Nytt oppdrag",
-  "2 of 3 ready":"2 av 3 klare",
+  
   "A mission is only verified once evidence has been recorded through the authenticated server boundary. Work being reported as finished is not the same as ZAVQERA considering it verified.":"Et oppdrag er først verifisert når dokumentasjon er registrert gjennom den autentiserte servergrensen. At arbeid meldes ferdig, er ikke det samme som at ZAVQERA anser det som verifisert.",
-  "A system for making progress":"Et system for å komme videre",
-  "ACTIVE MISSION":"AKTIVT OPPDRAG",
+  
+  
   "Actions":"Handlinger",
   "Activity":"Aktivitet",
   "Add an action":"Legg til en handling",
   "All missions":"Alle oppdrag",
   "An outcome can only be committed after a verification is recorded.":"Et resultat kan først bekreftes etter at en verifisering er registrert.",
   "At a glance":"Kort oppsummert",
-  "Authority bounded":"Avgrenset myndighet",
-  "Begin with the workflow you have today. Keep control of what happens next.":"Start med arbeidsflyten du har i dag. Behold kontrollen over hva som skjer videre.",
+  
+  
   "Browse mission templates":"Bla i oppdragsmaler",
   "Build on a proven starting point":"Bygg på et utprøvd utgangspunkt",
   "Cancel":"Avbryt",
   "Changes are accepted only after the server confirms the current version.":"Endringer godtas først når serveren bekrefter gjeldende versjon.",
-  "Check evidence before you accept an outcome.":"Kontroller dokumentasjonen før du godtar et resultat.",
+  
   "Commit verified outcome":"Bekreft verifisert resultat",
   "Compare opportunities before committing":"Sammenlign muligheter før du forplikter deg",
-  "Completed · Clear outcome recorded":"Fullført · Tydelig resultat registrert",
-  "Completed · Notes captured":"Fullført · Notater lagret",
+  
+  
   "Confidence":"Tillit",
   "Create mission":"Opprett oppdrag",
   "Danger zone":"Faresone",
   "Define":"Definer",
-  "Define the success criteria":"Definer suksesskriteriene",
+  
   "Deterministic guidance":"Deterministisk veiledning",
   "Edit this mission":"Rediger dette oppdraget",
   "Evaluate an idea":"Vurder en idé",
-  "Every Mission starts with an intended outcome and remains reviewable as the work changes.":"Hvert oppdrag starter med et tiltenkt resultat og kan gjennomgås etter hvert som arbeidet endrer seg.",
+  
   "Every mission below is a stated outcome and the work required to reach it.":"Hvert oppdrag nedenfor er et uttalt resultat og arbeidet som kreves for å nå det.",
   "Everything in Free":"Alt i Gratis",
   "Everything in Plus":"Alt i Plus",
   "Evidence summary":"Dokumentasjonssammendrag",
-  "Explicit goals":"Tydelige mål",
-  "Explore Opportunity Intelligence":"Utforsk Mulighetsanalyse",
+  
+  
   "First steps":"Første steg",
-  "From intent to action.":"Fra hensikt til handling.",
-  "Gather initial evidence":"Samle innledende dokumentasjon",
+  
+  
   "How it works":"Slik fungerer det",
-  "Human oversight":"Menneskelig tilsyn",
+  
   "Illustrative view":"Illustrasjon",
   "Intent":"Hensikt",
   "It may have been deleted, or it belongs to another workspace.":"Det kan være slettet, eller det tilhører et annet arbeidsområde.",
-  "Keep decisions in your hands":"Behold beslutningene selv",
-  "Know what success means":"Vit hva suksess betyr",
+  
+  
   "Last updated":"Sist oppdatert",
-  "Less uncertainty. Better next steps.":"Mindre usikkerhet. Bedre neste steg.",
+  
   "Loading workspace…":"Laster arbeidsområdet …",
-  "Make the next step clearer.":"Gjør neste steg tydeligere.",
+  
   "Mission":"Oppdrag",
   "Mission name":"Oppdragsnavn",
   "Mission setup":"Oppdragsoppsett",
@@ -224,8 +224,8 @@ const NB: Record<string, string> = {
   "Mission unavailable":"Oppdraget er utilgjengelig",
   "Most recently updated first.":"Sist oppdaterte først.",
   "Move mission":"Flytt oppdrag",
-  "Next action · Human decision required":"Neste handling · Krever menneskelig beslutning",
-  "Next steps":"Neste steg",
+  
+  
   "Next up":"Nå står for tur",
   "No actions have been added yet.":"Ingen handlinger er lagt til ennå.",
   "No history has been recorded for this mission yet.":"Ingen historikk er registrert for dette oppdraget ennå.",
@@ -237,48 +237,48 @@ const NB: Record<string, string> = {
   "Optional: the date you intend to check back. Leave empty for no reminder.":"Valgfritt: datoen du planlegger å følge opp. La stå tom for ingen påminnelse.",
   "Outcome":"Resultat",
   "Outcome result":"Resultatutfall",
-  "Outcome: decide whether this idea is worth pursuing, using evidence and a small test.":"Resultat: avgjør om idéen er verdt å forfølge, med dokumentasjon og en liten test.",
+  
   "Owner":"Eier",
   "Plan health":"Plantilstand",
   "Plans change. Add a step whenever you discover one.":"Planer endrer seg. Legg til et steg når du oppdager et.",
-  "Progress is reviewable":"Fremdriften kan gjennomgås",
-  "Progress you can explain.":"Fremdrift du kan forklare.",
+  
+  
   "Recent checkpoints":"Nylige sjekkpunkter",
   "Record verification":"Registrer verifisering",
   "Review before action. Clear boundaries. No false certainty.":"Gjennomgang før handling. Tydelige rammer. Ingen falsk sikkerhet.",
-  "Review the weakest assumption":"Gå gjennom den svakeste antakelsen",
+  
   "Save mission":"Lagre oppdrag",
   "Saving this will remove the follow-up date, because it only applies while Waiting.":"Lagring fjerner oppfølgingsdatoen, fordi den bare gjelder mens oppdraget venter.",
-  "See actions and blockers":"Se handlinger og hindringer",
+  
   "Show all":"Vis alle",
   "Start with a concrete outcome":"Start med et konkret resultat",
   "Start with one Mission":"Start med ett oppdrag",
   "Started from Opportunity Intelligence.":"Startet fra Mulighetsanalyse.",
-  "State the goal and what good looks like.":"Beskriv målet og hva som er bra.",
+  
   "Success criteria":"Suksesskriterier",
   "Success score":"Suksesspoeng",
   "The priority score is a rule-based decision aid, not a verified forecast. Review every field and confirm the source before creating the Mission.":"Prioritetsscoren er et regelbasert beslutningshjelpemiddel, ikke en verifisert prognose. Gå gjennom hvert felt og bekreft kilden før du oppretter oppdraget.",
   "The saved actions and lifecycle do not show a known planning issue.":"De lagrede handlingene og livsløpet viser ingen kjent planleggingsfeil.",
   "The work this mission needs":"Arbeidet dette oppdraget trenger",
   "The work you already know about, in the order you would do it. You can add more at any time. Leave it empty and the mission page will suggest a plan.":"Arbeidet du allerede kjenner til, i den rekkefølgen du ville gjort det. Du kan legge til mer når som helst. La feltet stå tomt, så foreslår oppdragssiden en plan.",
-  "Track steps, status, and decisions that need you.":"Følg steg, status og beslutninger som krever deg.",
+  
   "Use a template":"Bruk en mal",
   "Use plain language. Keep the decision you want to make visible.":"Bruk klart språk. Hold beslutningen du vil ta synlig.",
-  "Validate a new opportunity":"Valider en ny mulighet",
+  
   "Verification":"Verifisering",
   "Verification criteria":"Verifiseringskriterier",
   "Verified":"Verifisert",
-  "Visible work":"Synlig arbeid",
+  
   "We could not find that mission.":"Vi fant ikke det oppdraget.",
   "What good looks like":"Hva som er bra",
   "What needs your attention":"Hva som krever oppmerksomhet",
   "What should I do next?":"Hva bør jeg gjøre nå?",
   "Where this mission stands":"Slik ligger oppdraget an",
-  "With control at every step.":"Med kontroll i hvert steg.",
+  
   "Work":"Arbeid",
   "Yes, delete permanently":"Ja, slett permanent",
   "Your mission is saved to your private workspace. Ownership comes from your authenticated session.":"Oppdraget lagres i ditt private arbeidsområde. Eierskapet følger av din autentiserte økt.",
-  "Zavqera brings planning, execution tracking, and decision support into one calm workspace.":"Zavqera samler planlegging, oppfølging av gjennomføring og beslutningsstøtte i ett oversiktlig arbeidsområde.",
+  
   "optional":"valgfritt",
   "Sign in to open your workspace.":"Logg inn for å åpne arbeidsområdet.",
   "Sign in to open the business workspace.":"Logg inn for å åpne bedriftsarbeidsområdet.",
@@ -402,7 +402,7 @@ const NB: Record<string, string> = {
   "This Mission cannot be deleted because its historical provenance must be preserved.":"Dette oppdraget kan ikke slettes fordi den historiske opprinnelsen må bevares.",
   "Your session has expired. Sign in again to continue.":"Økten er utløpt. Logg inn på nytt for å fortsette.",
   "Business workspace metrics":"Nøkkeltall for bedriftsarbeidsområdet",
-  "Illustrative view of a governed Mission":"Illustrasjon av et styrt oppdrag",
+  
   "Product principles":"Produktprinsipper",
   "What needs to happen next?":"Hva må skje nå?",
   "User-provided source; not fetched by Zavqera":"Kilde oppgitt av brukeren; ikke hentet av Zavqera",
@@ -516,8 +516,8 @@ const NB: Record<string, string> = {
   "Terms":"Vilkår",
   "Privacy notice":"Personvernerklæring",
   "Terms of service":"Vilkår for bruk",
-  "Mission control for goals you have to get right":"Kontrollsenter for mål du må treffe",
-  "Write the outcome you want. Get a first plan back, with the weak parts of your own wording pointed out — then keep the evidence that you reached it.":"Skriv målet du vil nå. Få en første plan tilbake, med de svake punktene i din egen formulering påpekt — og behold dokumentasjonen på at du kom i mål.",
+  
+  
   "Filled in from this mission's own success criteria. Change it if what you checked was different.":"Fylt ut fra oppdragets egne suksesskriterier. Endre det hvis du sjekket noe annet.",
   "This mission records no success criteria, so there is nothing to fill in. Write what you actually checked.":"Dette oppdraget har ingen suksesskriterier, så det er ingenting å fylle ut. Skriv hva du faktisk sjekket.",
   "Completed steps you can cite:":"Fullførte steg du kan vise til:",
@@ -529,12 +529,12 @@ const NB: Record<string, string> = {
   "Noted — you will hear from us once, when it is ready.":"Notert — du hører fra oss én gang, når den er klar.",
   "One email, when this plan opens. Nothing else, and no account needed. You can ask us to delete your address at any time.":"Én e-post, når denne planen åpner. Ingenting annet, og ingen konto nødvendig. Du kan når som helst be oss slette adressen din.",
   "That did not save. Check your connection and try again.":"Det ble ikke lagret. Sjekk forbindelsen og prøv igjen.",
-  "Make intent explicit":"Gjør hensikten tydelig",
-  "Define the outcome, success criteria, and boundaries before work begins.":"Definer målet, suksesskriteriene og rammene før arbeidet starter.",
-  "Know what happens next":"Vit hva som skjer videre",
-  "Track each Mission, its actions, blockers, and progress in one place.":"Følg hvert oppdrag, handlingene, hindringene og fremdriften på ett sted.",
-  "Decide with evidence":"Bestem med dokumentasjon",
-  "Compare opportunities, record what you know, and expose what is still uncertain.":"Sammenlign muligheter, noter det du vet, og få frem det som fortsatt er usikkert.",
+  
+  
+  
+  
+  
+  
   "Strategic fit":"Strategisk treff",
   "How well does it match the user's goal and capabilities? (25%)":"Hvor godt passer den til brukerens mål og kapasitet? (25 %)",
   "Potential value":"Mulig verdi",
@@ -1079,15 +1079,15 @@ const AR: Record<string, string> = {
   "Privacy notice — ZAVQERA":"إشعار الخصوصية — ZAVQERA",
   "The agreement between you and ZAVQERA: what the service is, what it is not, and the rights you keep.":"الاتفاق بينك وبين ZAVQERA: ما هي الخدمة، وما ليست، والحقوق التي تحتفظ بها.",
   "Terms of service — ZAVQERA":"شروط الخدمة — ZAVQERA",
-    "ZAVQERA — turn a goal into steps, evidence and a result":"ZAVQERA — حوّل هدفك إلى خطوات وأدلة ونتيجة",
+    "ZAVQERA — Checklists with an owner and proof on every step":"ZAVQERA — قوائم مهام بمسؤول وإثبات لكل خطوة",
   "{left} of {limit} AI drafts left this month.":"المسودات المتبقية بالذكاء الاصطناعي هذا الشهر: {left} من {limit}.",
   "Working with a team?":"تعمل مع فريق؟",
   "The AI answer was cut off before it finished, so it was discarded. This attempt used one monthly generation; trying again usually works.":"انقطع ردّ الذكاء الاصطناعي قبل أن يكتمل، فتم تجاهله. استهلكت هذه المحاولة توليداً شهرياً واحداً؛ وإعادة المحاولة تنجح في الغالب.",
   "Your account ID, which the person running this site needs to approve you:":"معرّف حسابك، ويحتاجه من يدير هذا الموقع ليوافق عليك:",
-  "MISSION CONTROL":"مركز التحكم", "Search":"بحث", "New mission":"مهمة جديدة",
-  "Business":"الأعمال", "Guides":"الأدلة", "Checklists":"قوائم التحقق", "Checklists for the work you repeat":"قوائم تحقق للعمل الذي تكرّره", "Compare with ChatGPT, Claude and Gemini":"قارن مع ChatGPT وClaude وGemini", "Compare with Process Street, Trello and Manifestly":"قارن مع Process Street وTrello وManifestly", "Templates":"القوالب", "Pricing":"الأسعار", "Workspace":"مساحة العمل",
+  "TEAM CHECKLISTS":"قوائم مهام الفريق", "Search":"بحث", "New mission":"مهمة جديدة",
+  "Business":"الأعمال", "Guides":"الأدلة", "Checklists":"قوائم التحقق", "Checklists for the work you repeat":"قوائم تحقق للعمل الذي تكرّره", "Compare with ChatGPT, Claude and Gemini":"قارن مع ChatGPT وClaude وGemini", "Compare with Process Street, Trello and Manifestly":"قارن مع Process Street وTrello وManifestly", "Checklists for small teams":"قوائم مهام للفرق الصغيرة", "Every step has an owner.":"لكل خطوة مسؤول.", "And proof when it is done.":"وإثبات عند إنجازها.", "Start from a ready-made checklist or describe your goal. Give each step to someone on your team with a due date, see what is late, and keep a note and a link that show the work was done.":"ابدأ من قائمة جاهزة أو صف هدفك. أعطِ كل خطوة لشخص من فريقك مع موعد نهائي، وشاهد ما تأخر، واحتفظ بملاحظة ورابط يثبتان أن العمل أُنجز.", "Browse the checklists":"تصفّح القوائم", "Free plan, no card. Your team joins free.":"خطة مجانية بلا بطاقة. ينضم فريقك مجانًا.", "Plans for other goals":"خطط لأهداف أخرى", "Illustrative view of a team checklist":"عرض توضيحي لقائمة مهام فريق", "TEAM CHECKLIST":"قائمة الفريق", "CHECKLIST":"قائمة مهام", "Client onboarding":"استقبال عميل جديد", "Each step has an owner, a due date and proof.":"لكل خطوة مسؤول وموعد وإثبات.", "Steps":"الخطوات", "2 of 9 done":"أُنجزت 2 من 9", "Get the contract signed":"توقيع العقد", "Done by Sara · Proof: signed contract":"أنجزتها سارة · الإثبات: العقد الموقّع", "Send the deposit request":"إرسال طلب الدفعة المقدمة", "Done by Omar · Proof: invoice paid":"أنجزها عمر · الإثبات: الفاتورة مدفوعة", "Get access to the accounts":"الحصول على صلاحية الحسابات", "Lina · 2 days late":"لينا · متأخرة يومين", "Owner on every step":"لكل خطوة مسؤول", "Proof you can check":"إثبات يمكن التحقق منه", "An owner on every step":"مسؤول لكل خطوة", "Everyone sees what is theirs":"يرى كل شخص ما يخصه", "A due date on every step":"موعد لكل خطوة", "Late steps stand out":"الخطوات المتأخرة واضحة", "Proof when it is done":"إثبات عند الإنجاز", "A note and a link anyone can check":"ملاحظة ورابط يستطيع أي أحد التحقق منهما", "Built for the work you repeat":"مصمَّم للعمل الذي تكرّره", "Onboarding, month-end, handoffs. Done the same way every time.":"استقبال الموظفين، وإقفال الشهر، وتسليم المشاريع. بالطريقة نفسها كل مرة.", "ZAVQERA turns the processes a small team repeats into checklists everyone can follow, with the proof kept in one place.":"يحوّل ZAVQERA الإجراءات التي يكرّرها الفريق الصغير إلى قوائم يتبعها الجميع، مع حفظ الإثباتات في مكان واحد.", "Start from a ready-made checklist":"ابدأ من قائمة جاهزة", "Employee onboarding, month-end close, client handoffs and more, each step saying what proof to keep.":"استقبال الموظفين، وإقفال نهاية الشهر، وتسليم المشاريع للعملاء وغيرها، وكل خطوة تقول لك ما الإثبات الذي تحتفظ به.", "Give every step an owner":"أعطِ كل خطوة مسؤولًا", "Assign steps to people on your team with a due date. Each person sees what is theirs and what is late.":"أسند الخطوات إلى أشخاص من فريقك مع موعد نهائي. يرى كل شخص ما يخصه وما تأخر.", "Keep the proof":"احتفظ بالإثبات", "When a step is done, save a note and a link, so anyone can check the work later.":"عند إنجاز خطوة احفظ ملاحظة ورابطًا، ليتمكن أي أحد من التحقق من العمل لاحقًا.", "Three steps, then repeat.":"ثلاث خطوات، ثم كرّر.", "Pick a checklist or describe your goal, share the work, and keep the record.":"اختر قائمة أو صف هدفك، ووزّع العمل، واحتفظ بالسجل.", "Pick":"اختر", "Start from a ready-made checklist, or let AI draft the steps from your goal.":"ابدأ من قائمة جاهزة، أو دع الذكاء الاصطناعي يكتب مسودة الخطوات من هدفك.", "Assign":"وزّع", "Give each step an owner and a due date. Invite your team for free.":"أعطِ كل خطوة مسؤولًا وموعدًا. ادعُ فريقك مجانًا.", "Prove":"أثبت", "Mark steps done with a note and a link. Late steps stand out.":"علّم الخطوات المنجزة بملاحظة ورابط. الخطوات المتأخرة واضحة.", "Start with one checklist":"ابدأ بقائمة واحدة", "Run your next process with an owner on every step.":"نفّذ إجراءك القادم مع مسؤول لكل خطوة.", "Pick a checklist, invite your team and see who does what, by when.":"اختر قائمة، وادعُ فريقك، واعرف من يفعل ماذا ومتى.", "Templates":"القوالب", "Pricing":"الأسعار", "Workspace":"مساحة العمل",
   "Opportunity Intelligence":"تحليل الفرص", "Notifications":"الإشعارات", "Sign out":"تسجيل الخروج",
-  "A calm control plane for bounded AI work.":"مركز تحكم واضح للعمل بالذكاء الاصطناعي ضمن حدود محددة.",
+  "Checklists for small teams, with an owner and proof on every step.":"قوائم مهام للفرق الصغيرة، بمسؤول وإثبات لكل خطوة.",
   "Business workspace":"مساحة عمل الشركات", "Run AI work with clear boundaries.":"أدر عمل الذكاء الاصطناعي ضمن حدود واضحة.",
   "Total missions":"إجمالي المهام", "Active":"نشطة", "Completed":"مكتملة", "Needs your input":"تحتاج تدخلك",
   "Recent missions":"المهام الأخيرة", "Open workspace":"افتح مساحة العمل",
@@ -1193,56 +1193,56 @@ const AR: Record<string, string> = {
   "That confirmation link was incomplete. Open the most recent link from your email.":"رابط التأكيد كان ناقصاً. افتح أحدث رابط من بريدك.",
   "/ Mission detail":"/ تفاصيل المهمة",
   "/ New mission":"/ مهمة جديدة",
-  "2 of 3 ready":"2 من 3 جاهزة",
+  
   "A mission is only verified once evidence has been recorded through the authenticated server boundary. Work being reported as finished is not the same as ZAVQERA considering it verified.":"لا تُعدّ المهمة موثّقة إلا بعد تسجيل الأدلة عبر حدود الخادم المصادَق عليها. الإبلاغ عن إنجاز العمل ليس كاعتبار ZAVQERA له موثّقاً.",
-  "A system for making progress":"نظام لإحراز التقدّم",
-  "ACTIVE MISSION":"مهمة نشطة",
+  
+  
   "Actions":"الإجراءات",
   "Activity":"النشاط",
   "Add an action":"أضف إجراءً",
   "All missions":"كل المهام",
   "An outcome can only be committed after a verification is recorded.":"لا يمكن اعتماد النتيجة إلا بعد تسجيل عملية تحقق.",
   "At a glance":"نظرة سريعة",
-  "Authority bounded":"صلاحيات محدودة",
-  "Begin with the workflow you have today. Keep control of what happens next.":"ابدأ بسير العمل الذي لديك اليوم. واحتفظ بالتحكم فيما يحدث تالياً.",
+  
+  
   "Browse mission templates":"تصفّح قوالب المهام",
   "Build on a proven starting point":"ابنِ على نقطة بداية مجرَّبة",
   "Cancel":"إلغاء",
   "Changes are accepted only after the server confirms the current version.":"لا تُقبل التغييرات إلا بعد تأكيد الخادم للإصدار الحالي.",
-  "Check evidence before you accept an outcome.":"تحقّق من الأدلة قبل قبول أي نتيجة.",
+  
   "Commit verified outcome":"اعتمد النتيجة الموثّقة",
   "Compare opportunities before committing":"قارن الفرص قبل الالتزام",
-  "Completed · Clear outcome recorded":"مكتمل · نتيجة واضحة مسجَّلة",
-  "Completed · Notes captured":"مكتمل · ملاحظات محفوظة",
+  
+  
   "Confidence":"درجة الثقة",
   "Create mission":"أنشئ المهمة",
   "Danger zone":"منطقة الخطر",
   "Define":"حدّد",
-  "Define the success criteria":"حدّد معايير النجاح",
+  
   "Deterministic guidance":"إرشاد حتمي",
   "Edit this mission":"عدّل هذه المهمة",
   "Evaluate an idea":"قيّم فكرة",
-  "Every Mission starts with an intended outcome and remains reviewable as the work changes.":"كل مهمة تبدأ بنتيجة مقصودة وتبقى قابلة للمراجعة مع تغيّر العمل.",
+  
   "Every mission below is a stated outcome and the work required to reach it.":"كل مهمة أدناه هي نتيجة معلَنة والعمل اللازم للوصول إليها.",
   "Everything in Free":"كل ما في الخطة المجانية",
   "Everything in Plus":"كل ما في خطة Plus",
   "Evidence summary":"ملخّص الأدلة",
-  "Explicit goals":"أهداف صريحة",
-  "Explore Opportunity Intelligence":"استكشف تحليل الفرص",
+  
+  
   "First steps":"الخطوات الأولى",
-  "From intent to action.":"من النيّة إلى العمل.",
-  "Gather initial evidence":"اجمع الأدلة الأولية",
+  
+  
   "How it works":"كيف يعمل",
-  "Human oversight":"إشراف بشري",
+  
   "Illustrative view":"عرض توضيحي",
   "Intent":"النيّة",
   "It may have been deleted, or it belongs to another workspace.":"ربما حُذفت، أو أنها تخصّ مساحة عمل أخرى.",
-  "Keep decisions in your hands":"أبقِ القرارات بين يديك",
-  "Know what success means":"اعرف معنى النجاح",
+  
+  
   "Last updated":"آخر تحديث",
-  "Less uncertainty. Better next steps.":"يقين أكبر. خطوات تالية أفضل.",
+  
   "Loading workspace…":"جارٍ تحميل مساحة العمل…",
-  "Make the next step clearer.":"اجعل الخطوة التالية أوضح.",
+  
   "Mission":"مهمة",
   "Mission name":"اسم المهمة",
   "Mission setup":"إعداد المهمة",
@@ -1250,8 +1250,8 @@ const AR: Record<string, string> = {
   "Mission unavailable":"المهمة غير متاحة",
   "Most recently updated first.":"الأحدث تحديثاً أولاً.",
   "Move mission":"انقل المهمة",
-  "Next action · Human decision required":"الإجراء التالي · يتطلب قراراً بشرياً",
-  "Next steps":"الخطوات التالية",
+  
+  
   "Next up":"التالي",
   "No actions have been added yet.":"لم تُضف أي إجراءات بعد.",
   "No history has been recorded for this mission yet.":"لم يُسجَّل أي سجل لهذه المهمة بعد.",
@@ -1263,48 +1263,48 @@ const AR: Record<string, string> = {
   "Optional: the date you intend to check back. Leave empty for no reminder.":"اختياري: التاريخ الذي تنوي المراجعة فيه. اتركه فارغاً لإلغاء التذكير.",
   "Outcome":"النتيجة",
   "Outcome result":"حصيلة النتيجة",
-  "Outcome: decide whether this idea is worth pursuing, using evidence and a small test.":"النتيجة: قرّر إن كانت هذه الفكرة تستحق المتابعة، بالأدلة واختبار صغير.",
+  
   "Owner":"المالك",
   "Plan health":"سلامة الخطة",
   "Plans change. Add a step whenever you discover one.":"الخطط تتغيّر. أضف خطوة كلما اكتشفت واحدة.",
-  "Progress is reviewable":"التقدّم قابل للمراجعة",
-  "Progress you can explain.":"تقدّم يمكنك تفسيره.",
+  
+  
   "Recent checkpoints":"نقاط التحقق الأخيرة",
   "Record verification":"سجّل التحقق",
   "Review before action. Clear boundaries. No false certainty.":"مراجعة قبل الفعل. حدود واضحة. بلا يقين زائف.",
-  "Review the weakest assumption":"راجع أضعف افتراض",
+  
   "Save mission":"احفظ المهمة",
   "Saving this will remove the follow-up date, because it only applies while Waiting.":"الحفظ سيزيل تاريخ المتابعة، لأنه ينطبق فقط أثناء حالة الانتظار.",
-  "See actions and blockers":"اطّلع على الإجراءات والعوائق",
+  
   "Show all":"عرض الكل",
   "Start with a concrete outcome":"ابدأ بنتيجة ملموسة",
   "Start with one Mission":"ابدأ بمهمة واحدة",
   "Started from Opportunity Intelligence.":"بدأت من تحليل الفرص.",
-  "State the goal and what good looks like.":"حدّد الهدف وشكل النجاح.",
+  
   "Success criteria":"معايير النجاح",
   "Success score":"درجة النجاح",
   "The priority score is a rule-based decision aid, not a verified forecast. Review every field and confirm the source before creating the Mission.":"درجة الأولوية أداة مساعدة للقرار قائمة على قواعد، لا تنبؤاً موثّقاً. راجع كل حقل وأكّد المصدر قبل إنشاء المهمة.",
   "The saved actions and lifecycle do not show a known planning issue.":"الإجراءات المحفوظة ودورة الحياة لا تُظهر مشكلة تخطيط معروفة.",
   "The work this mission needs":"العمل الذي تحتاجه هذه المهمة",
   "The work you already know about, in the order you would do it. You can add more at any time. Leave it empty and the mission page will suggest a plan.":"العمل الذي تعرفه مسبقاً، بالترتيب الذي ستنفّذه به. يمكنك الإضافة في أي وقت. اتركه فارغاً وستقترح صفحة المهمة خطة.",
-  "Track steps, status, and decisions that need you.":"تابع الخطوات والحالة والقرارات التي تحتاجك.",
+  
   "Use a template":"استخدم قالباً",
   "Use plain language. Keep the decision you want to make visible.":"استخدم لغة واضحة. وأبقِ القرار الذي تريد اتخاذه ظاهراً.",
-  "Validate a new opportunity":"تحقّق من فرصة جديدة",
+  
   "Verification":"التحقق",
   "Verification criteria":"معايير التحقق",
   "Verified":"موثّقة",
-  "Visible work":"عمل مرئي",
+  
   "We could not find that mission.":"لم نعثر على تلك المهمة.",
   "What good looks like":"شكل النجاح",
   "What needs your attention":"ما يحتاج انتباهك",
   "What should I do next?":"ما الذي أفعله تالياً؟",
   "Where this mission stands":"أين تقف هذه المهمة",
-  "With control at every step.":"مع التحكم في كل خطوة.",
+  
   "Work":"العمل",
   "Yes, delete permanently":"نعم، احذف نهائياً",
   "Your mission is saved to your private workspace. Ownership comes from your authenticated session.":"تُحفظ مهمتك في مساحة عملك الخاصة. والملكية تأتي من جلستك المصادَق عليها.",
-  "Zavqera brings planning, execution tracking, and decision support into one calm workspace.":"يجمع ZAVQERA التخطيط وتتبّع التنفيذ ودعم القرار في مساحة عمل واحدة هادئة.",
+  
   "optional":"اختياري",
   "Sign in to open your workspace.":"سجّل الدخول لفتح مساحة عملك.",
   "Sign in to open the business workspace.":"سجّل الدخول لفتح مساحة عمل الشركات.",
@@ -1428,7 +1428,7 @@ const AR: Record<string, string> = {
   "This Mission cannot be deleted because its historical provenance must be preserved.":"لا يمكن حذف هذه المهمة لأن سجلّها التاريخي يجب أن يُحفظ.",
   "Your session has expired. Sign in again to continue.":"انتهت صلاحية جلستك. سجّل الدخول مجدداً للمتابعة.",
   "Business workspace metrics":"مؤشرات مساحة عمل الأعمال",
-  "Illustrative view of a governed Mission":"عرض توضيحي لمهمة خاضعة للحوكمة",
+  
   "Product principles":"مبادئ المنتج",
   "What needs to happen next?":"ما الخطوة التالية المطلوبة؟",
   "User-provided source; not fetched by Zavqera":"مصدر أدخله المستخدم؛ لم تجلبه Zavqera",
@@ -1542,8 +1542,8 @@ const AR: Record<string, string> = {
   "Terms":"الشروط",
   "Privacy notice":"إشعار الخصوصية",
   "Terms of service":"شروط الخدمة",
-  "Mission control for goals you have to get right":"مركز تحكم للأهداف التي لا تحتمل الخطأ",
-  "Write the outcome you want. Get a first plan back, with the weak parts of your own wording pointed out — then keep the evidence that you reached it.":"اكتب النتيجة التي تريدها. تعود إليك خطة أولى، مع إشارة إلى مواضع الضعف في صياغتك أنت — ثم احتفظ بالدليل على بلوغها.",
+  
+  
   "Filled in from this mission's own success criteria. Change it if what you checked was different.":"مملوءة من معايير نجاح هذه المهمة نفسها. غيّرها إن كان ما فحصته مختلفاً.",
   "This mission records no success criteria, so there is nothing to fill in. Write what you actually checked.":"هذه المهمة بلا معايير نجاح مسجّلة، فلا شيء يُملأ. اكتب ما فحصته فعلاً.",
   "Completed steps you can cite:":"خطوات مكتملة يمكنك الاستشهاد بها:",
@@ -1555,12 +1555,12 @@ const AR: Record<string, string> = {
   "Noted — you will hear from us once, when it is ready.":"سُجّل — ستصلك رسالة واحدة عندما تجهز.",
   "One email, when this plan opens. Nothing else, and no account needed. You can ask us to delete your address at any time.":"رسالة واحدة عند فتح هذه الخطة. لا شيء غيرها، ولا حاجة لحساب. ويمكنك أن تطلب حذف عنوانك في أي وقت.",
   "That did not save. Check your connection and try again.":"لم يُحفظ. تحقق من اتصالك وحاول مجدداً.",
-  "Make intent explicit":"اجعل النيّة صريحة",
-  "Define the outcome, success criteria, and boundaries before work begins.":"حدّد النتيجة ومعايير النجاح والحدود قبل أن يبدأ العمل.",
-  "Know what happens next":"اعرف ما سيحدث تالياً",
-  "Track each Mission, its actions, blockers, and progress in one place.":"تابع كل مهمة وإجراءاتها وعوائقها وتقدّمها في مكان واحد.",
-  "Decide with evidence":"قرّر بالدليل",
-  "Compare opportunities, record what you know, and expose what is still uncertain.":"قارن الفرص، وسجّل ما تعرفه، وأظهر ما لا يزال غير مؤكد.",
+  
+  
+  
+  
+  
+  
   "Strategic fit":"الملاءمة الاستراتيجية",
   "How well does it match the user's goal and capabilities? (25%)":"إلى أي مدى تلائم هدف المستخدم وقدراته؟ (٢٥٪)",
   "Potential value":"القيمة المحتملة",
@@ -2105,16 +2105,16 @@ const ES: Record<string, string> = {
   "Privacy notice — ZAVQERA":"Aviso de privacidad — ZAVQERA",
   "The agreement between you and ZAVQERA: what the service is, what it is not, and the rights you keep.":"El acuerdo entre tú y ZAVQERA: qué es el servicio, qué no es y los derechos que conservas.",
   "Terms of service — ZAVQERA":"Condiciones del servicio — ZAVQERA",
-    "ZAVQERA — turn a goal into steps, evidence and a result":"ZAVQERA: convierte un objetivo en pasos, evidencias y un resultado",
+    "ZAVQERA — Checklists with an owner and proof on every step":"ZAVQERA: listas de verificación con responsable y prueba en cada paso",
   "{left} of {limit} AI drafts left this month.":"Te quedan {left} de {limit} borradores con IA este mes.",
   "Working with a team?":"¿Trabajas en equipo?",
   "The AI answer was cut off before it finished, so it was discarded. This attempt used one monthly generation; trying again usually works.":"La respuesta de la IA se cortó antes de terminar, así que se descartó. Este intento usó una generación mensual; volver a intentarlo suele funcionar.",
   "Your account ID, which the person running this site needs to approve you:":"Tu ID de cuenta, que la persona que administra este sitio necesita para aprobarte:",
-  "Search":"Buscar", "New mission":"Nueva misión", "Business":"Empresa", "Guides":"Guías", "Checklists":"Listas de verificación", "Checklists for the work you repeat":"Listas de verificación para el trabajo que repites", "Compare with ChatGPT, Claude and Gemini":"Compara con ChatGPT, Claude y Gemini", "Compare with Process Street, Trello and Manifestly":"Compara con Process Street, Trello y Manifestly", "Templates":"Plantillas",
+  "Search":"Buscar", "New mission":"Nueva misión", "Business":"Empresa", "Guides":"Guías", "Checklists":"Listas de verificación", "Checklists for the work you repeat":"Listas de verificación para el trabajo que repites", "Compare with ChatGPT, Claude and Gemini":"Compara con ChatGPT, Claude y Gemini", "Compare with Process Street, Trello and Manifestly":"Compara con Process Street, Trello y Manifestly", "Checklists for small teams":"Listas de verificación para equipos pequeños", "Every step has an owner.":"Cada paso tiene un responsable.", "And proof when it is done.":"Y una prueba cuando está hecho.", "Start from a ready-made checklist or describe your goal. Give each step to someone on your team with a due date, see what is late, and keep a note and a link that show the work was done.":"Empieza con una lista de verificación lista para usar o describe tu objetivo. Asigna cada paso a alguien del equipo con una fecha límite, ve qué va con retraso y guarda una nota y un enlace que demuestran que el trabajo se hizo.", "Browse the checklists":"Ver las listas de verificación", "Free plan, no card. Your team joins free.":"Plan gratuito, sin tarjeta. Tu equipo se une gratis.", "Plans for other goals":"Planes para otros objetivos", "Illustrative view of a team checklist":"Vista ilustrativa de una lista de verificación de equipo", "TEAM CHECKLIST":"LISTA DEL EQUIPO", "CHECKLIST":"LISTA DE VERIFICACIÓN", "Client onboarding":"Alta de un cliente", "Each step has an owner, a due date and proof.":"Cada paso tiene un responsable, una fecha límite y una prueba.", "Steps":"Pasos", "2 of 9 done":"2 de 9 hechos", "Get the contract signed":"Conseguir el contrato firmado", "Done by Sara · Proof: signed contract":"Hecho por Sara · Prueba: contrato firmado", "Send the deposit request":"Enviar la solicitud de anticipo", "Done by Omar · Proof: invoice paid":"Hecho por Omar · Prueba: factura pagada", "Get access to the accounts":"Obtener acceso a las cuentas", "Lina · 2 days late":"Lina · 2 días de retraso", "Owner on every step":"Responsable en cada paso", "Proof you can check":"Pruebas que puedes comprobar", "An owner on every step":"Un responsable en cada paso", "Everyone sees what is theirs":"Cada uno ve lo que le toca", "A due date on every step":"Una fecha límite en cada paso", "Late steps stand out":"Los pasos atrasados se ven", "Proof when it is done":"Prueba cuando está hecho", "A note and a link anyone can check":"Una nota y un enlace que cualquiera puede comprobar", "Built for the work you repeat":"Hecho para el trabajo que repites", "Onboarding, month-end, handoffs. Done the same way every time.":"Altas, cierre de mes, entregas. Igual cada vez.", "ZAVQERA turns the processes a small team repeats into checklists everyone can follow, with the proof kept in one place.":"ZAVQERA convierte los procesos que repite un equipo pequeño en listas de verificación que todos pueden seguir, con las pruebas en un solo lugar.", "Start from a ready-made checklist":"Empieza con una lista lista para usar", "Employee onboarding, month-end close, client handoffs and more, each step saying what proof to keep.":"Alta de empleados, cierre de mes, entregas a clientes y más, y cada paso dice qué prueba guardar.", "Give every step an owner":"Da un responsable a cada paso", "Assign steps to people on your team with a due date. Each person sees what is theirs and what is late.":"Asigna pasos a personas de tu equipo con una fecha límite. Cada persona ve lo que le toca y lo que va con retraso.", "Keep the proof":"Guarda la prueba", "When a step is done, save a note and a link, so anyone can check the work later.":"Cuando un paso está hecho, guarda una nota y un enlace para que cualquiera pueda comprobar el trabajo después.", "Three steps, then repeat.":"Tres pasos, y a repetir.", "Pick a checklist or describe your goal, share the work, and keep the record.":"Elige una lista o describe tu objetivo, reparte el trabajo y guarda el registro.", "Pick":"Elige", "Start from a ready-made checklist, or let AI draft the steps from your goal.":"Empieza con una lista lista para usar, o deja que la IA redacte los pasos a partir de tu objetivo.", "Assign":"Asigna", "Give each step an owner and a due date. Invite your team for free.":"Da a cada paso un responsable y una fecha límite. Invita a tu equipo gratis.", "Prove":"Demuestra", "Mark steps done with a note and a link. Late steps stand out.":"Marca los pasos como hechos con una nota y un enlace. Los pasos atrasados se ven.", "Start with one checklist":"Empieza con una lista", "Run your next process with an owner on every step.":"Haz tu próximo proceso con un responsable en cada paso.", "Pick a checklist, invite your team and see who does what, by when.":"Elige una lista, invita a tu equipo y ve quién hace qué y para cuándo.", "Templates":"Plantillas",
   "Pricing":"Precios", "Workspace":"Espacio de trabajo", "Opportunity Intelligence":"Inteligencia de oportunidades",
-  "Notifications":"Notificaciones", "Sign out":"Cerrar sesión",  "MISSION CONTROL":"CENTRO DE CONTROL", "Signing out…":"Cerrando sesión…",
+  "Notifications":"Notificaciones", "Sign out":"Cerrar sesión",  "TEAM CHECKLISTS":"LISTAS PARA EQUIPOS", "Signing out…":"Cerrando sesión…",
   "Switch to dark mode":"Cambiar al modo oscuro", "Switch to light mode":"Cambiar al modo claro",
-  "A calm control plane for bounded AI work.":"Un centro de control claro para trabajo de IA con límites definidos.",
+  "Checklists for small teams, with an owner and proof on every step.":"Listas de verificación para equipos pequeños, con un responsable y una prueba en cada paso.",
   "Business workspace":"Espacio de trabajo para empresas",
   "Run AI work with clear boundaries.":"Dirige el trabajo de IA con límites claros.",
   "Total missions":"Misiones totales", "Active":"Activas", "Completed":"Completadas",
@@ -2222,56 +2222,56 @@ const ES: Record<string, string> = {
   "That confirmation link was incomplete. Open the most recent link from your email.":"Ese enlace de confirmación estaba incompleto. Abre el enlace más reciente de tu correo.",
   "/ Mission detail":"/ Detalle de la misión",
   "/ New mission":"/ Nueva misión",
-  "2 of 3 ready":"2 de 3 listas",
+  
   "A mission is only verified once evidence has been recorded through the authenticated server boundary. Work being reported as finished is not the same as ZAVQERA considering it verified.":"Una misión solo se verifica cuando la evidencia se registra a través del límite autenticado del servidor. Que un trabajo se reporte como terminado no equivale a que ZAVQERA lo considere verificado.",
-  "A system for making progress":"Un sistema para avanzar",
-  "ACTIVE MISSION":"MISIÓN ACTIVA",
+  
+  
   "Actions":"Acciones",
   "Activity":"Actividad",
   "Add an action":"Añadir una acción",
   "All missions":"Todas las misiones",
   "An outcome can only be committed after a verification is recorded.":"Un resultado solo puede confirmarse después de registrar una verificación.",
   "At a glance":"De un vistazo",
-  "Authority bounded":"Autoridad acotada",
-  "Begin with the workflow you have today. Keep control of what happens next.":"Empieza con el flujo de trabajo que ya tienes. Mantén el control de lo que viene después.",
+  
+  
   "Browse mission templates":"Explorar plantillas de misión",
   "Build on a proven starting point":"Parte de un punto de inicio probado",
   "Cancel":"Cancelar",
   "Changes are accepted only after the server confirms the current version.":"Los cambios solo se aceptan después de que el servidor confirme la versión actual.",
-  "Check evidence before you accept an outcome.":"Comprueba la evidencia antes de aceptar un resultado.",
+  
   "Commit verified outcome":"Confirmar resultado verificado",
   "Compare opportunities before committing":"Compara oportunidades antes de comprometerte",
-  "Completed · Clear outcome recorded":"Completado · Resultado claro registrado",
-  "Completed · Notes captured":"Completado · Notas guardadas",
+  
+  
   "Confidence":"Confianza",
   "Create mission":"Crear misión",
   "Danger zone":"Zona de riesgo",
   "Define":"Definir",
-  "Define the success criteria":"Define los criterios de éxito",
+  
   "Deterministic guidance":"Orientación determinista",
   "Edit this mission":"Editar esta misión",
   "Evaluate an idea":"Evaluar una idea",
-  "Every Mission starts with an intended outcome and remains reviewable as the work changes.":"Cada Misión empieza con un resultado previsto y sigue siendo revisable a medida que el trabajo cambia.",
+  
   "Every mission below is a stated outcome and the work required to reach it.":"Cada misión siguiente es un resultado declarado y el trabajo necesario para alcanzarlo.",
   "Everything in Free":"Todo lo de Free",
   "Everything in Plus":"Todo lo de Plus",
   "Evidence summary":"Resumen de evidencia",
-  "Explicit goals":"Objetivos explícitos",
-  "Explore Opportunity Intelligence":"Explorar Inteligencia de oportunidades",
+  
+  
   "First steps":"Primeros pasos",
-  "From intent to action.":"De la intención a la acción.",
-  "Gather initial evidence":"Reúne evidencia inicial",
+  
+  
   "How it works":"Cómo funciona",
-  "Human oversight":"Supervisión humana",
+  
   "Illustrative view":"Vista ilustrativa",
   "Intent":"Intención",
   "It may have been deleted, or it belongs to another workspace.":"Puede que se haya eliminado o que pertenezca a otro espacio de trabajo.",
-  "Keep decisions in your hands":"Mantén las decisiones en tus manos",
-  "Know what success means":"Sabe qué significa el éxito",
+  
+  
   "Last updated":"Última actualización",
-  "Less uncertainty. Better next steps.":"Menos incertidumbre. Mejores próximos pasos.",
+  
   "Loading workspace…":"Cargando espacio de trabajo…",
-  "Make the next step clearer.":"Haz más claro el siguiente paso.",
+  
   "Mission":"Misión",
   "Mission name":"Nombre de la misión",
   "Mission setup":"Configuración de la misión",
@@ -2279,8 +2279,8 @@ const ES: Record<string, string> = {
   "Mission unavailable":"Misión no disponible",
   "Most recently updated first.":"Las actualizadas más recientemente primero.",
   "Move mission":"Mover misión",
-  "Next action · Human decision required":"Siguiente acción · Requiere decisión humana",
-  "Next steps":"Próximos pasos",
+  
+  
   "Next up":"A continuación",
   "No actions have been added yet.":"Aún no se han añadido acciones.",
   "No history has been recorded for this mission yet.":"Aún no hay historial registrado para esta misión.",
@@ -2292,48 +2292,48 @@ const ES: Record<string, string> = {
   "Optional: the date you intend to check back. Leave empty for no reminder.":"Opcional: la fecha en que piensas revisar. Déjalo vacío para no recibir recordatorio.",
   "Outcome":"Resultado",
   "Outcome result":"Resultado final",
-  "Outcome: decide whether this idea is worth pursuing, using evidence and a small test.":"Resultado: decide si vale la pena seguir esta idea, con evidencia y una prueba pequeña.",
+  
   "Owner":"Propietario",
   "Plan health":"Salud del plan",
   "Plans change. Add a step whenever you discover one.":"Los planes cambian. Añade un paso cuando descubras uno.",
-  "Progress is reviewable":"El progreso es revisable",
-  "Progress you can explain.":"Un progreso que puedes explicar.",
+  
+  
   "Recent checkpoints":"Puntos de control recientes",
   "Record verification":"Registrar verificación",
   "Review before action. Clear boundaries. No false certainty.":"Revisión antes de actuar. Límites claros. Sin falsa certeza.",
-  "Review the weakest assumption":"Revisa el supuesto más débil",
+  
   "Save mission":"Guardar misión",
   "Saving this will remove the follow-up date, because it only applies while Waiting.":"Al guardar se eliminará la fecha de seguimiento, porque solo aplica mientras está En espera.",
-  "See actions and blockers":"Ver acciones y bloqueos",
+  
   "Show all":"Mostrar todo",
   "Start with a concrete outcome":"Empieza con un resultado concreto",
   "Start with one Mission":"Empieza con una Misión",
   "Started from Opportunity Intelligence.":"Iniciada desde Inteligencia de oportunidades.",
-  "State the goal and what good looks like.":"Define el objetivo y cómo se ve el éxito.",
+  
   "Success criteria":"Criterios de éxito",
   "Success score":"Puntuación de éxito",
   "The priority score is a rule-based decision aid, not a verified forecast. Review every field and confirm the source before creating the Mission.":"La puntuación de prioridad es una ayuda a la decisión basada en reglas, no un pronóstico verificado. Revisa cada campo y confirma la fuente antes de crear la Misión.",
   "The saved actions and lifecycle do not show a known planning issue.":"Las acciones guardadas y el ciclo de vida no muestran un problema de planificación conocido.",
   "The work this mission needs":"El trabajo que necesita esta misión",
   "The work you already know about, in the order you would do it. You can add more at any time. Leave it empty and the mission page will suggest a plan.":"El trabajo que ya conoces, en el orden en que lo harías. Puedes añadir más en cualquier momento. Déjalo vacío y la página de la misión te sugerirá un plan.",
-  "Track steps, status, and decisions that need you.":"Sigue pasos, estado y decisiones que te necesitan.",
+  
   "Use a template":"Usar una plantilla",
   "Use plain language. Keep the decision you want to make visible.":"Usa lenguaje claro. Mantén visible la decisión que quieres tomar.",
-  "Validate a new opportunity":"Validar una nueva oportunidad",
+  
   "Verification":"Verificación",
   "Verification criteria":"Criterios de verificación",
   "Verified":"Verificada",
-  "Visible work":"Trabajo visible",
+  
   "We could not find that mission.":"No encontramos esa misión.",
   "What good looks like":"Cómo se ve el éxito",
   "What needs your attention":"Qué necesita tu atención",
   "What should I do next?":"¿Qué debo hacer ahora?",
   "Where this mission stands":"En qué punto está esta misión",
-  "With control at every step.":"Con control en cada paso.",
+  
   "Work":"Trabajo",
   "Yes, delete permanently":"Sí, eliminar permanentemente",
   "Your mission is saved to your private workspace. Ownership comes from your authenticated session.":"Tu misión se guarda en tu espacio privado. La propiedad proviene de tu sesión autenticada.",
-  "Zavqera brings planning, execution tracking, and decision support into one calm workspace.":"Zavqera reúne planificación, seguimiento de la ejecución y apoyo a la decisión en un único espacio de trabajo sereno.",
+  
   "optional":"opcional",
   "Sign in to open your workspace.":"Inicia sesión para abrir tu espacio de trabajo.",
   "Sign in to open the business workspace.":"Inicia sesión para abrir el espacio de empresa.",
@@ -2457,7 +2457,7 @@ const ES: Record<string, string> = {
   "This Mission cannot be deleted because its historical provenance must be preserved.":"Esta Misión no puede eliminarse porque su procedencia histórica debe conservarse.",
   "Your session has expired. Sign in again to continue.":"Tu sesión ha caducado. Inicia sesión de nuevo para continuar.",
   "Business workspace metrics":"Métricas del espacio de trabajo empresarial",
-  "Illustrative view of a governed Mission":"Vista ilustrativa de una misión gobernada",
+  
   "Product principles":"Principios del producto",
   "What needs to happen next?":"¿Qué debe ocurrir a continuación?",
   "User-provided source; not fetched by Zavqera":"Fuente proporcionada por el usuario; no obtenida por Zavqera",
@@ -2571,8 +2571,8 @@ const ES: Record<string, string> = {
   "Terms":"Términos",
   "Privacy notice":"Aviso de privacidad",
   "Terms of service":"Términos del servicio",
-  "Mission control for goals you have to get right":"Centro de control para objetivos que no admiten error",
-  "Write the outcome you want. Get a first plan back, with the weak parts of your own wording pointed out — then keep the evidence that you reached it.":"Escribe el resultado que quieres. Recibes un primer plan, con los puntos débiles de tu propia redacción señalados, y conservas la evidencia de haberlo logrado.",
+  
+  
   "Filled in from this mission's own success criteria. Change it if what you checked was different.":"Rellenado con los criterios de éxito de esta misión. Cámbialo si lo que comprobaste fue distinto.",
   "This mission records no success criteria, so there is nothing to fill in. Write what you actually checked.":"Esta misión no registra criterios de éxito, así que no hay nada que rellenar. Escribe qué comprobaste realmente.",
   "Completed steps you can cite:":"Pasos completados que puedes citar:",
@@ -2584,12 +2584,12 @@ const ES: Record<string, string> = {
   "Noted — you will hear from us once, when it is ready.":"Anotado: te escribiremos una vez, cuando esté lista.",
   "One email, when this plan opens. Nothing else, and no account needed. You can ask us to delete your address at any time.":"Un solo correo, cuando se abra este plan. Nada más, y sin necesidad de cuenta. Puedes pedirnos que borremos tu dirección cuando quieras.",
   "That did not save. Check your connection and try again.":"No se guardó. Comprueba tu conexión e inténtalo de nuevo.",
-  "Make intent explicit":"Haz explícita la intención",
-  "Define the outcome, success criteria, and boundaries before work begins.":"Define el resultado, los criterios de éxito y los límites antes de empezar.",
-  "Know what happens next":"Sabe qué pasa después",
-  "Track each Mission, its actions, blockers, and progress in one place.":"Sigue cada misión, sus acciones, bloqueos y progreso en un solo lugar.",
-  "Decide with evidence":"Decide con evidencia",
-  "Compare opportunities, record what you know, and expose what is still uncertain.":"Compara oportunidades, anota lo que sabes y saca a la luz lo que sigue siendo incierto.",
+  
+  
+  
+  
+  
+  
   "Strategic fit":"Encaje estratégico",
   "How well does it match the user's goal and capabilities? (25%)":"¿Hasta qué punto encaja con el objetivo y las capacidades del usuario? (25 %)",
   "Potential value":"Valor potencial",
@@ -3134,16 +3134,16 @@ const FR: Record<string, string> = {
   "Privacy notice — ZAVQERA":"Avis de confidentialité — ZAVQERA",
   "The agreement between you and ZAVQERA: what the service is, what it is not, and the rights you keep.":"L'accord entre vous et ZAVQERA : ce qu'est le service, ce qu'il n'est pas, et les droits que vous conservez.",
   "Terms of service — ZAVQERA":"Conditions d'utilisation — ZAVQERA",
-    "ZAVQERA — turn a goal into steps, evidence and a result":"ZAVQERA — transformez un objectif en étapes, preuves et résultat",
+    "ZAVQERA — Checklists with an owner and proof on every step":"ZAVQERA — des checklists avec un responsable et une preuve à chaque étape",
   "{left} of {limit} AI drafts left this month.":"Il vous reste {left} brouillons IA sur {limit} ce mois-ci.",
   "Working with a team?":"Vous travaillez en équipe ?",
   "The AI answer was cut off before it finished, so it was discarded. This attempt used one monthly generation; trying again usually works.":"La réponse de l'IA a été coupée avant la fin et a donc été écartée. Cette tentative a utilisé une génération mensuelle ; un nouvel essai fonctionne en général.",
   "Your account ID, which the person running this site needs to approve you:":"Votre identifiant de compte, dont la personne qui gère ce site a besoin pour vous approuver :",
-  "Search":"Rechercher", "New mission":"Nouvelle mission", "Business":"Entreprise", "Guides":"Guides", "Checklists":"Checklists", "Checklists for the work you repeat":"Checklists pour le travail que vous répétez", "Compare with ChatGPT, Claude and Gemini":"Comparer avec ChatGPT, Claude et Gemini", "Compare with Process Street, Trello and Manifestly":"Comparer avec Process Street, Trello et Manifestly", "Templates":"Modèles",
+  "Search":"Rechercher", "New mission":"Nouvelle mission", "Business":"Entreprise", "Guides":"Guides", "Checklists":"Checklists", "Checklists for the work you repeat":"Checklists pour le travail que vous répétez", "Compare with ChatGPT, Claude and Gemini":"Comparer avec ChatGPT, Claude et Gemini", "Compare with Process Street, Trello and Manifestly":"Comparer avec Process Street, Trello et Manifestly", "Checklists for small teams":"Des checklists pour les petites équipes", "Every step has an owner.":"Chaque étape a un responsable.", "And proof when it is done.":"Et une preuve une fois faite.", "Start from a ready-made checklist or describe your goal. Give each step to someone on your team with a due date, see what is late, and keep a note and a link that show the work was done.":"Partez d'une checklist prête à l'emploi ou décrivez votre objectif. Confiez chaque étape à quelqu'un de l'équipe avec une échéance, voyez ce qui est en retard et gardez une note et un lien qui montrent que le travail a été fait.", "Browse the checklists":"Voir les checklists", "Free plan, no card. Your team joins free.":"Plan gratuit, sans carte. Votre équipe vous rejoint gratuitement.", "Plans for other goals":"Des plans pour d'autres objectifs", "Illustrative view of a team checklist":"Vue d'illustration d'une checklist d'équipe", "TEAM CHECKLIST":"CHECKLIST D'ÉQUIPE", "CHECKLIST":"CHECKLIST", "Client onboarding":"Accueil d'un client", "Each step has an owner, a due date and proof.":"Chaque étape a un responsable, une échéance et une preuve.", "Steps":"Étapes", "2 of 9 done":"2 sur 9 faites", "Get the contract signed":"Faire signer le contrat", "Done by Sara · Proof: signed contract":"Fait par Sara · Preuve : contrat signé", "Send the deposit request":"Envoyer la demande d'acompte", "Done by Omar · Proof: invoice paid":"Fait par Omar · Preuve : facture payée", "Get access to the accounts":"Obtenir l'accès aux comptes", "Lina · 2 days late":"Lina · 2 jours de retard", "Owner on every step":"Un responsable par étape", "Proof you can check":"Des preuves vérifiables", "An owner on every step":"Un responsable pour chaque étape", "Everyone sees what is theirs":"Chacun voit ce qui lui revient", "A due date on every step":"Une échéance pour chaque étape", "Late steps stand out":"Les retards sautent aux yeux", "Proof when it is done":"Une preuve une fois l'étape faite", "A note and a link anyone can check":"Une note et un lien que chacun peut vérifier", "Built for the work you repeat":"Pensé pour le travail que vous répétez", "Onboarding, month-end, handoffs. Done the same way every time.":"Arrivées, clôture du mois, passations. Faites de la même façon à chaque fois.", "ZAVQERA turns the processes a small team repeats into checklists everyone can follow, with the proof kept in one place.":"ZAVQERA transforme les processus qu'une petite équipe répète en checklists que tout le monde peut suivre, avec les preuves au même endroit.", "Start from a ready-made checklist":"Partez d'une checklist prête à l'emploi", "Employee onboarding, month-end close, client handoffs and more, each step saying what proof to keep.":"Arrivée d'un salarié, clôture mensuelle, passation à un client et plus, chaque étape indiquant quelle preuve garder.", "Give every step an owner":"Donnez un responsable à chaque étape", "Assign steps to people on your team with a due date. Each person sees what is theirs and what is late.":"Confiez des étapes aux membres de votre équipe avec une échéance. Chacun voit ce qui lui revient et ce qui est en retard.", "Keep the proof":"Gardez la preuve", "When a step is done, save a note and a link, so anyone can check the work later.":"Quand une étape est faite, enregistrez une note et un lien pour que chacun puisse vérifier le travail plus tard.", "Three steps, then repeat.":"Trois étapes, puis on recommence.", "Pick a checklist or describe your goal, share the work, and keep the record.":"Choisissez une checklist ou décrivez votre objectif, répartissez le travail et gardez la trace.", "Pick":"Choisir", "Start from a ready-made checklist, or let AI draft the steps from your goal.":"Partez d'une checklist prête à l'emploi, ou laissez l'IA rédiger les étapes à partir de votre objectif.", "Assign":"Confier", "Give each step an owner and a due date. Invite your team for free.":"Donnez à chaque étape un responsable et une échéance. Invitez votre équipe gratuitement.", "Prove":"Prouver", "Mark steps done with a note and a link. Late steps stand out.":"Cochez les étapes faites avec une note et un lien. Les retards sautent aux yeux.", "Start with one checklist":"Commencez par une checklist", "Run your next process with an owner on every step.":"Menez votre prochain processus avec un responsable à chaque étape.", "Pick a checklist, invite your team and see who does what, by when.":"Choisissez une checklist, invitez votre équipe et voyez qui fait quoi, pour quand.", "Templates":"Modèles",
   "Pricing":"Tarifs", "Workspace":"Espace de travail", "Opportunity Intelligence":"Analyse des opportunités",
-  "Notifications":"Notifications", "Sign out":"Se déconnecter",  "MISSION CONTROL":"CENTRE DE CONTRÔLE", "Signing out…":"Déconnexion…",
+  "Notifications":"Notifications", "Sign out":"Se déconnecter",  "TEAM CHECKLISTS":"CHECKLISTS D'ÉQUIPE", "Signing out…":"Déconnexion…",
   "Switch to dark mode":"Passer en mode sombre", "Switch to light mode":"Passer en mode clair",
-  "A calm control plane for bounded AI work.":"Un centre de contrôle clair pour un travail d'IA encadré.",
+  "Checklists for small teams, with an owner and proof on every step.":"Des checklists pour les petites équipes, avec un responsable et une preuve à chaque étape.",
   "Business workspace":"Espace de travail d'entreprise",
   "Run AI work with clear boundaries.":"Pilotez le travail d'IA avec des limites claires.",
   "Total missions":"Missions au total", "Active":"Actives", "Completed":"Terminées",
@@ -3251,56 +3251,56 @@ const FR: Record<string, string> = {
   "That confirmation link was incomplete. Open the most recent link from your email.":"Ce lien de confirmation était incomplet. Ouvrez le lien le plus récent reçu par e-mail.",
   "/ Mission detail":"/ Détail de la mission",
   "/ New mission":"/ Nouvelle mission",
-  "2 of 3 ready":"2 sur 3 prêtes",
+  
   "A mission is only verified once evidence has been recorded through the authenticated server boundary. Work being reported as finished is not the same as ZAVQERA considering it verified.":"Une mission n'est vérifiée qu'une fois les preuves enregistrées via la frontière serveur authentifiée. Déclarer un travail terminé n'équivaut pas à ce que ZAVQERA le considère vérifié.",
-  "A system for making progress":"Un système pour avancer",
-  "ACTIVE MISSION":"MISSION ACTIVE",
+  
+  
   "Actions":"Actions",
   "Activity":"Activité",
   "Add an action":"Ajouter une action",
   "All missions":"Toutes les missions",
   "An outcome can only be committed after a verification is recorded.":"Un résultat ne peut être validé qu'après l'enregistrement d'une vérification.",
   "At a glance":"En un coup d'œil",
-  "Authority bounded":"Autorité encadrée",
-  "Begin with the workflow you have today. Keep control of what happens next.":"Commencez avec le flux de travail que vous avez déjà. Gardez le contrôle de la suite.",
+  
+  
   "Browse mission templates":"Parcourir les modèles de mission",
   "Build on a proven starting point":"Partez d'un point de départ éprouvé",
   "Cancel":"Annuler",
   "Changes are accepted only after the server confirms the current version.":"Les modifications ne sont acceptées qu'après confirmation de la version actuelle par le serveur.",
-  "Check evidence before you accept an outcome.":"Vérifiez les preuves avant d'accepter un résultat.",
+  
   "Commit verified outcome":"Valider le résultat vérifié",
   "Compare opportunities before committing":"Comparez les opportunités avant de vous engager",
-  "Completed · Clear outcome recorded":"Terminé · Résultat clair enregistré",
-  "Completed · Notes captured":"Terminé · Notes enregistrées",
+  
+  
   "Confidence":"Confiance",
   "Create mission":"Créer la mission",
   "Danger zone":"Zone sensible",
   "Define":"Définir",
-  "Define the success criteria":"Définissez les critères de réussite",
+  
   "Deterministic guidance":"Conseils déterministes",
   "Edit this mission":"Modifier cette mission",
   "Evaluate an idea":"Évaluer une idée",
-  "Every Mission starts with an intended outcome and remains reviewable as the work changes.":"Chaque Mission commence par un résultat visé et reste examinable à mesure que le travail évolue.",
+  
   "Every mission below is a stated outcome and the work required to reach it.":"Chaque mission ci-dessous est un résultat énoncé et le travail requis pour l'atteindre.",
   "Everything in Free":"Tout de Free",
   "Everything in Plus":"Tout de Plus",
   "Evidence summary":"Synthèse des preuves",
-  "Explicit goals":"Objectifs explicites",
-  "Explore Opportunity Intelligence":"Découvrir l'Analyse des opportunités",
+  
+  
   "First steps":"Premières étapes",
-  "From intent to action.":"De l'intention à l'action.",
-  "Gather initial evidence":"Rassemblez les premières preuves",
+  
+  
   "How it works":"Comment ça marche",
-  "Human oversight":"Supervision humaine",
+  
   "Illustrative view":"Vue illustrative",
   "Intent":"Intention",
   "It may have been deleted, or it belongs to another workspace.":"Elle a peut-être été supprimée, ou elle appartient à un autre espace de travail.",
-  "Keep decisions in your hands":"Gardez les décisions en main",
-  "Know what success means":"Sachez ce que signifie la réussite",
+  
+  
   "Last updated":"Dernière mise à jour",
-  "Less uncertainty. Better next steps.":"Moins d'incertitude. De meilleures étapes suivantes.",
+  
   "Loading workspace…":"Chargement de l'espace de travail…",
-  "Make the next step clearer.":"Rendez la prochaine étape plus claire.",
+  
   "Mission":"Mission",
   "Mission name":"Nom de la mission",
   "Mission setup":"Configuration de la mission",
@@ -3308,8 +3308,8 @@ const FR: Record<string, string> = {
   "Mission unavailable":"Mission indisponible",
   "Most recently updated first.":"Les plus récemment mises à jour d'abord.",
   "Move mission":"Déplacer la mission",
-  "Next action · Human decision required":"Action suivante · Décision humaine requise",
-  "Next steps":"Étapes suivantes",
+  
+  
   "Next up":"À suivre",
   "No actions have been added yet.":"Aucune action n'a encore été ajoutée.",
   "No history has been recorded for this mission yet.":"Aucun historique n'a encore été enregistré pour cette mission.",
@@ -3321,48 +3321,48 @@ const FR: Record<string, string> = {
   "Optional: the date you intend to check back. Leave empty for no reminder.":"Facultatif : la date à laquelle vous comptez revenir. Laissez vide pour aucun rappel.",
   "Outcome":"Résultat",
   "Outcome result":"Issue du résultat",
-  "Outcome: decide whether this idea is worth pursuing, using evidence and a small test.":"Résultat : décidez si cette idée mérite d'être poursuivie, avec des preuves et un petit test.",
+  
   "Owner":"Propriétaire",
   "Plan health":"Santé du plan",
   "Plans change. Add a step whenever you discover one.":"Les plans changent. Ajoutez une étape dès que vous en découvrez une.",
-  "Progress is reviewable":"La progression est examinable",
-  "Progress you can explain.":"Une progression que vous pouvez expliquer.",
+  
+  
   "Recent checkpoints":"Points de contrôle récents",
   "Record verification":"Enregistrer la vérification",
   "Review before action. Clear boundaries. No false certainty.":"Examen avant action. Limites claires. Aucune fausse certitude.",
-  "Review the weakest assumption":"Examinez l'hypothèse la plus fragile",
+  
   "Save mission":"Enregistrer la mission",
   "Saving this will remove the follow-up date, because it only applies while Waiting.":"L'enregistrement supprimera la date de suivi, car elle ne s'applique qu'en attente.",
-  "See actions and blockers":"Voir les actions et les blocages",
+  
   "Show all":"Tout afficher",
   "Start with a concrete outcome":"Commencez par un résultat concret",
   "Start with one Mission":"Commencez par une Mission",
   "Started from Opportunity Intelligence.":"Lancée depuis l'Analyse des opportunités.",
-  "State the goal and what good looks like.":"Énoncez l'objectif et ce qu'est la réussite.",
+  
   "Success criteria":"Critères de réussite",
   "Success score":"Score de réussite",
   "The priority score is a rule-based decision aid, not a verified forecast. Review every field and confirm the source before creating the Mission.":"Le score de priorité est une aide à la décision fondée sur des règles, pas une prévision vérifiée. Vérifiez chaque champ et confirmez la source avant de créer la Mission.",
   "The saved actions and lifecycle do not show a known planning issue.":"Les actions enregistrées et le cycle de vie ne révèlent aucun problème de planification connu.",
   "The work this mission needs":"Le travail dont cette mission a besoin",
   "The work you already know about, in the order you would do it. You can add more at any time. Leave it empty and the mission page will suggest a plan.":"Le travail que vous connaissez déjà, dans l'ordre où vous le feriez. Vous pouvez en ajouter à tout moment. Laissez vide et la page de la mission vous proposera un plan.",
-  "Track steps, status, and decisions that need you.":"Suivez les étapes, le statut et les décisions qui vous attendent.",
+  
   "Use a template":"Utiliser un modèle",
   "Use plain language. Keep the decision you want to make visible.":"Employez un langage simple. Gardez visible la décision que vous voulez prendre.",
-  "Validate a new opportunity":"Valider une nouvelle opportunité",
+  
   "Verification":"Vérification",
   "Verification criteria":"Critères de vérification",
   "Verified":"Vérifiée",
-  "Visible work":"Travail visible",
+  
   "We could not find that mission.":"Nous n'avons pas trouvé cette mission.",
   "What good looks like":"Ce qu'est la réussite",
   "What needs your attention":"Ce qui demande votre attention",
   "What should I do next?":"Que dois-je faire ensuite ?",
   "Where this mission stands":"Où en est cette mission",
-  "With control at every step.":"Avec le contrôle à chaque étape.",
+  
   "Work":"Travail",
   "Yes, delete permanently":"Oui, supprimer définitivement",
   "Your mission is saved to your private workspace. Ownership comes from your authenticated session.":"Votre mission est enregistrée dans votre espace privé. La propriété découle de votre session authentifiée.",
-  "Zavqera brings planning, execution tracking, and decision support into one calm workspace.":"Zavqera réunit planification, suivi d'exécution et aide à la décision dans un espace de travail clair.",
+  
   "optional":"facultatif",
   "Sign in to open your workspace.":"Connectez-vous pour ouvrir votre espace de travail.",
   "Sign in to open the business workspace.":"Connectez-vous pour ouvrir l'espace entreprise.",
@@ -3486,7 +3486,7 @@ const FR: Record<string, string> = {
   "This Mission cannot be deleted because its historical provenance must be preserved.":"Cette Mission ne peut pas être supprimée car sa provenance historique doit être conservée.",
   "Your session has expired. Sign in again to continue.":"Votre session a expiré. Reconnectez-vous pour continuer.",
   "Business workspace metrics":"Indicateurs de l'espace de travail entreprise",
-  "Illustrative view of a governed Mission":"Vue illustrative d'une mission encadrée",
+  
   "Product principles":"Principes du produit",
   "What needs to happen next?":"Que doit-il se passer ensuite ?",
   "User-provided source; not fetched by Zavqera":"Source fournie par l'utilisateur ; non récupérée par Zavqera",
@@ -3600,8 +3600,8 @@ const FR: Record<string, string> = {
   "Terms":"Conditions",
   "Privacy notice":"Avis de confidentialité",
   "Terms of service":"Conditions d'utilisation",
-  "Mission control for goals you have to get right":"Centre de contrôle pour les objectifs à ne pas rater",
-  "Write the outcome you want. Get a first plan back, with the weak parts of your own wording pointed out — then keep the evidence that you reached it.":"Écrivez le résultat visé. Vous recevez un premier plan, avec les points faibles de votre propre formulation signalés — puis vous gardez la preuve de l'avoir atteint.",
+  
+  
   "Filled in from this mission's own success criteria. Change it if what you checked was different.":"Rempli à partir des critères de réussite de cette mission. Modifiez-le si vous avez vérifié autre chose.",
   "This mission records no success criteria, so there is nothing to fill in. Write what you actually checked.":"Cette mission n'enregistre aucun critère de réussite : il n'y a rien à préremplir. Écrivez ce que vous avez vraiment vérifié.",
   "Completed steps you can cite:":"Étapes terminées que vous pouvez citer :",
@@ -3613,12 +3613,12 @@ const FR: Record<string, string> = {
   "Noted — you will hear from us once, when it is ready.":"Noté — vous aurez un message, une seule fois, quand ce sera prêt.",
   "One email, when this plan opens. Nothing else, and no account needed. You can ask us to delete your address at any time.":"Un seul e-mail, à l'ouverture de ce plan. Rien d'autre, et aucun compte requis. Vous pouvez demander la suppression de votre adresse à tout moment.",
   "That did not save. Check your connection and try again.":"Cela n'a pas été enregistré. Vérifiez votre connexion et réessayez.",
-  "Make intent explicit":"Rendez l'intention explicite",
-  "Define the outcome, success criteria, and boundaries before work begins.":"Définissez le résultat, les critères de réussite et les limites avant de commencer.",
-  "Know what happens next":"Sachez ce qui vient ensuite",
-  "Track each Mission, its actions, blockers, and progress in one place.":"Suivez chaque mission, ses actions, ses blocages et sa progression au même endroit.",
-  "Decide with evidence":"Décidez sur preuves",
-  "Compare opportunities, record what you know, and expose what is still uncertain.":"Comparez les opportunités, consignez ce que vous savez et faites ressortir ce qui reste incertain.",
+  
+  
+  
+  
+  
+  
   "Strategic fit":"Adéquation stratégique",
   "How well does it match the user's goal and capabilities? (25%)":"Dans quelle mesure cela correspond-il à l'objectif et aux moyens de l'utilisateur ? (25 %)",
   "Potential value":"Valeur potentielle",
@@ -4163,16 +4163,16 @@ const DE: Record<string, string> = {
   "Privacy notice — ZAVQERA":"Datenschutzhinweis – ZAVQERA",
   "The agreement between you and ZAVQERA: what the service is, what it is not, and the rights you keep.":"Die Vereinbarung zwischen Ihnen und ZAVQERA: was der Dienst ist, was er nicht ist und welche Rechte Sie behalten.",
   "Terms of service — ZAVQERA":"Nutzungsbedingungen – ZAVQERA",
-    "ZAVQERA — turn a goal into steps, evidence and a result":"ZAVQERA – aus einem Ziel werden Schritte, Nachweise und ein Ergebnis",
+    "ZAVQERA — Checklists with an owner and proof on every step":"ZAVQERA – Checklisten mit verantwortlicher Person und Nachweis bei jedem Schritt",
   "{left} of {limit} AI drafts left this month.":"Noch {left} von {limit} KI-Entwürfen in diesem Monat.",
   "Working with a team?":"Arbeiten Sie im Team?",
   "The AI answer was cut off before it finished, so it was discarded. This attempt used one monthly generation; trying again usually works.":"Die KI-Antwort wurde abgeschnitten, bevor sie fertig war, und deshalb verworfen. Dieser Versuch hat eine monatliche Generierung verbraucht; ein erneuter Versuch klappt meist.",
   "Your account ID, which the person running this site needs to approve you:":"Ihre Konto-ID, die die Person, die diese Website betreibt, für Ihre Freigabe benötigt:",
-  "Search":"Suchen", "New mission":"Neue Mission", "Business":"Unternehmen", "Guides":"Ratgeber", "Checklists":"Checklisten", "Checklists for the work you repeat":"Checklisten für Arbeit, die sich wiederholt", "Compare with ChatGPT, Claude and Gemini":"Mit ChatGPT, Claude und Gemini vergleichen", "Compare with Process Street, Trello and Manifestly":"Mit Process Street, Trello und Manifestly vergleichen", "Templates":"Vorlagen",
+  "Search":"Suchen", "New mission":"Neue Mission", "Business":"Unternehmen", "Guides":"Ratgeber", "Checklists":"Checklisten", "Checklists for the work you repeat":"Checklisten für Arbeit, die sich wiederholt", "Compare with ChatGPT, Claude and Gemini":"Mit ChatGPT, Claude und Gemini vergleichen", "Compare with Process Street, Trello and Manifestly":"Mit Process Street, Trello und Manifestly vergleichen", "Checklists for small teams":"Checklisten für kleine Teams", "Every step has an owner.":"Jeder Schritt hat eine verantwortliche Person.", "And proof when it is done.":"Und einen Nachweis, wenn er erledigt ist.", "Start from a ready-made checklist or describe your goal. Give each step to someone on your team with a due date, see what is late, and keep a note and a link that show the work was done.":"Starte mit einer fertigen Checkliste oder beschreibe dein Ziel. Gib jeden Schritt mit einer Frist an jemanden im Team, sieh, was überfällig ist, und bewahre eine Notiz und einen Link auf, die zeigen, dass die Arbeit erledigt wurde.", "Browse the checklists":"Checklisten ansehen", "Free plan, no card. Your team joins free.":"Kostenloser Plan, ohne Karte. Dein Team ist kostenlos dabei.", "Plans for other goals":"Pläne für andere Ziele", "Illustrative view of a team checklist":"Beispielansicht einer Team-Checkliste", "TEAM CHECKLIST":"TEAM-CHECKLISTE", "CHECKLIST":"CHECKLISTE", "Client onboarding":"Kunden-Onboarding", "Each step has an owner, a due date and proof.":"Jeder Schritt hat eine verantwortliche Person, eine Frist und einen Nachweis.", "Steps":"Schritte", "2 of 9 done":"2 von 9 erledigt", "Get the contract signed":"Vertrag unterschreiben lassen", "Done by Sara · Proof: signed contract":"Erledigt von Sara · Nachweis: unterschriebener Vertrag", "Send the deposit request":"Anzahlung anfordern", "Done by Omar · Proof: invoice paid":"Erledigt von Omar · Nachweis: Rechnung bezahlt", "Get access to the accounts":"Zugang zu den Konten erhalten", "Lina · 2 days late":"Lina · 2 Tage überfällig", "Owner on every step":"Verantwortliche für jeden Schritt", "Proof you can check":"Nachweise, die man prüfen kann", "An owner on every step":"Eine verantwortliche Person für jeden Schritt", "Everyone sees what is theirs":"Alle sehen, was ihre Aufgabe ist", "A due date on every step":"Eine Frist für jeden Schritt", "Late steps stand out":"Überfällige Schritte fallen auf", "Proof when it is done":"Nachweis, wenn es erledigt ist", "A note and a link anyone can check":"Eine Notiz und ein Link, die alle prüfen können", "Built for the work you repeat":"Für die Arbeit, die sich wiederholt", "Onboarding, month-end, handoffs. Done the same way every time.":"Onboarding, Monatsabschluss, Übergaben. Jedes Mal gleich erledigt.", "ZAVQERA turns the processes a small team repeats into checklists everyone can follow, with the proof kept in one place.":"ZAVQERA macht aus den Abläufen, die ein kleines Team wiederholt, Checklisten, denen alle folgen können, mit den Nachweisen an einem Ort.", "Start from a ready-made checklist":"Mit einer fertigen Checkliste starten", "Employee onboarding, month-end close, client handoffs and more, each step saying what proof to keep.":"Mitarbeiter-Onboarding, Monatsabschluss, Kundenübergaben und mehr, und jeder Schritt sagt, welchen Nachweis du aufbewahrst.", "Give every step an owner":"Jedem Schritt eine verantwortliche Person geben", "Assign steps to people on your team with a due date. Each person sees what is theirs and what is late.":"Weise Schritte mit einer Frist Personen im Team zu. Alle sehen, was ihre Aufgabe ist und was überfällig ist.", "Keep the proof":"Den Nachweis aufbewahren", "When a step is done, save a note and a link, so anyone can check the work later.":"Wenn ein Schritt erledigt ist, speichere eine Notiz und einen Link, damit alle die Arbeit später prüfen können.", "Three steps, then repeat.":"Drei Schritte, dann wiederholen.", "Pick a checklist or describe your goal, share the work, and keep the record.":"Wähle eine Checkliste oder beschreibe dein Ziel, verteile die Arbeit und bewahre den Nachweis auf.", "Pick":"Wählen", "Start from a ready-made checklist, or let AI draft the steps from your goal.":"Starte mit einer fertigen Checkliste oder lass die KI die Schritte aus deinem Ziel entwerfen.", "Assign":"Zuweisen", "Give each step an owner and a due date. Invite your team for free.":"Gib jedem Schritt eine verantwortliche Person und eine Frist. Lade dein Team kostenlos ein.", "Prove":"Nachweisen", "Mark steps done with a note and a link. Late steps stand out.":"Hake Schritte mit einer Notiz und einem Link ab. Überfällige Schritte fallen auf.", "Start with one checklist":"Mit einer Checkliste starten", "Run your next process with an owner on every step.":"Erledige deinen nächsten Ablauf mit einer verantwortlichen Person für jeden Schritt.", "Pick a checklist, invite your team and see who does what, by when.":"Wähle eine Checkliste, lade dein Team ein und sieh, wer was bis wann macht.", "Templates":"Vorlagen",
   "Pricing":"Preise", "Workspace":"Arbeitsbereich", "Opportunity Intelligence":"Chancenanalyse",
-  "Notifications":"Benachrichtigungen", "Sign out":"Abmelden",  "MISSION CONTROL":"KONTROLLZENTRUM", "Signing out…":"Abmeldung …",
+  "Notifications":"Benachrichtigungen", "Sign out":"Abmelden",  "TEAM CHECKLISTS":"TEAM-CHECKLISTEN", "Signing out…":"Abmeldung …",
   "Switch to dark mode":"Zum dunklen Modus wechseln", "Switch to light mode":"Zum hellen Modus wechseln",
-  "A calm control plane for bounded AI work.":"Ein übersichtliches Kontrollzentrum für abgegrenzte KI-Arbeit.",
+  "Checklists for small teams, with an owner and proof on every step.":"Checklisten für kleine Teams, mit einer verantwortlichen Person und einem Nachweis bei jedem Schritt.",
   "Business workspace":"Arbeitsbereich für Unternehmen",
   "Run AI work with clear boundaries.":"Steuern Sie KI-Arbeit mit klaren Grenzen.",
   "Total missions":"Missionen gesamt", "Active":"Aktiv", "Completed":"Abgeschlossen",
@@ -4280,56 +4280,56 @@ const DE: Record<string, string> = {
   "That confirmation link was incomplete. Open the most recent link from your email.":"Dieser Bestätigungslink war unvollständig. Öffnen Sie den neuesten Link aus Ihrer E-Mail.",
   "/ Mission detail":"/ Missionsdetails",
   "/ New mission":"/ Neue Mission",
-  "2 of 3 ready":"2 von 3 bereit",
+  
   "A mission is only verified once evidence has been recorded through the authenticated server boundary. Work being reported as finished is not the same as ZAVQERA considering it verified.":"Eine Mission gilt erst als verifiziert, wenn Belege über die authentifizierte Servergrenze erfasst wurden. Als fertig gemeldete Arbeit ist nicht dasselbe, wie dass ZAVQERA sie als verifiziert ansieht.",
-  "A system for making progress":"Ein System, um voranzukommen",
-  "ACTIVE MISSION":"AKTIVE MISSION",
+  
+  
   "Actions":"Aktionen",
   "Activity":"Aktivität",
   "Add an action":"Aktion hinzufügen",
   "All missions":"Alle Missionen",
   "An outcome can only be committed after a verification is recorded.":"Ein Ergebnis kann erst nach Erfassung einer Verifizierung festgeschrieben werden.",
   "At a glance":"Auf einen Blick",
-  "Authority bounded":"Befugnis begrenzt",
-  "Begin with the workflow you have today. Keep control of what happens next.":"Beginnen Sie mit dem Ablauf, den Sie heute haben. Behalten Sie die Kontrolle über das Weitere.",
+  
+  
   "Browse mission templates":"Missionsvorlagen durchsuchen",
   "Build on a proven starting point":"Auf einem bewährten Start aufbauen",
   "Cancel":"Abbrechen",
   "Changes are accepted only after the server confirms the current version.":"Änderungen werden erst akzeptiert, wenn der Server die aktuelle Version bestätigt.",
-  "Check evidence before you accept an outcome.":"Prüfen Sie die Belege, bevor Sie ein Ergebnis akzeptieren.",
+  
   "Commit verified outcome":"Verifiziertes Ergebnis festschreiben",
   "Compare opportunities before committing":"Chancen vergleichen, bevor Sie sich festlegen",
-  "Completed · Clear outcome recorded":"Abgeschlossen · Klares Ergebnis erfasst",
-  "Completed · Notes captured":"Abgeschlossen · Notizen erfasst",
+  
+  
   "Confidence":"Konfidenz",
   "Create mission":"Mission erstellen",
   "Danger zone":"Gefahrenbereich",
   "Define":"Definieren",
-  "Define the success criteria":"Erfolgskriterien festlegen",
+  
   "Deterministic guidance":"Deterministische Hinweise",
   "Edit this mission":"Diese Mission bearbeiten",
   "Evaluate an idea":"Eine Idee bewerten",
-  "Every Mission starts with an intended outcome and remains reviewable as the work changes.":"Jede Mission beginnt mit einem beabsichtigten Ergebnis und bleibt überprüfbar, während sich die Arbeit ändert.",
+  
   "Every mission below is a stated outcome and the work required to reach it.":"Jede Mission unten ist ein erklärtes Ergebnis und die Arbeit, die dafür nötig ist.",
   "Everything in Free":"Alles aus Free",
   "Everything in Plus":"Alles aus Plus",
   "Evidence summary":"Belegzusammenfassung",
-  "Explicit goals":"Explizite Ziele",
-  "Explore Opportunity Intelligence":"Chancenanalyse entdecken",
+  
+  
   "First steps":"Erste Schritte",
-  "From intent to action.":"Von der Absicht zum Handeln.",
-  "Gather initial evidence":"Erste Belege sammeln",
+  
+  
   "How it works":"So funktioniert es",
-  "Human oversight":"Menschliche Aufsicht",
+  
   "Illustrative view":"Beispielansicht",
   "Intent":"Absicht",
   "It may have been deleted, or it belongs to another workspace.":"Sie wurde möglicherweise gelöscht oder gehört zu einem anderen Arbeitsbereich.",
-  "Keep decisions in your hands":"Entscheidungen bleiben bei Ihnen",
-  "Know what success means":"Wissen, was Erfolg bedeutet",
+  
+  
   "Last updated":"Zuletzt aktualisiert",
-  "Less uncertainty. Better next steps.":"Weniger Unsicherheit. Bessere nächste Schritte.",
+  
   "Loading workspace…":"Arbeitsbereich wird geladen …",
-  "Make the next step clearer.":"Den nächsten Schritt klarer machen.",
+  
   "Mission":"Mission",
   "Mission name":"Missionsname",
   "Mission setup":"Missionseinrichtung",
@@ -4337,8 +4337,8 @@ const DE: Record<string, string> = {
   "Mission unavailable":"Mission nicht verfügbar",
   "Most recently updated first.":"Zuletzt aktualisierte zuerst.",
   "Move mission":"Mission verschieben",
-  "Next action · Human decision required":"Nächste Aktion · Menschliche Entscheidung nötig",
-  "Next steps":"Nächste Schritte",
+  
+  
   "Next up":"Als Nächstes",
   "No actions have been added yet.":"Es wurden noch keine Aktionen hinzugefügt.",
   "No history has been recorded for this mission yet.":"Für diese Mission wurde noch kein Verlauf erfasst.",
@@ -4350,48 +4350,48 @@ const DE: Record<string, string> = {
   "Optional: the date you intend to check back. Leave empty for no reminder.":"Optional: das Datum, an dem Sie nachsehen wollen. Leer lassen für keine Erinnerung.",
   "Outcome":"Ergebnis",
   "Outcome result":"Ergebnisausgang",
-  "Outcome: decide whether this idea is worth pursuing, using evidence and a small test.":"Ergebnis: entscheiden, ob diese Idee es wert ist, mit Belegen und einem kleinen Test.",
+  
   "Owner":"Inhaber",
   "Plan health":"Planzustand",
   "Plans change. Add a step whenever you discover one.":"Pläne ändern sich. Fügen Sie einen Schritt hinzu, sobald Sie einen entdecken.",
-  "Progress is reviewable":"Fortschritt ist überprüfbar",
-  "Progress you can explain.":"Fortschritt, den Sie erklären können.",
+  
+  
   "Recent checkpoints":"Jüngste Checkpoints",
   "Record verification":"Verifizierung erfassen",
   "Review before action. Clear boundaries. No false certainty.":"Prüfung vor dem Handeln. Klare Grenzen. Keine falsche Gewissheit.",
-  "Review the weakest assumption":"Die schwächste Annahme prüfen",
+  
   "Save mission":"Mission speichern",
   "Saving this will remove the follow-up date, because it only applies while Waiting.":"Beim Speichern entfällt das Nachfassdatum, da es nur im Status Wartend gilt.",
-  "See actions and blockers":"Aktionen und Blocker sehen",
+  
   "Show all":"Alle anzeigen",
   "Start with a concrete outcome":"Mit einem konkreten Ergebnis beginnen",
   "Start with one Mission":"Mit einer Mission beginnen",
   "Started from Opportunity Intelligence.":"Aus der Chancenanalyse gestartet.",
-  "State the goal and what good looks like.":"Ziel und gewünschtes Ergebnis benennen.",
+  
   "Success criteria":"Erfolgskriterien",
   "Success score":"Erfolgswert",
   "The priority score is a rule-based decision aid, not a verified forecast. Review every field and confirm the source before creating the Mission.":"Der Prioritätswert ist eine regelbasierte Entscheidungshilfe, keine geprüfte Prognose. Prüfen Sie jedes Feld und bestätigen Sie die Quelle, bevor Sie die Mission anlegen.",
   "The saved actions and lifecycle do not show a known planning issue.":"Die gespeicherten Aktionen und der Lebenszyklus zeigen kein bekanntes Planungsproblem.",
   "The work this mission needs":"Die Arbeit, die diese Mission braucht",
   "The work you already know about, in the order you would do it. You can add more at any time. Leave it empty and the mission page will suggest a plan.":"Die Arbeit, die Sie schon kennen, in der Reihenfolge, in der Sie sie erledigen würden. Sie können jederzeit mehr hinzufügen. Lassen Sie das Feld leer, dann schlägt die Missionsseite einen Plan vor.",
-  "Track steps, status, and decisions that need you.":"Schritte, Status und Entscheidungen verfolgen, die Sie brauchen.",
+  
   "Use a template":"Vorlage verwenden",
   "Use plain language. Keep the decision you want to make visible.":"Verwenden Sie klare Sprache. Halten Sie die zu treffende Entscheidung sichtbar.",
-  "Validate a new opportunity":"Eine neue Chance validieren",
+  
   "Verification":"Verifizierung",
   "Verification criteria":"Verifizierungskriterien",
   "Verified":"Verifiziert",
-  "Visible work":"Sichtbare Arbeit",
+  
   "We could not find that mission.":"Diese Mission wurde nicht gefunden.",
   "What good looks like":"Wie Erfolg aussieht",
   "What needs your attention":"Was Ihre Aufmerksamkeit braucht",
   "What should I do next?":"Was soll ich als Nächstes tun?",
   "Where this mission stands":"Wo diese Mission steht",
-  "With control at every step.":"Mit Kontrolle bei jedem Schritt.",
+  
   "Work":"Arbeit",
   "Yes, delete permanently":"Ja, endgültig löschen",
   "Your mission is saved to your private workspace. Ownership comes from your authenticated session.":"Ihre Mission wird in Ihrem privaten Arbeitsbereich gespeichert. Die Inhaberschaft folgt aus Ihrer authentifizierten Sitzung.",
-  "Zavqera brings planning, execution tracking, and decision support into one calm workspace.":"Zavqera vereint Planung, Ausführungsverfolgung und Entscheidungsunterstützung in einem ruhigen Arbeitsbereich.",
+  
   "optional":"optional",
   "Sign in to open your workspace.":"Melden Sie sich an, um Ihren Arbeitsbereich zu öffnen.",
   "Sign in to open the business workspace.":"Melden Sie sich an, um den Unternehmensbereich zu öffnen.",
@@ -4515,7 +4515,7 @@ const DE: Record<string, string> = {
   "This Mission cannot be deleted because its historical provenance must be preserved.":"Diese Mission kann nicht gelöscht werden, da ihre historische Herkunft erhalten bleiben muss.",
   "Your session has expired. Sign in again to continue.":"Ihre Sitzung ist abgelaufen. Melden Sie sich erneut an, um fortzufahren.",
   "Business workspace metrics":"Kennzahlen des Unternehmens-Arbeitsbereichs",
-  "Illustrative view of a governed Mission":"Beispielhafte Ansicht einer gesteuerten Mission",
+  
   "Product principles":"Produktprinzipien",
   "What needs to happen next?":"Was muss als Nächstes geschehen?",
   "User-provided source; not fetched by Zavqera":"Vom Nutzer angegebene Quelle; nicht von Zavqera abgerufen",
@@ -4629,8 +4629,8 @@ const DE: Record<string, string> = {
   "Terms":"Bedingungen",
   "Privacy notice":"Datenschutzhinweis",
   "Terms of service":"Nutzungsbedingungen",
-  "Mission control for goals you have to get right":"Kontrollzentrum für Ziele, die sitzen müssen",
-  "Write the outcome you want. Get a first plan back, with the weak parts of your own wording pointed out — then keep the evidence that you reached it.":"Schreiben Sie das gewünschte Ergebnis. Sie erhalten einen ersten Plan, mit den schwachen Stellen Ihrer eigenen Formulierung benannt — und behalten den Nachweis, dass Sie es erreicht haben.",
+  
+  
   "Filled in from this mission's own success criteria. Change it if what you checked was different.":"Aus den Erfolgskriterien dieser Mission übernommen. Ändern Sie es, wenn Sie etwas anderes geprüft haben.",
   "This mission records no success criteria, so there is nothing to fill in. Write what you actually checked.":"Diese Mission hat keine Erfolgskriterien, also gibt es nichts vorauszufüllen. Schreiben Sie, was Sie tatsächlich geprüft haben.",
   "Completed steps you can cite:":"Abgeschlossene Schritte, die Sie anführen können:",
@@ -4642,12 +4642,12 @@ const DE: Record<string, string> = {
   "Noted — you will hear from us once, when it is ready.":"Notiert — Sie hören einmal von uns, sobald es so weit ist.",
   "One email, when this plan opens. Nothing else, and no account needed. You can ask us to delete your address at any time.":"Eine E-Mail, wenn dieser Plan öffnet. Sonst nichts, und kein Konto nötig. Sie können die Löschung Ihrer Adresse jederzeit verlangen.",
   "That did not save. Check your connection and try again.":"Das wurde nicht gespeichert. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
-  "Make intent explicit":"Die Absicht ausdrücklich machen",
-  "Define the outcome, success criteria, and boundaries before work begins.":"Legen Sie Ergebnis, Erfolgskriterien und Grenzen fest, bevor die Arbeit beginnt.",
-  "Know what happens next":"Wissen, was als Nächstes kommt",
-  "Track each Mission, its actions, blockers, and progress in one place.":"Verfolgen Sie jede Mission, ihre Schritte, Blocker und den Fortschritt an einem Ort.",
-  "Decide with evidence":"Mit Nachweisen entscheiden",
-  "Compare opportunities, record what you know, and expose what is still uncertain.":"Vergleichen Sie Chancen, halten Sie fest, was Sie wissen, und legen Sie offen, was unsicher bleibt.",
+  
+  
+  
+  
+  
+  
   "Strategic fit":"Strategische Passung",
   "How well does it match the user's goal and capabilities? (25%)":"Wie gut passt das zu Ziel und Möglichkeiten des Nutzers? (25 %)",
   "Potential value":"Möglicher Wert",

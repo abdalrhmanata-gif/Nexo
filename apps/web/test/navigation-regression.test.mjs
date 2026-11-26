@@ -154,10 +154,13 @@ test("navigation identifies Workspace only on the workspace route", () => {
 
 test("landing page explains real product value and uses functional paths", () => {
   const page = read("app/page.tsx");
-  for (const route of ["/app", "/app/opportunities", "/templates", "/pricing"]) {
+  // 26 Nov 2026: the home page leads with checklists for small teams (owner's
+  // decision), so its paths are the checklists, the comparisons, templates
+  // and pricing. Opportunity Intelligence stays in the workspace navigation.
+  for (const route of ["/app", "/checklists", "/compare", "/templates", "/pricing", "/try"]) {
     assert.ok(page.includes(route), `missing landing CTA ${route}`);
   }
-  assert.match(page, /Review before action/);
+  assert.match(page, /Free plan, no card/);
   assert.match(page, /Illustrative view/);
 });
 
