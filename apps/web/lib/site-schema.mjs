@@ -12,6 +12,7 @@ export const SITE_URL = "https://zavqera.com";
 export const PROFILES = Object.freeze([
   "https://www.youtube.com/@ZAVQERA",
   "https://www.g2.com/products/zavqera/reviews",
+  "https://www.crunchbase.com/organization/zavqera",
 ]);
 
 /** Monthly prices in US dollars, as /pricing shows them. */
