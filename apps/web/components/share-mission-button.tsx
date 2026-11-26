@@ -8,7 +8,7 @@ import { LocalizedFill, LocalizedText } from "./localized-text";
 export type MissionShareStatus = { views: number; remixes: number } | null;
 
 /**
- * "Share result" publishes a stored copy of this mission's public face and
+ * "Share checklist" publishes a stored copy of this mission's public face and
  * hands over its link. The copy is built on the server; this button sends
  * only the request. While a link is live it shows how often it was opened
  * and remixed, and lets the person stop sharing.
@@ -70,7 +70,7 @@ export function ShareMissionButton({ missionId, shared }: { missionId: string; s
   return (
     <span className="share-mission no-print">
       <button className="button button-quiet" type="button" disabled={state === "busy"} onClick={share}>
-        <LocalizedText en="Share result" />
+        <LocalizedText en="Share checklist" />
       </button>
       {link && (
         <span className="share-panel" role="group" aria-label={link.name}>

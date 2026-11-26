@@ -49,7 +49,7 @@ test("a snapshot is bounded, whatever the mission holds", () => {
   assert.equal(snapshot.name.length, 100);
   assert.equal(snapshot.intent.length, 700);
   assert.equal(snapshot.criteria.length, 6);
-  assert.equal(snapshot.completedSteps.length, 6);
+  assert.equal(snapshot.completedSteps.length, 20);
   assert.equal(snapshot.progress, 100);
   assert.equal(snapshot.outcome.successScore, 1);
   assert.equal(Object.keys(snapshot.outcome.result).length, 4);
@@ -105,7 +105,7 @@ test("anyone may read a share; only an editor of the mission's workspace may cre
 test("a shared mission shows the steps still to do, by title only", () => {
   const snapshot = publicMissionSnapshot({ ...mission, plannedSteps: ["Call two suppliers", { title: "x", note: "private" }, "  ", ...Array.from({ length: 20 }, (_, index) => `later ${index} ${"s".repeat(300)}`)] });
   assert.equal(snapshot.plannedSteps[0], "Call two suppliers");
-  assert.equal(snapshot.plannedSteps.length, 8);
+  assert.equal(snapshot.plannedSteps.length, 18);
   assert.ok(snapshot.plannedSteps.every((step) => typeof step === "string" && step.length <= 140));
   assert.ok(JSON.stringify(snapshot).length < 8000);
 });
@@ -145,4 +145,34 @@ test("each share target carries the Mission name and the link, encoded", () => {
   assert.equal(targets.linkedin.searchParams.get("url"), url);
   assert.equal(targets.facebook.searchParams.get("u"), url);
   for (const id of ["gmail", "outlook", "whatsapp", "x", "linkedin", "facebook"]) assert.equal(targets[id].protocol, "https:");
+});
+
+test("a shared checklist keeps all its steps, and always fits what the database stores", async () => {
+  const { MAX_SHARED_STEPS } = await import("../lib/mission-share.mjs");
+  const eleven = publicMissionSnapshot({ ...mission, completedSteps: Array.from({ length: 7 }, (_, i) => `done ${i}`), plannedSteps: Array.from({ length: 4 }, (_, i) => `todo ${i}`) });
+  assert.equal(eleven.completedSteps.length + eleven.plannedSteps.length, 11);
+  const many = publicMissionSnapshot({ ...mission, completedSteps: Array.from({ length: 15 }, (_, i) => `done ${i}`), plannedSteps: Array.from({ length: 15 }, (_, i) => `todo ${i}`) });
+  assert.equal(many.completedSteps.length + many.plannedSteps.length, MAX_SHARED_STEPS);
+  assert.equal(many.completedSteps.length, 15);
+  // Long Arabic steps: two bytes a letter, still under the 8000-byte limit.
+  const arabic = "خطوة طويلة جدًا ".repeat(9).slice(0, 140);
+  const heavy = publicMissionSnapshot({ ...mission, name: "ق".repeat(100), intent: "ن".repeat(700), criteria: Array.from({ length: 6 }, () => "م".repeat(180)), completedSteps: Array.from({ length: 10 }, () => arabic), plannedSteps: Array.from({ length: 10 }, () => arabic) });
+  assert.ok(new TextEncoder().encode(JSON.stringify(heavy)).length <= 7600);
+  assert.ok(heavy.completedSteps.length === 10, "done steps are kept before planned ones");
+});
+
+test("a signed-out visitor who uses a shared checklist signs up first and comes back by a short address", () => {
+  const route = readFileSync(new URL("../app/share/m/[id]/remix/route.ts", import.meta.url), "utf8");
+  assert.match(route, /if \(!user\) \{/);
+  assert.match(route, /signUp\.searchParams\.set\("next", `\/share\/m\/\$\{shareId\}\/remix`\)/);
+  // The count and the draft come after sign-in.
+  assert.ok(route.indexOf("if (!user)") < route.indexOf("record_mission_share_event"));
+});
+
+test("a shared page says where it came from, links home with a tag, and keeps notes and proof private", () => {
+  const page = readFileSync(new URL("../app/share/m/[id]/page.tsx", import.meta.url), "utf8");
+  assert.match(page, /utm_source=shared_checklist/);
+  assert.match(page, /Made with ZAVQERA/);
+  assert.match(page, /Use this checklist/);
+  assert.doesNotMatch(page, /snapshot\.(notes|proof|evidence|assignee|owner)/);
 });
