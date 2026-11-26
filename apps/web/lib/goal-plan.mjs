@@ -27,7 +27,7 @@ export const GOAL_MIN_LENGTH = 4;
  * taps one never gets a plan for something else.
  */
 export const GOAL_EXAMPLES = [
-  { goal: "Move to Germany and settle in", expect: { source: "guide", id: "moving-to-germany-checklist" } },
+  { goal: "Close the month's books", expect: { source: "checklist", id: "month-end-close-checklist" } },
   { goal: "Open a small café", expect: { source: "planner", id: "venture" } },
   { goal: "Find a new job", expect: { source: "template", id: "find-a-job" } },
   { goal: "Start an LLC in the US", expect: { source: "guide", id: "how-to-start-an-llc" } },
@@ -170,6 +170,22 @@ const ONBOARDING = [
   "ta imot en ny ansatt", "ta imot ny ansatt", "onboarde", "nyansatt",
 ];
 
+/**
+ * Closing the month's books: a process every business repeats twelve times a
+ * year, which is what a paid plan's own templates are for. First under the box.
+ * "End of the month" alone is not listed: a trip can be at the end of a month.
+ */
+const MONTH_END = [
+  "month end", "month end close", "close the month", "close the books", "month's books", "monthly close",
+  "close the month's books", "closing the books",
+  "إغلاق حسابات نهاية الشهر", "حسابات نهاية الشهر", "إقفال حسابات الشهر", "إقفال الشهر", "إغلاق الشهر",
+  "الإقفال الشهري", "الإغلاق الشهري", "إقفال الحسابات", "إغلاق الحسابات",
+  "cierre mensual", "cerrar las cuentas del mes", "cierre contable", "cerrar el mes",
+  "clôture mensuelle", "clôture comptable", "clôturer le mois",
+  "monatsabschluss", "abschluss des monats",
+  "månedsavslutning", "avslutte regnskapet", "månedsregnskap",
+];
+
 /** Onboarding a client, not an employee. */
 const CLIENT = [
   "client", "clients", "customer", "customers", "عميل", "العميل", "عملاء", "cliente", "clientes",
@@ -244,6 +260,9 @@ export function matchGoal(value) {
   if (onboarding > 0) {
     add("checklist", score(text, CLIENT) > 0 ? "client-onboarding-checklist" : "employee-onboarding-checklist", onboarding + 3, 2.5);
   }
+
+  const monthEnd = score(text, MONTH_END);
+  if (monthEnd > 0) add("checklist", "month-end-close-checklist", monthEnd + 3, 2.5);
 
   add("template", "find-a-job", score(text, JOB), 2);
   add("template", "organise-an-event", score(text, EVENT), 2);
