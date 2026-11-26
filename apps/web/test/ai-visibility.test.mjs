@@ -25,6 +25,8 @@ test("the home page tells engines what ZAVQERA is, with facts only", () => {
     "https://www.g2.com/products/zavqera/reviews",
     "https://www.crunchbase.com/organization/zavqera",
   ], "only profiles the company runs, each checked by the owner");
+  assert.deepEqual(organization.founder, { "@type": "Person", name: "Abd Ata", sameAs: ["https://peerlist.io/zavqera"] }, "the founder as he names himself publicly");
+  assert.ok(!organization.sameAs.includes("https://peerlist.io/zavqera"), "a person's profile is not the company's");
   assert.equal(website["@type"], "WebSite");
   assert.equal(software["@type"], "SoftwareApplication");
   assert.equal(software.applicationCategory, "BusinessApplication");
