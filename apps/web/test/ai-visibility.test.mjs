@@ -20,6 +20,11 @@ test("the home page tells engines what ZAVQERA is, with facts only", () => {
   assert.equal(organization.logo.url, "https://zavqera.com/brand/zavqera-icon-512.png");
   assert.ok(existsSync(join(webRoot, "public/brand/zavqera-icon-512.png")), "the logo is served by the site");
   assert.deepEqual(organization.sameAs, [...PROFILES]);
+  assert.deepEqual(PROFILES, [
+    "https://www.youtube.com/@ZAVQERA",
+    "https://www.g2.com/products/zavqera/reviews",
+    "https://www.crunchbase.com/organization/zavqera",
+  ], "only profiles the company runs, each checked by the owner");
   assert.equal(website["@type"], "WebSite");
   assert.equal(software["@type"], "SoftwareApplication");
   assert.equal(software.applicationCategory, "BusinessApplication");
