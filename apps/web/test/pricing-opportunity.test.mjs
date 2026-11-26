@@ -139,7 +139,7 @@ test("every 'unlimited' on the pricing page is true: no feature is gated by plan
     for (const entry of readdirSync(join(webRoot, dir), { withFileTypes: true })) {
       const rel = join(dir, entry.name);
       if (entry.isDirectory()) walk(rel);
-      else if (/\.(tsx?|mjs)$/.test(entry.name) && /isPaidPlan\(|hasOwnTemplates\(|calendarLimit\(|\.plan === "(plus|pro|scale)"/.test(readFileSync(join(webRoot, rel), "utf8"))) gated.push(rel);
+      else if (/\.(tsx?|mjs)$/.test(entry.name) && /isPaidPlan\(|hasOwnTemplates\(|calendarLimit\(|repeatAllowance\(|\.plan === "(plus|pro|scale)"/.test(readFileSync(join(webRoot, rel), "utf8"))) gated.push(rel);
     }
   };
   for (const dir of ["app", "components", "lib"]) walk(dir);
@@ -148,7 +148,12 @@ test("every 'unlimited' on the pricing page is true: no feature is gated by plan
   // The calendar link is the other: how many Missions it carries (1, 3, all).
   const OWN_TEMPLATE_FILES = ["app/app/missions/[id]/page.tsx", "app/app/templates/actions.ts", "app/app/templates/page.tsx", "lib/own-templates.mjs"];
   const CALENDAR_FILES = ["app/app/calendar/page.tsx", "components/plan-dates-card.tsx", "lib/plan-dates.mjs"];
-  assert.deepEqual(gated.filter((file) => !/billing|checkout|stripe/.test(file) && !OWN_TEMPLATE_FILES.includes(file) && !CALENDAR_FILES.includes(file)).sort(), [], "a feature is gated by plan; the pricing page would no longer be true");
+  // Repeating checklists: how many run at once (1, 3, up to 100), on the cards.
+  const REPEAT_FILES = ["lib/repeats.mjs"];
+  assert.match(pricing, /Repeating checklists: 1"/);
+  assert.match(pricing, /Repeating checklists: 3"/);
+  assert.match(pricing, /Repeating checklists: up to 100"/);
+  assert.deepEqual(gated.filter((file) => !/billing|checkout|stripe/.test(file) && !OWN_TEMPLATE_FILES.includes(file) && !CALENDAR_FILES.includes(file) && !REPEAT_FILES.includes(file)).sort(), [], "a feature is gated by plan; the pricing page would no longer be true");
   // The terms carry the fair-use sentence the FAQ points to.
   const terms = read("app/terms/page.tsx");
   assert.match(terms, /Where a plan says something is unlimited/);

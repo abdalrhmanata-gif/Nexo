@@ -33,6 +33,7 @@ const plans = [
       "Six languages, including Arabic",
       "Plan dates, countdown and legal deadlines with their source",
       "Your plan in Google, Apple or Outlook calendar: 1 Mission",
+      "Repeating checklists: 1",
     ],
   },
   {
@@ -44,7 +45,7 @@ const plans = [
     className: "",
     cta: false,
     // 10 a month: one every three days or so.
-    features: ["Everything in Free", "A fresh AI plan every few days", "Your calendar: 3 Missions"],
+    features: ["Everything in Free", "A fresh AI plan every few days", "Your calendar: 3 Missions", "Repeating checklists: 3"],
   },
   {
     name: "Pro",
@@ -55,7 +56,7 @@ const plans = [
     className: "pricing-card-pro",
     cta: false,
     // 30 a month.
-    features: ["Everything in Plus", "About one AI draft a day", "Your own templates: save any Mission, reuse it in one press", "Your calendar: every Mission"],
+    features: ["Everything in Plus", "About one AI draft a day", "Your own templates: save any Mission, reuse it in one press", "Your calendar: every Mission", "Repeating checklists: up to 100"],
   },
   {
     name: "Scale",
@@ -67,7 +68,7 @@ const plans = [
     className: "pricing-card-featured",
     cta: false,
     // 90 a month.
-    features: ["Everything in Pro", "About three AI drafts a day", "Your own templates: save any Mission, reuse it in one press", "Your calendar: every Mission"],
+    features: ["Everything in Pro", "About three AI drafts a day", "Your own templates: save any Mission, reuse it in one press", "Your calendar: every Mission", "Repeating checklists: up to 100"],
   },
 ];
 
@@ -78,6 +79,9 @@ const NEW_FEATURES = new Set([
   "Your plan in Google, Apple or Outlook calendar: 1 Mission",
   "Your calendar: 3 Missions",
   "Your calendar: every Mission",
+  "Repeating checklists: 1",
+  "Repeating checklists: 3",
+  "Repeating checklists: up to 100",
 ]);
 
 const questions = [
@@ -96,6 +100,10 @@ const questions = [
   {
     q: "What are your own templates?",
     a: "On Pro and Scale, any Mission you plan well can be saved as your own template, with its intent, success criteria and steps. The next time, you start a new Mission from it in one press. You can keep up to 100, and they are private to you. If you move to another plan they are kept, and they work again when you come back to Pro or Scale.",
+  },
+  {
+    q: "How do repeating checklists work?",
+    a: "Set a checklist to repeat every day, every week or every month. When each new period starts, a fresh copy appears in your workspace with the same steps and the same step owners, due by the end of that period. Days you were away are not filled in. Free runs 1 repeating checklist, Plus 3, Pro and Scale up to 100. Copies already made stay if you stop repeating or change plan.",
   },
   {
     q: "How does the calendar work?",

@@ -160,8 +160,8 @@ test("the page learns who the reader is in the read it already makes", () => {
 
 test("owners are read beside the page's other reads and never break it", () => {
   const page = read("app/app/missions/[id]/page.tsx");
-  assert.match(page, /const \[shareStatus, aiReady, plan, dates, calendarRead, stepOwners\] = await Promise\.all\(\[/);
-  assert.match(page, /readStepOwners\(mission\.id\),\n  \]\);/);
+  assert.match(page, /const \[shareStatus, aiReady, plan, dates, calendarRead, stepOwners(?:, [a-zA-Z]+)*\] = await Promise\.all\(\[/);
+  assert.match(page, /readStepOwners\(mission\.id\),\n/);
   assert.match(page, /editable=\{stepOwners\.canAssign && !closed && stepTakesOwner\(action\.status\)\}/);
   assert.match(page, /href="\/app\/team"/, "alone in the workspace, the page invites the team instead");
   for (const [control, rule] of [

@@ -2009,3 +2009,13 @@ html[dir="rtl"] .try-more a span[aria-hidden="true"] { display:inline-block; tra
 
 /* The task-tracker landing page (/ar/employee-task-tracker): two buttons under the lead. */
 .tracker-actions { display:flex; flex-wrap:wrap; gap:12px; margin-block:22px 10px; }
+
+/* "Repeat this checklist" on a checklist's page. */
+.repeat-form { display:grid; gap:12px; margin-top:10px; }
+.repeat-form fieldset { border:0; padding:0; margin:0; display:flex; flex-wrap:wrap; gap:6px 14px; }
+.repeat-form legend { font-size:13px; font-weight:700; margin-bottom:6px; padding:0; }
+.repeat-form label { display:inline-flex; align-items:center; gap:6px; font-size:14px; }
+.repeat-select { display:grid !important; gap:6px; }
+.repeat-select select { max-width:260px; }
+.repeat-notice { color:var(--teal); font-weight:700; font-size:14px; }
+.repeat-allowance { color:var(--muted); font-size:13px; margin-top:8px; }
