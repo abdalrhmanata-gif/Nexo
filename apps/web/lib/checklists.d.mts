@@ -56,6 +56,10 @@ export type ChecklistChrome = {
   when: string;
   steps: string;
   proofLabel: string;
+  pdfButton: string;
+  pdfNote: string;
+  pdfWriteIn: string;
+  pdfFooter: string;
   sourceLabel: string;
   faq: string;
   related: string;
