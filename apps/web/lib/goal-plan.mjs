@@ -152,6 +152,30 @@ const WORKFLOW = [
   "arbeitsablauf", "produktivität", "gewohnheit", "arbeidsflyt", "rutine", "produktivitet",
 ];
 
+/**
+ * Getting a new employee started: the most searched team process there is
+ * ("onboarding checklist", see claude/ZAVQERA_PAYING_SEGMENT_CHECKLISTS in
+ * the project) and the example in the box. Phrases, not single words, so
+ * hiring someone ("hire a new employee", "توظيف موظف جديد") stays a hiring
+ * plan and a new client is not a new employee.
+ */
+const ONBOARDING = [
+  "onboard", "onboarding", "onboard a new employee", "onboard a new hire", "new hire", "new starter",
+  "employee onboarding", "first day of a new employee",
+  "استقبال موظف", "استقبال الموظف", "استقبال موظفة", "استقبال الموظفين", "تهيئة موظف", "تهيئة الموظف",
+  "تهيئة الموظفين", "تأهيل موظف جديد",
+  "incorporar a un nuevo empleado", "incorporación de un empleado", "incorporación de empleados",
+  "intégrer un nouveau salarié", "intégration d'un salarié", "intégration d'un nouveau salarié",
+  "accueillir un nouveau salarié", "einarbeiten", "einarbeitung", "neuen mitarbeiter einarbeiten",
+  "ta imot en ny ansatt", "ta imot ny ansatt", "onboarde", "nyansatt",
+];
+
+/** Onboarding a client, not an employee. */
+const CLIENT = [
+  "client", "clients", "customer", "customers", "عميل", "العميل", "عملاء", "cliente", "clientes",
+  "kunde", "kunden", "kunder",
+];
+
 const LAUNCH = [
   "launch", "side project", "project", "new project", "مشروع", "إطلاق", "اطلاق", "أطلق", "lanzar",
   "proyecto", "lancer", "projet", "projekt", "lansere", "prosjekt",
@@ -185,7 +209,7 @@ function namesEin(raw, text) {
 }
 
 /**
- * Which plan a goal gets: { source: "guide" | "template" | "planner", id,
+ * Which plan a goal gets: { source: "guide" | "checklist" | "template" | "planner", id,
  * licensed? }. Null when the goal is too short to read. A goal that matches
  * nothing specific still gets the planner's general plan, because the point
  * of the box is that every visitor sees something they can start.
@@ -214,6 +238,12 @@ export function matchGoal(value) {
   if (bankAccount > 0 && (us > 0 || llc > 0)) add("guide", "how-to-open-a-business-bank-account", bankAccount + us + llc, 3);
   const business = score(text, BUSINESS);
   if (business > 0 && us > 0) add("guide", "how-to-start-a-business", business + us, 2.5);
+
+  // A ready-made checklist beats a template on its own subject.
+  const onboarding = score(text, ONBOARDING);
+  if (onboarding > 0) {
+    add("checklist", score(text, CLIENT) > 0 ? "client-onboarding-checklist" : "employee-onboarding-checklist", onboarding + 3, 2.5);
+  }
 
   add("template", "find-a-job", score(text, JOB), 2);
   add("template", "organise-an-event", score(text, EVENT), 2);

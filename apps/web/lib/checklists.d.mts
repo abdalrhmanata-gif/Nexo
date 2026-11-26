@@ -12,6 +12,10 @@ export declare const CHECKLIST_GROUPS: readonly ["people", "clients", "finance",
 export type ChecklistGroup = (typeof CHECKLIST_GROUPS)[number];
 
 export type Checklist = {
+  /** Absent for English. */
+  lang?: "ar";
+  /** For a checklist in another language: the English one on the same subject. */
+  en?: string;
   slug: string;
   group: ChecklistGroup;
   /** The page's H1. */
@@ -36,7 +40,9 @@ export type Checklist = {
   related: string[];
 };
 
-export declare const CHECKLIST_CHROME: {
+export type ChecklistChrome = {
+  dir?: "rtl" | "ltr";
+  taskTracker?: string;
   indexTitle: string;
   indexMetaTitle: string;
   indexMetaDescription: string;
@@ -68,8 +74,15 @@ export declare const CHECKLIST_CHROME: {
   allChecklists: string;
 };
 
+export declare const CHECKLIST_CHROME: ChecklistChrome;
+export declare const CHECKLIST_LANGUAGES: readonly ["en", "ar"];
+export declare function checklistsIn(lang?: string): Checklist[];
+export declare function checklistChrome(lang?: string): ChecklistChrome;
+export declare function checklistLanguage(checklist: Checklist): "en" | "ar";
+export declare function checklistAlternates(checklist: Checklist): Record<string, string> | null;
+
 export declare const checklists: Checklist[];
 export declare function checklistBySlug(slug: string): Checklist | null;
-export declare function checklistPath(slug?: string): string;
+export declare function checklistPath(slug?: string, lang?: string): string;
 export declare function checklistMission(checklist: Checklist): { name: string; intent: string; criteria: string[]; actions: string[] };
 export declare function checklistMissionHref(checklist: Checklist): string;

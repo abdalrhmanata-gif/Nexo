@@ -1,18 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
-  CHECKLIST_CHROME as chrome,
   CHECKLIST_GROUPS,
+  checklistAlternates,
   checklistBySlug,
+  checklistChrome,
+  checklistLanguage,
   checklistMissionHref,
   checklistPath,
-  checklists,
+  checklistsIn,
 } from "../lib/checklists.mjs";
 import { SITE_URL } from "../lib/guides";
 import { savePlan } from "../app/app/start/actions";
+import { taskTrackerPath } from "../lib/task-tracker.mjs";
 
-// Every visible word comes from lib/checklists.mjs, which is English on
-// purpose: see the header of that file. The layout reuses the guide styles.
+// Every visible word comes from the checklist data: lib/checklists.mjs in
+// English, lib/checklists-ar.mjs in Arabic. A checklist carries its own
+// language, so the page follows it. The layout reuses the guide styles.
 
 /** JSON for a <script> tag: "<" escaped so content can never close the tag. */
 function jsonLd(value: unknown) {
@@ -26,27 +30,36 @@ function stepId(index: number) {
 export function checklistMetadata(slug: string): Metadata {
   const checklist = checklistBySlug(slug);
   if (!checklist) return { title: "ZAVQERA" };
+  const lang = checklistLanguage(checklist);
   const url = `${SITE_URL}${checklistPath(slug)}`;
+  const alternates = checklistAlternates(checklist);
   return {
     title: checklist.metaTitle,
     description: checklist.metaDescription,
-    alternates: { canonical: url },
-    openGraph: { title: checklist.metaTitle, description: checklist.metaDescription, url, type: "article", siteName: "ZAVQERA", locale: "en" },
+    alternates: {
+      canonical: url,
+      ...(alternates ? { languages: Object.fromEntries(Object.entries(alternates).map(([code, path]) => [code, `${SITE_URL}${path}`])) } : {}),
+    },
+    openGraph: { title: checklist.metaTitle, description: checklist.metaDescription, url, type: "article", siteName: "ZAVQERA", locale: lang },
     twitter: { card: "summary", title: checklist.metaTitle, description: checklist.metaDescription },
   };
 }
 
-export function checklistsIndexMetadata(): Metadata {
+export function checklistsIndexMetadata(lang = "en"): Metadata {
+  const chrome = checklistChrome(lang);
+  const url = `${SITE_URL}${checklistPath(undefined, lang)}`;
   return {
     title: chrome.indexMetaTitle,
     description: chrome.indexMetaDescription,
-    alternates: { canonical: `${SITE_URL}${checklistPath()}` },
-    openGraph: { title: chrome.indexMetaTitle, description: chrome.indexMetaDescription, url: `${SITE_URL}${checklistPath()}`, type: "website", siteName: "ZAVQERA", locale: "en" },
+    alternates: { canonical: url },
+    openGraph: { title: chrome.indexMetaTitle, description: chrome.indexMetaDescription, url, type: "website", siteName: "ZAVQERA", locale: lang },
   };
 }
 
 function SaveChecklist({ slug, compact = false }: { slug: string; compact?: boolean }) {
   const checklist = checklistBySlug(slug)!;
+  const lang = checklistLanguage(checklist);
+  const chrome = checklistChrome(lang);
   return (
     <div className="guide-cta">
       <strong className="guide-cta-title">{chrome.ctaTitle}</strong>
@@ -55,8 +68,8 @@ function SaveChecklist({ slug, compact = false }: { slug: string; compact?: bool
           press goes through sign-up, and the plan is saved straight after it. */}
       <form action={savePlan}>
         <input type="hidden" name="checklist" value={checklist.slug} />
-        <input type="hidden" name="lang" value="en" />
-        <button className="button guide-cta-button" type="submit">{chrome.ctaButton} <span aria-hidden="true">→</span></button>
+        <input type="hidden" name="lang" value={lang} />
+        <button className="button guide-cta-button" type="submit">{chrome.ctaButton} <span aria-hidden="true">{chrome.dir === "rtl" ? "←" : "→"}</span></button>
       </form>
       <Link className="checklist-edit-link" href={checklistMissionHref(checklist)} prefetch={false}>{chrome.ctaEdit}</Link>
       <small>{chrome.ctaFree}</small>
@@ -67,6 +80,8 @@ function SaveChecklist({ slug, compact = false }: { slug: string; compact?: bool
 export function ChecklistArticle({ slug }: { slug: string }) {
   const checklist = checklistBySlug(slug);
   if (!checklist) return null;
+  const lang = checklistLanguage(checklist);
+  const chrome = checklistChrome(lang);
   const url = `${SITE_URL}${checklistPath(slug)}`;
   const related = checklist.related
     .map((item) => checklistBySlug(item))
@@ -78,7 +93,7 @@ export function ChecklistArticle({ slug }: { slug: string }) {
       "@type": "Article",
       headline: checklist.title,
       description: checklist.metaDescription,
-      inLanguage: "en",
+      inLanguage: lang,
       dateModified: checklist.updated,
       mainEntityOfPage: url,
       author: { "@type": "Organization", name: "ZAVQERA", url: SITE_URL },
@@ -87,26 +102,26 @@ export function ChecklistArticle({ slug }: { slug: string }) {
     {
       "@context": "https://schema.org",
       "@type": "FAQPage",
-      inLanguage: "en",
+      inLanguage: lang,
       mainEntity: checklist.faqs.map((faq) => ({ "@type": "Question", name: faq.question, acceptedAnswer: { "@type": "Answer", text: faq.answer } })),
     },
     {
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
       itemListElement: [
-        { "@type": "ListItem", position: 1, name: chrome.checklistsLabel, item: `${SITE_URL}${checklistPath()}` },
+        { "@type": "ListItem", position: 1, name: chrome.checklistsLabel, item: `${SITE_URL}${checklistPath(undefined, lang)}` },
         { "@type": "ListItem", position: 2, name: checklist.short, item: url },
       ],
     },
   ];
 
   return (
-    <div className="guide-page checklist-page" lang="en" dir="ltr">
+    <div className="guide-page checklist-page" lang={lang} dir={chrome.dir ?? "ltr"}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(structured) }} />
 
       <header className="guide-header">
         <nav className="guide-crumbs" aria-label={chrome.checklistsLabel}>
-          <Link href={checklistPath()}>{chrome.checklistsLabel}</Link>
+          <Link href={checklistPath(undefined, lang)}>{chrome.checklistsLabel}</Link>
           <span aria-hidden="true">/</span>
           <span>{checklist.short}</span>
         </nav>
@@ -186,30 +201,34 @@ export function ChecklistArticle({ slug }: { slug: string }) {
               </Link>
             ))}
           </div>
-          <p><Link href={checklistPath()}>{chrome.allChecklists} <span aria-hidden="true">→</span></Link></p>
+          <p><Link href={checklistPath(undefined, lang)}>{chrome.allChecklists} <span aria-hidden="true">{chrome.dir === "rtl" ? "←" : "→"}</span></Link></p>
+          {chrome.taskTracker ? <p><Link href={taskTrackerPath(lang)}>{chrome.taskTracker} <span aria-hidden="true">←</span></Link></p> : null}
         </section>
       ) : null}
     </div>
   );
 }
 
-export function ChecklistsIndex() {
+export function ChecklistsIndex({ lang = "en" }: { lang?: string }) {
+  const chrome = checklistChrome(lang);
+  const list = checklistsIn(lang);
   let number = 0;
   const structured = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    itemListElement: checklists.map((checklist, index) => ({ "@type": "ListItem", position: index + 1, url: `${SITE_URL}${checklistPath(checklist.slug)}`, name: checklist.title })),
+    itemListElement: list.map((checklist, index) => ({ "@type": "ListItem", position: index + 1, url: `${SITE_URL}${checklistPath(checklist.slug)}`, name: checklist.title })),
   };
   return (
-    <div className="guide-page checklist-page" lang="en" dir="ltr">
+    <div className="guide-page checklist-page" lang={lang} dir={chrome.dir ?? "ltr"}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(structured) }} />
       <header className="guide-header guide-index-header">
         <h1 className="guide-title">{chrome.indexTitle}</h1>
         <p className="guide-lead">{chrome.indexLead}</p>
         <p className="guide-meta"><span>{chrome.indexNote}</span></p>
+        {chrome.taskTracker ? <p><Link href={taskTrackerPath(lang)}>{chrome.taskTracker} <span aria-hidden="true">←</span></Link></p> : null}
       </header>
       {CHECKLIST_GROUPS.map((group) => {
-        const inGroup = checklists.filter((checklist) => checklist.group === group);
+        const inGroup = list.filter((checklist) => checklist.group === group);
         if (!inGroup.length) return null;
         return (
           <section className="guide-country" key={group} aria-labelledby={`checklists-${group}`}>
@@ -223,7 +242,7 @@ export function ChecklistsIndex() {
                     <strong>{checklist.title}</strong>
                     <p>{checklist.metaDescription}</p>
                     <span>{chrome.stepsCount(checklist.steps.length)}</span>
-                    <span className="guide-card-more">{chrome.open} <span aria-hidden="true">→</span></span>
+                    <span className="guide-card-more">{chrome.open} <span aria-hidden="true">{chrome.dir === "rtl" ? "←" : "→"}</span></span>
                   </Link>
                 );
               })}

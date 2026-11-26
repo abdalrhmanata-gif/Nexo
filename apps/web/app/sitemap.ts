@@ -2,7 +2,8 @@ import type { MetadataRoute } from "next";
 import { GUIDE_LANGUAGES, SITE_URL, guideAlternates, guideLocale, guidePath } from "../lib/guides";
 import { missionTemplates } from "../lib/mission-templates";
 import { COMPARE_PATH, compare } from "../lib/compare";
-import { checklistPath, checklists } from "../lib/checklists.mjs";
+import { CHECKLIST_LANGUAGES, checklistAlternates, checklistPath, checklistsIn } from "../lib/checklists.mjs";
+import { TASK_TRACKER_LANGUAGES, taskTrackerPath } from "../lib/task-tracker.mjs";
 import { TOOL_COMPARISONS, toolComparisonPath } from "../lib/compare-tools.mjs";
 
 // Public pages only. /app, /auth and /api are behind sign-in or are
@@ -25,9 +26,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${SITE_URL}${COMPARE_PATH}`, lastModified: compare.checked },
     ...TOOL_COMPARISONS.map((item) => ({ url: `${SITE_URL}${toolComparisonPath(item.slug)}`, lastModified: item.checked })),
   ];
-  const checklistPages = [
-    { url: `${SITE_URL}${checklistPath()}` },
-    ...checklists.map((checklist) => ({ url: `${SITE_URL}${checklistPath(checklist.slug)}`, lastModified: checklist.updated })),
-  ];
-  return [...fixed, ...comparePages, ...indexes, ...guidePages, ...templatePages, ...checklistPages];
+  // Checklists are written per language, not translated; a checklist with a
+  // counterpart in another language lists both as hreflang alternates.
+  const absolute = (paths: Record<string, string> | null) =>
+    paths ? { alternates: { languages: Object.fromEntries(Object.entries(paths).map(([code, path]) => [code, `${SITE_URL}${path}`])) } } : {};
+  const checklistPages = CHECKLIST_LANGUAGES.flatMap((lang) => [
+    { url: `${SITE_URL}${checklistPath(undefined, lang)}` },
+    ...checklistsIn(lang).map((checklist) => ({ url: `${SITE_URL}${checklistPath(checklist.slug)}`, lastModified: checklist.updated, ...absolute(checklistAlternates(checklist)) })),
+  ]);
+  const trackerPages = TASK_TRACKER_LANGUAGES.map((lang) => ({ url: `${SITE_URL}${taskTrackerPath(lang)}` }));
+  return [...fixed, ...comparePages, ...indexes, ...guidePages, ...templatePages, ...checklistPages, ...trackerPages];
 }

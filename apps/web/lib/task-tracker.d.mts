@@ -1,0 +1,28 @@
+export declare const TASK_TRACKER_LANGUAGES: readonly ["ar"];
+export declare function taskTrackerPath(lang?: string): string;
+type Item = { heading: string; detail: string };
+export declare const TASK_TRACKER_AR: {
+  dir: "rtl";
+  metaTitle: string;
+  metaDescription: string;
+  eyebrow: string;
+  title: string;
+  lead: string;
+  ctaPrimary: string;
+  ctaSecondary: string;
+  ctaNote: string;
+  problemTitle: string;
+  problems: Item[];
+  howTitle: string;
+  how: Item[];
+  freeTitle: string;
+  free: string[];
+  paidNote: string;
+  pricingLink: string;
+  forTitle: string;
+  forWho: string[];
+  faqTitle: string;
+  faqs: { question: string; answer: string }[];
+  finalTitle: string;
+  finalBody: string;
+};

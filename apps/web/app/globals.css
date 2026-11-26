@@ -2001,3 +2001,6 @@ html[dir="rtl"] .try-more a span[aria-hidden="true"] { display:inline-block; tra
 :root[data-theme="dark"] .step-owner-edit select { background:transparent; color:inherit; color-scheme:dark; }
 @media print { .step-owner-edit select { border:none; appearance:none; padding:0; } }
 @media (max-width:700px) { .step-owner { margin-inline-start:0; margin-top:4px; } .step-owner-edit select { max-width:100%; } }
+
+/* The task-tracker landing page (/ar/employee-task-tracker): two buttons under the lead. */
+.tracker-actions { display:flex; flex-wrap:wrap; gap:12px; margin-block:22px 10px; }

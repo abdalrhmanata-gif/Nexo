@@ -38,7 +38,7 @@ export function pricingSentence() {
  * The whole file. Each list holds { title, url, description }; url is a path
  * on zavqera.com or a full https address.
  */
-export function buildLlmsTxt({ checklists = [], templates = [], comparisons = [], guides = [] } = {}) {
+export function buildLlmsTxt({ checklists = [], templates = [], comparisons = [], guides = [], localized = [] } = {}) {
   const intro = [
     "# ZAVQERA",
     "",
@@ -89,6 +89,7 @@ export function buildLlmsTxt({ checklists = [], templates = [], comparisons = []
     section("Templates", templates),
     section("Comparisons", comparisons),
     section("Guides", guides),
+    section("In Arabic", localized),
     section("Company", company),
     section("Optional", optional),
   ].filter(Boolean).join("\n");

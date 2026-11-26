@@ -26,7 +26,7 @@ export function GoalStarter({ mode, inputId = "goal" }: { mode: "preview" | "sav
         maxLength={GOAL_MAX_LENGTH}
         autoComplete="off"
         enterKeyHint="go"
-        placeholder={t("e.g. Move to Germany for work")}
+        placeholder={t("e.g. Onboard a new employee")}
       />
       {mode === "preview"
         ? <button className="button" type="submit"><LocalizedText en="Get my plan" /> <span aria-hidden="true">→</span></button>
