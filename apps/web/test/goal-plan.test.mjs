@@ -209,3 +209,11 @@ test("the onboarding plan for readers in other languages is translated into ever
   }
   assert.match(source, /checklistLanguage\(checklist\) === request\.lang/);
 });
+
+test("the first example is closing the month, a process repeated every month", () => {
+  assert.deepEqual(GOAL_EXAMPLES[0], { goal: "Close the month's books", expect: { source: "checklist", id: "month-end-close-checklist" } });
+  expectMatch("Month-end close", "checklist", "month-end-close-checklist");
+  // The end of a month is not, by itself, closing the books.
+  expectMatch("A trip at the end of the month", "planner", "travel");
+  expectMatch("سفر في نهاية الشهر", "planner", "travel");
+});

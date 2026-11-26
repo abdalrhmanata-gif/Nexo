@@ -68,6 +68,23 @@ const CHECKLIST_SUBJECT_PLANS: Record<string, { headline: string; intent: string
       "Agree goals for the first 90 days and set the check-in dates",
     ],
   },
+  "month-end-close-checklist": {
+    headline: "Closing the month takes these six steps",
+    intent: "Close the month's books on time: every account reconciled, the period locked and the report sent, with proof on each step.",
+    criteria: [
+      "Every bank and card account is reconciled to its statement",
+      "The period is locked in the accounting software",
+      "The month's report is sent, with the date recorded",
+    ],
+    actions: [
+      "Collect the month's statements, receipts and bills",
+      "Reconcile every bank account and card to its statement",
+      "Review unpaid invoices and unpaid bills",
+      "Record the month's payroll, accruals and recurring entries",
+      "Review the profit and loss and the balance sheet against last month",
+      "Lock the period and send the month's report",
+    ],
+  },
 };
 
 type Params = Record<string, string | string[] | undefined | null>;
