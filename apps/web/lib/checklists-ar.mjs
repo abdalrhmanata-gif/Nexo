@@ -52,6 +52,7 @@ export const CHECKLIST_CHROME_AR = {
   allChecklists: "كل القوائم",
   pdfButton: "نزّل ملف PDF",
   pdfNote: "مجاني، للطباعة والتعليم باليد.",
+  pinButton: "احفظها على Pinterest",
   pdfWriteIn: "نفّذها: ______________    التاريخ: __________",
   pdfFooter: "تابع من نفّذ كل خطوة واحفظ الإثبات مجانًا: zavqera.com",
   taskTracker: "برنامج مجاني لمتابعة مهام الموظفين",

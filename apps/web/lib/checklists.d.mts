@@ -58,6 +58,8 @@ export type ChecklistChrome = {
   proofLabel: string;
   pdfButton: string;
   pdfNote: string;
+  /** Link text for saving the checklist's tall image on Pinterest. */
+  pinButton: string;
   pdfWriteIn: string;
   pdfFooter: string;
   sourceLabel: string;
