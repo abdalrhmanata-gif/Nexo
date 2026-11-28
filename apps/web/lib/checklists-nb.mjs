@@ -41,6 +41,7 @@ export const CHECKLIST_CHROME_NB = {
   allChecklists: "Alle sjekklister",
   pdfButton: "Last ned PDF",
   pdfNote: "Gratis, til å skrive ut og krysse av for hånd.",
+  pinButton: "Lagre på Pinterest",
   pdfWriteIn: "Utført av: ______________    Dato: __________",
   pdfFooter: "Hold oversikt over hvem som gjorde hvert steg, med bevis, gratis: zavqera.com",
 };

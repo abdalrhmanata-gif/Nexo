@@ -42,6 +42,7 @@ export const CHECKLIST_CHROME_DE = {
   allChecklists: "Alle Checklisten",
   pdfButton: "PDF herunterladen",
   pdfNote: "Kostenlos, zum Ausdrucken und Abhaken von Hand.",
+  pinButton: "Auf Pinterest merken",
   pdfWriteIn: "Erledigt von: ______________    Datum: __________",
   pdfFooter: "Festhalten, wer jeden Schritt erledigt hat, mit Nachweis, kostenlos: zavqera.com",
 };

@@ -72,6 +72,7 @@ export const CHECKLIST_CHROME = {
   allChecklists: "All checklists",
   pdfButton: "Download the PDF",
   pdfNote: "Free, to print and tick by hand.",
+  pinButton: "Save it on Pinterest",
   pdfWriteIn: "Done by: ______________    Date: __________",
   pdfFooter: "Track who did each step and keep the proof, free: zavqera.com",
 };

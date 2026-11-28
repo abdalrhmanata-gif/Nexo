@@ -41,6 +41,7 @@ export const CHECKLIST_CHROME_ES = {
   allChecklists: "Todas las checklists",
   pdfButton: "Descargar el PDF",
   pdfNote: "Gratis, para imprimir y marcar a mano.",
+  pinButton: "Guárdala en Pinterest",
   pdfWriteIn: "Hecho por: ______________    Fecha: __________",
   pdfFooter: "Lleva quién hizo cada paso y guarda la prueba, gratis: zavqera.com",
 };
